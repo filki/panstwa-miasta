@@ -178,11 +178,19 @@
                 <label for="nickname">Twój Nick</label>
                 <input type="text" id="nickname" placeholder="Wpisz swój nick..." required>
             </div>
-            <div class="form-group">
-                <label for="room_id">ID Pokoju</label>
-                <input type="text" id="room_id" placeholder="np. lobby123" required>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <button onclick="createRoom()" style="background-color: var(--accent);">+ Stwórz pokój</button>
+                <button onclick="showJoinInputs()" style="background-color: var(--surface); color: var(--primary); border: 2px solid var(--primary);">Dołącz do pokoju</button>
             </div>
-            <button onclick="connect()">Dołącz do Gry</button>
+
+            <div id="join-inputs" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                <div class="form-group">
+                    <label for="room_id">ID Pokoju</label>
+                    <input type="text" id="room_id" placeholder="np. 1234">
+                </div>
+                <button onclick="connect()">Wejdź do Gry</button>
+            </div>
         </div>
 
         <div id="chat-section" style="display: none;">
@@ -260,11 +268,24 @@
             });
         }
 
+        function showJoinInputs() {
+            document.getElementById('join-inputs').style.display = 'block';
+        }
+
+        function createRoom() {
+            const nickname = document.getElementById('nickname').value.trim();
+            if (!nickname) return alert('Proszę najpierw podać swój nick!');
+            
+            const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
+            document.getElementById('room_id').value = randomCode;
+            connect();
+        }
+
         function connect() {
             const nickname = document.getElementById('nickname').value.trim();
             const roomId = document.getElementById('room_id').value.trim();
 
-            if (!nickname || !roomId) return alert('Proszę podać nick i ID pokoju.');
+            if (!nickname || !roomId) return alert('Proszę podać nick i upewnić się, że masz ID pokoju.');
 
             myNick = nickname;
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
