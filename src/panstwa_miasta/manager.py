@@ -86,10 +86,15 @@ class Room:
                     else:
                         round_scores[player]["details"][category] = -1
                 elif category == "Zawód":
-                    if ans not in JOBS:
-                        round_scores[player]["details"][category] = 0
-                    else:
+                    if ans in JOBS:
                         round_scores[player]["details"][category] = -1
+                    else:
+                        # Lematyzacja / dopasowanie częściowe: np. "urolog" dopasuje "lekarz urolog"
+                        # Szukamy po pełnych słowach (split()), by "log" nie dopasowało "urolog"
+                        if any(ans in job.split() for job in JOBS):
+                            round_scores[player]["details"][category] = -1
+                        else:
+                            round_scores[player]["details"][category] = 0
                 elif category in wiki_categories:
                     # Kolejkujemy do Wikipedii
                     validation_tasks.append(validator.validate(ans, category))

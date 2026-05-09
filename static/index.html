@@ -175,6 +175,9 @@
     </style>
 </head>
 <body>
+    <div id="sticky-timer" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: var(--danger); color: white; padding: 10px; text-align: center; font-size: 1.5rem; z-index: 1000; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+        🛑 STOP! Czas: <span id="sticky-time">10</span>s
+    </div>
     <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
             <h1 style="margin-bottom: 0;">Państwa-Miasta Engine</h1>
@@ -434,8 +437,11 @@
                     const btnStop = document.getElementById('btn-stop');
                     btnStop.disabled = true;
                     
-                    // Przewiń ekran na górę (dla urządzeń mobilnych, gdzie odliczanie jest u góry)
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    // Pokazujemy fixed banner na górze (idealne na mobilki)
+                    const stickyTimer = document.getElementById('sticky-timer');
+                    const stickyTime = document.getElementById('sticky-time');
+                    stickyTimer.style.display = 'block';
+                    stickyTime.innerText = '10';
                     
                     // Pokazujemy wielki odliczacz na środku ekranu oraz na przycisku STOP
                     document.getElementById('current-letter').innerHTML = `<span style="color:var(--danger)">10s</span>`;
@@ -447,9 +453,11 @@
                         if(timeLeft > 0) {
                             document.getElementById('current-letter').innerHTML = `<span style="color:var(--danger)">${timeLeft}s</span>`;
                             btnStop.innerHTML = `⏳ ${timeLeft}s`;
+                            stickyTime.innerText = timeLeft;
                         } else {
                             clearInterval(countdownInterval);
                             btnStop.innerHTML = `WYSYŁANIE...`;
+                            stickyTimer.style.display = 'none';
                             disableAndSubmit();
                         }
                     }, 1000);
@@ -458,6 +466,7 @@
                     window.currentCountdown = countdownInterval;
                 }
                 else if (msg.type === "round_results") {
+                    document.getElementById('sticky-timer').style.display = 'none';
                     if(window.currentCountdown) clearInterval(window.currentCountdown);
                     if(window.globalRoundTimer) clearInterval(window.globalRoundTimer);
                     document.getElementById("round-timer").style.display = "none";

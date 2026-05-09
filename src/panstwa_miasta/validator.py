@@ -22,36 +22,37 @@ class WikipediaValidator:
             
         try:
             params = {
-                "action": "opensearch",
+                "action": "wbsearchentities",
                 "search": term,
-                "limit": "1",
-                "namespace": "0",
+                "language": "pl",
                 "format": "json"
             }
-            response = await self.client.get("https://pl.wikipedia.org/w/api.php", params=params)
+            # Używamy API Wikidata - jest dużo bardziej restrykcyjne i precyzyjne (opisy to np. "miasto w Polsce", "gatunek ssaka")
+            response = await self.client.get("https://www.wikidata.org/w/api.php", params=params)
             data = response.json()
             
-            # data format: [query, [titles], [descriptions], [links]]
-            if len(data) > 2 and data[1]:
-                title = data[1][0].lower()
-                description = data[2][0].lower() if data[2] else ""
+            search_results = data.get("search", [])
+            if search_results:
+                # Bierzemy pierwszy (najbardziej trafny) wynik
+                first_result = search_results[0]
+                title = first_result.get("label", "").lower()
+                description = first_result.get("description", "").lower()
                 
                 # Słowa kluczowe dla kategorii
                 keywords = {
                     "Miasto": ["miasto", "miejscowość", "stolica", "wieś", "osada", "gmina", "aglomeracja", "prowincja"],
                     "Zwierzę": ["zwierzę", "gatunek", "rodzina", "rząd", "ptak", "ryba", "ssak", "gad", "płaz", "owad", "pająk", "stawonóg"],
-                    "Roślina": ["roślina", "gatunek", "drzewo", "krzew", "kwiat", "bylina", "zioło", "owoc", "warzywo", "grzyb"] # grzyby często są w roślinie w tej grze ;)
+                    "Roślina": ["roślina", "gatunek", "drzewo", "krzew", "kwiat", "bylina", "zioło", "owoc", "warzywo", "grzyb", "roślin"]
                 }
                 
                 # Jeśli tytuł się zgadza (lub jest bardzo blisko)
-                if title == term or term in title:
-                    # Jeśli mamy opis, sprawdzamy czy pasuje do kategorii
+                if term in title or title in term:
                     if category in keywords:
+                        # Wyszukujemy słów kluczowych w precyzyjnym opisie Wikidata
                         if any(kw in description for kw in keywords[category]):
                             self.cache[cache_key] = True
                             return True
                     else:
-                        # Dla innych kategorii (jeśli byśmy dodali) akceptujemy samo istnienie
                         self.cache[cache_key] = True
                         return True
             

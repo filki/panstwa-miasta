@@ -2913,6 +2913,7 @@ Specjalista do spraw pakowania i opakowań
 Specjalista do spraw planowania strategicznego
 Specjalista do spraw pozyskiwania funduszy (fundraiser)
 Specjalista do spraw pozyskiwania i analizy informacji o cyberzagrożeniach (Cyber threat intelligence specialist) 
+Specjalista do spraw prawnych i zgodności w zakresie cyberbezpieczeństwa (Cyber legal, policy & compliance officer)
 Specjalista do spraw przewozów intermodalnych
 Specjalista do spraw public relations
 Specjalista do spraw rachunkowości
@@ -3476,6 +3477,8 @@ Wyższy urzędnik samorządowy
 Wędliniarz
 Wędzarz
 Właściciel małego sklepu
+Właściciel małego zakładu agroturystycznego / hotelarskiego / gastronomicznego
+Właściciele sklepów
 Zabawkarz
 Zabiegowy balneologiczny
 Zakonnik (bez święceń kapłańskich)
@@ -3520,10 +3523,23 @@ Złotnik-jubiler*
 Łubiankarz
 Ślusarz galanterii metalowej
 Ślusarz narzędziowy
-Ślusarz
+Ślusarz*
+Ślusarze i pokrewni
+Średni personel do spraw biznesu i administracji
+Średni personel do spraw finansowych
+Średni personel do spraw statystyki i dziedzin pokrewnych
+Średni personel do spraw zdrowia
+Średni personel do spraw zdrowia gdzie indziej niesklasyfikowany
+Średni personel nauk fizycznych, chemicznych i technicznych
+Średni personel ochrony środowiska, medycyny pracy i bhp
+Średni personel w zakresie działalności artystycznej i kulturalnej gdzie indziej niesklasyfikowany
+Średni personel w zakresie działalności artystycznej, kulturalnej
+Średni personel z dziedziny prawa i pokrewny
+Średni personel z dziedziny prawa, spraw społecznych i religii
+Średni personel z dziedziny prawa, spraw społecznych, kultury i pokrewny
 Środowiskowi pracownicy ochrony zdrowia
 Świecki krzewiciel wiary
 Żaglownik
 Żałobnik
 Żongler
-
+Żołnierze szeregowi
