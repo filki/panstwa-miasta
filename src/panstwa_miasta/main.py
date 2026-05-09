@@ -2,7 +2,9 @@ import json
 import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
-from manager import ConnectionManager
+from .manager import ConnectionManager
+import os
+import pathlib
 
 app = FastAPI(title="Państwa-Miasta Engine")
 manager = ConnectionManager()
@@ -46,7 +48,10 @@ async def force_end_round(room_id: str):
 
 @app.get("/")
 async def get():
-    with open("index.html", "r", encoding="utf-8") as f:
+    # Ścieżka do index.html w folderze static/
+    base_path = pathlib.Path(__file__).parent.parent.parent
+    index_path = base_path / "static" / "index.html"
+    with open(index_path, "r", encoding="utf-8") as f:
         html_content = f.read()
     return HTMLResponse(content=html_content)
 

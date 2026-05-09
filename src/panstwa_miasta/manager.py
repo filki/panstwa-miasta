@@ -1,6 +1,6 @@
 from typing import Dict
 from fastapi import WebSocket
-from data import COUNTRIES, NAMES
+from data import COUNTRIES, NAMES, JOBS
 
 ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
 
@@ -51,7 +51,7 @@ class Room:
         Zwraca: {player: {"total": int, "details": {category: points}}}
         """
         round_scores = {player: {"total": 0, "details": {}} for player in self.answers_received}
-        categories = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię"]
+        categories = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
         
         for category in categories:
             # Zbieramy odpowiedzi graczy dla jednej kategorii { nick: hasło }
@@ -66,6 +66,8 @@ class Room:
                     if category == "Państwo" and ans not in COUNTRIES:
                         is_valid = False
                     elif category == "Imię" and ans not in NAMES:
+                        is_valid = False
+                    elif category == "Zawód" and ans not in JOBS:
                         is_valid = False
                 
                 if is_valid and ans != "":

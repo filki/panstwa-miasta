@@ -1,3 +1,7 @@
+import csv
+import pathlib
+
+# Baza danych krajów
 COUNTRIES = {
     "afganistan", "albania", "algieria", "andora", "angola", "antigua i barbuda", "arabia saudyjska",
     "argentyna", "armenia", "australia", "austria", "azerbejdżan", "bahamy", "bahrajn", "bangladesz",
@@ -57,22 +61,35 @@ NAMES = {
     "zofia", "zosia", "zuzanna", "zuza", "zygmunt"
 }
 
-import csv
-import os
-import glob
+# Dynamiczne ścieżki do plików danych
+base_path = pathlib.Path(__file__).parent.parent.parent
+data_dir = base_path / "data"
 
-# Rozbudowa bazy imion o oficjalne dane z rejestru PESEL
-current_dir = os.path.dirname(os.path.abspath(__file__))
-for csv_file in glob.glob(os.path.join(current_dir, "*.csv")):
+# Ładowanie imion z PESEL (CSV)
+for csv_file in data_dir.glob("*.csv"):
     try:
         with open(csv_file, "r", encoding="utf-8") as f:
             reader = csv.reader(f)
-            next(reader, None)  # Pomiń nagłówek
+            next(reader, None)
             for row in reader:
                 if row and row[0]:
                     NAMES.add(row[0].strip().lower())
-        print(f"✅ Załadowano imiona z pliku: {os.path.basename(csv_file)}")
+        print(f"✅ Załadowano imiona z pliku: {csv_file.name}")
     except Exception as e:
         print(f"❌ Błąd podczas ładowania {csv_file}: {e}")
+
+# Ładowanie zawodów z ręcznej listy
+JOBS = set()
+zawody_path = data_dir / "zawody.txt"
+if zawody_path.exists():
+    try:
+        with open(zawody_path, "r", encoding="utf-8") as f:
+            for line in f:
+                job = line.strip().lower()
+                if job:
+                    JOBS.add(job)
+        print(f"✅ Załadowano zawodów (wersja ludzka): {len(JOBS)}")
+    except Exception as e:
+        print(f"❌ Błąd podczas ładowania zawodów: {e}")
 
 print(f"Całkowita liczba unikalnych imion w bazie: {len(NAMES)}")
