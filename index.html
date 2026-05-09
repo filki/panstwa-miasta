@@ -179,7 +179,7 @@
                 <input type="text" id="nickname" placeholder="Wpisz swój nick..." required>
             </div>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div id="buttons-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                 <button onclick="createRoom()" style="background-color: var(--accent);">+ Stwórz pokój</button>
                 <button onclick="showJoinInputs()" style="background-color: var(--surface); color: var(--primary); border: 2px solid var(--primary);">Dołącz do pokoju</button>
             </div>
@@ -242,8 +242,27 @@
     </div>
 
     <script>
-        let ws = null;
+        let ws;
         let myNick = "";
+
+        // Odpalane przy załadowaniu strony
+        window.onload = () => {
+            // Przywróć nick z pamięci przeglądarki
+            const savedNick = localStorage.getItem('pm_nickname');
+            if (savedNick) {
+                document.getElementById('nickname').value = savedNick;
+            }
+
+            // Jeśli ktoś wszedł z linku typu ?room=1234
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomFromUrl = urlParams.get('room');
+            if (roomFromUrl) {
+                document.getElementById('room_id').value = roomFromUrl;
+                showJoinInputs();
+                // Ukryjemy przyciski wyboru "Stwórz/Dołącz", bo wiemy że chce dołączyć
+                document.getElementById('buttons-grid').style.display = 'none';
+            }
+        };
 
         function addLog(htmlContent, typeClass) {
             const logsDiv = document.getElementById('logs');
@@ -287,6 +306,12 @@
 
             if (!nickname || !roomId) return alert('Proszę podać nick i upewnić się, że masz ID pokoju.');
 
+            // Zapisz na przyszłość
+            localStorage.setItem('pm_nickname', nickname);
+            
+            // Podmień URL żeby łatwo było go skopiować i wysłać znajomym!
+            window.history.replaceState(null, '', `?room=${roomId}`);
+
             myNick = nickname;
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//${window.location.host}/ws/${roomId}/${nickname}`;
@@ -313,14 +338,36 @@
                 }
                 else if (msg.type === "round_started") {
                     document.getElementById("current-letter").textContent = msg.letter;
+                    document.getElementById("btn-draw").style.display = 'block';
                     addLog(`<em>Gra rozpoczęta! Litera: <strong>${msg.letter}</strong> (Start od: ${msg.sender})</em>`, "system-msg");
                     enableInputs();
                 }
                 else if (msg.type === "stop_round") {
-                    addLog(`<em>🚨 <strong>${msg.sender} krzyknął STOP!</strong> Oczekiwanie na przesłanie odpowiedzi...</em>`, "system-msg");
-                    disableAndSubmit();
+                    addLog(`<em>🚨 <strong>${msg.sender} krzyknął STOP!</strong> Oczekiwanie na przesłanie odpowiedzi... Masz 10 sekund!</em>`, "system-msg");
+                    
+                    // Zablokuj przycisk STOP dla wszystkich
+                    document.getElementById('btn-stop').disabled = true;
+                    
+                    // Pokazujemy wielki odliczacz na środku ekranu
+                    document.getElementById('current-letter').innerHTML = `<span style="color:var(--danger)">10s</span>`;
+                    
+                    let timeLeft = msg.time_left;
+                    const countdownInterval = setInterval(() => {
+                        timeLeft--;
+                        if(timeLeft > 0) {
+                            document.getElementById('current-letter').innerHTML = `<span style="color:var(--danger)">${timeLeft}s</span>`;
+                        } else {
+                            clearInterval(countdownInterval);
+                            disableAndSubmit();
+                        }
+                    }, 1000);
+                    
+                    // Zapisujemy ID intervalu do window, żeby można go było wyczyścić przy ew. ręcznym wyjściu
+                    window.currentCountdown = countdownInterval;
                 }
                 else if (msg.type === "round_results") {
+                    if(window.currentCountdown) clearInterval(window.currentCountdown);
+                    
                     let html = `<div class="sender">Wyniki Rundy:</div>`;
                     
                     // Pokazujemy ile kto dostał punktów w tej rundzie
@@ -364,10 +411,13 @@
         }
 
         function stopGame() {
+            // Natychmiastowe wysłanie swoich wyników jak się wciśnie STOP
             sendJson({ type: "stop" });
+            disableAndSubmit();
         }
 
         function enableInputs() {
+            if(window.currentCountdown) clearInterval(window.currentCountdown);
             const inputs = document.querySelectorAll('#categories input');
             inputs.forEach(inp => {
                 inp.disabled = false;

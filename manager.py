@@ -1,6 +1,6 @@
-import random
 from typing import Dict
 from fastapi import WebSocket
+from data import COUNTRIES, NAMES
 
 ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
 
@@ -12,6 +12,7 @@ class Room:
         
         # Stan rundy
         self.is_playing = False
+        self.stop_triggered = False
         self.current_letter = ""
         self.answers_received: Dict[str, Dict[str, str]] = {}
         self.expected_answers = 0
@@ -22,7 +23,9 @@ class Room:
             await connection.send_text(message)
 
     def start_round(self) -> str:
+        import random
         self.is_playing = True
+        self.stop_triggered = False
         self.current_letter = random.choice(ALPHABET)
         self.answers_received = {}
         self.expected_answers = len(self.connections)
@@ -36,7 +39,7 @@ class Room:
         - Błędna litera lub puste: 0 pkt
         """
         round_scores = {player: 0 for player in self.answers_received}
-        categories = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię"]
+        categories = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
         
         for category in categories:
             # Zbieramy odpowiedzi graczy dla jednej kategorii { nick: hasło }
@@ -44,8 +47,16 @@ class Room:
             for player, answers in self.answers_received.items():
                 ans = answers.get(category, "").strip().lower()
                 
-                # Sprawdzamy, czy zaczyna się na poprawną literę
-                if ans.startswith(self.current_letter.lower()):
+                is_valid = ans.startswith(self.current_letter.lower())
+                
+                # Dodatkowa weryfikacja słownikowa
+                if is_valid and ans != "":
+                    if category == "Państwo" and ans not in COUNTRIES:
+                        is_valid = False
+                    elif category == "Imię" and ans not in NAMES:
+                        is_valid = False
+                
+                if is_valid and ans != "":
                     category_answers[player] = ans
                 else:
                     category_answers[player] = ""

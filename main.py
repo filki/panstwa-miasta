@@ -7,6 +7,23 @@ from manager import ConnectionManager
 app = FastAPI(title="Państwa-Miasta Engine")
 manager = ConnectionManager()
 
+async def force_end_round(room_id: str):
+    # Dajemy 12 sekund, czyli 2 sekundy "zapasu" na opóźnienia sieciowe (lagi),
+    # podczas gdy klient odlicza 10 sekund i potem wysyła odpowiedzi.
+    await asyncio.sleep(12)
+    if room_id in manager.rooms:
+        room = manager.rooms[room_id]
+        if room.is_playing and room.stop_triggered:
+            room.is_playing = False
+            room.stop_triggered = False
+            round_scores = room.calculate_scores()
+            await room.broadcast(json.dumps({
+                "type": "round_results",
+                "answers": room.answers_received,
+                "round_scores": round_scores,
+                "total_scores": room.scores
+            }))
+
 @app.get("/")
 async def get():
     with open("index.html", "r", encoding="utf-8") as f:
@@ -58,19 +75,23 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
                         }))
                         
                 elif msg_type == "stop":
-                    if room.is_playing:
+                    if room.is_playing and not room.stop_triggered:
+                        room.stop_triggered = True
                         await room.broadcast(json.dumps({
                             "type": "stop_round",
-                            "sender": client_name
+                            "sender": client_name,
+                            "time_left": 10
                         }))
+                        asyncio.create_task(force_end_round(room_id))
                         
                 elif msg_type == "answers":
                     if room.is_playing:
                         room.answers_received[client_name] = msg.get("answers", {})
                         
-                        # Sprawdzamy, czy wszyscy już przysłali odpowiedzi
+                        # Gdy tylko spłyną odpowiedzi od WSZYSTKICH (np. po 10s odliczania na frontendzie), od razu zakończ.
                         if len(room.answers_received) >= room.expected_answers:
                             room.is_playing = False
+                            room.stop_triggered = False
                             round_scores = room.calculate_scores()
                             
                             await room.broadcast(json.dumps({
@@ -94,14 +115,3 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
                 "type": "score_update",
                 "scores": room.scores
             }))
-            
-            # Jeśli ktoś wyszedł, sprawdź, czy nie byliśmy w trakcie czekania na jego odpowiedzi
-            if room.is_playing and room.expected_answers > 0 and len(room.answers_received) >= room.expected_answers:
-                room.is_playing = False
-                round_scores = room.calculate_scores()
-                await room.broadcast(json.dumps({
-                    "type": "round_results",
-                    "answers": room.answers_received,
-                    "round_scores": round_scores,
-                    "total_scores": room.scores
-                }))
