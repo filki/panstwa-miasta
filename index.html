@@ -190,13 +190,21 @@
             </div>
             
             <div id="create-settings" style="display: none; border: 1px solid var(--border); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; background: rgba(0,0,0,0.2);">
-                <div class="form-group">
-                    <label for="setting_rounds">Liczba rund (Gra zakończy się po nich)</label>
-                    <input type="number" id="setting_rounds" value="5" min="1" max="20">
+                <div style="margin-bottom: 1rem;">
+                    <label>Liczba rund:</label>
+                    <select id="rounds-input" style="width: 100%; padding: 0.8rem; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; margin-bottom: 0; outline: none;">
+                        <option value="1">1</option>
+                        <option value="3">3</option>
+                        <option value="5" selected>5</option>
+                    </select>
                 </div>
-                <div class="form-group">
-                    <label for="setting_limit">Czas rundy (w sekundach)</label>
-                    <input type="number" id="setting_limit" value="90" min="30" max="300">
+                <div style="margin-bottom: 1rem;">
+                    <label>Limit czasu (sekundy):</label>
+                    <select id="limit-input" style="width: 100%; padding: 0.8rem; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; margin-bottom: 0; outline: none;">
+                        <option value="60">60</option>
+                        <option value="90" selected>90</option>
+                        <option value="120">120</option>
+                    </select>
                 </div>
                 <button onclick="doCreateRoom()" style="background-color: var(--accent);">Zaczynamy!</button>
             </div>
@@ -245,8 +253,8 @@
                     </div>
 
                     <div class="action-row">
-                        <button onclick="drawLetter()" id="btn-draw">🎲 Start Rundy</button>
-                        <button onclick="stopGame()" id="btn-stop" class="danger" disabled>🛑 STOP!</button>
+                        <button id="btn-draw" onclick="toggleReady()" style="background-color: var(--primary);">👍 Gotowy do rundy</button>
+                        <button id="btn-stop" onclick="stopGame()" style="background-color: var(--danger);" disabled>⭕ STOP!</button>
                     </div>
                 </div>
 
@@ -357,6 +365,24 @@
                 document.getElementById('current-room').textContent = roomId;
             };
 
+            ws.onclose = (e) => {
+                if (e.code === 1008) {
+                    alert('Nick jest już zajęty lub nieprawidłowy!');
+                    document.getElementById('join-section').style.display = 'block';
+                    document.getElementById('chat-section').style.display = 'none';
+                    return;
+                }
+                
+                // Automatyczny reconnect (np. po wyjściu z Safari/Chrome na telefonie)
+                addLog(`<em>Utracono połączenie. Próba wznowienia za 2 sekundy...</em>`, "system-msg");
+                setTimeout(() => {
+                    // Ponawiamy próbę łączenia bez resetowania wpisanych haseł
+                    if (document.getElementById('chat-section').style.display !== 'none') {
+                        connect();
+                    }
+                }, 2000);
+            };
+
             ws.onmessage = (event) => {
                 const msg = JSON.parse(event.data);
                 
@@ -372,7 +398,11 @@
                 else if (msg.type === "round_started") {
                     window.currentLetter = msg.letter;
                     document.getElementById("current-letter").textContent = msg.letter;
-                    document.getElementById("btn-draw").style.display = 'none'; 
+                    // Reset statusu przycisku po starcie
+                    const btn = document.getElementById("btn-draw");
+                    btn.classList.remove('ready');
+                    btn.style.display = 'none';
+                    
                     addLog(`<em>Gra rozpoczęta! Litera: <strong>${msg.letter}</strong> (Runda ${msg.current_round}/${msg.max_rounds}). Limit czasu: ${msg.time_limit}s</em>`, "system-msg");
                     enableInputs();
                     
@@ -458,7 +488,11 @@
                         addLog(`<div style="text-align:center; color: var(--warning); font-size: 1.5rem; font-weight: bold; margin-top: 1rem;">Koniec Gry! 🏆<br>Zwycięzca został wyłoniony!</div>`, "system-msg");
                         document.getElementById('btn-draw').style.display = 'none';
                     } else {
-                        document.getElementById('btn-draw').style.display = 'block';
+                        const btn = document.getElementById('btn-draw');
+                        btn.classList.remove('ready');
+                        btn.innerHTML = '👍 Gotowy do rundy';
+                        btn.style.backgroundColor = 'var(--primary)';
+                        btn.style.display = 'block';
                     }
                 }
             };
@@ -481,8 +515,19 @@
             }
         }
 
-        function drawLetter() {
-            sendJson({ type: "draw" });
+        function toggleReady() {
+            const btn = document.getElementById('btn-draw');
+            if (btn.classList.contains('ready')) {
+                btn.classList.remove('ready');
+                btn.innerHTML = '👍 Gotowy do rundy';
+                btn.style.backgroundColor = 'var(--primary)';
+                sendJson({ type: "not_ready" });
+            } else {
+                btn.classList.add('ready');
+                btn.innerHTML = '⏳ Czekamy na resztę...';
+                btn.style.backgroundColor = 'var(--accent)';
+                sendJson({ type: "ready" });
+            }
         }
 
         function stopGame() {

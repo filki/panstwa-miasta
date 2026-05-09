@@ -71,6 +71,17 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
         "scores": room.scores
     }))
     
+    # Wznawianie trwającej rundy
+    if room.is_playing:
+        await websocket.send_text(json.dumps({
+            "type": "round_started",
+            "letter": room.current_letter,
+            "sender": "Serwer (Wznowienie)",
+            "current_round": room.current_round,
+            "max_rounds": room.max_rounds,
+            "time_limit": room.time_limit
+        }))
+    
     try:
         while True:
             data = await websocket.receive_text()
@@ -85,20 +96,33 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
                         "text": msg["text"]
                     }))
                     
-                elif msg_type == "start":
+                elif msg_type == "ready":
                     if not room.is_playing:
-                        letter = room.start_round()
+                        room.ready_players.add(client_name)
                         await room.broadcast(json.dumps({
-                            "type": "round_started",
-                            "letter": letter,
-                            "sender": client_name,
-                            "current_round": room.current_round,
-                            "max_rounds": room.max_rounds,
-                            "time_limit": room.time_limit
+                            "type": "system",
+                            "message": f"<em>{client_name} jest gotowy! ({len(room.ready_players)}/{len(room.connections)})</em>"
                         }))
                         
-                        # Zabezpieczenie globalne
-                        asyncio.create_task(global_round_timeout(room_id, room.current_round, room.time_limit + 2))
+                        if len(room.ready_players) >= len(room.connections) and len(room.connections) > 0:
+                            letter = room.start_round()
+                            await room.broadcast(json.dumps({
+                                "type": "round_started",
+                                "letter": letter,
+                                "sender": "System",
+                                "current_round": room.current_round,
+                                "max_rounds": room.max_rounds,
+                                "time_limit": room.time_limit
+                            }))
+                            asyncio.create_task(global_round_timeout(room_id, room.current_round, room.time_limit + 2))
+                
+                elif msg_type == "not_ready":
+                    if not room.is_playing:
+                        room.ready_players.discard(client_name)
+                        await room.broadcast(json.dumps({
+                            "type": "system",
+                            "message": f"<em>{client_name} nie jest już gotowy. ({len(room.ready_players)}/{len(room.connections)})</em>"
+                        }))
                         
                 elif msg_type == "stop":
                     if room.is_playing and not room.stop_triggered:

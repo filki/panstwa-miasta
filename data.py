@@ -56,3 +56,23 @@ NAMES = {
     "władysław", "włodzimierz", "wojciech", "wojtek", "zbyszek", "zbigniew", "zdzisław", "zenon",
     "zofia", "zosia", "zuzanna", "zuza", "zygmunt"
 }
+
+import csv
+import os
+import glob
+
+# Rozbudowa bazy imion o oficjalne dane z rejestru PESEL
+current_dir = os.path.dirname(os.path.abspath(__file__))
+for csv_file in glob.glob(os.path.join(current_dir, "*.csv")):
+    try:
+        with open(csv_file, "r", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            next(reader, None)  # Pomiń nagłówek
+            for row in reader:
+                if row and row[0]:
+                    NAMES.add(row[0].strip().lower())
+        print(f"✅ Załadowano imiona z pliku: {os.path.basename(csv_file)}")
+    except Exception as e:
+        print(f"❌ Błąd podczas ładowania {csv_file}: {e}")
+
+print(f"Całkowita liczba unikalnych imion w bazie: {len(NAMES)}")

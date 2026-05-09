@@ -15,6 +15,7 @@ class Room:
         # Stan gry i rundy
         self.current_round = 0
         self.used_letters = set()
+        self.ready_players = set()
         self.is_playing = False
         self.stop_triggered = False
         self.current_letter = ""
@@ -30,6 +31,7 @@ class Room:
         import random
         self.is_playing = True
         self.stop_triggered = False
+        self.ready_players = set() # Reset gotowości
         self.current_round += 1
         
         available = list(set(ALPHABET) - self.used_letters)
@@ -105,8 +107,14 @@ class ConnectionManager:
             self.rooms[room_id] = Room(room_id, max_rounds, time_limit)
             
         room = self.rooms[room_id]
+        
+        # Jeśli ktoś wchodzi z tym samym nickiem (np. powrót zminimalizowanej przeglądarki na telefonie),
+        # ubijamy stare "ducha" połączenie i podmieniamy na nowe.
         if client_name in room.connections:
-            return False # Nick zajęty
+            try:
+                await room.connections[client_name].close()
+            except Exception:
+                pass
             
         await websocket.accept()
         room.connections[client_name] = websocket
