@@ -31,15 +31,12 @@ class Room:
         self.expected_answers = len(self.connections)
         return self.current_letter
 
-    def calculate_scores(self) -> Dict[str, int]:
+    def calculate_scores(self) -> Dict[str, Dict]:
         """
-        Zasady (proste MVP):
-        - Poprawne i unikalne: 10 pkt
-        - Poprawne, ale powtórzone: 5 pkt
-        - Błędna litera lub puste: 0 pkt
+        Zwraca: {player: {"total": int, "details": {category: points}}}
         """
-        round_scores = {player: 0 for player in self.answers_received}
-        categories = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
+        round_scores = {player: {"total": 0, "details": {}} for player in self.answers_received}
+        categories = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię"]
         
         for category in categories:
             # Zbieramy odpowiedzi graczy dla jednej kategorii { nick: hasło }
@@ -60,6 +57,7 @@ class Room:
                     category_answers[player] = ans
                 else:
                     category_answers[player] = ""
+                    round_scores[player]["details"][category] = 0
                     
             # Zliczamy, ile razy padło dane słowo
             counts = {}
@@ -73,13 +71,15 @@ class Room:
                     continue # brak punktów
                 
                 if counts[ans] == 1:
-                    round_scores[player] += 10 # Unikalne
+                    round_scores[player]["details"][category] = 10
+                    round_scores[player]["total"] += 10
                 else:
-                    round_scores[player] += 5  # Powtórzone
+                    round_scores[player]["details"][category] = 5
+                    round_scores[player]["total"] += 5
                     
         # Dodajemy do wyników całkowitych
-        for player, score in round_scores.items():
-            self.scores[player] = self.scores.get(player, 0) + score
+        for player, score_data in round_scores.items():
+            self.scores[player] = self.scores.get(player, 0) + score_data["total"]
             
         return round_scores
 

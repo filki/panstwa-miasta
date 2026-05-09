@@ -36,7 +36,7 @@
             border-radius: 16px; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
             width: 100%;
-            max-width: 900px;
+            max-width: 1300px;
             box-sizing: border-box;
         }
 
@@ -44,11 +44,12 @@
         
         .layout-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 250px 2fr 300px;
             gap: 2rem;
+            align-items: start;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 1000px) {
             .layout-grid { grid-template-columns: 1fr; }
         }
 
@@ -69,6 +70,10 @@
         }
         input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
         input:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .success-10 { border-color: var(--accent) !important; box-shadow: 0 0 8px rgba(16, 185, 129, 0.6) !important; }
+        .warning-5 { border-color: var(--warning) !important; box-shadow: 0 0 8px rgba(245, 158, 11, 0.6) !important; }
+        .error-0 { border-color: var(--danger) !important; box-shadow: 0 0 8px rgba(220, 38, 38, 0.6) !important; }
 
         button { 
             padding: 0.8rem 1.5rem; 
@@ -195,7 +200,16 @@
 
         <div id="chat-section" style="display: none;">
             <div class="layout-grid">
-                <!-- Lewa kolumna: Gra -->
+                
+                <!-- Kolumna 1: Tabela Wyników -->
+                <div class="sidebar" style="border: 2px solid var(--accent); background: rgba(16, 185, 129, 0.05); text-align: center;">
+                    <div style="font-weight: 800; font-size: 1.3rem; color: var(--accent); margin-bottom: 1rem; border-bottom: 2px solid var(--accent); padding-bottom: 0.5rem; letter-spacing: 1px;">🏆 WYNIKI</div>
+                    <div class="scoreboard" id="scoreboard" style="font-size: 1.2rem; text-align: left;">
+                        <!-- Wyniki generowane dynamicznie -->
+                    </div>
+                </div>
+
+                <!-- Kolumna 2: Gra -->
                 <div class="main-game">
                     <div class="game-header">
                         <div>
@@ -223,15 +237,10 @@
                     </div>
                 </div>
 
-                <!-- Prawa kolumna: Sidebar -->
+                <!-- Kolumna 3: Czat & Logi -->
                 <div class="sidebar">
-                    <label>Wyniki</label>
-                    <div class="scoreboard" id="scoreboard">
-                        <!-- Wyniki generowane dynamicznie -->
-                    </div>
-
                     <label>Czat & Logi</label>
-                    <div id="logs"></div>
+                    <div id="logs" style="height: 350px;"></div>
                     <div class="chat-input-group">
                         <input type="text" id="message-input" placeholder="Napisz wiadomość...">
                         <button onclick="sendChat()">Wyślij</button>
@@ -337,8 +346,9 @@
                     addLog(`<div class="sender">${msg.sender}</div><div>${msg.text}</div>`, "");
                 }
                 else if (msg.type === "round_started") {
+                    window.currentLetter = msg.letter;
                     document.getElementById("current-letter").textContent = msg.letter;
-                    document.getElementById("btn-draw").style.display = 'block';
+                    document.getElementById("btn-draw").style.display = 'none'; // Chowamy losowanie, bo runda trwa
                     addLog(`<em>Gra rozpoczęta! Litera: <strong>${msg.letter}</strong> (Start od: ${msg.sender})</em>`, "system-msg");
                     enableInputs();
                 }
@@ -372,12 +382,32 @@
                     
                     // Pokazujemy ile kto dostał punktów w tej rundzie
                     for (const [player, rScore] of Object.entries(msg.round_scores)) {
-                        html += `<div style="margin-bottom: 0.5rem"><strong>${player}: +${rScore} pkt</strong><br>`;
+                        html += `<div style="margin-bottom: 0.5rem"><strong>${player}: +${rScore.total} pkt</strong><br>`;
                         const pAnswers = msg.answers[player] || {};
                         for (const [cat, val] of Object.entries(pAnswers)) {
-                            if(val) html += `<span style="font-size:0.8em; color:var(--text-muted);">${cat}:</span> ${val} `;
+                            if(val) {
+                                const pts = rScore.details[cat] || 0;
+                                let color = "var(--text-muted)";
+                                if (pts === 10) color = "var(--accent)";
+                                else if (pts === 5) color = "var(--warning)";
+                                else color = "var(--danger)";
+                                html += `<span style="font-size:0.8em; color:${color};">${cat}:</span> ${val} `;
+                            }
                         }
                         html += `</div>`;
+                        
+                        // Kolorowanie własnych inputów
+                        if (player === myNick) {
+                            const inputs = document.querySelectorAll('#categories input');
+                            inputs.forEach(inp => {
+                                const cat = inp.previousElementSibling.textContent.trim();
+                                const pts = rScore.details[cat] || 0;
+                                inp.classList.remove('success-10', 'warning-5', 'error-0');
+                                if(pts === 10) inp.classList.add('success-10');
+                                else if(pts === 5) inp.classList.add('warning-5');
+                                else inp.classList.add('error-0');
+                            });
+                        }
                     }
                     
                     addLog(html, "results-msg");
@@ -411,6 +441,10 @@
         }
 
         function stopGame() {
+            const stopBtn = document.getElementById('btn-stop');
+            stopBtn.setAttribute('data-stopped', 'true');
+            stopBtn.disabled = true;
+            
             // Natychmiastowe wysłanie swoich wyników jak się wciśnie STOP
             sendJson({ type: "stop" });
             disableAndSubmit();
@@ -422,10 +456,63 @@
             inputs.forEach(inp => {
                 inp.disabled = false;
                 inp.value = '';
+                inp.classList.remove('error', 'success-10', 'warning-5', 'error-0'); 
+                inp.style.borderColor = '';
+                
+                // Remove stare listenery, żeby się nie duplikowały
+                const clone = inp.cloneNode(true);
+                inp.parentNode.replaceChild(clone, inp);
             });
-            inputs[0].focus();
-            document.getElementById('btn-draw').disabled = true;
-            document.getElementById('btn-stop').disabled = false;
+            
+            // Ponownie łapiemy, bo zrobiliśmy cloneNode
+            const newInputs = document.querySelectorAll('#categories input');
+            newInputs.forEach((inp, i) => {
+                inp.addEventListener('input', (e) => {
+                    checkAllFilled();
+                    validateFirstLetter(e.target);
+                });
+                
+                // Zgłaszaj odpowiedzi Enterem
+                inp.addEventListener('keypress', e => {
+                    if (e.key === 'Enter') {
+                        if(i < newInputs.length - 1) newInputs[i+1].focus();
+                        else {
+                            const stopBtn = document.getElementById('btn-stop');
+                            if(!stopBtn.disabled) stopGame(); // Ostatni input i enter = STOP!
+                        }
+                    }
+                });
+            });
+            
+            document.getElementById('btn-stop').disabled = true;
+            document.getElementById('btn-stop').removeAttribute('data-stopped');
+            
+            // Przywracamy literę jeśli zniknęła
+            if(window.currentLetter) {
+                document.getElementById('current-letter').innerHTML = window.currentLetter;
+            }
+        }
+
+        function checkAllFilled() {
+            const inputs = Array.from(document.querySelectorAll('#categories input'));
+            const allFilled = inputs.every(inp => inp.value.trim().length > 0);
+            const stopBtn = document.getElementById('btn-stop');
+            
+            if (allFilled && !stopBtn.hasAttribute('data-stopped')) {
+                stopBtn.disabled = false;
+            } else {
+                stopBtn.disabled = true;
+            }
+        }
+
+        function validateFirstLetter(inp) {
+            if (!window.currentLetter) return;
+            const val = inp.value.trim();
+            if (val.length > 0 && val[0].toUpperCase() !== window.currentLetter) {
+                inp.style.borderColor = 'var(--danger)';
+            } else {
+                inp.style.borderColor = ''; 
+            }
         }
 
         function disableAndSubmit() {
