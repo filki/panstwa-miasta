@@ -3,26 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Państwa-Miasta Lobby</title>
+    <title>Państwa-Miasta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; background-color: #f4f7f6; color: #333; }
-        h1 { text-align: center; color: #2c3e50; }
-        .container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; margin-bottom: 0.5rem; font-weight: bold; color: #34495e; }
-        input { padding: 0.75rem; width: 100%; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
-        input:focus { border-color: #3498db; outline: none; box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2); }
-        button { padding: 0.75rem 1rem; background: #3498db; color: white; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; width: 100%; font-weight: bold; transition: background 0.3s; }
-        button:hover { background: #2980b9; }
-        button.danger { background: #e74c3c; margin-top: 1rem; }
-        button.danger:hover { background: #c0392b; }
-        #logs { margin-top: 1.5rem; border: 1px solid #ecf0f1; padding: 1rem; height: 300px; overflow-y: auto; background: #fafafa; border-radius: 4px; }
-        .log-entry { margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid #eee; word-wrap: break-word; }
-        .log-entry:last-child { border-bottom: none; }
-        .system-msg { color: #7f8c8d; font-style: italic; font-size: 0.9em; }
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --accent: #10b981;
+        }
+
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background-color: var(--bg); 
+            color: var(--text);
+            margin: 0;
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container { 
+            background: var(--surface); 
+            padding: 2rem; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+            width: 100%;
+            max-width: 800px;
+            box-sizing: border-box;
+        }
+
+        h1 { text-align: center; color: var(--primary); margin-top: 0; font-weight: 800; font-size: 2.5rem; letter-spacing: -1px; }
+        
+        .form-group { margin-bottom: 1.2rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;}
+        
+        input { 
+            padding: 0.8rem 1rem; 
+            width: 100%; 
+            box-sizing: border-box; 
+            border: 2px solid var(--border); 
+            border-radius: 8px; 
+            background: var(--bg);
+            color: var(--text);
+            font-size: 1.1rem; 
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
+        input:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        button { 
+            padding: 0.8rem 1.5rem; 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 1.1rem; 
+            cursor: pointer; 
+            width: 100%; 
+            font-weight: 600; 
+            transition: all 0.2s ease; 
+        }
+        button:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        button:active { transform: translateY(1px); }
+        button.danger { background: var(--danger); }
+        button.danger:hover { background: var(--danger-hover); }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .letter-display {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--accent);
+            text-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        #logs { 
+            margin-top: 1.5rem; 
+            border: 2px solid var(--border); 
+            padding: 1rem; 
+            height: 250px; 
+            overflow-y: auto; 
+            background: var(--bg); 
+            border-radius: 8px; 
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .log-entry { 
+            padding: 0.75rem; 
+            border-radius: 6px; 
+            background: var(--surface);
+            border-left: 4px solid var(--primary);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .system-msg { border-left-color: var(--text-muted); color: var(--text-muted); font-style: italic; font-size: 0.9em; }
+        .answers-msg { border-left-color: var(--accent); background: rgba(16, 185, 129, 0.1); }
+        .sender { font-weight: 800; margin-bottom: 0.3rem; color: var(--primary); }
+        .answers-msg .sender { color: var(--accent); }
+
+        .answers-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.2rem 1rem;
+            font-size: 0.95rem;
+        }
+        .answers-grid strong { color: var(--text-muted); text-transform: uppercase; font-size: 0.7rem; }
+
         .chat-input-group { display: flex; gap: 0.5rem; margin-top: 1rem; }
         .chat-input-group input { flex-grow: 1; }
         .chat-input-group button { width: auto; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -31,40 +152,63 @@
         
         <div id="join-section">
             <div class="form-group">
-                <label for="nickname">Twój Nick:</label>
+                <label for="nickname">Twój Nick</label>
                 <input type="text" id="nickname" placeholder="Wpisz swój nick..." required>
             </div>
             <div class="form-group">
-                <label for="room_id">ID Pokoju:</label>
-                <input type="text" id="room_id" placeholder="Wpisz ID pokoju..." required>
+                <label for="room_id">ID Pokoju</label>
+                <input type="text" id="room_id" placeholder="np. lobby123" required>
             </div>
-            <button onclick="connect()">Połącz z lobby</button>
+            <button onclick="connect()">Dołącz do Gry</button>
         </div>
 
         <div id="chat-section" style="display: none;">
-            <h2>Pokój: <span id="current-room" style="color: #3498db;"></span></h2>
-            <div id="logs"></div>
-            <div class="chat-input-group">
-                <input type="text" id="message-input" placeholder="Napisz coś...">
-                <button onclick="sendMessage()">Wyślij</button>
+            <div class="game-header">
+                <div>
+                    <label>Pokój</label>
+                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--text-muted);" id="current-room"></div>
+                </div>
+                <div style="text-align: right;">
+                    <label>Gramy na literę</label>
+                    <div class="letter-display" id="current-letter">?</div>
+                </div>
             </div>
-            <button class="danger" onclick="disconnect()">Rozłącz</button>
+
+            <div class="categories-grid" id="categories">
+                <div class="form-group"><label>Państwo</label><input type="text" data-category="Państwo" disabled></div>
+                <div class="form-group"><label>Miasto</label><input type="text" data-category="Miasto" disabled></div>
+                <div class="form-group"><label>Rzecz</label><input type="text" data-category="Rzecz" disabled></div>
+                <div class="form-group"><label>Zwierzę</label><input type="text" data-category="Zwierzę" disabled></div>
+                <div class="form-group"><label>Roślina</label><input type="text" data-category="Roślina" disabled></div>
+                <div class="form-group"><label>Imię</label><input type="text" data-category="Imię" disabled></div>
+            </div>
+
+            <div class="action-row">
+                <button onclick="drawLetter()" id="btn-draw">🎲 Losuj literę</button>
+                <button onclick="stopGame()" id="btn-stop" class="danger" disabled>🛑 STOP!</button>
+            </div>
+
+            <label>Dziennik Gry</label>
+            <div id="logs"></div>
+            
+            <div class="chat-input-group">
+                <input type="text" id="message-input" placeholder="Wpisz wiadomość...">
+                <button onclick="sendChat()">Wyślij</button>
+            </div>
         </div>
     </div>
 
     <script>
         let ws = null;
+        let myNick = "";
 
-        function addLog(message) {
+        const ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ";
+
+        function addLog(htmlContent, typeClass) {
             const logsDiv = document.getElementById('logs');
             const entry = document.createElement('div');
-            entry.className = 'log-entry';
-            
-            if (message.startsWith('System:')) {
-                entry.classList.add('system-msg');
-            }
-            
-            entry.textContent = message;
+            entry.className = `log-entry ${typeClass}`;
+            entry.innerHTML = htmlContent;
             logsDiv.appendChild(entry);
             logsDiv.scrollTop = logsDiv.scrollHeight;
         }
@@ -78,6 +222,7 @@
                 return;
             }
 
+            myNick = nickname;
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//${window.location.host}/ws/${roomId}/${nickname}`;
             
@@ -87,11 +232,11 @@
                 document.getElementById('join-section').style.display = 'none';
                 document.getElementById('chat-section').style.display = 'block';
                 document.getElementById('current-room').textContent = roomId;
-                addLog('System: Połączono z serwerem pomyślnie.');
             };
 
             ws.onmessage = (event) => {
-                addLog(event.data);
+                const data = JSON.parse(event.data);
+                handleMessage(data);
             };
 
             ws.onclose = (event) => {
@@ -100,34 +245,88 @@
                 
                 if (event.code === 1008) {
                     alert('Ten nick jest już zajęty w tym pokoju! Wybierz inny.');
-                } else {
-                    addLog('System: Rozłączono z serwerem.');
                 }
                 ws = null;
-                document.getElementById('logs').innerHTML = ''; // czyszczenie logów po wyjściu
-            };
-            
-            ws.onerror = (error) => {
-                console.error("WebSocket error:", error);
-                alert('Wystąpił błąd połączenia z serwerem.');
+                document.getElementById('logs').innerHTML = ''; 
             };
         }
 
-        function sendMessage() {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                const input = document.getElementById('message-input');
-                const message = input.value.trim();
-                if (message) {
-                    ws.send(message);
-                    input.value = '';
-                }
+        function handleMessage(msg) {
+            if (msg.type === "system") {
+                addLog(`<em>${msg.message}</em>`, "system-msg");
+            } 
+            else if (msg.type === "chat") {
+                addLog(`<div class="sender">${msg.sender}</div><div>${msg.text}</div>`, "");
             }
+            else if (msg.type === "draw") {
+                document.getElementById("current-letter").textContent = msg.letter;
+                addLog(`<em>${msg.sender} wylosował literę: <strong>${msg.letter}</strong>. Gra rozpoczęta!</em>`, "system-msg");
+                enableInputs();
+            }
+            else if (msg.type === "stop") {
+                addLog(`<em>🚨 ${msg.sender} krzyknął <strong>STOP!</strong> Koniec rundy.</em>`, "system-msg");
+                disableAndSubmit();
+            }
+            else if (msg.type === "answers") {
+                let html = `<div class="sender">Odpowiedzi: ${msg.sender}</div><div class="answers-grid">`;
+                for (const [category, value] of Object.entries(msg.answers)) {
+                    html += `<strong>${category}:</strong> <span>${value || '-'}</span>`;
+                }
+                html += `</div>`;
+                addLog(html, "answers-msg");
+            }
+        }
+
+        function sendJson(obj) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(obj));
+            }
+        }
+
+        function sendChat() {
+            const input = document.getElementById('message-input');
+            if (input.value.trim()) {
+                sendJson({ type: "chat", text: input.value.trim() });
+                input.value = '';
+            }
+        }
+
+        function drawLetter() {
+            const letter = ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+            sendJson({ type: "draw", letter: letter });
+        }
+
+        function stopGame() {
+            sendJson({ type: "stop" });
+        }
+
+        function enableInputs() {
+            const inputs = document.querySelectorAll('#categories input');
+            inputs.forEach(inp => {
+                inp.disabled = false;
+                inp.value = '';
+            });
+            inputs[0].focus();
+            document.getElementById('btn-draw').disabled = true;
+            document.getElementById('btn-stop').disabled = false;
+        }
+
+        function disableAndSubmit() {
+            const inputs = document.querySelectorAll('#categories input');
+            let answers = {};
+            inputs.forEach(inp => {
+                answers[inp.dataset.category] = inp.value.trim();
+                inp.disabled = true;
+            });
+            document.getElementById('btn-draw').disabled = false;
+            document.getElementById('btn-stop').disabled = true;
+            
+            // Send answers automatically
+            sendJson({ type: "answers", answers: answers });
         }
 
         document.getElementById('message-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
+            if (e.key === 'Enter') sendChat();
         });
     </script>
 </body>
