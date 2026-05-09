@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Państwa-Miasta Lobby</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; background-color: #f4f7f6; color: #333; }
+        h1 { text-align: center; color: #2c3e50; }
+        .container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: bold; color: #34495e; }
+        input { padding: 0.75rem; width: 100%; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+        input:focus { border-color: #3498db; outline: none; box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2); }
+        button { padding: 0.75rem 1rem; background: #3498db; color: white; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; width: 100%; font-weight: bold; transition: background 0.3s; }
+        button:hover { background: #2980b9; }
+        button.danger { background: #e74c3c; margin-top: 1rem; }
+        button.danger:hover { background: #c0392b; }
+        #logs { margin-top: 1.5rem; border: 1px solid #ecf0f1; padding: 1rem; height: 300px; overflow-y: auto; background: #fafafa; border-radius: 4px; }
+        .log-entry { margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid #eee; word-wrap: break-word; }
+        .log-entry:last-child { border-bottom: none; }
+        .system-msg { color: #7f8c8d; font-style: italic; font-size: 0.9em; }
+        .chat-input-group { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        .chat-input-group input { flex-grow: 1; }
+        .chat-input-group button { width: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Państwa-Miasta</h1>
+        
+        <div id="join-section">
+            <div class="form-group">
+                <label for="nickname">Twój Nick:</label>
+                <input type="text" id="nickname" placeholder="Wpisz swój nick..." required>
+            </div>
+            <div class="form-group">
+                <label for="room_id">ID Pokoju:</label>
+                <input type="text" id="room_id" placeholder="Wpisz ID pokoju..." required>
+            </div>
+            <button onclick="connect()">Połącz z lobby</button>
+        </div>
+
+        <div id="chat-section" style="display: none;">
+            <h2>Pokój: <span id="current-room" style="color: #3498db;"></span></h2>
+            <div id="logs"></div>
+            <div class="chat-input-group">
+                <input type="text" id="message-input" placeholder="Napisz coś...">
+                <button onclick="sendMessage()">Wyślij</button>
+            </div>
+            <button class="danger" onclick="disconnect()">Rozłącz</button>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+
+        function addLog(message) {
+            const logsDiv = document.getElementById('logs');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            
+            if (message.startsWith('System:')) {
+                entry.classList.add('system-msg');
+            }
+            
+            entry.textContent = message;
+            logsDiv.appendChild(entry);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function connect() {
+            const nickname = document.getElementById('nickname').value.trim();
+            const roomId = document.getElementById('room_id').value.trim();
+
+            if (!nickname || !roomId) {
+                alert('Proszę podać nick i ID pokoju.');
+                return;
+            }
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/${roomId}/${nickname}`;
+            
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                document.getElementById('join-section').style.display = 'none';
+                document.getElementById('chat-section').style.display = 'block';
+                document.getElementById('current-room').textContent = roomId;
+                addLog('System: Połączono z serwerem pomyślnie.');
+            };
+
+            ws.onmessage = (event) => {
+                addLog(event.data);
+            };
+
+            ws.onclose = (event) => {
+                document.getElementById('join-section').style.display = 'block';
+                document.getElementById('chat-section').style.display = 'none';
+                
+                if (event.code === 1008) {
+                    alert('Ten nick jest już zajęty w tym pokoju! Wybierz inny.');
+                } else {
+                    addLog('System: Rozłączono z serwerem.');
+                }
+                ws = null;
+                document.getElementById('logs').innerHTML = ''; // czyszczenie logów po wyjściu
+            };
+            
+            ws.onerror = (error) => {
+                console.error("WebSocket error:", error);
+                alert('Wystąpił błąd połączenia z serwerem.');
+            };
+        }
+
+        function sendMessage() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const input = document.getElementById('message-input');
+                const message = input.value.trim();
+                if (message) {
+                    ws.send(message);
+                    input.value = '';
+                }
+            }
+        }
+
+        document.getElementById('message-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
