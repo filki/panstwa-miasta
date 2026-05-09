@@ -5,12 +5,16 @@ from data import COUNTRIES, NAMES
 ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
 
 class Room:
-    def __init__(self, room_id: str):
+    def __init__(self, room_id: str, max_rounds: int = 5, time_limit: int = 90):
         self.room_id = room_id
+        self.max_rounds = max_rounds
+        self.time_limit = time_limit
         self.connections: Dict[str, WebSocket] = {}
         self.scores: Dict[str, int] = {}
         
-        # Stan rundy
+        # Stan gry i rundy
+        self.current_round = 0
+        self.used_letters = set()
         self.is_playing = False
         self.stop_triggered = False
         self.current_letter = ""
@@ -26,7 +30,16 @@ class Room:
         import random
         self.is_playing = True
         self.stop_triggered = False
-        self.current_letter = random.choice(ALPHABET)
+        self.current_round += 1
+        
+        available = list(set(ALPHABET) - self.used_letters)
+        if not available:
+            self.used_letters = set()
+            available = list(ALPHABET)
+            
+        self.current_letter = random.choice(available)
+        self.used_letters.add(self.current_letter)
+        
         self.answers_received = {}
         self.expected_answers = len(self.connections)
         return self.current_letter
@@ -87,9 +100,9 @@ class ConnectionManager:
     def __init__(self):
         self.rooms: Dict[str, Room] = {}
 
-    async def connect(self, websocket: WebSocket, room_id: str, client_name: str) -> bool:
+    async def connect(self, websocket: WebSocket, room_id: str, client_name: str, max_rounds: int, time_limit: int) -> bool:
         if room_id not in self.rooms:
-            self.rooms[room_id] = Room(room_id)
+            self.rooms[room_id] = Room(room_id, max_rounds, time_limit)
             
         room = self.rooms[room_id]
         if client_name in room.connections:

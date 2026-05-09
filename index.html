@@ -188,6 +188,18 @@
                 <button onclick="createRoom()" style="background-color: var(--accent);">+ Stwórz pokój</button>
                 <button onclick="showJoinInputs()" style="background-color: var(--surface); color: var(--primary); border: 2px solid var(--primary);">Dołącz do pokoju</button>
             </div>
+            
+            <div id="create-settings" style="display: none; border: 1px solid var(--border); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; background: rgba(0,0,0,0.2);">
+                <div class="form-group">
+                    <label for="setting_rounds">Liczba rund (Gra zakończy się po nich)</label>
+                    <input type="number" id="setting_rounds" value="5" min="1" max="20">
+                </div>
+                <div class="form-group">
+                    <label for="setting_limit">Czas rundy (w sekundach)</label>
+                    <input type="number" id="setting_limit" value="90" min="30" max="300">
+                </div>
+                <button onclick="doCreateRoom()" style="background-color: var(--accent);">Zaczynamy!</button>
+            </div>
 
             <div id="join-inputs" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
                 <div class="form-group">
@@ -219,6 +231,7 @@
                         <div style="text-align: right;">
                             <label>Gramy na literę</label>
                             <div class="letter-display" id="current-letter">?</div>
+                            <div id="round-timer" style="color: var(--warning); font-weight: 600; font-size: 1.2rem; display: none;"></div>
                         </div>
                     </div>
 
@@ -304,8 +317,15 @@
             const nickname = document.getElementById('nickname').value.trim();
             if (!nickname) return alert('Proszę najpierw podać swój nick!');
             
+            document.getElementById('buttons-grid').style.display = 'none';
+            document.getElementById('create-settings').style.display = 'block';
+        }
+
+        function doCreateRoom() {
             const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
             document.getElementById('room_id').value = randomCode;
+            window.roomRounds = document.getElementById('setting_rounds').value || 5;
+            window.roomLimit = document.getElementById('setting_limit').value || 90;
             connect();
         }
 
@@ -323,7 +343,11 @@
 
             myNick = nickname;
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws/${roomId}/${nickname}`;
+            let wsUrl = `${protocol}//${window.location.host}/ws/${roomId}/${nickname}`;
+            
+            if (window.roomRounds && window.roomLimit) {
+                wsUrl += `?rounds=${window.roomRounds}&limit=${window.roomLimit}`;
+            }
             
             ws = new WebSocket(wsUrl);
 
@@ -348,12 +372,27 @@
                 else if (msg.type === "round_started") {
                     window.currentLetter = msg.letter;
                     document.getElementById("current-letter").textContent = msg.letter;
-                    document.getElementById("btn-draw").style.display = 'none'; // Chowamy losowanie, bo runda trwa
-                    addLog(`<em>Gra rozpoczęta! Litera: <strong>${msg.letter}</strong> (Start od: ${msg.sender})</em>`, "system-msg");
+                    document.getElementById("btn-draw").style.display = 'none'; 
+                    addLog(`<em>Gra rozpoczęta! Litera: <strong>${msg.letter}</strong> (Runda ${msg.current_round}/${msg.max_rounds}). Limit czasu: ${msg.time_limit}s</em>`, "system-msg");
                     enableInputs();
+                    
+                    // Włącz globalny timer
+                    let timeLeft = msg.time_limit;
+                    document.getElementById("round-timer").textContent = timeLeft + "s";
+                    document.getElementById("round-timer").style.display = "block";
+                    
+                    window.globalRoundTimer = setInterval(() => {
+                        timeLeft--;
+                        if (timeLeft >= 0) {
+                            document.getElementById("round-timer").textContent = timeLeft + "s";
+                        }
+                    }, 1000);
                 }
                 else if (msg.type === "stop_round") {
-                    addLog(`<em>🚨 <strong>${msg.sender} krzyknął STOP!</strong> Oczekiwanie na przesłanie odpowiedzi... Masz 10 sekund!</em>`, "system-msg");
+                    if (window.globalRoundTimer) clearInterval(window.globalRoundTimer);
+                    document.getElementById("round-timer").style.display = "none";
+                    
+                    addLog(`<em>🚨 <strong>${msg.sender} zatrzymał rundę!</strong> Oczekiwanie na przesłanie odpowiedzi... Masz 10 sekund!</em>`, "system-msg");
                     
                     // Zablokuj przycisk STOP dla wszystkich
                     document.getElementById('btn-stop').disabled = true;
@@ -377,6 +416,8 @@
                 }
                 else if (msg.type === "round_results") {
                     if(window.currentCountdown) clearInterval(window.currentCountdown);
+                    if(window.globalRoundTimer) clearInterval(window.globalRoundTimer);
+                    document.getElementById("round-timer").style.display = "none";
                     
                     let html = `<div class="sender">Wyniki Rundy:</div>`;
                     
@@ -413,8 +454,12 @@
                     addLog(html, "results-msg");
                     updateScoreboard(msg.total_scores);
                     
-                    // Reset UI
-                    document.getElementById('btn-draw').disabled = false;
+                    if (msg.game_over) {
+                        addLog(`<div style="text-align:center; color: var(--warning); font-size: 1.5rem; font-weight: bold; margin-top: 1rem;">Koniec Gry! 🏆<br>Zwycięzca został wyłoniony!</div>`, "system-msg");
+                        document.getElementById('btn-draw').style.display = 'none';
+                    } else {
+                        document.getElementById('btn-draw').style.display = 'block';
+                    }
                 }
             };
 

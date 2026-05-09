@@ -7,9 +7,26 @@ from manager import ConnectionManager
 app = FastAPI(title="Państwa-Miasta Engine")
 manager = ConnectionManager()
 
+async def global_round_timeout(room_id: str, round_num: int, wait_time: int):
+    # Czekamy na globalny koniec czasu (+2s na lagi sieciowe)
+    await asyncio.sleep(wait_time)
+    if room_id in manager.rooms:
+        room = manager.rooms[room_id]
+        if room.is_playing and room.current_round == round_num:
+            room.is_playing = False
+            room.stop_triggered = False
+            round_scores = room.calculate_scores()
+            is_game_over = room.current_round >= room.max_rounds
+            
+            await room.broadcast(json.dumps({
+                "type": "round_results",
+                "answers": room.answers_received,
+                "round_scores": round_scores,
+                "total_scores": room.scores,
+                "game_over": is_game_over
+            }))
+
 async def force_end_round(room_id: str):
-    # Dajemy 12 sekund, czyli 2 sekundy "zapasu" na opóźnienia sieciowe (lagi),
-    # podczas gdy klient odlicza 10 sekund i potem wysyła odpowiedzi.
     await asyncio.sleep(12)
     if room_id in manager.rooms:
         room = manager.rooms[room_id]
@@ -17,11 +34,14 @@ async def force_end_round(room_id: str):
             room.is_playing = False
             room.stop_triggered = False
             round_scores = room.calculate_scores()
+            is_game_over = room.current_round >= room.max_rounds
+            
             await room.broadcast(json.dumps({
                 "type": "round_results",
                 "answers": room.answers_received,
                 "round_scores": round_scores,
-                "total_scores": room.scores
+                "total_scores": room.scores,
+                "game_over": is_game_over
             }))
 
 @app.get("/")
@@ -31,8 +51,8 @@ async def get():
     return HTMLResponse(content=html_content)
 
 @app.websocket("/ws/{room_id}/{client_name}")
-async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: str):
-    success = await manager.connect(websocket, room_id, client_name)
+async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: str, rounds: int = 5, limit: int = 90):
+    success = await manager.connect(websocket, room_id, client_name, rounds, limit)
     if not success:
         await websocket.close(code=1008) 
         return
@@ -65,14 +85,20 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
                         "text": msg["text"]
                     }))
                     
-                elif msg_type == "draw":
+                elif msg_type == "start":
                     if not room.is_playing:
                         letter = room.start_round()
                         await room.broadcast(json.dumps({
                             "type": "round_started",
                             "letter": letter,
-                            "sender": client_name
+                            "sender": client_name,
+                            "current_round": room.current_round,
+                            "max_rounds": room.max_rounds,
+                            "time_limit": room.time_limit
                         }))
+                        
+                        # Zabezpieczenie globalne
+                        asyncio.create_task(global_round_timeout(room_id, room.current_round, room.time_limit + 2))
                         
                 elif msg_type == "stop":
                     if room.is_playing and not room.stop_triggered:
@@ -93,12 +119,14 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
                             room.is_playing = False
                             room.stop_triggered = False
                             round_scores = room.calculate_scores()
+                            is_game_over = room.current_round >= room.max_rounds
                             
                             await room.broadcast(json.dumps({
                                 "type": "round_results",
                                 "answers": room.answers_received,
                                 "round_scores": round_scores,
-                                "total_scores": room.scores
+                                "total_scores": room.scores,
+                                "game_over": is_game_over
                             }))
                             
             except json.JSONDecodeError:
