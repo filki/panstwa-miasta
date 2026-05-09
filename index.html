@@ -17,6 +17,7 @@
             --text-muted: #94a3b8;
             --border: #334155;
             --accent: #10b981;
+            --warning: #f59e0b;
         }
 
         body { 
@@ -35,12 +36,22 @@
             border-radius: 16px; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
             width: 100%;
-            max-width: 800px;
+            max-width: 900px;
             box-sizing: border-box;
         }
 
         h1 { text-align: center; color: var(--primary); margin-top: 0; font-weight: 800; font-size: 2.5rem; letter-spacing: -1px; }
         
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .layout-grid { grid-template-columns: 1fr; }
+        }
+
         .form-group { margin-bottom: 1.2rem; }
         label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;}
         
@@ -71,10 +82,11 @@
             font-weight: 600; 
             transition: all 0.2s ease; 
         }
-        button:hover { background: var(--primary-hover); transform: translateY(-1px); }
-        button:active { transform: translateY(1px); }
+        button:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
+        button:active:not(:disabled) { transform: translateY(1px); }
         button.danger { background: var(--danger); }
-        button.danger:hover { background: var(--danger-hover); }
+        button.danger:hover:not(:disabled) { background: var(--danger-hover); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
         .game-header {
             display: flex;
@@ -94,19 +106,38 @@
 
         .categories-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 1rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
         }
 
         .action-row {
             display: flex;
             gap: 1rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
         }
 
+        .sidebar {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .scoreboard {
+            margin-bottom: 1rem;
+        }
+        
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .score-item:last-child { border-bottom: none; }
+        .score-item strong { color: var(--accent); }
+
         #logs { 
-            margin-top: 1.5rem; 
             border: 2px solid var(--border); 
             padding: 1rem; 
             height: 250px; 
@@ -124,20 +155,12 @@
             background: var(--surface);
             border-left: 4px solid var(--primary);
             animation: fadeIn 0.3s ease;
-        }
-        
-        .system-msg { border-left-color: var(--text-muted); color: var(--text-muted); font-style: italic; font-size: 0.9em; }
-        .answers-msg { border-left-color: var(--accent); background: rgba(16, 185, 129, 0.1); }
-        .sender { font-weight: 800; margin-bottom: 0.3rem; color: var(--primary); }
-        .answers-msg .sender { color: var(--accent); }
-
-        .answers-grid {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 0.2rem 1rem;
             font-size: 0.95rem;
         }
-        .answers-grid strong { color: var(--text-muted); text-transform: uppercase; font-size: 0.7rem; }
+        
+        .system-msg { border-left-color: var(--warning); color: var(--text-muted); font-style: italic; }
+        .results-msg { border-left-color: var(--accent); background: rgba(16, 185, 129, 0.05); }
+        .sender { font-weight: 800; margin-bottom: 0.3rem; color: var(--primary); }
 
         .chat-input-group { display: flex; gap: 0.5rem; margin-top: 1rem; }
         .chat-input-group input { flex-grow: 1; }
@@ -148,7 +171,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Państwa-Miasta</h1>
+        <h1>Państwa-Miasta Engine</h1>
         
         <div id="join-section">
             <div class="form-group">
@@ -163,37 +186,49 @@
         </div>
 
         <div id="chat-section" style="display: none;">
-            <div class="game-header">
-                <div>
-                    <label>Pokój</label>
-                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--text-muted);" id="current-room"></div>
+            <div class="layout-grid">
+                <!-- Lewa kolumna: Gra -->
+                <div class="main-game">
+                    <div class="game-header">
+                        <div>
+                            <label>Pokój</label>
+                            <div style="font-size: 1.5rem; font-weight: 600; color: var(--text-muted);" id="current-room"></div>
+                        </div>
+                        <div style="text-align: right;">
+                            <label>Gramy na literę</label>
+                            <div class="letter-display" id="current-letter">?</div>
+                        </div>
+                    </div>
+
+                    <div class="categories-grid" id="categories">
+                        <div class="form-group"><label>Państwo</label><input type="text" data-category="Państwo" disabled></div>
+                        <div class="form-group"><label>Miasto</label><input type="text" data-category="Miasto" disabled></div>
+                        <div class="form-group"><label>Rzecz</label><input type="text" data-category="Rzecz" disabled></div>
+                        <div class="form-group"><label>Zwierzę</label><input type="text" data-category="Zwierzę" disabled></div>
+                        <div class="form-group"><label>Roślina</label><input type="text" data-category="Roślina" disabled></div>
+                        <div class="form-group"><label>Imię</label><input type="text" data-category="Imię" disabled></div>
+                    </div>
+
+                    <div class="action-row">
+                        <button onclick="drawLetter()" id="btn-draw">🎲 Start Rundy</button>
+                        <button onclick="stopGame()" id="btn-stop" class="danger" disabled>🛑 STOP!</button>
+                    </div>
                 </div>
-                <div style="text-align: right;">
-                    <label>Gramy na literę</label>
-                    <div class="letter-display" id="current-letter">?</div>
+
+                <!-- Prawa kolumna: Sidebar -->
+                <div class="sidebar">
+                    <label>Wyniki</label>
+                    <div class="scoreboard" id="scoreboard">
+                        <!-- Wyniki generowane dynamicznie -->
+                    </div>
+
+                    <label>Czat & Logi</label>
+                    <div id="logs"></div>
+                    <div class="chat-input-group">
+                        <input type="text" id="message-input" placeholder="Napisz wiadomość...">
+                        <button onclick="sendChat()">Wyślij</button>
+                    </div>
                 </div>
-            </div>
-
-            <div class="categories-grid" id="categories">
-                <div class="form-group"><label>Państwo</label><input type="text" data-category="Państwo" disabled></div>
-                <div class="form-group"><label>Miasto</label><input type="text" data-category="Miasto" disabled></div>
-                <div class="form-group"><label>Rzecz</label><input type="text" data-category="Rzecz" disabled></div>
-                <div class="form-group"><label>Zwierzę</label><input type="text" data-category="Zwierzę" disabled></div>
-                <div class="form-group"><label>Roślina</label><input type="text" data-category="Roślina" disabled></div>
-                <div class="form-group"><label>Imię</label><input type="text" data-category="Imię" disabled></div>
-            </div>
-
-            <div class="action-row">
-                <button onclick="drawLetter()" id="btn-draw">🎲 Losuj literę</button>
-                <button onclick="stopGame()" id="btn-stop" class="danger" disabled>🛑 STOP!</button>
-            </div>
-
-            <label>Dziennik Gry</label>
-            <div id="logs"></div>
-            
-            <div class="chat-input-group">
-                <input type="text" id="message-input" placeholder="Wpisz wiadomość...">
-                <button onclick="sendChat()">Wyślij</button>
             </div>
         </div>
     </div>
@@ -201,8 +236,6 @@
     <script>
         let ws = null;
         let myNick = "";
-
-        const ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ";
 
         function addLog(htmlContent, typeClass) {
             const logsDiv = document.getElementById('logs');
@@ -213,14 +246,25 @@
             logsDiv.scrollTop = logsDiv.scrollHeight;
         }
 
+        function updateScoreboard(scores) {
+            const sb = document.getElementById('scoreboard');
+            sb.innerHTML = '';
+            // Sortujemy malejąco po wynikach
+            const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+            
+            sorted.forEach(([player, score]) => {
+                const div = document.createElement('div');
+                div.className = 'score-item';
+                div.innerHTML = `<span>${player}</span> <strong>${score} pkt</strong>`;
+                sb.appendChild(div);
+            });
+        }
+
         function connect() {
             const nickname = document.getElementById('nickname').value.trim();
             const roomId = document.getElementById('room_id').value.trim();
 
-            if (!nickname || !roomId) {
-                alert('Proszę podać nick i ID pokoju.');
-                return;
-            }
+            if (!nickname || !roomId) return alert('Proszę podać nick i ID pokoju.');
 
             myNick = nickname;
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -235,52 +279,55 @@
             };
 
             ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                handleMessage(data);
-            };
-
-            ws.onclose = (event) => {
-                document.getElementById('join-section').style.display = 'block';
-                document.getElementById('chat-section').style.display = 'none';
+                const msg = JSON.parse(event.data);
                 
-                if (event.code === 1008) {
-                    alert('Ten nick jest już zajęty w tym pokoju! Wybierz inny.');
+                if (msg.type === "system") {
+                    addLog(`<em>${msg.message}</em>`, "system-msg");
+                } 
+                else if (msg.type === "score_update") {
+                    updateScoreboard(msg.scores);
                 }
-                ws = null;
-                document.getElementById('logs').innerHTML = ''; 
+                else if (msg.type === "chat") {
+                    addLog(`<div class="sender">${msg.sender}</div><div>${msg.text}</div>`, "");
+                }
+                else if (msg.type === "round_started") {
+                    document.getElementById("current-letter").textContent = msg.letter;
+                    addLog(`<em>Gra rozpoczęta! Litera: <strong>${msg.letter}</strong> (Start od: ${msg.sender})</em>`, "system-msg");
+                    enableInputs();
+                }
+                else if (msg.type === "stop_round") {
+                    addLog(`<em>🚨 <strong>${msg.sender} krzyknął STOP!</strong> Oczekiwanie na przesłanie odpowiedzi...</em>`, "system-msg");
+                    disableAndSubmit();
+                }
+                else if (msg.type === "round_results") {
+                    let html = `<div class="sender">Wyniki Rundy:</div>`;
+                    
+                    // Pokazujemy ile kto dostał punktów w tej rundzie
+                    for (const [player, rScore] of Object.entries(msg.round_scores)) {
+                        html += `<div style="margin-bottom: 0.5rem"><strong>${player}: +${rScore} pkt</strong><br>`;
+                        const pAnswers = msg.answers[player] || {};
+                        for (const [cat, val] of Object.entries(pAnswers)) {
+                            if(val) html += `<span style="font-size:0.8em; color:var(--text-muted);">${cat}:</span> ${val} `;
+                        }
+                        html += `</div>`;
+                    }
+                    
+                    addLog(html, "results-msg");
+                    updateScoreboard(msg.total_scores);
+                    
+                    // Reset UI
+                    document.getElementById('btn-draw').disabled = false;
+                }
             };
-        }
 
-        function handleMessage(msg) {
-            if (msg.type === "system") {
-                addLog(`<em>${msg.message}</em>`, "system-msg");
-            } 
-            else if (msg.type === "chat") {
-                addLog(`<div class="sender">${msg.sender}</div><div>${msg.text}</div>`, "");
-            }
-            else if (msg.type === "draw") {
-                document.getElementById("current-letter").textContent = msg.letter;
-                addLog(`<em>${msg.sender} wylosował literę: <strong>${msg.letter}</strong>. Gra rozpoczęta!</em>`, "system-msg");
-                enableInputs();
-            }
-            else if (msg.type === "stop") {
-                addLog(`<em>🚨 ${msg.sender} krzyknął <strong>STOP!</strong> Koniec rundy.</em>`, "system-msg");
-                disableAndSubmit();
-            }
-            else if (msg.type === "answers") {
-                let html = `<div class="sender">Odpowiedzi: ${msg.sender}</div><div class="answers-grid">`;
-                for (const [category, value] of Object.entries(msg.answers)) {
-                    html += `<strong>${category}:</strong> <span>${value || '-'}</span>`;
-                }
-                html += `</div>`;
-                addLog(html, "answers-msg");
-            }
+            ws.onclose = (e) => {
+                if(e.code === 1008) alert('Nick zajęty!');
+                window.location.reload();
+            };
         }
 
         function sendJson(obj) {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify(obj));
-            }
+            if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
         }
 
         function sendChat() {
@@ -292,8 +339,7 @@
         }
 
         function drawLetter() {
-            const letter = ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
-            sendJson({ type: "draw", letter: letter });
+            sendJson({ type: "draw" });
         }
 
         function stopGame() {
@@ -318,15 +364,24 @@
                 answers[inp.dataset.category] = inp.value.trim();
                 inp.disabled = true;
             });
-            document.getElementById('btn-draw').disabled = false;
-            document.getElementById('btn-stop').disabled = true;
             
-            // Send answers automatically
+            document.getElementById('btn-stop').disabled = true;
             sendJson({ type: "answers", answers: answers });
         }
 
-        document.getElementById('message-input').addEventListener('keypress', function (e) {
+        document.getElementById('message-input').addEventListener('keypress', e => {
             if (e.key === 'Enter') sendChat();
+        });
+        
+        // Zgłaszaj odpowiedzi Enterem
+        const catInputs = document.querySelectorAll('#categories input');
+        catInputs.forEach((inp, i) => {
+            inp.addEventListener('keypress', e => {
+                if (e.key === 'Enter') {
+                    if(i < catInputs.length - 1) catInputs[i+1].focus();
+                    else stopGame(); // Ostatni input i enter = STOP!
+                }
+            });
         });
     </script>
 </body>
