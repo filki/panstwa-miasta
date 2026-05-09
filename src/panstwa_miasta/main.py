@@ -17,8 +17,10 @@ async def global_round_timeout(room_id: str, round_num: int, wait_time: int):
         if room.is_playing and room.current_round == round_num:
             room.is_playing = False
             room.stop_triggered = False
-            round_scores = room.calculate_scores()
+            round_scores = await room.calculate_scores()
             is_game_over = room.current_round >= room.max_rounds
+            if is_game_over:
+                room.game_over = True
             
             await room.broadcast(json.dumps({
                 "type": "round_results",
@@ -35,8 +37,10 @@ async def force_end_round(room_id: str):
         if room.is_playing and room.stop_triggered:
             room.is_playing = False
             room.stop_triggered = False
-            round_scores = room.calculate_scores()
+            round_scores = await room.calculate_scores()
             is_game_over = room.current_round >= room.max_rounds
+            if is_game_over:
+                room.game_over = True
             
             await room.broadcast(json.dumps({
                 "type": "round_results",
@@ -76,7 +80,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
         "scores": room.scores
     }))
     
-    # Wznawianie trwającej rundy
+    # Wznawianie trwającej rundy lub wyświetlanie wyników końcowych
     if room.is_playing:
         await websocket.send_text(json.dumps({
             "type": "round_started",
@@ -85,6 +89,14 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
             "current_round": room.current_round,
             "max_rounds": room.max_rounds,
             "time_limit": room.time_limit
+        }))
+    elif room.game_over:
+        await websocket.send_text(json.dumps({
+            "type": "round_results",
+            "answers": {},
+            "round_scores": {},
+            "total_scores": room.scores,
+            "game_over": True
         }))
     
     try:
@@ -102,7 +114,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
                     }))
                     
                 elif msg_type == "ready":
-                    if not room.is_playing:
+                    if not room.is_playing and not room.game_over:
                         room.ready_players.add(client_name)
                         await room.broadcast(json.dumps({
                             "type": "system",
@@ -147,8 +159,10 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
                         if len(room.answers_received) >= room.expected_answers:
                             room.is_playing = False
                             room.stop_triggered = False
-                            round_scores = room.calculate_scores()
+                            round_scores = await room.calculate_scores()
                             is_game_over = room.current_round >= room.max_rounds
+                            if is_game_over:
+                                room.game_over = True
                             
                             await room.broadcast(json.dumps({
                                 "type": "round_results",
@@ -160,6 +174,12 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
                             
             except json.JSONDecodeError:
                 pass
+            except Exception as e:
+                print(f"❌ Błąd w obsłudze wiadomości od {client_name}: {e}")
+                import traceback
+                traceback.print_exc()
+                # Nie zamykamy połączenia, próbujemy dalej
+                continue
     except WebSocketDisconnect:
         manager.disconnect(room_id, client_name)
         if room_id in manager.rooms:

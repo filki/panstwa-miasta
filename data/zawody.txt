@@ -1,4 +1,3 @@
-administrator nieruchomości
 adwokat
 agenci ubezpieczeniowi
 agent celny
@@ -17,15 +16,12 @@ akwizytor
 alpinista przemysłowy
 analitycy finansowi
 analityk biznesowy
-analityk doświadczenia użytkowników
 analityk finansowy
 analityk giełdowy
 analityk inwestycyjny
 analityk kredytowy
 analityk kryminalny
-analityk pracy
 andragog
-animator kultury
 animator rynku książki
 ankieter
 ankieterzy
@@ -40,7 +36,6 @@ archeolog
 architekci
 architekci krajobrazu
 architekt
-architekt cyberbezpieczeństwa
 architekt krajobrazu
 architekt wnętrz
 archiwista
@@ -76,7 +71,6 @@ audiofonolog
 audytor
 audytor  środowiskowy
 audytor / kontroler
-audytor cyberbezpieczeństwa
 audytor energetyczny
 automatyk
 baca
@@ -151,17 +145,10 @@ cukrownictwo
 cykliniarz
 cyrku
 czapnik
-czyściciel butów
-czyściciel dywanów
-czyściciel pojazdów
-czyściciele pojazdów
 dekarz
 dekarze
-dekorator sklepów
 dekorator wnętrz
 demograf
-demonstrator wyrobów
-demonstratorzy wyrobów
 dentysta
 detektyw prywatny
 diagnosta kolejowy
@@ -197,15 +184,12 @@ dróżnik obchodowy
 dróżnik przejazdowy
 dydaktyk multimedialny
 dyrektor departamentu
-dyrektor filharmonii
 dyrektor finansowy
 dyrektor generalny
 dyrektor handlowy
 dyrektor logistyki
-dyrektor marketingu
 dyrektor operacyjny
 dyrektor placówki opiekuńczo
-dyrektor produkcji
 dyrektor rozwoju biznesu
 dyrektor sprzedaży
 dyrektor szkoły
@@ -236,7 +220,6 @@ ekspedient pocztowy
 ekspedient wypożyczalni
 ekspedytor
 eksploatator portu
-ekspozytor towarów
 elektroenergetyk nastawni
 elektromechanicy i elektromonterzy
 elektromechanik
@@ -244,7 +227,6 @@ elektromonter
 elektromonter  zakładowy
 elektromonter lotniczy
 elektromonter okrętowy
-elektromonter transformatorów
 elektroniczne instrumenty muzyczne
 elektronik
 elektroradiolog
@@ -253,7 +235,6 @@ elektryk
 elektryk budowlany
 epidemiolog
 etnograf
-ewaluator programów edukacji
 fajkarz
 fakturzystka
 farmaceuci
@@ -318,12 +299,9 @@ gleboznawca
 goniec
 gorseciarka
 gospodarz domu
-gospodarze budynków
-gospodarze obiektów
 gospodyni
 grabarz
 grafik komputerowy dtp
-grafik komputerowy multimediów
 grafolog
 grawer
 grawer poligraficzny
@@ -339,13 +317,10 @@ hartownik
 higienistka stomatologiczna
 higienistka szkolna
 historyk
-historyk sztuki
 hodowca bydła
 hodowca drobiu
-hodowca jedwabników
 hodowca koni
 hodowca owiec
-hodowca ptaków
 hodowca ryb
 hodowcy drobiu
 hodowcy ryb
@@ -368,21 +343,16 @@ inkasent
 inspektor bezpieczeństwa żeglugi
 inspektor budowlany
 inspektor budowy dróg
-inspektor budowy mostów
 inspektor farmaceutyczny
 inspektor hotelowy
-inspektor ochrony środowiska
-inspektor pracy
 inspektor sanitarny
 inspicjent
 instalacja anten
 instalacje sanitarne
 instruktor fitness
 instruktor higieny
-instruktor hipoterapii
 instruktor nauki jazdy
 instruktor rytmiki
-instruktor sportu
 instruktor strzałowy
 instruktor sztuki walki
 instruktor tańca
@@ -399,9 +369,7 @@ introligatorzy i pokrewni
 inwentaryzator
 inżynier akustyk
 inżynier awionik
-inżynier budownictwa
 inżynier budowy dróg
-inżynier budowy mostów
 inżynier dekontaminacji
 inżynier elektroenergetyk
 inżynier elektronik
@@ -415,26 +383,19 @@ inżynier geotechnik
 inżynier górnik
 inżynier hutnik
 inżynier internetu rzeczy
-inżynier inżynierii środowiska
 inżynier kliniczny
-inżynier leśnictwa
 inżynier mechanik
 inżynier mechanik lotniczy
-inżynier mechanizacji rolnictwa
 inżynier mechatronik
-inżynier normowania pracy
 inżynier odlewnik
 inżynier ogrodnictwa
 inżynier optyk
 inżynier papiernictwa
-inżynier poligrafii
 inżynier pożarnictwa
 inżynier procesu malowania
-inżynier rolnictwa
 inżynier rybactwa
 inżynier spawalnik
 inżynier sprzedaży
-inżynier technologii betonów
 inżynier technologii ceramiki
 inżynier technologii drewna
 inżynier technologii szkła
@@ -445,11 +406,8 @@ inżynier utrzymania ruchu
 inżynier włókiennik
 inżynier zootechniki
 inżynierowie
-inżynierowie budownictwa
 inżynierowie elektronicy
-inżynierowie elektrotechnologii
 inżynierowie elektrycy
-inżynierowie inżynierii środowiska
 inżynierowie mechanicy
 inżynierowie telekomunikacji
 jeździec
@@ -478,7 +436,6 @@ kierowca trolejbusu
 kierowcy motocykli
 kierownicy
 kierownicy biura
-kierownicy w gastronomii
 kierownicy w górnictwie
 kierownicy w hotelarstwie
 kierownik
@@ -489,16 +446,11 @@ kierownik biura
 kierownik biura podroży
 kierownik biura tłumaczeń
 kierownik budowy
-kierownik domu kultury
 kierownik działu administracyjno
 kierownik działu badawczo
-kierownik działu informatyki
 kierownik działu logistyki
 kierownik działu reklamy
 kierownik działu szkoleń
-kierownik działu transportu
-kierownik działu zakupów
-kierownik galerii sztuki
 kierownik hospicjum
 kierownik hostelu
 kierownik hotelu
@@ -518,7 +470,6 @@ kierownik przedszkola
 kierownik punktu skupu
 kierownik rewiru
 kierownik sali sprzedaży
-kierownik sieci sklepów
 kierownik siłowni
 kierownik sklepu
 kierownik szkoły tańca
@@ -529,8 +480,6 @@ kierownik żłobka
 kierujący tramwajem
 kinooperator
 kioskarz
-klasyfikator gruntów
-klasyfikator grzybów
 klasyfikator ryb
 klasyfikator skór
 klaun
@@ -552,14 +501,11 @@ konduktor
 konduktorzy i pokrewni
 konferansjer
 konserwator części
-konserwator dzieł sztuki
-konserwator spadochronów
 konserwator zabytków architektury
 konstruktor odzieży
 konstruktor rozkładów jazdy
 konsultant
 kontroler
-kontroler biletów
 kontroler finansowy
 kontroler higieny mięsa
 kontroler kolejowy
@@ -618,12 +564,10 @@ legislator
 lekarz
 lekarz dentysta
 lekarz ordynator oddziału
-lekarz weterynarii
 lekarze
 lekarze dentyści
 lekarze dentyści specjaliści
 lekarze specjaliści
-lekarze weterynarii
 lekarze weterynarii specjaliści
 leśnicy i rybacy
 licytator
@@ -636,7 +580,6 @@ listonosze i pokrewni
 lobbysta
 logistyk
 logopeda
-loterii
 ludwisarz
 lustrzarz
 lutowacz
@@ -668,14 +611,10 @@ matematyk
 maślarz
 mechanicy precyzyjni
 mechanik
-mechanik autobusów
-mechanik ciągników
 mechanik motocyklowy
 mechanik okrętowy
 mechanik pokładowy
 mechanik precyzyjny
-mechanik płatowców
-mechanik rowerów
 mechanika precyzyjna
 mechatronik
 mediator
@@ -683,10 +622,8 @@ mediator sądowy
 melioracje
 meliorant
 menedżer artystyczny
-menedżer dyscypliny sportu
 menedżer marki
 menedżer produktu
-menedżer sportu
 metaloplastyk
 meteorolodzy
 meteorolog
@@ -714,7 +651,6 @@ monter konstrukcji targowo
 monter mebli
 monter mechatronik
 monter obrabiarek
-monter ociepleń budynków
 monter ogrodzeń
 monter płyt kartonowo
 monter reklam
@@ -778,8 +714,6 @@ obuwnik ortopedyczny
 obuwnik przemysłowy
 oceanolog
 oczyszczacz kanalizacyjny
-odczytywacz liczników
-odprawiacz pociągów
 oficer automatyk okrętowy
 oficer mechanik
 oficer pokładowy
@@ -798,7 +732,6 @@ operator dźwięku
 operator edytorów tekstu
 operator fotoskładu
 operator kamery
-operator kontroli bezpieczeństwa
 operator koparki
 operator koparko
 operator koparko-ładowarki
@@ -807,7 +740,6 @@ operator myjni
 operator obrazu
 operator pergaminiarki
 operator pociągowy
-operator przenośników
 operator reaktora
 operator skrawarek drewna
 operator spycharki
@@ -818,7 +750,6 @@ operator wirówek
 operator wtryskarki
 operator zgrzewarek
 operator ładowarki
-operatorzy edytorów tekstu
 operetki
 opery
 opiekun dzikich zwierząt
@@ -843,8 +774,6 @@ organomistrz
 orkiestry
 ortopeda mechanik
 ortoptystka
-osoba do towarzystwa
-osoby do towarzystwa
 osteopata
 ostrzarz
 oświetlacz filmowy
@@ -859,7 +788,6 @@ parlamentarzysta
 parzelniczy drewna
 patroszacz ryb
 pedagog
-pedagog mediów
 pedagog specjalny
 pedagog szkolny
 pedikiurzystka
@@ -871,7 +799,6 @@ piekarz
 pielęgniarka
 pielęgniarka oddziałowa
 pielęgniarki
-pielęgniarz trawników
 pilarz
 pilarz drzew
 pilarz kamienia
@@ -939,8 +866,6 @@ położna oddziałowa
 położne
 pośrednicy handlowi
 pośrednik finansowy
-pośrednik pracy
-pracodawców
 pracownicy biur informacji
 pracownicy biurowi
 pracownicy działów kadr
@@ -951,22 +876,18 @@ pracownik biura przepustek
 pracownik biurowy
 pracownik cmentarza
 pracownik działu logistyki
-pracownik galerii
 pracownik kolektury
 pracownik lombardu
-pracownik obsługi bankomatów
 pracownik obsługi monitoringu
 pracownik obsługi sklepu
 pracownik ochrony roślin
 pracownik parafialny
 pracownik parku rozrywki
 pracownik pomocniczy fryzjera
-pracownik pomocniczy gastronomii
 pracownik pomocniczy krawca
 pracownik pomocniczy mechanika
 pracownik pomocniczy stolarza
 pracownik pomocniczy ślusarza
-pracownik produkcji
 pracownik przeprowadzkowy
 pracownik punktu skupu
 pracownik rozbioru mięsa
@@ -974,10 +895,10 @@ pracownik socjalny
 pracownik solarium
 pracownik utrzymania czystości
 pracownik wylęgarni drobiu
-pracownik zbiórki odpadów
 praczka
 prasowaczka ręczna
 prasowy
+prawnik
 preparator medyczny
 prezenter muzyczny
 prezenter telewizyjny
@@ -995,7 +916,6 @@ programista aplikacji
 programista obrabiarek
 programiści aplikacji
 projektant
-projektant biżuterii
 projektant grafiki
 projektant interfejsu użytkownika
 projektant mody
@@ -1035,7 +955,6 @@ psychoterapeuta
 psychotraumatolog
 pszczelarz
 public relations
-pulpitowy wielkich pieców
 płatnerz
 płetwonurek ratownik
 radca prawny
@@ -1070,7 +989,6 @@ renowator zabytków architektury
 reporter radiowy
 retman
 rewident taboru
-rewizor pociągów
 reżyser dźwięku
 reżyser filmowy
 reżyser teatralny
@@ -1119,7 +1037,6 @@ rzeźbiarz w drewnie
 rzeźnik
 rzeźnik-wędliniarz
 ręczny polerowacz szkła
-ręczny znakowacz wyrobów
 rękawicznik
 sadownicy
 sadownik
@@ -1147,62 +1064,26 @@ sommelier
 sortowacz
 sortowacz-brakarz ceramiki
 sortowacz-brakarz szkła
-sortowacze odpadów
 spawacz
 spawacze i pokrewni
-specjalista alergologii
-specjalista angiologii
-specjalista bankowości
 specjalista bezpieczeństwa oprogramowania
-specjalista bromatologii
 specjalista chirurgii szczękowo
 specjalista chorób koni
 specjalista chorób przeżuwaczy
 specjalista chorób płuc
 specjalista chorób ryb
-specjalista diabetologii
-specjalista endokrynologii
-specjalista epidemiologii
 specjalista etyki biznesu
-specjalista farmakologii
-specjalista fizjoterapii
-specjalista gastroenterologii
-specjalista geriatrii
-specjalista hematologii
-specjalista hipertensjologii
-specjalista intensywnej terapii
-specjalista kardiochirurgii
-specjalista kardiologii
 specjalista kontroli jakości
-specjalista medycyny pracy
-specjalista medycyny transportu
-specjalista nefrologii
-specjalista neonatologii
-specjalista neurochirurgii
-specjalista neurologii
-specjalista neuropatologii
-specjalista ochrony środowiska
 specjalista okulistyki
 specjalista ortodoncji
-specjalista otorynolaryngologii
-specjalista patomorfologii
-specjalista pediatrii
-specjalista perinatologii
-specjalista periodontologii
 specjalista pielęgniarstwa ginekologiczno
-specjalista psychiatrii
 specjalista psychoterapii uzależnień
 specjalista radiofarmacji
 specjalista resocjalizacji
-specjalista reumatologii
 specjalista rozrodu zwierząt
-specjalista seksuologii
 specjalista terapii uzależnień
-specjalista toksykologii
-specjalista urologii
 specjalista zarządzania dokumentacją
 specjalista zarządzania informacją
-specjalista zastosowań informatyki
 specjalista żywienia człowieka
 specjaliści
 spedytor
@@ -1214,7 +1095,6 @@ sprzedawca na targowisku
 sprzedawca na telefon
 sprzedawcy i pokrewni
 sprzedawcy sklepowi
-sprzątacz pojazdów
 sprzątaczka domowa
 sprzęt komputerowy
 sprzętu
@@ -1257,7 +1137,6 @@ szef kuchni
 szewc
 szklarz
 szklarz budowlany
-szklarz pojazdów
 szklarze
 szkliwierz ceramiki
 szkutnik
@@ -1269,7 +1148,6 @@ szlifierz-ostrzarz
 szpachlarz
 sztauer
 sztauer-trymer
-sztuka
 sztukator
 szwaczka maszynowa
 szwaczka ręczna
@@ -1292,16 +1170,12 @@ tapicer meblowy
 tapicerzy i pokrewni
 tartacznik
 tatuażysta
-technicy budownictwa
 technicy elektrycy
 technicy farmaceutyczni
 technicy informatycy
-technicy leśnictwa
 technicy mechanicy
 technicy technologii żywności
-technicy weterynarii
 techniczne
-technik administracji
 technik agrobiznesu
 technik akustyk
 technik analityk
@@ -1311,10 +1185,8 @@ technik architektury krajobrazu
 technik archiwista
 technik automatyk
 technik awionik
-technik budownictwa
 technik budowy dróg
 technik ceramik
-technik dekarstwa
 technik dentystyczny
 technik dozymetrysta
 technik drogownictwa
@@ -1328,7 +1200,6 @@ technik elektryk
 technik elektryk samochodowy
 technik energetyk
 technik farmaceutyczny
-technik fizjoterapii
 technik garbarz
 technik gazownictwa
 technik geodeta
@@ -1337,12 +1208,10 @@ technik geolog
 technik handlowiec
 technik hodowca koni
 technik hodowca zwierząt
-technik hotelarstwa
 technik hutnik
 technik hydrolog
 technik informatyk
 technik kryminalistyki
-technik księgarstwa
 technik leśnik
 technik logistyk
 technik masażysta
@@ -1350,20 +1219,15 @@ technik mechanik
 technik mechanik lotniczy
 technik mechanik okrętowy
 technik mechanik precyzyjny
-technik mechanizacji rolnictwa
 technik mechatronik
 technik meteorolog
 technik metrolog
 technik nawigator morski
-technik normowania pracy
 technik obuwnik
-technik ochrony środowiska
 technik odlewnik
 technik ogrodnik
 technik optyk
-technik organizacji produkcji
 technik organizacji reklamy
-technik organizacji turystyki
 technik ortopeda
 technik papiernictwa
 technik poligraf
@@ -1391,7 +1255,6 @@ technik teleinformatyk
 technik telekomunikacji
 technik tyfloinformatyk
 technik utrzymania ruchu
-technik weterynarii
 technik wiertnik
 technik włókiennik
 technolog
@@ -1419,8 +1282,6 @@ transportowych i pokrewni
 traser
 trawiacz poligraficzny
 trener osobisty
-trener sportu
-treser psów
 trymer
 trzciniarz
 twórca ludowy
@@ -1432,12 +1293,7 @@ tłumacz
 tłumacz przysięgły
 ubojowy
 układacz
-układacz-konserwator spadochronów
-uliczni sprzedawcy produktów
-uliczni sprzedawcy żywności
 urbanista
-urządzenia radiokomunikacyjne
-urządzenia radiowo
 urzędnik podatkowy
 ustawiacz
 vloger
@@ -1462,18 +1318,10 @@ woźny
 wróżbita
 wulkanizator
 wybieracz monet
-wyburzanie obiektów
-wydawca materiałów
-wydawca posiłków
-wydawcy posiłków
 wykrawacz
 wykładowca na kursach
-wytwórca abażurów
-wytwórca galanterii
-wytwórca sztucznych kwiatów
 wyższy urzędnik państwowy
 wyższy urzędnik samorządowy
-wózków
 wędliniarz
 wędzarz
 właściciel małego sklepu
@@ -1488,9 +1336,7 @@ zamiatacze i pokrewni
 zaopatrzeniowcy
 zaopatrzeniowiec
 zarządca energią
-zarządca nieruchomości
 zawiadowca stacji
-zawodnik dyscypliny sportu
 zbrojarz
 zdobnik ceramiki
 zdobnik szkła
@@ -1509,16 +1355,12 @@ zwrotniczy
 złotnik
 złotnik-jubiler
 ładowacz
-ładowacze nieczystości
 ładowarki
 łazienkowa
 łubiankarz
 ślusarz
 ślusarz narzędziowy
-środki transportu
-środowiska
 świecki krzewiciel wiary
 żaglownik
 żałobnik
-żetonów z automatów
 żongler

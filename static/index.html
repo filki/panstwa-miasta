@@ -176,7 +176,10 @@
 </head>
 <body>
     <div class="container">
-        <h1>Państwa-Miasta Engine</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h1 style="margin-bottom: 0;">Państwa-Miasta Engine</h1>
+            <button id="btn-leave" style="display: none; background: var(--danger); padding: 0.5rem 1rem; width: auto; font-size: 0.9rem;" onclick="window.location.reload()">🚪 Wyjdź</button>
+        </div>
         
         <div id="join-section">
             <div class="form-group">
@@ -333,8 +336,8 @@
         function doCreateRoom() {
             const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
             document.getElementById('room_id').value = randomCode;
-            window.roomRounds = document.getElementById('setting_rounds').value || 5;
-            window.roomLimit = document.getElementById('setting_limit').value || 90;
+            window.roomRounds = document.getElementById('rounds-input').value || 5;
+            window.roomLimit = document.getElementById('limit-input').value || 90;
             connect();
         }
 
@@ -363,6 +366,7 @@
             ws.onopen = () => {
                 document.getElementById('join-section').style.display = 'none';
                 document.getElementById('chat-section').style.display = 'block';
+                document.getElementById('btn-leave').style.display = 'block';
                 document.getElementById('current-room').textContent = roomId;
             };
 
@@ -371,6 +375,7 @@
                     alert('Nick jest już zajęty lub nieprawidłowy!');
                     document.getElementById('join-section').style.display = 'block';
                     document.getElementById('chat-section').style.display = 'none';
+                    document.getElementById('btn-leave').style.display = 'none';
                     return;
                 }
                 
@@ -426,18 +431,25 @@
                     addLog(`<em>🚨 <strong>${msg.sender} zatrzymał rundę!</strong> Oczekiwanie na przesłanie odpowiedzi... Masz 10 sekund!</em>`, "system-msg");
                     
                     // Zablokuj przycisk STOP dla wszystkich
-                    document.getElementById('btn-stop').disabled = true;
+                    const btnStop = document.getElementById('btn-stop');
+                    btnStop.disabled = true;
                     
-                    // Pokazujemy wielki odliczacz na środku ekranu
+                    // Przewiń ekran na górę (dla urządzeń mobilnych, gdzie odliczanie jest u góry)
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    // Pokazujemy wielki odliczacz na środku ekranu oraz na przycisku STOP
                     document.getElementById('current-letter').innerHTML = `<span style="color:var(--danger)">10s</span>`;
+                    btnStop.innerHTML = `⏳ 10s`;
                     
                     let timeLeft = msg.time_left;
                     const countdownInterval = setInterval(() => {
                         timeLeft--;
                         if(timeLeft > 0) {
                             document.getElementById('current-letter').innerHTML = `<span style="color:var(--danger)">${timeLeft}s</span>`;
+                            btnStop.innerHTML = `⏳ ${timeLeft}s`;
                         } else {
                             clearInterval(countdownInterval);
+                            btnStop.innerHTML = `WYSYŁANIE...`;
                             disableAndSubmit();
                         }
                     }, 1000);
@@ -575,8 +587,10 @@
                 });
             });
             
-            document.getElementById('btn-stop').disabled = true;
-            document.getElementById('btn-stop').removeAttribute('data-stopped');
+            const btnStop = document.getElementById('btn-stop');
+            btnStop.disabled = true;
+            btnStop.removeAttribute('data-stopped');
+            btnStop.innerHTML = '🛑 STOP!';
             
             // Przywracamy literę jeśli zniknęła
             if(window.currentLetter) {

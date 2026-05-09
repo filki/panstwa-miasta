@@ -1,6 +1,7 @@
 from typing import Dict
 from fastapi import WebSocket
-from data import COUNTRIES, NAMES, JOBS
+import asyncio
+from .data import COUNTRIES, NAMES, JOBS
 
 ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
 
@@ -21,6 +22,7 @@ class Room:
         self.current_letter = ""
         self.answers_received: Dict[str, Dict[str, str]] = {}
         self.expected_answers = 0
+        self.game_over = False
 
     async def broadcast(self, message: str):
         """Wysyła wiadomość do wszystkich w pokoju"""
@@ -46,53 +48,81 @@ class Room:
         self.expected_answers = len(self.connections)
         return self.current_letter
 
-    def calculate_scores(self) -> Dict[str, Dict]:
+    async def calculate_scores(self) -> Dict[str, Dict]:
         """
         Zwraca: {player: {"total": int, "details": {category: points}}}
         """
+        from .validator import validator
+        
         round_scores = {player: {"total": 0, "details": {}} for player in self.answers_received}
         categories = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
         
+        # Przygotowanie listy haseł do walidacji przez Wikipedię
+        # (tylko te, których nie mamy w lokalnych słownikach)
+        wiki_categories = ["Miasto", "Zwierzę", "Roślina"]
+        validation_tasks = []
+        task_info = [] # (player, category, ans)
+        
         for category in categories:
-            # Zbieramy odpowiedzi graczy dla jednej kategorii { nick: hasło }
-            category_answers = {}
             for player, answers in self.answers_received.items():
                 ans = answers.get(category, "").strip().lower()
                 
-                is_valid = ans.startswith(self.current_letter.lower())
+                # Podstawowa walidacja (litera)
+                is_valid_base = ans.startswith(self.current_letter.lower()) and ans != ""
                 
-                # Dodatkowa weryfikacja słownikowa
-                if is_valid and ans != "":
-                    if category == "Państwo" and ans not in COUNTRIES:
-                        is_valid = False
-                    elif category == "Imię" and ans not in NAMES:
-                        is_valid = False
-                    elif category == "Zawód" and ans not in JOBS:
-                        is_valid = False
-                
-                if is_valid and ans != "":
-                    category_answers[player] = ans
-                else:
-                    category_answers[player] = ""
+                if not is_valid_base:
                     round_scores[player]["details"][category] = 0
-                    
-            # Zliczamy, ile razy padło dane słowo
-            counts = {}
-            for ans in category_answers.values():
-                if ans:
-                    counts[ans] = counts.get(ans, 0) + 1
-                    
-            # Przypisujemy punkty
-            for player, ans in category_answers.items():
-                if ans == "":
-                    continue # brak punktów
-                
-                if counts[ans] == 1:
-                    round_scores[player]["details"][category] = 10
-                    round_scores[player]["total"] += 10
+                    continue
+
+                # Specjalistyczna walidacja
+                if category == "Państwo":
+                    if ans not in COUNTRIES:
+                        round_scores[player]["details"][category] = 0
+                    else:
+                        round_scores[player]["details"][category] = -1 # Oznaczenie "do dalszej oceny punktowej"
+                elif category == "Imię":
+                    if ans not in NAMES:
+                        round_scores[player]["details"][category] = 0
+                    else:
+                        round_scores[player]["details"][category] = -1
+                elif category == "Zawód":
+                    if ans not in JOBS:
+                        round_scores[player]["details"][category] = 0
+                    else:
+                        round_scores[player]["details"][category] = -1
+                elif category in wiki_categories:
+                    # Kolejkujemy do Wikipedii
+                    validation_tasks.append(validator.validate(ans, category))
+                    task_info.append((player, category, ans))
                 else:
-                    round_scores[player]["details"][category] = 5
-                    round_scores[player]["total"] += 5
+                    # Rzecz - na razie akceptujemy wszystko na dobrą literę
+                    round_scores[player]["details"][category] = -1
+
+        # Czekamy na wszystkie wyniki z Wikipedii równolegle
+        if validation_tasks:
+            wiki_results = await asyncio.gather(*validation_tasks)
+            for (player, category, ans), is_valid in zip(task_info, wiki_results):
+                if is_valid:
+                    round_scores[player]["details"][category] = -1
+                else:
+                    round_scores[player]["details"][category] = 0
+
+        # Druga faza: Liczenie punktów (5, 10) dla poprawnych haseł
+        for category in categories:
+            counts = {}
+            # Zliczamy tylko poprawne (te z -1)
+            for player in self.answers_received:
+                if round_scores[player]["details"].get(category) == -1:
+                    ans = self.answers_received[player].get(category, "").strip().lower()
+                    counts[ans] = counts.get(ans, 0) + 1
+            
+            # Przypisujemy punkty
+            for player in self.answers_received:
+                if round_scores[player]["details"].get(category) == -1:
+                    ans = self.answers_received[player].get(category, "").strip().lower()
+                    pts = 10 if counts[ans] == 1 else 5
+                    round_scores[player]["details"][category] = pts
+                    round_scores[player]["total"] += pts
                     
         # Dodajemy do wyników całkowitych
         for player, score_data in round_scores.items():
