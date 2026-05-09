@@ -98,6 +98,10 @@ class ConnectionManager:
             room = self.rooms[room_id]
             if client_name in room.connections:
                 del room.connections[client_name]
+                
+                # Zmniejsz pulę oczekiwanych odpowiedzi
+                if room.is_playing:
+                    room.expected_answers = max(0, room.expected_answers - 1)
             
             # Usuń pokój, jeśli pusty
             if not room.connections:

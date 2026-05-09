@@ -85,12 +85,23 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
     except WebSocketDisconnect:
         manager.disconnect(room_id, client_name)
         if room_id in manager.rooms:
-            await manager.rooms[room_id].broadcast(json.dumps({
+            room = manager.rooms[room_id]
+            await room.broadcast(json.dumps({
                 "type": "system", 
                 "message": f"{client_name} opuścił grę"
             }))
-            # Update scores (remove disconnected player from UI)
-            await manager.rooms[room_id].broadcast(json.dumps({
+            await room.broadcast(json.dumps({
                 "type": "score_update",
-                "scores": manager.rooms[room_id].scores
+                "scores": room.scores
             }))
+            
+            # Jeśli ktoś wyszedł, sprawdź, czy nie byliśmy w trakcie czekania na jego odpowiedzi
+            if room.is_playing and room.expected_answers > 0 and len(room.answers_received) >= room.expected_answers:
+                room.is_playing = False
+                round_scores = room.calculate_scores()
+                await room.broadcast(json.dumps({
+                    "type": "round_results",
+                    "answers": room.answers_received,
+                    "round_scores": round_scores,
+                    "total_scores": room.scores
+                }))
