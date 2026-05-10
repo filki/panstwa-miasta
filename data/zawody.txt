@@ -1364,3 +1364,87 @@ złotnik-jubiler
 żaglownik
 żałobnik
 żongler
+alergolog
+anestezjolog
+angiolog
+audiolog
+foniatra
+balneolog
+chirurg dziecięcy
+torakochirurg
+chirurg naczyniowy
+chirurg ogólny
+chirurg onkologiczny
+chirurg plastyczny
+chirurg szczękowo-twarzowy
+dentysta
+ortodonta
+stomatolog
+chirurg stomatologiczny
+dermatolog
+diabetolog
+diagnosta laboratoryjny
+endokrynolog
+endokrynolog ginekologiczny
+epidemiolog
+farmakolog kliniczny
+gastroenterolog
+gastroenterolog dziecięcy
+genetyk kliniczny
+geriatra
+ginekolog onkolog
+hematolog
+hipertensjolog
+immunolog kliniczny
+intensywista
+internista
+kardiochirurg
+kardiolog
+kardiolog dziecięcy
+laryngolog
+laryngolog dziecięcy
+lekarz chorób zakaźnych
+lekarz medycyny lotniczej
+lekarz medycyny morskiej i tropikalnej
+lekarz medycyny nuklearnej
+lekarz medycyny paliatywnej
+lekarz medycyny pracy
+lekarz medycyny ratunkowej
+lekarz medycyny sądowej
+lekarz medycyny transportu
+lekarz rehabilitacji medycznej
+lekarz rodzinny
+mikrobiolog lekarski
+nefrolog
+nefrolog dziecięcy
+neonatolog
+neurochirurg
+neurolog
+neurolog dziecięcy
+neuropatolog
+okulista
+onkolog
+onkolog kliniczny
+ortopeda
+traumatolog
+patomorfolog
+pediatra
+pediatra metaboliczny
+perinatolog
+położnik
+ginekolog
+psychiatra
+psychiatra dziecięcy
+pulmonolog
+pulmonolog dziecięcy
+radiolog
+radioterapeuta onkologiczny
+reumatolog
+seksuolog
+specjalista zdrowia publicznego
+toksykolog kliniczny
+transfuzjolog kliniczny
+transplantolog kliniczny
+urolog
+urolog dziecięcy
+weterynarz

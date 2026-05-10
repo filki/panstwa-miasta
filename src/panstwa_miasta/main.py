@@ -14,21 +14,16 @@ async def global_round_timeout(room_id: str, round_num: int, wait_time: int):
     await asyncio.sleep(wait_time)
     if room_id in manager.rooms:
         room = manager.rooms[room_id]
-        if room.is_playing and room.current_round == round_num:
-            room.is_playing = False
-            room.stop_triggered = False
-            round_scores = await room.calculate_scores()
-            is_game_over = room.current_round >= room.max_rounds
-            if is_game_over:
-                room.game_over = True
-            
+        if room.is_playing and room.current_round == round_num and not room.stop_triggered:
+            # Zamiast ucinać punkty i zakańczać grę z pustymi wynikami, 
+            # serwer symuluje wciśnięcie przycisku STOP po upływie czasu globalnego.
+            room.stop_triggered = True
             await room.broadcast(json.dumps({
-                "type": "round_results",
-                "answers": room.answers_received,
-                "round_scores": round_scores,
-                "total_scores": room.scores,
-                "game_over": is_game_over
+                "type": "stop_round",
+                "sender": "System (Koniec czasu)",
+                "time_left": 10
             }))
+            asyncio.create_task(force_end_round(room_id))
 
 async def force_end_round(room_id: str):
     await asyncio.sleep(12)
@@ -139,6 +134,26 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
                         await room.broadcast(json.dumps({
                             "type": "system",
                             "message": f"<em>{client_name} nie jest już gotowy. ({len(room.ready_players)}/{len(room.connections)})</em>"
+                        }))
+                        
+                elif msg_type == "restart_game":
+                    if room.game_over:
+                        room.game_over = False
+                        room.current_round = 0
+                        room.scores = {p: 0 for p in room.scores.keys()}
+                        room.answers_received = {}
+                        room.ready_players.clear()
+                        room.used_letters.clear()
+                        room.is_playing = False
+                        room.stop_triggered = False
+                        
+                        room.max_rounds = msg.get("rounds", 5)
+                        room.time_limit = msg.get("limit", 90)
+                        
+                        await room.broadcast(json.dumps({
+                            "type": "game_restarted",
+                            "sender": client_name,
+                            "scores": room.scores
                         }))
                         
                 elif msg_type == "stop":

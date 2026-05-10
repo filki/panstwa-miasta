@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Państwa-Miasta</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
             --bg: #0f172a;
@@ -250,18 +251,42 @@
                     </div>
 
                     <div class="categories-grid" id="categories">
-                        <div class="form-group"><label>Państwo</label><input type="text" data-category="Państwo" disabled></div>
-                        <div class="form-group"><label>Miasto</label><input type="text" data-category="Miasto" disabled></div>
-                        <div class="form-group"><label>Rzecz</label><input type="text" data-category="Rzecz" disabled></div>
-                        <div class="form-group"><label>Zwierzę</label><input type="text" data-category="Zwierzę" disabled></div>
-                        <div class="form-group"><label>Roślina</label><input type="text" data-category="Roślina" disabled></div>
-                        <div class="form-group"><label>Imię</label><input type="text" data-category="Imię" disabled></div>
-                        <div class="form-group"><label>Zawód</label><input type="text" data-category="Zawód" disabled></div>
+                        <div class="form-group"><label>🌍 Państwo</label><input type="text" data-category="Państwo" disabled></div>
+                        <div class="form-group"><label>🏙️ Miasto</label><input type="text" data-category="Miasto" disabled></div>
+                        <div class="form-group"><label>📦 Rzecz</label><input type="text" data-category="Rzecz" disabled></div>
+                        <div class="form-group"><label>🐾 Zwierzę</label><input type="text" data-category="Zwierzę" disabled></div>
+                        <div class="form-group"><label>🌿 Roślina</label><input type="text" data-category="Roślina" disabled></div>
+                        <div class="form-group"><label>👤 Imię</label><input type="text" data-category="Imię" disabled></div>
+                        <div class="form-group"><label>💼 Zawód</label><input type="text" data-category="Zawód" disabled></div>
                     </div>
 
                     <div class="action-row">
                         <button id="btn-draw" onclick="toggleReady()" style="background-color: var(--primary);">👍 Gotowy do rundy</button>
                         <button id="btn-stop" onclick="stopGame()" style="background-color: var(--danger);" disabled>⭕ STOP!</button>
+                    </div>
+
+                    <div id="restart-settings" style="display: none; margin-top: 2rem; padding: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 12px; border: 2px solid var(--accent);">
+                        <h3 style="margin-top:0; color: var(--accent); text-align: center; font-weight: 800; font-size: 1.5rem;">Zagraj Ponownie!</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div>
+                                <label style="color: var(--text);">Liczba rund:</label>
+                                <select id="restart-rounds" style="width: 100%; padding: 0.8rem; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; outline: none;">
+                                    <option value="1">1</option>
+                                    <option value="3">3</option>
+                                    <option value="5" selected>5</option>
+                                    <option value="10">10</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="color: var(--text);">Limit czasu (sek):</label>
+                                <select id="restart-limit" style="width: 100%; padding: 0.8rem; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; outline: none;">
+                                    <option value="60">60</option>
+                                    <option value="90" selected>90</option>
+                                    <option value="120">120</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="requestRestart()" style="background-color: var(--accent); width: 100%;">🚀 Rozpocznij Nową Grę!</button>
                     </div>
                 </div>
 
@@ -281,6 +306,46 @@
     <script>
         let ws;
         let myNick = "";
+        
+        // Simple Audio Synthesizer
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTick() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function playGong() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 1.5);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 1.5);
+        }
 
         // Odpalane przy załadowaniu strony
         window.onload = () => {
@@ -345,20 +410,20 @@
         }
 
         function connect() {
-            const nickname = document.getElementById('nickname').value.trim();
+            initAudio();
+            myNick = document.getElementById('nickname').value.trim();
             const roomId = document.getElementById('room_id').value.trim();
 
-            if (!nickname || !roomId) return alert('Proszę podać nick i upewnić się, że masz ID pokoju.');
+            if (!myNick || !roomId) return alert('Proszę podać nick i upewnić się, że masz ID pokoju.');
 
             // Zapisz na przyszłość
-            localStorage.setItem('pm_nickname', nickname);
+            localStorage.setItem('pm_nickname', myNick);
             
             // Podmień URL żeby łatwo było go skopiować i wysłać znajomym!
             window.history.replaceState(null, '', `?room=${roomId}`);
 
-            myNick = nickname;
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            let wsUrl = `${protocol}//${window.location.host}/ws/${roomId}/${nickname}`;
+            let wsUrl = `${protocol}//${window.location.host}/ws/${roomId}/${myNick}`;
             
             if (window.roomRounds && window.roomLimit) {
                 wsUrl += `?rounds=${window.roomRounds}&limit=${window.roomLimit}`;
@@ -376,9 +441,6 @@
             ws.onclose = (e) => {
                 if (e.code === 1008) {
                     alert('Nick jest już zajęty lub nieprawidłowy!');
-                    document.getElementById('join-section').style.display = 'block';
-                    document.getElementById('chat-section').style.display = 'none';
-                    document.getElementById('btn-leave').style.display = 'none';
                     return;
                 }
                 
@@ -428,6 +490,7 @@
                     }, 1000);
                 }
                 else if (msg.type === "stop_round") {
+                    playGong();
                     if (window.globalRoundTimer) clearInterval(window.globalRoundTimer);
                     document.getElementById("round-timer").style.display = "none";
                     
@@ -440,24 +503,27 @@
                     // Pokazujemy fixed banner na górze (idealne na mobilki)
                     const stickyTimer = document.getElementById('sticky-timer');
                     const stickyTime = document.getElementById('sticky-time');
-                    stickyTimer.style.display = 'block';
-                    stickyTime.innerText = '10';
+                    if (stickyTimer) {
+                        stickyTimer.style.display = 'block';
+                        stickyTime.innerText = '10';
+                    }
                     
                     // Pokazujemy wielki odliczacz na środku ekranu oraz na przycisku STOP
                     document.getElementById('current-letter').innerHTML = `<span style="color:var(--danger)">10s</span>`;
                     btnStop.innerHTML = `⏳ 10s`;
                     
-                    let timeLeft = msg.time_left;
+                    let timeLeft = 10;
                     const countdownInterval = setInterval(() => {
                         timeLeft--;
                         if(timeLeft > 0) {
                             document.getElementById('current-letter').innerHTML = `<span style="color:var(--danger)">${timeLeft}s</span>`;
                             btnStop.innerHTML = `⏳ ${timeLeft}s`;
-                            stickyTime.innerText = timeLeft;
+                            if (stickyTime) stickyTime.innerText = timeLeft;
+                            playTick();
                         } else {
                             clearInterval(countdownInterval);
                             btnStop.innerHTML = `WYSYŁANIE...`;
-                            stickyTimer.style.display = 'none';
+                            if (stickyTimer) stickyTimer.style.display = 'none';
                             disableAndSubmit();
                         }
                     }, 1000);
@@ -466,7 +532,6 @@
                     window.currentCountdown = countdownInterval;
                 }
                 else if (msg.type === "round_results") {
-                    document.getElementById('sticky-timer').style.display = 'none';
                     if(window.currentCountdown) clearInterval(window.currentCountdown);
                     if(window.globalRoundTimer) clearInterval(window.globalRoundTimer);
                     document.getElementById("round-timer").style.display = "none";
@@ -493,8 +558,8 @@
                         if (player === myNick) {
                             const inputs = document.querySelectorAll('#categories input');
                             inputs.forEach(inp => {
-                                const cat = inp.previousElementSibling.textContent.trim();
-                                const pts = rScore.details[cat] || 0;
+                                const cat = inp.dataset.category;
+                                const pts = rScore.details[cat];
                                 inp.classList.remove('success-10', 'warning-5', 'error-0');
                                 if(pts === 10) inp.classList.add('success-10');
                                 else if(pts === 5) inp.classList.add('warning-5');
@@ -507,8 +572,11 @@
                     updateScoreboard(msg.total_scores);
                     
                     if (msg.game_over) {
-                        addLog(`<div style="text-align:center; color: var(--warning); font-size: 1.5rem; font-weight: bold; margin-top: 1rem;">Koniec Gry! 🏆<br>Zwycięzca został wyłoniony!</div>`, "system-msg");
+                        html += `<div style="margin-top:1rem; font-weight:800; color:var(--danger); text-align:center;">🏁 Koniec Gry! Zwycięzca został wyłoniony!</div>`;
                         document.getElementById('btn-draw').style.display = 'none';
+                        document.getElementById('restart-settings').style.display = 'block';
+                        confetti({ particleCount: 150, spread: 100, origin: { y: 0.3 } });
+                        setTimeout(() => confetti({ particleCount: 150, spread: 120, origin: { y: 0.4 } }), 1000);
                     } else {
                         const btn = document.getElementById('btn-draw');
                         btn.classList.remove('ready');
@@ -517,9 +585,29 @@
                         btn.style.display = 'block';
                     }
                 }
+                else if (msg.type === "game_restarted") {
+                    document.getElementById('restart-settings').style.display = 'none';
+                    const btn = document.getElementById('btn-draw');
+                    btn.style.display = 'inline-block';
+                    btn.classList.remove('ready');
+                    btn.innerHTML = '👍 Gotowy do rundy';
+                    btn.style.backgroundColor = 'var(--primary)';
+                    
+                    document.getElementById('current-letter').innerHTML = '?';
+                    updateScoreboard(msg.scores);
+                    
+                    const inputs = document.querySelectorAll('#categories input');
+                    inputs.forEach(inp => {
+                        inp.value = '';
+                        inp.disabled = true;
+                        inp.classList.remove('error', 'success-10', 'warning-5', 'error-0');
+                    });
+                    
+                    addLog(`<em>Gospodarz <strong>${msg.sender}</strong> zrestartował grę z nowymi ustawieniami! Wyniki zostały wyzerowane.</em>`, "system-msg");
+                }
             };
 
-            ws.onclose = (e) => {
+            ws.onerror = () => {
                 if(e.code === 1008) alert('Nick zajęty!');
                 window.location.reload();
             };
@@ -560,6 +648,17 @@
             // Natychmiastowe wysłanie swoich wyników jak się wciśnie STOP
             sendJson({ type: "stop" });
             disableAndSubmit();
+        }
+
+        function requestRestart() {
+            const rounds = parseInt(document.getElementById('restart-rounds').value) || 5;
+            const limit = parseInt(document.getElementById('restart-limit').value) || 90;
+            sendJson({
+                type: "restart_game",
+                rounds: rounds,
+                limit: limit
+            });
+            document.getElementById('restart-settings').style.display = 'none';
         }
 
         function enableInputs() {
