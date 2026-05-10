@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Państwa-Miasta</title>
+    <title>Państwa-Miasta | Premium Multiplayer</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -12,49 +12,68 @@
     <div id="sticky-timer" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: var(--danger); color: white; padding: 10px; text-align: center; font-size: 1.5rem; z-index: 1000; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
         🛑 STOP! Czas: <span id="sticky-time">10</span>s
     </div>
+
     <div class="container">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-            <h1 style="margin-bottom: 0;">Państwa-Miasta Engine</h1>
-            <button id="btn-leave" style="display: none; background: var(--danger); padding: 0.5rem 1rem; width: auto; font-size: 0.9rem;" onclick="window.location.reload()">🚪 Wyjdź</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 12px; height: 12px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent);"></div>
+                <span style="font-weight: 600; font-size: 0.9rem; color: var(--accent);">LIVE MULTIPLAYER</span>
+            </div>
+            <button id="btn-leave" style="display: none; background: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); padding: 0.5rem 1rem; width: auto; font-size: 0.9rem; color: var(--danger);" onclick="window.location.reload()">🚪 Wyjdź</button>
         </div>
         
         <div id="join-section">
-            <div class="form-group">
-                <label for="nickname">Twój Nick</label>
-                <input type="text" id="nickname" placeholder="Wpisz swój nick..." required>
+            <h1>Państwa-Miasta</h1>
+            <p class="hero-subtext">Najlepsza gra towarzyska online. Graj ze znajomymi w czasie rzeczywistym.</p>
+
+            <div class="form-group" style="max-width: 400px; margin: 0 auto 3rem auto;">
+                <label for="nickname" style="text-align: center;">Twój Nickname</label>
+                <input type="text" id="nickname" placeholder="Wpisz swój nick..." required style="text-align: center; font-size: 1.3rem; padding: 1.2rem;">
             </div>
             
-            <div id="buttons-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                <button onclick="createRoom()" style="background-color: var(--accent);">+ Stwórz pokój</button>
-                <button onclick="showJoinInputs()" style="background-color: var(--surface); color: var(--primary); border: 2px solid var(--primary);">Dołącz do pokoju</button>
+            <div id="buttons-grid" class="choice-cards">
+                <div class="choice-card" onclick="createRoom()">
+                    <i style="color: var(--accent);">✨</i>
+                    <h3>Stwórz Pokój</h3>
+                    <p>Zostań hostem, zaproś znajomych i ustalaj własne zasady gry.</p>
+                </div>
+                <div class="choice-card" onclick="showJoinInputs()">
+                    <i style="color: var(--primary);">🔗</i>
+                    <h3>Dołącz do Gry</h3>
+                    <p>Masz kod od znajomego? Wpisz go tutaj i wskocz prosto do akcji.</p>
+                </div>
             </div>
             
-            <div id="create-settings" style="display: none; border: 1px solid var(--border); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; background: rgba(0,0,0,0.2);">
-                <div style="margin-bottom: 1rem;">
-                    <label>Liczba rund:</label>
-                    <select id="rounds-input" style="width: 100%; padding: 0.8rem; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; margin-bottom: 0; outline: none;">
-                        <option value="1">1</option>
-                        <option value="3">3</option>
-                        <option value="5" selected>5</option>
-                    </select>
+            <div id="create-settings" style="display: none; border: 1px solid var(--border); padding: 2rem; border-radius: 20px; margin-bottom: 2rem; background: rgba(0,0,0,0.2); animation: fadeIn 0.4s ease;">
+                <h2 style="margin-top: 0; margin-bottom: 1.5rem; text-align: center;">Ustawienia Pokoju</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                    <div>
+                        <label>Liczba rund</label>
+                        <select id="rounds-input">
+                            <option value="1">1 Runda (Quick)</option>
+                            <option value="3">3 Rundy</option>
+                            <option value="5" selected>5 Rund (Standard)</option>
+                            <option value="10">10 Rund (Maraton)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Limit czasu</label>
+                        <select id="limit-input">
+                            <option value="60">60 sekund</option>
+                            <option value="90" selected>90 sekund</option>
+                            <option value="120">120 sekund</option>
+                        </select>
+                    </div>
                 </div>
-                <div style="margin-bottom: 1rem;">
-                    <label>Limit czasu (sekundy):</label>
-                    <select id="limit-input" style="width: 100%; padding: 0.8rem; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; margin-bottom: 0; outline: none;">
-                        <option value="60">60</option>
-                        <option value="90" selected>90</option>
-                        <option value="120">120</option>
-                    </select>
-                </div>
-                <button onclick="doCreateRoom()" style="background-color: var(--accent);">Zaczynamy!</button>
+                <button onclick="doCreateRoom()">ZACZNIJMY GRĘ! 🚀</button>
             </div>
 
-            <div id="join-inputs" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
-                <div class="form-group">
-                    <label for="room_id">ID Pokoju</label>
-                    <input type="text" id="room_id" placeholder="np. 1234">
+            <div id="join-inputs" style="display: none; margin-top: 2rem; padding: 2rem; border-top: 1px solid var(--border); animation: fadeIn 0.4s ease;">
+                <div class="form-group" style="max-width: 300px; margin: 0 auto 2rem auto;">
+                    <label for="room_id" style="text-align: center;">Kod Pokoju</label>
+                    <input type="text" id="room_id" placeholder="np. 1234" style="text-align: center; letter-spacing: 5px; font-weight: 800; font-size: 1.5rem;">
                 </div>
-                <button onclick="connect()">Wejdź do Gry</button>
+                <button onclick="connect()" style="max-width: 400px; margin: 0 auto; display: block;">WCHODZĘ! 🎮</button>
             </div>
         </div>
 
@@ -62,9 +81,11 @@
             <div class="layout-grid">
                 
                 <!-- Kolumna 1: Tabela Wyników -->
-                <div class="sidebar" style="border: 2px solid var(--accent); background: rgba(16, 185, 129, 0.05); text-align: center;">
-                    <div style="font-weight: 800; font-size: 1.3rem; color: var(--accent); margin-bottom: 1rem; border-bottom: 2px solid var(--accent); padding-bottom: 0.5rem; letter-spacing: 1px;">🏆 WYNIKI</div>
-                    <div class="scoreboard" id="scoreboard" style="font-size: 1.2rem; text-align: left;">
+                <div class="sidebar">
+                    <div style="font-weight: 800; font-size: 1.1rem; color: var(--accent); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+                        <span>🏆</span> RANKING GRACZY
+                    </div>
+                    <div class="scoreboard" id="scoreboard">
                         <!-- Wyniki generowane dynamicznie -->
                     </div>
                 </div>
@@ -73,13 +94,16 @@
                 <div class="main-game">
                     <div class="game-header">
                         <div>
-                            <label>Pokój</label>
-                            <div style="font-size: 1.5rem; font-weight: 600; color: var(--text-muted);" id="current-room"></div>
+                            <label>POKÓJ</label>
+                            <div style="font-size: 1.2rem; font-weight: 800; color: var(--text);" id="current-room"></div>
+                        </div>
+                        <div style="text-align: center;">
+                            <label>LITERA</label>
+                            <div class="letter-display" id="current-letter">?</div>
                         </div>
                         <div style="text-align: right;">
-                            <label>Gramy na literę</label>
-                            <div class="letter-display" id="current-letter">?</div>
-                            <div id="round-timer" style="color: var(--warning); font-weight: 600; font-size: 1.2rem; display: none;"></div>
+                            <label>CZAS</label>
+                            <div id="round-timer" style="color: var(--warning); font-weight: 800; font-size: 2rem;">--</div>
                         </div>
                     </div>
 
@@ -93,17 +117,17 @@
                         <div class="form-group"><label>💼 Zawód</label><input type="text" data-category="Zawód" disabled></div>
                     </div>
 
-                    <div class="action-row">
-                        <button id="btn-draw" onclick="toggleReady()" style="background-color: var(--primary);">👍 Gotowy do rundy</button>
-                        <button id="btn-stop" onclick="stopGame()" style="background-color: var(--danger);" disabled>⭕ STOP!</button>
+                    <div style="display: flex; gap: 1.5rem; margin-top: 2rem;">
+                        <button id="btn-draw" onclick="toggleReady()" style="flex: 2;">👍 GOTOWY DO RUNDY</button>
+                        <button id="btn-stop" onclick="stopGame()" class="danger" style="flex: 1;" disabled>🛑 STOP!</button>
                     </div>
 
-                    <div id="restart-settings" style="display: none; margin-top: 2rem; padding: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 12px; border: 2px solid var(--accent);">
-                        <h3 style="margin-top:0; color: var(--accent); text-align: center; font-weight: 800; font-size: 1.5rem;">Zagraj Ponownie!</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div id="restart-settings" style="display: none; margin-top: 2rem; padding: 2rem; background: rgba(0,0,0,0.3); border-radius: 20px; border: 2px solid var(--accent); animation: fadeIn 0.5s ease;">
+                        <h3 style="margin-top:0; color: var(--accent); text-align: center; font-weight: 800; font-size: 1.5rem;">ZAGRAJ PONOWNIE!</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
                             <div>
-                                <label style="color: var(--text);">Liczba rund:</label>
-                                <select id="restart-rounds" style="width: 100%; padding: 0.8rem; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; outline: none;">
+                                <label>Liczba rund</label>
+                                <select id="restart-rounds">
                                     <option value="1">1</option>
                                     <option value="3">3</option>
                                     <option value="5" selected>5</option>
@@ -111,28 +135,30 @@
                                 </select>
                             </div>
                             <div>
-                                <label style="color: var(--text);">Limit czasu (sek):</label>
-                                <select id="restart-limit" style="width: 100%; padding: 0.8rem; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; outline: none;">
+                                <label>Limit czasu</label>
+                                <select id="restart-limit">
                                     <option value="60">60</option>
                                     <option value="90" selected>90</option>
                                     <option value="120">120</option>
                                 </select>
                             </div>
                         </div>
-                        <div style="display: flex; gap: 10px;">
-                            <button id="btn-restart-game" onclick="requestRestart()" style="background-color: var(--accent); flex: 2; display: none;">🚀 Nowa Gra!</button>
-                            <button id="btn-dissolve" onclick="dissolveRoom()" style="background-color: var(--danger); flex: 1; display: none;">💥 Rozwiąż</button>
+                        <div style="display: flex; gap: 1rem;">
+                            <button id="btn-restart-game" onclick="requestRestart()" style="flex: 2; display: none;">🚀 NOWA GRA!</button>
+                            <button id="btn-dissolve" onclick="dissolveRoom()" class="danger" style="flex: 1; display: none;">💥 ROZWIĄŻ</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Kolumna 3: Czat & Logi -->
                 <div class="sidebar">
-                    <label>Czat & Logi</label>
+                    <div style="font-weight: 800; font-size: 1.1rem; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+                        <span>💬</span> CZAT I LOGI
+                    </div>
                     <div id="logs" style="height: 350px;"></div>
-                    <div class="chat-input-group">
+                    <div class="chat-input-group" style="margin-top: 1.5rem;">
                         <input type="text" id="message-input" placeholder="Napisz wiadomość...">
-                        <button onclick="sendChat()">Wyślij</button>
+                        <button onclick="sendChat()" style="width: auto; padding: 0.8rem 1.5rem;">Wyslij</button>
                     </div>
                 </div>
             </div>
@@ -162,18 +188,21 @@
             }
         };
 
-        // Obsługa Entera na czacie i inputach
+        // Obsługa Entera na czacie
         document.getElementById('message-input').addEventListener('keypress', e => {
             if (e.key === 'Enter') sendChat();
         });
         
-        // Dynamiczna obsługa inputów kategorii (zostaje tutaj, bo dotyczy DOMu wygenerowanego statycznie)
+        // Dynamiczna obsługa inputów kategorii
         const catInputs = document.querySelectorAll('#categories input');
         catInputs.forEach((inp, i) => {
             inp.addEventListener('keypress', e => {
                 if (e.key === 'Enter') {
                     if(i < catInputs.length - 1) catInputs[i+1].focus();
-                    else stopGame(); 
+                    else {
+                        const stopBtn = document.getElementById('btn-stop');
+                        if(!stopBtn.disabled) stopGame(); 
+                    }
                 }
             });
         });
