@@ -12,6 +12,7 @@ class Room:
         self.time_limit = time_limit
         self.connections: Dict[str, WebSocket] = {}
         self.scores: Dict[str, int] = {}
+        self.host_name = ""
         
         # Stan gry i rundy
         self.current_round = 0
@@ -156,6 +157,10 @@ class ConnectionManager:
         await websocket.accept()
         room.connections[client_name] = websocket
         
+        # Jeśli nie ma hosta, ten gracz nim zostaje
+        if not room.host_name:
+            room.host_name = client_name
+        
         # Jeśli nowy gracz, dodaj mu 0 punktów
         if client_name not in room.scores:
             room.scores[client_name] = 0
@@ -171,6 +176,10 @@ class ConnectionManager:
                 # Zmniejsz pulę oczekiwanych odpowiedzi
                 if room.is_playing:
                     room.expected_answers = max(0, room.expected_answers - 1)
+                
+                # Jeśli wyszedł host, mianuj nowego
+                if client_name == room.host_name and room.connections:
+                    room.host_name = next(iter(room.connections.keys()))
             
             # Usuń pokój, jeśli pusty
             if not room.connections:

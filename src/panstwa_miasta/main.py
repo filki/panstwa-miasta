@@ -42,7 +42,8 @@ async def force_end_round(room_id: str):
                 "answers": room.answers_received,
                 "round_scores": round_scores,
                 "total_scores": room.scores,
-                "game_over": is_game_over
+                "game_over": is_game_over,
+                "host_name": room.host_name
             }))
 
 @app.get("/")
@@ -72,7 +73,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
     # Wyślij aktualną tabelę wyników do wszystkich
     await room.broadcast(json.dumps({
         "type": "score_update",
-        "scores": room.scores
+        "scores": room.scores,
+        "host_name": room.host_name
     }))
     
     # Wznawianie trwającej rundy lub wyświetlanie wyników końcowych
@@ -91,7 +93,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
             "answers": {},
             "round_scores": {},
             "total_scores": room.scores,
-            "game_over": True
+            "game_over": True,
+            "host_name": room.host_name
         }))
     
     try:
@@ -137,7 +140,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
                         }))
                         
                 elif msg_type == "restart_game":
-                    if room.game_over:
+                    if room.game_over and client_name == room.host_name:
                         room.game_over = False
                         room.current_round = 0
                         room.scores = {p: 0 for p in room.scores.keys()}
@@ -153,8 +156,19 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
                         await room.broadcast(json.dumps({
                             "type": "game_restarted",
                             "sender": client_name,
-                            "scores": room.scores
+                            "scores": room.scores,
+                            "host_name": room.host_name
                         }))
+                
+                elif msg_type == "dissolve_room":
+                    if client_name == room.host_name:
+                        await room.broadcast(json.dumps({
+                            "type": "room_dissolved",
+                            "message": "Pokój został rozwiązany przez hosta."
+                        }))
+                        # Rozłączamy wszystkich
+                        for conn in list(room.connections.values()):
+                            await conn.close()
                         
                 elif msg_type == "stop":
                     if room.is_playing and not room.stop_triggered:
@@ -184,7 +198,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
                                 "answers": room.answers_received,
                                 "round_scores": round_scores,
                                 "total_scores": room.scores,
-                                "game_over": is_game_over
+                                "game_over": is_game_over,
+                                "host_name": room.host_name
                             }))
                             
             except json.JSONDecodeError:
@@ -205,5 +220,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
             }))
             await room.broadcast(json.dumps({
                 "type": "score_update",
-                "scores": room.scores
+                "scores": room.scores,
+                "host_name": room.host_name
             }))

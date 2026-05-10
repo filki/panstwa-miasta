@@ -94,6 +94,26 @@
         button.danger:hover:not(:disabled) { background: var(--danger-hover); }
         button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0.8rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .score-item.is-host {
+            border-left-color: var(--accent);
+            background: rgba(255, 171, 0, 0.1);
+        }
+        .crown {
+            color: var(--accent);
+            margin-right: 5px;
+            font-size: 1.1em;
+        }
+
         .game-header {
             display: flex;
             justify-content: space-between;
@@ -286,7 +306,10 @@
                                 </select>
                             </div>
                         </div>
-                        <button onclick="requestRestart()" style="background-color: var(--accent); width: 100%;">🚀 Rozpocznij Nową Grę!</button>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="btn-restart-game" onclick="requestRestart()" style="background-color: var(--accent); flex: 2; display: none;">🚀 Nowa Gra!</button>
+                            <button id="btn-dissolve" onclick="dissolveRoom()" style="background-color: var(--danger); flex: 1; display: none;">💥 Rozwiąż</button>
+                        </div>
                     </div>
                 </div>
 
@@ -375,7 +398,7 @@
             logsDiv.scrollTop = logsDiv.scrollHeight;
         }
 
-        function updateScoreboard(scores) {
+        function updateScoreboard(scores, hostName) {
             const sb = document.getElementById('scoreboard');
             sb.innerHTML = '';
             // Sortujemy malejąco po wynikach
@@ -384,7 +407,10 @@
             sorted.forEach(([player, score]) => {
                 const div = document.createElement('div');
                 div.className = 'score-item';
-                div.innerHTML = `<span>${player}</span> <strong>${score} pkt</strong>`;
+                if (player === hostName) div.classList.add('is-host');
+                
+                const crown = player === hostName ? '<span class="crown">👑</span>' : '';
+                div.innerHTML = `<span>${crown}${player}</span> <strong>${score} pkt</strong>`;
                 sb.appendChild(div);
             });
         }
@@ -461,7 +487,7 @@
                     addLog(`<em>${msg.message}</em>`, "system-msg");
                 } 
                 else if (msg.type === "score_update") {
-                    updateScoreboard(msg.scores);
+                    updateScoreboard(msg.scores, msg.host_name);
                 }
                 else if (msg.type === "chat") {
                     addLog(`<div class="sender">${msg.sender}</div><div>${msg.text}</div>`, "");
@@ -569,12 +595,19 @@
                     }
                     
                     addLog(html, "results-msg");
-                    updateScoreboard(msg.total_scores);
+                    updateScoreboard(msg.total_scores, msg.host_name);
                     
                     if (msg.game_over) {
                         html += `<div style="margin-top:1rem; font-weight:800; color:var(--danger); text-align:center;">🏁 Koniec Gry! Zwycięzca został wyłoniony!</div>`;
                         document.getElementById('btn-draw').style.display = 'none';
                         document.getElementById('restart-settings').style.display = 'block';
+                        
+                        // Pokazujemy przyciski hosta tylko hostowi
+                        if (myNick === msg.host_name) {
+                            document.getElementById('btn-restart-game').style.display = 'block';
+                            document.getElementById('btn-dissolve').style.display = 'block';
+                        }
+
                         confetti({ particleCount: 150, spread: 100, origin: { y: 0.3 } });
                         setTimeout(() => confetti({ particleCount: 150, spread: 120, origin: { y: 0.4 } }), 1000);
                     } else {
@@ -594,7 +627,7 @@
                     btn.style.backgroundColor = 'var(--primary)';
                     
                     document.getElementById('current-letter').innerHTML = '?';
-                    updateScoreboard(msg.scores);
+                    updateScoreboard(msg.scores, msg.host_name);
                     
                     const inputs = document.querySelectorAll('#categories input');
                     inputs.forEach(inp => {
@@ -604,6 +637,10 @@
                     });
                     
                     addLog(`<em>Gospodarz <strong>${msg.sender}</strong> zrestartował grę z nowymi ustawieniami! Wyniki zostały wyzerowane.</em>`, "system-msg");
+                }
+                else if (msg.type === "room_dissolved") {
+                    alert(msg.message);
+                    window.location.href = window.location.pathname;
                 }
             };
 
@@ -659,6 +696,12 @@
                 limit: limit
             });
             document.getElementById('restart-settings').style.display = 'none';
+        }
+
+        function dissolveRoom() {
+            if (confirm("Czy na pewno chcesz rozwiązać pokój? Wszyscy zostaną rozłączeni!")) {
+                sendJson({ type: "dissolve_room" });
+            }
         }
 
         function enableInputs() {
