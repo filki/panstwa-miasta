@@ -133,6 +133,18 @@ function connect() {
             if(window.globalRoundTimer) clearInterval(window.globalRoundTimer);
             document.getElementById("round-timer").style.display = "none";
             
+            // UKRYWAMY BANER STOP, który Cię wkurzał :)
+            const stickyTimer = document.getElementById('sticky-timer');
+            if (stickyTimer) stickyTimer.style.display = 'none';
+            
+            // Przywracamy literę lub czyścimy odliczanie
+            document.getElementById('current-letter').innerHTML = window.currentLetter || '?';
+            
+            // Resetujemy przycisk STOP
+            const btnStop = document.getElementById('btn-stop');
+            btnStop.innerHTML = '🛑 STOP!';
+            btnStop.disabled = true;
+            
             let html = `<div class="sender">Wyniki Rundy:</div>`;
             
             // Pokazujemy ile kto dostał punktów w tej rundzie
