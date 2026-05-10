@@ -2,6 +2,7 @@ from typing import Dict
 from fastapi import WebSocket
 import asyncio
 from .data import COUNTRIES, NAMES, JOBS
+from .db import save_room, save_player_score, delete_room, get_active_rooms
 
 ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
 
@@ -130,9 +131,13 @@ class Room:
                     round_scores[player]["details"][category] = pts
                     round_scores[player]["total"] += pts
                     
-        # Dodajemy do wyników całkowitych
+        # Dodajemy do wyników całkowitych i zapisujemy w DB
         for player, score_data in round_scores.items():
             self.scores[player] = self.scores.get(player, 0) + score_data["total"]
+            await save_player_score(self.room_id, player, self.scores[player])
+            
+        # Zapisz aktualną rundę i hosta
+        await save_room(self.room_id, self.max_rounds, self.time_limit, self.current_round, self.host_name)
             
         return round_scores
 
@@ -146,8 +151,7 @@ class ConnectionManager:
             
         room = self.rooms[room_id]
         
-        # Jeśli ktoś wchodzi z tym samym nickiem (np. powrót zminimalizowanej przeglądarki na telefonie),
-        # ubijamy stare "ducha" połączenie i podmieniamy na nowe.
+        # Jeśli ktoś wchodzi z tym samym nickiem, ubijamy stare połączenie
         if client_name in room.connections:
             try:
                 await room.connections[client_name].close()
@@ -157,15 +161,28 @@ class ConnectionManager:
         await websocket.accept()
         room.connections[client_name] = websocket
         
-        # Jeśli nie ma hosta, ten gracz nim zostaje
         if not room.host_name:
             room.host_name = client_name
         
-        # Jeśli nowy gracz, dodaj mu 0 punktów
         if client_name not in room.scores:
             room.scores[client_name] = 0
             
+        # Zapisz/Aktualizuj pokój i gracza w DB
+        await save_room(room_id, room.max_rounds, room.time_limit, room.current_round, room.host_name)
+        await save_player_score(room_id, client_name, room.scores[client_name])
+            
         return True
+
+    async def load_from_db(self):
+        """Ładuje aktywne pokoje i wyniki z bazy danych przy starcie"""
+        active_rooms = await get_active_rooms()
+        for r_data in active_rooms:
+            room = Room(r_data["room_id"], r_data["max_rounds"], r_data["time_limit"])
+            room.current_round = r_data["current_round"]
+            room.host_name = r_data["host_name"]
+            room.scores = r_data["players"]
+            self.rooms[r_data["room_id"]] = room
+        print(f"✅ Załadowano {len(active_rooms)} pokoi z bazy danych.")
 
     def disconnect(self, room_id: str, client_name: str):
         if room_id in self.rooms:

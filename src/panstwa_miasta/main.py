@@ -4,6 +4,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from .manager import ConnectionManager
+from .db import init_db, delete_room
 import os
 import pathlib
 
@@ -13,6 +14,11 @@ manager = ConnectionManager()
 # Montowanie plików statycznych
 static_path = pathlib.Path(__file__).parent.parent.parent / "static"
 app.mount("/static", StaticFiles(directory=static_path), name="static")
+
+@app.on_event("startup")
+async def startup_event():
+    await init_db()
+    await manager.load_from_db()
 
 
 async def global_round_timeout(room_id: str, round_num: int, wait_time: int):
@@ -175,6 +181,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: st
                         # Rozłączamy wszystkich
                         for conn in list(room.connections.values()):
                             await conn.close()
+                        # Usuwamy z bazy
+                        await delete_room(room_id)
                         
                 elif msg_type == "stop":
                     if room.is_playing and not room.stop_triggered:
