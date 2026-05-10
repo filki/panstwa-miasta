@@ -45,8 +45,17 @@ class WikipediaValidator:
                     "Roślina": ["roślina", "gatunek", "drzewo", "krzew", "kwiat", "bylina", "zioło", "owoc", "warzywo", "grzyb", "roślin"]
                 }
                 
+                # Czarna lista - terminy które nie powinny być zaliczone, mimo że pasują do słów kluczowych
+                BLACKLIST = {
+                    "Roślina": {"zalia", "trawa"},  # np. "zalia" to nazwisko, nie roślina
+                }
+                
                 # Jeśli tytuł się zgadza (lub jest bardzo blisko)
                 if term in title or title in term:
+                    # Sprawdzamy czarną listę najpierw
+                    if category in BLACKLIST and term in BLACKLIST[category]:
+                        self.cache[cache_key] = False
+                        return False
                     if category in keywords:
                         # Wyszukujemy słów kluczowych w precyzyjnym opisie Wikidata
                         if any(kw in description for kw in keywords[category]):
