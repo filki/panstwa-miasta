@@ -56,74 +56,51 @@ class Room:
         """
         from .validator import validator
         
-        round_scores = {player: {"total": 0, "details": {}} for player in self.answers_received}
+        round_scores: Dict[str, Dict] = {}
+        for player in self.answers_received:
+            round_scores[player] = {"total": 0, "details": {}}
+            
         categories = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
-        
-        # Przygotowanie listy haseł do walidacji przez Wikipedię
-        # (tylko te, których nie mamy w lokalnych słownikach)
         wiki_categories = ["Miasto", "Zwierzę", "Roślina"]
         validation_tasks = []
-        task_info = [] # (player, category, ans)
-        
+        task_info = []
+
         for category in categories:
             for player, answers in self.answers_received.items():
                 ans = answers.get(category, "").strip().lower()
-                
-                # Podstawowa walidacja (litera)
                 is_valid_base = ans.startswith(self.current_letter.lower()) and ans != ""
                 
                 if not is_valid_base:
                     round_scores[player]["details"][category] = 0
                     continue
 
-                # Specjalistyczna walidacja
                 if category == "Państwo":
-                    if ans not in COUNTRIES:
-                        round_scores[player]["details"][category] = 0
-                    else:
-                        round_scores[player]["details"][category] = -1 # Oznaczenie "do dalszej oceny punktowej"
+                    round_scores[player]["details"][category] = -1 if ans in COUNTRIES else 0
                 elif category == "Imię":
-                    if ans not in NAMES:
-                        round_scores[player]["details"][category] = 0
-                    else:
-                        round_scores[player]["details"][category] = -1
+                    round_scores[player]["details"][category] = -1 if ans in NAMES else 0
                 elif category == "Zawód":
-                    if ans in JOBS:
+                    if ans in JOBS or any(ans in job.split() for job in JOBS):
                         round_scores[player]["details"][category] = -1
                     else:
-                        # Lematyzacja / dopasowanie częściowe: np. "urolog" dopasuje "lekarz urolog"
-                        # Szukamy po pełnych słowach (split()), by "log" nie dopasowało "urolog"
-                        if any(ans in job.split() for job in JOBS):
-                            round_scores[player]["details"][category] = -1
-                        else:
-                            round_scores[player]["details"][category] = 0
+                        round_scores[player]["details"][category] = 0
                 elif category in wiki_categories:
-                    # Kolejkujemy do Wikipedii
                     validation_tasks.append(validator.validate(ans, category))
                     task_info.append((player, category, ans))
                 else:
-                    # Rzecz - na razie akceptujemy wszystko na dobrą literę
-                    round_scores[player]["details"][category] = -1
+                    round_scores[player]["details"][category] = -1 # Rzecz
 
-        # Czekamy na wszystkie wyniki z Wikipedii równolegle
         if validation_tasks:
             wiki_results = await asyncio.gather(*validation_tasks)
             for (player, category, ans), is_valid in zip(task_info, wiki_results):
-                if is_valid:
-                    round_scores[player]["details"][category] = -1
-                else:
-                    round_scores[player]["details"][category] = 0
+                round_scores[player]["details"][category] = -1 if is_valid else 0
 
-        # Druga faza: Liczenie punktów (5, 10) dla poprawnych haseł
         for category in categories:
             counts = {}
-            # Zliczamy tylko poprawne (te z -1)
             for player in self.answers_received:
                 if round_scores[player]["details"].get(category) == -1:
                     ans = self.answers_received[player].get(category, "").strip().lower()
                     counts[ans] = counts.get(ans, 0) + 1
             
-            # Przypisujemy punkty
             for player in self.answers_received:
                 if round_scores[player]["details"].get(category) == -1:
                     ans = self.answers_received[player].get(category, "").strip().lower()
@@ -131,14 +108,11 @@ class Room:
                     round_scores[player]["details"][category] = pts
                     round_scores[player]["total"] += pts
                     
-        # Dodajemy do wyników całkowitych i zapisujemy w DB
         for player, score_data in round_scores.items():
             self.scores[player] = self.scores.get(player, 0) + score_data["total"]
             await save_player_score(self.room_id, player, self.scores[player])
             
-        # Zapisz aktualną rundę i hosta
         await save_room(self.room_id, self.max_rounds, self.time_limit, self.current_round, self.host_name)
-            
         return round_scores
 
 class ConnectionManager:
