@@ -2,12 +2,18 @@ import json
 import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from .manager import ConnectionManager
 import os
 import pathlib
 
 app = FastAPI(title="Państwa-Miasta Engine")
 manager = ConnectionManager()
+
+# Montowanie plików statycznych
+static_path = pathlib.Path(__file__).parent.parent.parent / "static"
+app.mount("/static", StaticFiles(directory=static_path), name="static")
+
 
 async def global_round_timeout(room_id: str, round_num: int, wait_time: int):
     # Czekamy na globalny koniec czasu (+2s na lagi sieciowe)
