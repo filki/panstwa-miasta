@@ -56,6 +56,13 @@ class Room:
         """
         from .validator import validator
         
+        def normalize(text: str) -> str:
+            return text.strip().lower().replace("-", " ").replace("  ", " ")
+
+        # Znormalizowane bazy dla łatwiejszego dopasowania
+        norm_countries = {normalize(c) for c in COUNTRIES}
+        norm_names = {normalize(n) for n in NAMES}
+        
         round_scores: Dict[str, Dict] = {}
         for player in self.answers_received:
             round_scores[player] = {"total": 0, "details": {}}
@@ -67,25 +74,28 @@ class Room:
 
         for category in categories:
             for player, answers in self.answers_received.items():
-                ans = answers.get(category, "").strip().lower()
-                is_valid_base = ans.startswith(self.current_letter.lower()) and ans != ""
+                ans_raw = answers.get(category, "").strip().lower()
+                ans_norm = normalize(ans_raw)
+                
+                is_valid_base = ans_raw.startswith(self.current_letter.lower()) and ans_raw != ""
                 
                 if not is_valid_base:
                     round_scores[player]["details"][category] = 0
                     continue
 
                 if category == "Państwo":
-                    round_scores[player]["details"][category] = -1 if ans in COUNTRIES else 0
+                    round_scores[player]["details"][category] = -1 if ans_norm in norm_countries else 0
                 elif category == "Imię":
-                    round_scores[player]["details"][category] = -1 if ans in NAMES else 0
+                    round_scores[player]["details"][category] = -1 if ans_norm in norm_names else 0
                 elif category == "Zawód":
-                    if ans in JOBS or any(ans in job.split() for job in JOBS):
+                    # Sprawdzamy czy ans_norm występuje w JOBS (które już są znormalizowane przy ładowaniu)
+                    if ans_norm in JOBS:
                         round_scores[player]["details"][category] = -1
                     else:
                         round_scores[player]["details"][category] = 0
                 elif category in wiki_categories:
-                    validation_tasks.append(validator.validate(ans, category))
-                    task_info.append((player, category, ans))
+                    validation_tasks.append(validator.validate(ans_raw, category))
+                    task_info.append((player, category, ans_raw))
                 else:
                     round_scores[player]["details"][category] = -1 # Rzecz
 
