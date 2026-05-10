@@ -64,27 +64,32 @@ function connect() {
         }
         else if (msg.type === "round_started") {
             window.currentLetter = msg.letter;
-            document.getElementById("current-letter").textContent = msg.letter;
-            // Reset statusu przycisku po starcie
-            const btn = document.getElementById("btn-draw");
-            btn.classList.remove('ready');
-            btn.style.display = 'none';
             
-            addLog(`<em>Gra rozpoczęta! Litera: <strong>${msg.letter}</strong> (Runda ${msg.current_round}/${msg.max_rounds}). Limit czasu: ${msg.time_limit}s</em>`, "system-msg");
-            enableInputs();
-            
-            // Włącz globalny timer
-            let timeLeft = msg.time_limit;
-            document.getElementById("round-timer").textContent = timeLeft + "s";
-            document.getElementById("round-timer").style.display = "block";
-            
-            if (window.globalRoundTimer) clearInterval(window.globalRoundTimer);
-            window.globalRoundTimer = setInterval(() => {
-                timeLeft--;
-                if (timeLeft >= 0) {
-                    document.getElementById("round-timer").textContent = timeLeft + "s";
-                }
-            }, 1000);
+            // Animacja losowania!
+            runLetterLottery(msg.letter, () => {
+                document.getElementById("current-letter").textContent = msg.letter;
+                
+                // Reset statusu przycisku po starcie
+                const btn = document.getElementById("btn-draw");
+                btn.classList.remove('ready');
+                btn.style.display = 'none';
+                
+                addLog(`<em>Gra rozpoczęta! Litera: <strong>${msg.letter}</strong> (Runda ${msg.current_round}/${msg.max_rounds}). Limit czasu: ${msg.time_limit}s</em>`, "system-msg");
+                enableInputs();
+                
+                // Włącz globalny timer
+                let timeLeft = msg.time_limit;
+                document.getElementById("round-timer").textContent = timeLeft + "s";
+                document.getElementById("round-timer").style.display = "block";
+                
+                if (window.globalRoundTimer) clearInterval(window.globalRoundTimer);
+                window.globalRoundTimer = setInterval(() => {
+                    timeLeft--;
+                    if (timeLeft >= 0) {
+                        document.getElementById("round-timer").textContent = timeLeft + "s";
+                    }
+                }, 1000);
+            });
         }
         else if (msg.type === "stop_round") {
             playGong();
@@ -232,4 +237,49 @@ function connect() {
         // if(e.code === 1008) alert('Nick zajęty!');
         // window.location.reload();
     };
+}
+
+function runLetterLottery(targetLetter, onComplete) {
+    const modal = document.getElementById('lottery-modal');
+    const letterDiv = document.getElementById('lottery-letter');
+    const alphabet = "ABCDEFGHIJKLMNOPRSTUWZ";
+    
+    modal.style.display = 'flex';
+    
+    let duration = 2500; // 2.5 sekundy
+    let intervalTime = 50;
+    let elapsed = 0;
+    
+    const interval = setInterval(() => {
+        elapsed += intervalTime;
+        
+        // Wybieramy losową literę z alfabetu
+        const randomLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
+        letterDiv.innerText = randomLetter;
+        
+        // Efekt rozmycia przy dużych prędkościach
+        letterDiv.style.filter = `blur(${Math.max(0, 5 - (elapsed/duration)*5)}px)`;
+        
+        if (elapsed >= duration) {
+            clearInterval(interval);
+            letterDiv.innerText = targetLetter;
+            letterDiv.style.filter = 'none';
+            letterDiv.style.transform = 'scale(1.2)';
+            letterDiv.style.color = 'var(--success)';
+            
+            // Strzał confetti przy wylosowaniu!
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+            
+            setTimeout(() => {
+                modal.style.display = 'none';
+                letterDiv.style.transform = 'scale(1)';
+                letterDiv.style.color = 'var(--accent)';
+                if (onComplete) onComplete();
+            }, 1500);
+        }
+    }, intervalTime);
 }

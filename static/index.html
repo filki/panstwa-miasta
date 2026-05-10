@@ -9,6 +9,14 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
+    
+    <!-- Modal Losowania Litery -->
+    <div id="lottery-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 9999; backdrop-filter: blur(10px); flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+        <div style="color: var(--text-muted); font-size: 1.5rem; text-transform: uppercase; letter-spacing: 5px; margin-bottom: 2rem; font-weight: 800;">Losowanie litery...</div>
+        <div id="lottery-letter" style="font-size: 15rem; font-weight: 900; color: var(--accent); text-shadow: 0 0 50px rgba(34, 211, 238, 0.5); line-height: 1;">?</div>
+        <div id="lottery-countdown" style="margin-top: 3rem; font-size: 2rem; color: var(--primary); font-weight: 700;"></div>
+    </div>
+
     <div id="sticky-timer" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: var(--danger); color: white; padding: 10px; text-align: center; font-size: 1.5rem; z-index: 1000; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
         🛑 STOP! Czas: <span id="sticky-time">10</span>s
     </div>
