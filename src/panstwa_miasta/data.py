@@ -78,18 +78,22 @@ for csv_file in data_dir.glob("*.csv"):
     except Exception as e:
         print(f"❌ Błąd podczas ładowania {csv_file}: {e}")
 
-# Ładowanie zawodów z bazy hierarchiczny.json (wyekstrahowanej do raw_jobs.txt)
+# Ładowanie zawodów ze wszystkich plików .txt w folderze data
 JOBS = set()
-zawody_path = data_dir / "raw_jobs.txt"
-if zawody_path.exists():
+for txt_file in data_dir.glob("*.txt"):
     try:
-        with open(zawody_path, "r", encoding="utf-8") as f:
+        with open(txt_file, "r", encoding="utf-8") as f:
             for line in f:
-                job = line.strip().lower().replace("*", "").replace(",", "").replace("(", "").replace(")", "").replace("/", " ")
+                # Czyścimy linię z niepotrzebnych znaków
+                job = line.strip().lower().replace("*", "").replace(",", "").replace("(", "").replace(")", "").replace("/", " ").replace("-", " ")
                 if job:
+                    # Dodajemy całą linię oraz poszczególne słowa, żeby "onkolog" złapał "ginekolog onkolog"
                     JOBS.add(job)
-        print(f"✅ Załadowano zawodów (wersja ludzka): {len(JOBS)}")
+                    for word in job.split():
+                        if len(word) > 3:
+                            JOBS.add(word)
+        print(f"✅ Załadowano zawody z pliku: {txt_file.name}")
     except Exception as e:
-        print(f"❌ Błąd podczas ładowania zawodów: {e}")
+        print(f"❌ Błąd podczas ładowania zawodów {txt_file.name}: {e}")
 
 print(f"Całkowita liczba unikalnych imion w bazie: {len(NAMES)}")

@@ -185,6 +185,12 @@
                 document.getElementById('room_id').value = roomFromUrl;
                 showJoinInputs();
                 document.getElementById('buttons-grid').style.display = 'none';
+                
+                // AUTO-JOIN: Jeśli mamy nick i pokój w URL, łączymy od razu!
+                if (savedNick && savedNick.trim() !== "") {
+                    console.log("Auto-joining room:", roomFromUrl);
+                    setTimeout(() => connect(), 500); // Mały delay na inicjalizację
+                }
             }
         };
 
