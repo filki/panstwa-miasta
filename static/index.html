@@ -75,6 +75,13 @@
                 </div>
                 <button onclick="connect()" style="max-width: 400px; margin: 0 auto; display: block;">WCHODZĘ! 🎮</button>
             </div>
+
+            <div id="active-rooms-section" style="margin-top: 4rem; display: none;">
+                <h2 style="text-align: center; font-size: 1.5rem; margin-bottom: 2rem; color: var(--accent);">🔥 Aktywne Pokoje</h2>
+                <div id="rooms-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
+                    <!-- Lista pokoi renderowana dynamicznie -->
+                </div>
+            </div>
         </div>
 
         <div id="chat-section" style="display: none;">
@@ -192,6 +199,9 @@
                     setTimeout(() => connect(), 500); // Mały delay na inicjalizację
                 }
             }
+
+            // Ładowanie aktywnych pokoi
+            loadActiveRooms();
         };
 
         // Obsługa Entera na czacie

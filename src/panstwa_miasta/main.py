@@ -59,13 +59,25 @@ async def force_end_round(room_id: str):
             }))
 
 @app.get("/")
-async def get():
-    # Ścieżka do index.html w folderze static/
+async def get_root():
     base_path = pathlib.Path(__file__).parent.parent.parent
     index_path = base_path / "static" / "index.html"
     with open(index_path, "r", encoding="utf-8") as f:
         html_content = f.read()
     return HTMLResponse(content=html_content)
+
+@app.get("/api/active-rooms")
+async def get_active_rooms():
+    active = []
+    for r_id, room in manager.rooms.items():
+        if room.connections: 
+            active.append({
+                "id": r_id,
+                "players": len(room.connections),
+                "host": room.host_name or "Anonim",
+                "round": f"{room.current_round}/{room.max_rounds}"
+            })
+    return active
 
 @app.websocket("/ws/{room_id}/{client_name}")
 async def websocket_endpoint(websocket: WebSocket, room_id: str, client_name: str, rounds: int = 5, limit: int = 90):

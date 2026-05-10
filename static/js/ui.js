@@ -53,3 +53,45 @@ function sendChat() {
         input.value = '';
     }
 }
+async function loadActiveRooms() {
+    try {
+        const response = await fetch('/api/active-rooms');
+        const rooms = await response.json();
+        
+        const section = document.getElementById('active-rooms-section');
+        const list = document.getElementById('rooms-list');
+        
+        if (!rooms || rooms.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+        
+        section.style.display = 'block';
+        list.innerHTML = '';
+        
+        rooms.forEach(room => {
+            const card = document.createElement('div');
+            card.className = 'room-card';
+            card.onclick = () => {
+                document.getElementById('room_id').value = room.id;
+                showJoinInputs();
+                document.getElementById('buttons-grid').style.display = 'none';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+            
+            card.innerHTML = `
+                <div class="room-info">
+                    <h4>Pokój #${room.id}</h4>
+                    <p>Host: <strong>${room.host}</strong> | Runda: ${room.round}</p>
+                </div>
+                <div class="player-count">
+                    <div class="live-dot"></div>
+                    ${room.players} graczy
+                </div>
+            `;
+            list.appendChild(card);
+        });
+    } catch (err) {
+        console.error("Błąd podczas ładowania pokoi:", err);
+    }
+}
