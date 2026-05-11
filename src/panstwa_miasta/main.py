@@ -152,7 +152,7 @@ async def get_active_rooms():
             "mode": "Standard",  # Na razie wszystkie standardowe
         }
         for r_id, room in manager.rooms.items()
-        if room.connections
+        if room.connections and not room.game_over
     ]
 
 
