@@ -27,6 +27,67 @@ def test_deck_shuffle_refill(room):
     assert len(room.letter_queue) == 21
 
 
+def test_22_rounds_no_repeats(room):
+    """W jednej grze (do 22 rund) każda litera dokładnie raz."""
+    letters = [room.start_round() for _ in range(22)]
+    assert len(letters) == 22
+    assert len(set(letters)) == 22, f"Powtórki w cyklu: {letters}"
+    assert set(letters) == set("ABCDEFGHIJKLMNOPRSTUWZ")
+
+
+def test_restart_continues_existing_queue(room):
+    """`restart_game` NIE tasuje od nowa -- ciągnie z istniejącej talii."""
+    import asyncio
+
+    letters_before = [room.start_round() for _ in range(5)]
+    queue_snapshot = list(room.letter_queue)
+
+    asyncio.run(_restart(room))
+    # Po restarcie talia powinna być nietknięta (poza może state'ami gry).
+    assert room.letter_queue == queue_snapshot, "restart_game nie powinien tasować"
+    assert room.current_round == 0
+
+    letters_after = [room.start_round() for _ in range(5)]
+    # 5 + 5 = 10 unikalnych liter łącznie (cykl 22 jeszcze niewyczerpany).
+    combined = letters_before + letters_after
+    assert len(set(combined)) == 10, f"Powtórki między grami: {combined}"
+
+
+async def _restart(room):
+    """Helper: stubuje save_* żeby restart nie wołał DB."""
+    from unittest.mock import AsyncMock
+
+    import panstwa_miasta.manager as mod
+
+    orig_save_room = mod.save_room
+    orig_save_score = mod.save_player_score
+    mod.save_room = AsyncMock()
+    mod.save_player_score = AsyncMock()
+    try:
+        await room.restart_game(5, 60)
+    finally:
+        mod.save_room = orig_save_room
+        mod.save_player_score = orig_save_score
+
+
+def test_recent_letters_pushed_to_bottom_after_reshuffle(room):
+    """Po wyczerpaniu talii ostatnie N liter ląduje na dnie nowego cyklu."""
+    # Wyczerpujemy całą talię (22 litery).
+    cycle1 = [room.start_round() for _ in range(22)]
+    assert room.letter_queue == []
+    last7 = cycle1[-7:]
+
+    # Następny start_round wymusza re-shuffle.
+    first_of_cycle2 = room.start_round()
+    # Pierwsze 15 liter cyklu 2 (czyli `last_7` z poprzedniego cyklu odłożone na DOLE)
+    # NIE powinno zawierać żadnej z `last7`.
+    rest_of_cycle2 = [room.start_round() for _ in range(14)]
+    fresh_part = [first_of_cycle2, *rest_of_cycle2]
+    assert not (set(fresh_part) & set(last7)), (
+        f"Ostatnie z cyklu 1 ({last7}) pojawiły się za wcześnie w cyklu 2: {fresh_part}"
+    )
+
+
 @pytest.mark.asyncio
 async def test_room_broadcast():
     room = Room("test")
