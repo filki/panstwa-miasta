@@ -22,7 +22,7 @@
             <div class="nav-links">
                 <a href="#features" class="nav-link-extra">Zalety</a>
                 <a href="#lobby" class="nav-link-extra">Pokoje</a>
-                <button type="button" class="nav-cta" onclick="document.getElementById('lobby').scrollIntoView({behavior:'smooth'})">Graj teraz</button>
+                <button type="button" class="nav-cta" onclick="showCreateModal()">Graj teraz</button>
             </div>
         </div>
     </nav>
@@ -35,8 +35,8 @@
                 <h1 class="hero-title">Klasyczna gra w <span>nowoczesnym</span> wydaniu</h1>
                 <p class="hero-subtitle">Państwa, miasta, czat i ranking — w przeglądarce i na telefonie. Bez instalacji, bez reklam.</p>
                 <div class="hero-btns">
-                    <button class="btn-primary" onclick="document.getElementById('lobby').scrollIntoView({behavior:'smooth'})">Szybki start</button>
-                    <button class="btn-secondary" onclick="showCreateModal()">Stwórz pokój</button>
+                    <button class="btn-primary" onclick="showCreateModal()">Stwórz pokój</button>
+                    <button class="btn-secondary" onclick="showJoinModal()">Mam kod</button>
                 </div>
             </div>
         </header>
