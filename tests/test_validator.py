@@ -24,6 +24,13 @@ async def test_validator_empty_term(validator):
 
 
 @pytest.mark.asyncio
+async def test_validator_short_term_fails_for_wiki_categories(validator):
+    assert await validator.validate("P", "Miasto") is False
+    assert await validator.validate("A", "Zwierzę") is False
+    assert await validator.validate("O", "Roślina") is False
+
+
+@pytest.mark.asyncio
 async def test_validator_search_wikidata_match(validator):
     mock_resp = MagicMock()
     mock_resp.json.return_value = {"search": [{"label": "Warszawa", "id": "Q270"}]}

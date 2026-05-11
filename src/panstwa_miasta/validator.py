@@ -56,6 +56,16 @@ class WikipediaValidator:
         if not term:
             return False
 
+        # In the game "Miasto"/"Zwierzę"/"Roślina" answers should not be a
+        # single letter. When we allow 1-char terms, Wikidata lookups can
+        # either match unrelated entities or fail in a way that previously
+        # returned True (fail-open), which gives points for typing just the
+        # current letter (e.g. "P" always scoring as a city).
+        if category in {"Miasto", "Zwierzę", "Roślina"} and len(term) < 2:
+            cache_key = f"{category}:{term}"
+            self.cache[cache_key] = False
+            return False
+
         cache_key = f"{category}:{term}"
         if cache_key in self.cache:
             return self.cache[cache_key]
@@ -75,7 +85,8 @@ class WikipediaValidator:
             return found
         except Exception as e:
             logger.error(f"⚠️ Błąd walidacji Wikidata dla {term}: {e}")
-            return True  # Fail-open to not break the game
+            self.cache[cache_key] = False
+            return False
 
     async def close(self):
         await self.client.aclose()
