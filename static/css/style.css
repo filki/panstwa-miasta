@@ -10,6 +10,9 @@
     --success: #10b981;
     --danger: #ef4444;
     --warning: #f59e0b;
+    --pts-15: #a855f7; /* Purple */
+    --pts-10: #22c55e; /* Green */
+    --pts-5: #f97316;  /* Orange */
 }
 
 * {
@@ -78,64 +81,91 @@ body::after {
     to { opacity: 1; transform: translateY(0); }
 }
 
-h1 {
-    font-size: 3.5rem;
-    font-weight: 800;
+.join-card {
+    max-width: 800px;
+    margin: 0 auto;
     text-align: center;
-    margin-bottom: 0.5rem;
-    background: linear-gradient(to right, #fff, var(--accent));
+}
+
+.header-section {
+    margin-bottom: 3rem;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(14, 165, 233, 0.1);
+    color: var(--accent);
+    padding: 0.5rem 1rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 1.5rem;
+}
+
+.main-title {
+    font-size: 4rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    letter-spacing: -1px;
+    line-height: 1;
 }
 
-.hero-subtext {
-    text-align: center;
+.subtitle {
     color: var(--text-muted);
     font-size: 1.1rem;
-    margin-bottom: 3rem;
+    max-width: 500px;
+    margin: 0 auto;
 }
 
 /* Choice Cards */
 .choice-cards {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
-    margin-bottom: 2rem;
+    margin-top: 2rem;
 }
 
 .choice-card {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border);
-    border-radius: 20px;
+    border-radius: 24px;
     padding: 2rem;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    text-align: center;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .choice-card:hover {
     background: rgba(255, 255, 255, 0.07);
     border-color: var(--primary);
     transform: translateY(-5px);
-    box-shadow: 0 10px 30px -10px rgba(14, 165, 233, 0.3);
+    box-shadow: 0 20px 40px -10px rgba(14, 165, 233, 0.3);
 }
 
-.choice-card i {
+.choice-icon {
     font-size: 2.5rem;
-    margin-bottom: 1rem;
-    display: block;
 }
 
-.choice-card h3 {
-    font-size: 1.5rem;
+.choice-content h3 {
+    font-size: 1.25rem;
+    font-weight: 800;
     margin-bottom: 0.5rem;
+    color: var(--text);
 }
 
-.choice-card p {
+.choice-content p {
+    font-size: 0.85rem;
     color: var(--text-muted);
-    font-size: 0.9rem;
     line-height: 1.5;
 }
 
@@ -145,6 +175,13 @@ h1 {
     grid-template-columns: 280px 1fr 320px;
     gap: 2rem;
     align-items: start;
+    transition: all 0.5s ease;
+}
+
+.layout-grid.game-over {
+    grid-template-columns: 1fr;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 .sidebar {
@@ -153,6 +190,11 @@ h1 {
     border-radius: 20px;
     padding: 1.5rem;
     height: 100%;
+    transition: all 0.5s ease;
+}
+
+.sidebar.hidden {
+    display: none;
 }
 
 .main-game {
@@ -302,6 +344,12 @@ button.danger {
     animation: slideIn 0.3s ease;
 }
 
+/* Kolory Punktów */
+input.pts-15 { border-color: var(--pts-15); box-shadow: 0 0 10px rgba(168, 85, 247, 0.3); }
+input.pts-10 { border-color: var(--pts-10); box-shadow: 0 0 10px rgba(34, 197, 94, 0.3); }
+input.pts-5 { border-color: var(--pts-5); box-shadow: 0 0 10px rgba(249, 115, 22, 0.3); }
+input.pts-0 { border-color: var(--danger); }
+
 .log-entry.system {
     background: rgba(14, 165, 233, 0.1);
     border-left-color: var(--accent);
@@ -318,60 +366,133 @@ button.danger {
     to { opacity: 1; transform: translateX(0); }
 }
 
-/* Responsywność */
-/* Lista Aktywnych Pokoi */
-.room-card {
-    background: rgba(255, 255, 255, 0.03);
+.settings-card, .restart-card {
+    background: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.room-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: var(--accent);
-    transform: scale(1.02);
-}
-
-.room-info h4 {
-    font-size: 1.2rem;
-    color: var(--text);
-    margin-bottom: 0.2rem;
-}
-
-.room-info p {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-}
-
-.player-count {
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--success);
-    padding: 4px 12px;
     border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 5px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    animation: fadeIn 0.4s ease;
 }
 
-.live-dot {
-    width: 8px;
-    height: 8px;
-    background: var(--success);
-    border-radius: 50%;
-    box-shadow: 0 0 10px var(--success);
-    animation: pulse 1.5s infinite;
+.restart-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid var(--accent);
+    margin-top: 2rem;
 }
 
-@keyframes pulse {
-    0% { transform: scale(0.95); opacity: 0.7; }
-    50% { transform: scale(1.1); opacity: 1; }
-    100% { transform: scale(0.95); opacity: 0.7; }
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.active-rooms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+@media (max-width: 600px) {
+    .settings-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+/* Responsywność */
+@media (max-width: 1024px) {
+    .layout-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .sidebar {
+        order: 2;
+    }
+    
+    .main-game {
+        order: 1;
+    }
+    
+    #logs {
+        height: 250px;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 0.5rem;
+    }
+    
+    .container {
+        padding: 1rem;
+        border-radius: 12px;
+        width: 100%;
+        max-width: none;
+    }
+    
+    h1 {
+        font-size: 2.2rem;
+        margin-top: 1rem;
+    }
+    
+    .hero-subtext {
+        font-size: 0.9rem;
+        margin-bottom: 2rem;
+    }
+
+    .choice-cards {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .choice-card {
+        padding: 1.2rem;
+        display: flex;
+        align-items: center;
+        text-align: left;
+        gap: 1rem;
+    }
+
+    .choice-card i {
+        font-size: 2rem;
+        margin-bottom: 0;
+    }
+
+    .choice-card h3 {
+        font-size: 1.2rem;
+        margin-bottom: 0.2rem;
+    }
+
+    .choice-card p {
+        font-size: 0.8rem;
+    }
+
+    .categories-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .game-header {
+        grid-template-columns: 1fr 1fr;
+        padding: 1rem;
+    }
+    
+    .letter-display {
+        font-size: 2.5rem;
+    }
+
+    #lottery-letter {
+        font-size: 6rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.8rem;
+    }
+    
+    .letter-display {
+        font-size: 2rem;
+    }
 }

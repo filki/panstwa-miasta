@@ -31,33 +31,55 @@ function leaveRoom() {
     }
 }
 
+function generateRoomId() {
+    const array = new Uint32Array(1);
+    globalThis.crypto.getRandomValues(array);
+    return (1000 + (array[0] % 9000)).toString();
+}
+
 function connect() {
     initAudio();
     myNick = document.getElementById('nickname').value.trim();
-    const roomId = document.getElementById('room_id').value.trim();
+    if (!myNick) return alert('Proszę najpierw podać swój nickname!');
 
-    if (!myNick || !roomId) return alert('Proszę podać nick i upewnić się, że masz ID pokoju.');
-
-    // Zapisz na przyszłość
-    localStorage.setItem('pm_nickname', myNick);
+    const pathParts = globalThis.location.pathname.split('/');
+    let roomId = "";
     
-    // Podmień URL żeby łatwo było go skopiować i wysłać znajomym!
-    globalThis.history.replaceState(null, '', `?room=${roomId}`);
+    // 1. Sprawdź czy to wejście z bezpośredniego linku
+    if (pathParts.length >= 3 && pathParts[1] === 'room') {
+        roomId = pathParts[2];
+    } else {
+        // 2. Sprawdź czy wpisano kod w modalu dołączania
+        roomId = document.getElementById('room_id').value.trim();
+    }
+
+    // 3. Jeśli nadal brak ID, a kliknięto "STWÓRZ", generujemy nowe
+    const isCreating = document.getElementById('create-modal').style.display !== 'none';
+    if (!roomId && isCreating) {
+        roomId = generateRoomId();
+    }
+
+    if (!roomId) return alert('Proszę podać kod pokoju lub wybrać opcję stworzenia nowego.');
+
+    // Pobierz ustawienia (jeśli tworzymy)
+    const maxRounds = document.getElementById('max_rounds').value || 5;
+    const timeLimit = document.getElementById('time_limit').value || 90;
+
+    localStorage.setItem('pm_nickname', myNick);
+    globalThis.history.replaceState(null, '', `/room/${roomId}`);
 
     const protocol = globalThis.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    let wsUrl = `${protocol}//${globalThis.location.host}/ws/${roomId}/${myNick}`;
-    
-    if (globalThis.roomRounds && globalThis.roomLimit) {
-        wsUrl += `?rounds=${globalThis.roomRounds}&limit=${globalThis.roomLimit}`;
-    }
+    let wsUrl = `${protocol}//${globalThis.location.host}/ws/${roomId}/${myNick}?rounds=${maxRounds}&limit=${timeLimit}`;
     
     ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
+        if (typeof hideModals === 'function') hideModals();
         document.getElementById('join-section').style.display = 'none';
         document.getElementById('chat-section').style.display = 'block';
         document.getElementById('btn-leave').style.display = 'block';
         document.getElementById('current-room').textContent = roomId;
+        document.getElementById('scoreboard-sidebar').classList.add('hidden');
     };
 
     ws.onclose = (e) => {
@@ -124,6 +146,7 @@ function onRoundStarted(msg) {
         btn.classList.remove('ready');
         btn.style.display = 'none';
         addLog(`<em>Gra rozpoczęta! Litera: <strong>${msg.letter}</strong> (Runda ${msg.current_round}/${msg.max_rounds}). Limit czasu: ${msg.time_limit}s</em>`, "system-msg");
+        clearInputColors();
         enableInputs();
         let timeLeft = msg.time_limit;
         document.getElementById("round-timer").textContent = timeLeft + "s";
@@ -167,29 +190,21 @@ function onStopRound(msg) {
 }
 
 function getScoreColor(pts) {
-    if (pts === 10) return "var(--accent)";
-    if (pts === 5) return "var(--warning)";
+    if (pts === 15) return "var(--pts-15)";
+    if (pts === 10) return "var(--pts-10)";
+    if (pts === 5) return "var(--pts-5)";
     return "var(--danger)";
 }
 
 function buildPlayerResultHtml(player, rScore, pAnswers) {
-    let html = `<div style="margin-bottom: 0.5rem"><strong>${player}: +${rScore.total} pkt</strong><br>`;
-    for (const [cat, val] of Object.entries(pAnswers)) {
-        if(val) {
-            const pts = rScore.details[cat] || 0;
-            const color = getScoreColor(pts);
-            html += `<span style="font-size:0.8em; color:${color};">${cat}:</span> ${val} `;
-        }
-    }
-    html += `</div>`;
-    return html;
+    // Uproszczony log: tylko kto ile punktów dostał w sumie, bez detali kategorii (kolory są na inputach)
+    return `<div style="margin-bottom: 0.5rem"><strong>${player}: +${rScore.total} pkt</strong></div>`;
 }
 
 function buildRoundResultsHtml(msg) {
-    let html = `<div class="sender">Wyniki Rundy:</div>`;
+    let html = `<div class="sender">Podsumowanie Rundy:</div>`;
     for (const [player, rScore] of Object.entries(msg.round_scores)) {
-        const pAnswers = msg.answers[player] || {};
-        html += buildPlayerResultHtml(player, rScore, pAnswers);
+        html += buildPlayerResultHtml(player, rScore, {});
         if (player === myNick) highlightMyInputs(rScore);
     }
     return html;
@@ -209,6 +224,12 @@ function onRoundResults(msg) {
     const html = buildRoundResultsHtml(msg);
     addLog(html, "results-msg");
     updateScoreboard(msg.total_scores, msg.host_name);
+    
+    // Ukrywamy ranking w trakcie gry (jeśli nie koniec gry)
+    if (!msg.game_over) {
+        document.getElementById('scoreboard-sidebar').classList.add('hidden');
+    }
+
     if (msg.game_over) handleGameOver(msg.host_name);
     else resetReadyButton();
 }
@@ -217,24 +238,38 @@ function highlightMyInputs(rScore) {
     const inputs = document.querySelectorAll('#categories input');
     inputs.forEach(inp => {
         const cat = inp.dataset.category;
-        const pts = rScore.details[cat];
-        inp.classList.remove('success-10', 'warning-5', 'error-0');
-        if(pts === 10) inp.classList.add('success-10');
-        else if(pts === 5) inp.classList.add('warning-5');
-        else inp.classList.add('error-0');
+        const pts = rScore.details[cat] || 0;
+        // Czyścimy stare klasy
+        inp.classList.remove('pts-15', 'pts-10', 'pts-5', 'pts-0', 'success-10', 'warning-5', 'error-0');
+        
+        if (pts === 15) inp.classList.add('pts-15');
+        else if (pts === 10) inp.classList.add('pts-10');
+        else if (pts === 5) inp.classList.add('pts-5');
+        else if (inp.value.trim() !== "") inp.classList.add('pts-0');
     });
 }
 
 function handleGameOver(hostName) {
-    addLog(`<div style="margin-top:1rem; font-weight:800; color:var(--danger); text-align:center;">🏁 Koniec Gry! Zwycięzca został wyłoniony!</div>`, "system-msg");
-    document.getElementById('btn-draw').style.display = 'none';
-    document.getElementById('restart-settings').style.display = 'block';
+    addLog(`<div style="margin-top:1rem; font-weight:800; color:var(--pts-15); text-align:center;">🏁 KONIEC GRY!</div>`, "system-msg");
+    
+    // Pokaż ranking jako główny element
+    document.getElementById('game-layout').classList.add('game-over');
+    document.getElementById('scoreboard-sidebar').classList.remove('hidden');
+    document.getElementById('game-main-area').style.display = 'none';
+    document.getElementById('chat-sidebar').classList.add('hidden');
+    
+    // Przenieś przyciski restartu do sidebar'a rankingu lub wyświetl pod rankingiem
+    const restartArea = document.getElementById('restart-settings');
+    restartArea.style.display = 'block';
+    document.getElementById('scoreboard-sidebar').appendChild(restartArea);
+    
     if (myNick === hostName) {
         document.getElementById('btn-restart-game').style.display = 'block';
         document.getElementById('btn-dissolve').style.display = 'block';
     }
-    confetti({ particleCount: 150, spread: 100, origin: { y: 0.3 } });
-    setTimeout(() => confetti({ particleCount: 150, spread: 120, origin: { y: 0.4 } }), 1000);
+    
+    confetti({ particleCount: 200, spread: 100, origin: { y: 0.3 } });
+    setTimeout(() => confetti({ particleCount: 200, spread: 120, origin: { y: 0.4 } }), 1000);
 }
 
 function resetReadyButton() {
@@ -246,7 +281,17 @@ function resetReadyButton() {
 }
 
 function onGameRestarted(msg) {
-    document.getElementById('restart-settings').style.display = 'none';
+    // Przywracamy obszary gry
+    document.getElementById('game-layout').classList.remove('game-over');
+    document.getElementById('game-main-area').style.display = 'block';
+    document.getElementById('chat-sidebar').classList.remove('hidden');
+    document.getElementById('scoreboard-sidebar').classList.add('hidden');
+    
+    // Przywracamy panel restartu na jego miejsce w main-area (jeśli był przeniesiony)
+    const restartArea = document.getElementById('restart-settings');
+    restartArea.style.display = 'none';
+    document.getElementById('game-main-area').appendChild(restartArea);
+
     const btn = document.getElementById('btn-draw');
     btn.style.display = 'inline-block';
     btn.classList.remove('ready');
@@ -258,9 +303,16 @@ function onGameRestarted(msg) {
     inputs.forEach(inp => {
         inp.value = '';
         inp.disabled = true;
-        inp.classList.remove('error', 'success-10', 'warning-5', 'error-0');
+        inp.classList.remove('error', 'pts-15', 'pts-10', 'pts-5', 'pts-0', 'success-10', 'warning-5', 'error-0');
     });
     addLog(`<em>Gospodarz <strong>${msg.sender}</strong> zrestartował grę z nowymi ustawieniami! Wyniki zostały wyzerowane.</em>`, "system-msg");
+}
+
+function clearInputColors() {
+    const inputs = document.querySelectorAll('#categories input');
+    inputs.forEach(inp => {
+        inp.classList.remove('pts-15', 'pts-10', 'pts-5', 'pts-0', 'success-10', 'warning-5', 'error-0');
+    });
 }
 
 function runLetterLottery(targetLetter, onComplete) {

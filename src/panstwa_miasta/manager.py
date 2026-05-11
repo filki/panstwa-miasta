@@ -104,20 +104,33 @@ class Room:
         return -1  # Rzecz / other
 
     def _assign_round_points(self, round_scores: Dict[str, Dict]):
-        """Applies 10/5 points logic based on uniqueness of answers."""
+        """Applies 15/10/5 points logic based on uniqueness of answers."""
         for category in GAME_CATEGORIES:
-            valid_answers = {}
-            for player in self.answers_received:
-                if round_scores[player]["details"].get(category) == -1:
-                    ans = normalize_text(self.answers_received[player].get(category, ""))
-                    valid_answers[ans] = valid_answers.get(ans, 0) + 1
+            valid_answers = {}  # ans -> count
+            players_with_valid = []
             
             for player in self.answers_received:
                 if round_scores[player]["details"].get(category) == -1:
                     ans = normalize_text(self.answers_received[player].get(category, ""))
-                    pts = 10 if valid_answers[ans] == 1 else 5
-                    round_scores[player]["details"][category] = pts
-                    round_scores[player]["total"] += pts
+                    valid_answers[ans] = valid_answers.get(ans, 0) + 1
+                    players_with_valid.append(player)
+            
+            num_valid = len(players_with_valid)
+            
+            for player in players_with_valid:
+                ans = normalize_text(self.answers_received[player].get(category, ""))
+                # 15 pkt: Tylko Ty masz poprawną odpowiedź w tej kategorii
+                if num_valid == 1:
+                    pts = 15
+                # 10 pkt: Inni też mają, ale Twoja jest unikalna (nikt inny nie wpisał tego samego)
+                elif valid_answers[ans] == 1:
+                    pts = 10
+                # 5 pkt: Inni mają tę samą poprawną odpowiedź co Ty
+                else:
+                    pts = 5
+                
+                round_scores[player]["details"][category] = pts
+                round_scores[player]["total"] += pts
 
     def _gather_answers_and_validation_tasks(self, round_scores: Dict[str, Dict]) -> tuple[list, list]:
         """Iterates over categories and players to fill base scores and gather wiki validation tasks."""

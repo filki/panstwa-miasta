@@ -18,7 +18,6 @@ function updateScoreboard(scores, hostName) {
     const sb = document.getElementById('scoreboard');
     if (!sb) return;
     sb.innerHTML = '';
-    // Sortujemy malejąco po wynikach
     const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
     
     sorted.forEach(([player, score]) => {
@@ -44,35 +43,32 @@ function updateScoreboard(scores, hostName) {
     });
 }
 
-function showJoinInputs() {
-    document.getElementById('join-inputs').style.display = 'block';
-}
-
-function createRoom() {
-    const nickname = document.getElementById('nickname').value.trim();
-    if (!nickname) return alert('Proszę najpierw podać swój nick!');
-    
-    document.getElementById('buttons-grid').style.display = 'none';
-    document.getElementById('create-settings').style.display = 'block';
-}
-
-function doCreateRoom() {
-    const array = new Uint32Array(1);
-    globalThis.crypto.getRandomValues(array);
-    const randomCode = (1000 + (array[0] % 9000)).toString();
-    document.getElementById('room_id').value = randomCode;
-    globalThis.roomRounds = document.getElementById('rounds-input').value || 5;
-    globalThis.roomLimit = document.getElementById('limit-input').value || 90;
-    connect();
-}
-
 function sendChat() {
     const input = document.getElementById('message-input');
-    if (input.value.trim()) {
+    if (input && input.value.trim()) {
         sendJson({ type: "chat", text: input.value.trim() });
         input.value = '';
     }
 }
+
+// Modal Management
+function showJoinModal() {
+    const modal = document.getElementById('join-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function showCreateModal() {
+    const modal = document.getElementById('create-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function hideModals() {
+    const joinModal = document.getElementById('join-modal');
+    const createModal = document.getElementById('create-modal');
+    if (joinModal) joinModal.style.display = 'none';
+    if (createModal) createModal.style.display = 'none';
+}
+
 async function loadActiveRooms() {
     try {
         const response = await fetch('/api/active-rooms');
@@ -82,60 +78,99 @@ async function loadActiveRooms() {
         const list = document.getElementById('rooms-list');
         
         if (!rooms || rooms.length === 0) {
-            section.style.display = 'none';
+            if (section) section.style.display = 'none';
             return;
         }
         
-        section.style.display = 'block';
-        list.innerHTML = '';
-        
-        rooms.forEach(room => {
-            const card = document.createElement('div');
-            card.className = 'room-card';
-            card.onclick = () => {
-                document.getElementById('room_id').value = room.id;
-                showJoinInputs();
-                document.getElementById('buttons-grid').style.display = 'none';
-                globalThis.scrollTo({ top: 0, behavior: 'smooth' });
-            };
-            
-            const info = document.createElement('div');
-            info.className = 'room-info';
-            const h4 = document.createElement('h4');
-            h4.textContent = `Pokój #${room.id}`;
-            const p = document.createElement('p');
-            p.textContent = `Host: `;
-            const strongHost = document.createElement('strong');
-            strongHost.textContent = room.host;
-            p.appendChild(strongHost);
-            p.appendChild(document.createTextNode(` | Runda: ${room.round}`));
-            info.appendChild(h4);
-            info.appendChild(p);
+        if (section) section.style.display = 'block';
+        if (list) {
+            list.innerHTML = '';
+            rooms.forEach(room => {
+                const card = document.createElement('div');
+                card.className = 'room-card';
+                card.onclick = () => {
+                    const roomIdInput = document.getElementById('room_id');
+                    if (roomIdInput) roomIdInput.value = room.id;
+                    showJoinModal();
+                };
+                
+                const info = document.createElement('div');
+                info.className = 'room-info';
+                const h4 = document.createElement('h4');
+                h4.textContent = `Pokój #${room.id}`;
+                const p = document.createElement('p');
+                p.innerHTML = `Host: <strong>${room.host}</strong> | Runda: ${room.round}/${room.max_rounds}`;
+                info.appendChild(h4);
+                info.appendChild(p);
 
-            const count = document.createElement('div');
-            count.className = 'player-count';
-            const dot = document.createElement('div');
-            dot.className = 'live-dot';
-            count.appendChild(dot);
-            count.appendChild(document.createTextNode(` ${room.players} graczy`));
+                const count = document.createElement('div');
+                count.className = 'player-count';
+                count.innerHTML = `<div class="live-dot"></div> ${room.players} graczy`;
 
-            card.appendChild(info);
-            card.appendChild(count);
-            list.appendChild(card);
-        });
+                card.appendChild(info);
+                card.appendChild(count);
+                list.appendChild(card);
+            });
+        }
     } catch (err) {
         console.error("Błąd podczas ładowania pokoi:", err);
     }
 }
 
+globalThis.window.onload = () => {
+    const savedNick = localStorage.getItem('pm_nickname');
+    if (savedNick && document.getElementById('nickname')) {
+        document.getElementById('nickname').value = savedNick;
+    }
+
+    // Obsługa wejścia z linku /room/ID
+    const pathParts = globalThis.location.pathname.split('/');
+    if (pathParts.length >= 3 && pathParts[1] === 'room') {
+        const roomId = pathParts[2];
+        const roomIdInput = document.getElementById('room_id');
+        if (roomIdInput) {
+            roomIdInput.value = roomId;
+            showJoinModal();
+        }
+    }
+    
+    // Załaduj aktywne pokoje na starcie
+    loadActiveRooms();
+    // Odświeżaj co 10 sekund
+    setInterval(loadActiveRooms, 10000);
+
+    // Obsługa Entera na czacie
+    const msgInput = document.getElementById('message-input');
+    if (msgInput) {
+        msgInput.addEventListener('keypress', e => {
+            if (e.key === 'Enter') sendChat();
+        });
+    }
+
+    // Dynamiczna obsługa inputów kategorii (Enter przechodzi do następnego)
+    const catInputs = document.querySelectorAll('#categories input');
+    catInputs.forEach((inp, i) => {
+        inp.addEventListener('keypress', e => {
+            if (e.key === 'Enter') {
+                if (i < catInputs.length - 1) {
+                    catInputs[i + 1].focus();
+                } else {
+                    const stopBtn = document.getElementById('btn-stop');
+                    if (stopBtn && !stopBtn.disabled) stopGame();
+                }
+            }
+        });
+    });
+};
+
 if (typeof module !== 'undefined') {
     module.exports = {
         addLog,
         updateScoreboard,
-        showJoinInputs,
-        createRoom,
-        doCreateRoom,
         sendChat,
-        loadActiveRooms
+        loadActiveRooms,
+        showJoinModal,
+        showCreateModal,
+        hideModals
     };
 }

@@ -6,232 +6,186 @@
     <title>Państwa-Miasta | Premium Multiplayer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" integrity="sha384-HAH79XdRvHr6axVGh4xQWVCp14kcd32bNk4Xu0sHDHtFQ42n6BAM8ykvB47dGz6D" crossorigin="anonymous"></script>
+    <style>
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            width: 90%; max-width: 450px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
-    
-    <!-- Modal Losowania Litery -->
-    <dialog id="lottery-modal" aria-label="Losowanie litery" style="display: none; border: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 9999; backdrop-filter: blur(10px); flex-direction: column; justify-content: center; align-items: center; text-align: center;">
-        <div style="color: var(--text-muted); font-size: 1.5rem; text-transform: uppercase; letter-spacing: 5px; margin-bottom: 2rem; font-weight: 800;">Losowanie litery...</div>
-        <div id="lottery-letter" aria-live="polite" style="font-size: 15rem; font-weight: 900; color: var(--accent); text-shadow: 0 0 50px rgba(34, 211, 238, 0.5); line-height: 1;">?</div>
-        <div id="lottery-countdown" style="margin-top: 3rem; font-size: 2rem; color: var(--primary); font-weight: 700;"></div>
-    </dialog>
-
-    <div id="sticky-timer" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: var(--danger); color: white; padding: 10px; text-align: center; font-size: 1.5rem; z-index: 1000; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
-        🛑 STOP! Czas: <span id="sticky-time">10</span>s
-    </div>
-
     <div class="container">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 12px; height: 12px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent);"></div>
-                <span style="font-weight: 600; font-size: 0.9rem; color: var(--accent);">LIVE MULTIPLAYER</span>
+        <!-- SEKCJA LOGOWANIA / STARTU -->
+        <div id="join-section" class="join-card">
+            <div class="header-section">
+                <div class="status-badge"><div class="live-dot"></div> LIVE MULTIPLAYER</div>
+                <h1 class="main-title">Państwa-Miasta</h1>
+                <p class="subtitle">Najlepsza gra towarzyska online. Graj ze znajomymi w czasie rzeczywistym.</p>
             </div>
-            <button id="btn-leave" style="display: none; background: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); padding: 0.5rem 1rem; width: auto; font-size: 0.9rem; color: var(--danger);" onclick="leaveRoom()">🚪 Wyjdź</button>
-        </div>
-        
-        <div id="join-section">
-            <h1>Państwa-Miasta</h1>
-            <p class="hero-subtext">Najlepsza gra towarzyska online. Graj ze znajomymi w czasie rzeczywistym.</p>
 
-            <div class="form-group" style="max-width: 400px; margin: 0 auto 3rem auto;">
-                <label for="nickname" style="text-align: center;">Twój Nickname</label>
-                <input type="text" id="nickname" placeholder="Wpisz swój nick..." required style="text-align: center; font-size: 1.3rem; padding: 1.2rem;">
-            </div>
-            
-            <div id="buttons-grid" class="choice-cards">
-                <button type="button" class="choice-card" onclick="createRoom()">
-                    <i style="color: var(--accent);" aria-hidden="true">✨</i>
-                    <h3>Stwórz Pokój</h3>
-                    <p>Zostań hostem, zaproś znajomych i ustalaj własne zasady gry.</p>
-                </button>
-                <button type="button" class="choice-card" onclick="showJoinInputs()">
-                    <i style="color: var(--primary);" aria-hidden="true">🔗</i>
-                    <h3>Dołącz do Gry</h3>
-                    <p>Masz kod od znajomego? Wpisz go tutaj i wskocz prosto do akcji.</p>
-                </button>
-            </div>
-            
-            <div id="create-settings" style="display: none; border: 1px solid var(--border); padding: 2rem; border-radius: 20px; margin-bottom: 2rem; background: rgba(0,0,0,0.2); animation: fadeIn 0.4s ease;">
-                <h2 style="margin-top: 0; margin-bottom: 1.5rem; text-align: center;">Ustawienia Pokoju</h2>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
-                    <div>
-                        <label for="rounds-input">Liczba rund</label>
-                        <select id="rounds-input">
-                            <option value="1">1 Runda (Quick)</option>
-                            <option value="3">3 Rundy</option>
-                            <option value="5" selected>5 Rund (Standard)</option>
-                            <option value="10">10 Rund (Maraton)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="limit-input">Limit czasu</label>
-                        <select id="limit-input">
-                            <option value="60">60 sekund</option>
-                            <option value="90" selected>90 sekund</option>
-                            <option value="120">120 sekund</option>
-                        </select>
-                    </div>
+            <div class="form-container">
+                <div class="form-group" style="max-width: 400px; margin: 0 auto 3rem auto;">
+                    <span class="header-label">TWÓJ NICKNAME</span>
+                    <input type="text" id="nickname" placeholder="Wpisz swoje imię..." maxlength="20">
                 </div>
-                <button type="button" onclick="doCreateRoom()">ZACZNIJMY GRĘ! 🚀</button>
-            </div>
-
-            <div id="join-inputs" style="display: none; margin-top: 2rem; padding: 2rem; border-top: 1px solid var(--border); animation: fadeIn 0.4s ease;">
-                <div class="form-group" style="max-width: 300px; margin: 0 auto 2rem auto;">
-                    <label for="room_id" style="text-align: center;">Kod Pokoju</label>
-                    <input type="text" id="room_id" placeholder="np. 1234" style="text-align: center; letter-spacing: 5px; font-weight: 800; font-size: 1.5rem;">
-                </div>
-                <button type="button" onclick="connect()" style="max-width: 400px; margin: 0 auto; display: block;">WCHODZĘ! 🎮</button>
-            </div>
-
-            <div id="active-rooms-section" style="margin-top: 4rem; display: none;">
-                <h2 style="text-align: center; font-size: 1.5rem; margin-bottom: 2rem; color: var(--accent);">🔥 Aktywne Pokoje</h2>
-                <div id="rooms-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
-                    <!-- Lista pokoi renderowana dynamicznie -->
-                </div>
-            </div>
-        </div>
-
-        <div id="chat-section" style="display: none;">
-            <div class="layout-grid">
                 
-                <!-- Kolumna 1: Tabela Wyników -->
-                <div class="sidebar">
+                <div id="buttons-grid" class="choice-cards">
+                    <div class="choice-card" onclick="showCreateModal()" style="cursor:pointer;">
+                        <div class="choice-icon">✨</div>
+                        <div class="choice-content">
+                            <h3>STWÓRZ POKÓJ</h3>
+                            <p>Zostań hostem, zaproś znajomych i ustalaj własne zasady gry.</p>
+                        </div>
+                    </div>
+                    <div class="choice-card" onclick="showJoinModal()" style="cursor:pointer;">
+                        <div class="choice-icon">🔗</div>
+                        <div class="choice-content">
+                            <h3>DOŁĄCZ DO GRY</h3>
+                            <p>Masz kod od znajomego? Wpisz go tutaj i wskocz prosto do akcji.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="active-rooms-section" style="margin-top: 4rem; display: none;">
+                    <h2 style="text-align: center; font-size: 1.5rem; margin-bottom: 2rem; color: var(--accent);">🔥 Aktywne Pokoje</h2>
+                    <div id="rooms-list" class="active-rooms-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODALE -->
+        <div id="join-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-content">
+                <h3 style="margin-top:0; color:var(--accent);">DOŁĄCZ DO POKOJU</h3>
+                <p style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:1.5rem;">Wpisz kod pokoju, aby dołączyć:</p>
+                <div class="form-group">
+                    <input type="text" id="room_id" placeholder="np. 1234" style="text-align:center; font-size:1.5rem; letter-spacing:3px;">
+                </div>
+                <div style="display:flex; gap:1rem; margin-top:2rem;">
+                    <button type="button" class="secondary" onclick="hideModals()" style="flex:1;">ANULUJ</button>
+                    <button type="button" onclick="connect()" style="flex:2;">WCHODZĘ! 🚀</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="create-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-content">
+                <h3 style="margin-top:0; color:var(--accent);">USTAWIENIA POKOJU</h3>
+                <div class="settings-grid" style="margin-top:1.5rem;">
+                    <div class="form-group">
+                        <label>Liczba rund</label>
+                        <select id="max_rounds">
+                            <option value="1">1</option>
+                            <option value="3">3</option>
+                            <option value="5" selected>5</option>
+                            <option value="10">10</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Limit czasu (s)</label>
+                        <select id="time_limit">
+                            <option value="60">60</option>
+                            <option value="90" selected>90</option>
+                            <option value="120">120</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex; gap:1rem; margin-top:2rem;">
+                    <button type="button" class="secondary" onclick="hideModals()" style="flex:1;">ANULUJ</button>
+                    <button type="button" onclick="connect()" style="flex:2;">STWÓRZ! 🔥</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEKCJA GRY (UKRYTA NA START) -->
+        <div id="chat-section" style="display: none;">
+            <div class="layout-grid" id="game-layout">
+                <div class="sidebar" id="scoreboard-sidebar">
                     <div style="font-weight: 800; font-size: 1.1rem; color: var(--accent); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
                         <span>🏆</span> RANKING GRACZY
                     </div>
-                    <div class="scoreboard" id="scoreboard">
-                        <!-- Wyniki generowane dynamicznie -->
+                    <div class="scoreboard" id="scoreboard"></div>
+                    <div id="restart-settings" class="restart-card" style="display: none; margin-top: 2rem;">
+                        <h3 style="margin-top:0; color: var(--accent); text-align: center; font-weight: 800; font-size: 1.2rem;">ZAGRAJ PONOWNIE!</h3>
+                        <div class="settings-grid">
+                            <div><label>Rundy</label><select id="restart-rounds"><option value="1">1</option><option value="3">3</option><option value="5" selected>5</option><option value="10">10</option></select></div>
+                            <div><label>Czas</label><select id="restart-limit"><option value="60">60</option><option value="90" selected>90</option><option value="120">120</option></select></div>
+                        </div>
+                        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                            <button type="button" id="btn-restart-game" onclick="requestRestart()" style="flex: 2; display: none;">🚀 NOWA GRA</button>
+                            <button type="button" id="btn-dissolve" onclick="dissolveRoom()" class="danger" style="flex: 1; display: none;">💥 ROZWIĄŻ</button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Kolumna 2: Gra -->
-                <div class="main-game">
+                <div class="main-game" id="game-main-area">
                     <div class="game-header">
-                        <div>
-                            <span class="header-label">POKÓJ</span>
-                            <div style="font-size: 1.2rem; font-weight: 800; color: var(--text);" id="current-room"></div>
-                        </div>
-                        <div style="text-align: center;">
-                            <span class="header-label">LITERA</span>
-                            <div class="letter-display" id="current-letter">?</div>
-                        </div>
-                        <div style="text-align: right;">
-                            <span class="header-label">CZAS</span>
-                            <div id="round-timer" style="color: var(--warning); font-weight: 800; font-size: 2rem;">--</div>
-                        </div>
+                        <div><span class="header-label">POKÓJ</span><div id="current-room" style="font-weight:800;"></div></div>
+                        <div style="text-align: center;"><span class="header-label">LITERA</span><div class="letter-display" id="current-letter">?</div></div>
+                        <div style="text-align: right;"><span class="header-label">CZAS</span><div id="round-timer" style="color: var(--warning); font-weight: 800; font-size: 2rem;">--</div></div>
                     </div>
 
                     <div class="categories-grid" id="categories">
-                        <div class="form-group"><label for="cat-panstwo">🌍 Państwo</label><input type="text" id="cat-panstwo" data-category="Państwo" disabled></div>
-                        <div class="form-group"><label for="cat-miasto">🏙️ Miasto</label><input type="text" id="cat-miasto" data-category="Miasto" disabled></div>
-                        <div class="form-group"><label for="cat-rzecz">📦 Rzecz</label><input type="text" id="cat-rzecz" data-category="Rzecz" disabled></div>
-                        <div class="form-group"><label for="cat-zwierze">🐾 Zwierzę</label><input type="text" id="cat-zwierze" data-category="Zwierzę" disabled></div>
-                        <div class="form-group"><label for="cat-roslina">🌿 Roślina</label><input type="text" id="cat-roslina" data-category="Roślina" disabled></div>
-                        <div class="form-group"><label for="cat-imie">👤 Imię</label><input type="text" id="cat-imie" data-category="Imię" disabled></div>
-                        <div class="form-group"><label for="cat-zawod">💼 Zawód</label><input type="text" id="cat-zawod" data-category="Zawód" disabled></div>
+                        <div class="form-group"><label>🌍 Państwo</label><input type="text" id="cat-panstwo" data-category="Państwo" disabled></div>
+                        <div class="form-group"><label>🏙️ Miasto</label><input type="text" id="cat-miasto" data-category="Miasto" disabled></div>
+                        <div class="form-group"><label>📦 Rzecz</label><input type="text" id="cat-rzecz" data-category="Rzecz" disabled></div>
+                        <div class="form-group"><label>🐾 Zwierzę</label><input type="text" id="cat-zwierze" data-category="Zwierzę" disabled></div>
+                        <div class="form-group"><label>🌿 Roślina</label><input type="text" id="cat-roslina" data-category="Roślina" disabled></div>
+                        <div class="form-group"><label>👤 Imię</label><input type="text" id="cat-imie" data-category="Imię" disabled></div>
+                        <div class="form-group"><label>💼 Zawód</label><input type="text" id="cat-zawod" data-category="Zawód" disabled></div>
                     </div>
 
                     <div style="display: flex; gap: 1.5rem; margin-top: 2rem;">
                         <button type="button" id="btn-draw" onclick="toggleReady()" style="flex: 2;">👍 GOTOWY DO RUNDY</button>
                         <button type="button" id="btn-stop" onclick="stopGame()" class="danger" style="flex: 1;" disabled>🛑 STOP!</button>
                     </div>
-
-                    <div id="restart-settings" style="display: none; margin-top: 2rem; padding: 2rem; background: rgba(0,0,0,0.3); border-radius: 20px; border: 2px solid var(--accent); animation: fadeIn 0.5s ease;">
-                        <h3 style="margin-top:0; color: var(--accent); text-align: center; font-weight: 800; font-size: 1.5rem;">ZAGRAJ PONOWNIE!</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-                            <div>
-                                <label for="restart-rounds">Liczba rund</label>
-                                <select id="restart-rounds">
-                                    <option value="1">1</option>
-                                    <option value="3">3</option>
-                                    <option value="5" selected>5</option>
-                                    <option value="10">10</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="restart-limit">Limit czasu</label>
-                                <select id="restart-limit">
-                                    <option value="60">60</option>
-                                    <option value="90" selected>90</option>
-                                    <option value="120">120</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 1rem;">
-                            <button type="button" id="btn-restart-game" onclick="requestRestart()" style="flex: 2; display: none;">🚀 NOWA GRA!</button>
-                            <button type="button" id="btn-dissolve" onclick="dissolveRoom()" class="danger" style="flex: 1; display: none;">💥 ROZWIĄŻ</button>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- Kolumna 3: Czat & Logi -->
-                <div class="sidebar">
+                <div class="sidebar" id="chat-sidebar">
                     <div style="font-weight: 800; font-size: 1.1rem; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
                         <span>💬</span> CZAT I LOGI
                     </div>
-                    <div id="logs" style="height: 350px;"></div>
+                    <div id="logs" style="height: 400px; overflow-y: auto;"></div>
                     <div class="chat-input-group" style="margin-top: 1.5rem;">
                         <input type="text" id="message-input" placeholder="Napisz wiadomość...">
-                        <button type="button" onclick="sendChat()" style="width: auto; padding: 0.8rem 1.5rem;">Wyslij</button>
+                        <button type="button" onclick="sendChat()" style="width: auto;">Wyslij</button>
                     </div>
                 </div>
             </div>
         </div>
+
+        <button type="button" id="btn-leave" onclick="location.href = '/'" class="danger" style="position: fixed; top: 20px; right: 20px; display: none; width: auto; padding: 0.5rem 1rem; border-radius: 12px; font-weight: 800;">🚪 WYJDŹ</button>
     </div>
 
-    <!-- Skrypty -->
+    <!-- MODAL LOTERII -->
+    <div id="lottery-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 300px; padding: 3rem;">
+            <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem; font-weight: 800; letter-spacing: 2px;">LOSOWANIE LITERY</div>
+            <div id="lottery-letter" style="font-size: 8rem; font-weight: 900; color: var(--accent); line-height: 1;">?</div>
+        </div>
+    </div>
+
     <script src="/static/js/audio.js"></script>
     <script src="/static/js/ui.js"></script>
     <script src="/static/js/game.js"></script>
     <script src="/static/js/socket.js"></script>
-    
-    <script>
-        // Inicjalizacja przy załadowaniu strony
-        globalThis.addEventListener('load', () => {
-            const savedNick = localStorage.getItem('pm_nickname');
-            if (savedNick) {
-                document.getElementById('nickname').value = savedNick;
-            }
-
-            const urlParams = new URLSearchParams(globalThis.location.search);
-            const roomFromUrl = urlParams.get('room');
-            if (roomFromUrl) {
-                document.getElementById('room_id').value = roomFromUrl;
-                showJoinInputs();
-                document.getElementById('buttons-grid').style.display = 'none';
-                
-                // AUTO-JOIN: Jeśli mamy nick i pokój w URL, łączymy od razu!
-                if (savedNick && savedNick.trim() !== "") {
-                    console.log("Auto-joining room:", roomFromUrl);
-                    setTimeout(() => connect(), 500); // Mały delay na inicjalizację
-                }
-            }
-
-            // Ładowanie aktywnych pokoi
-            loadActiveRooms();
-        });
-
-        // Obsługa Entera na czacie
-        document.getElementById('message-input').addEventListener('keypress', e => {
-            if (e.key === 'Enter') sendChat();
-        });
-        
-        // Dynamiczna obsługa inputów kategorii
-        const catInputs = document.querySelectorAll('#categories input');
-        catInputs.forEach((inp, i) => {
-            inp.addEventListener('keypress', e => {
-                if (e.key === 'Enter') {
-                    if(i < catInputs.length - 1) catInputs[i+1].focus();
-                    else {
-                        const stopBtn = document.getElementById('btn-stop');
-                        if(!stopBtn.disabled) stopGame(); 
-                    }
-                }
-            });
-        });
-    </script>
 </body>
 </html>

@@ -1426,6 +1426,13 @@ okulista
 onkolog
 onkolog kliniczny
 ortopeda
+ornitolog
+organista
+operator maszyn
+ogrodnik
+optyk
+optometrysta
+opiekun
 traumatolog
 patomorfolog
 pediatra

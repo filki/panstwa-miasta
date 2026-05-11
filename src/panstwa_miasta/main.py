@@ -101,6 +101,13 @@ async def get_root() -> HTMLResponse:
         html_content = await f.read()
     return HTMLResponse(content=html_content)
 
+@app.get("/room/{room_id}")
+async def get_room(room_id: str) -> HTMLResponse:
+    # Use async file read (SonarQube MAJOR: avoid sync open in async function)
+    async with aiofiles.open(INDEX_PATH, encoding="utf-8") as f:
+        html_content = await f.read()
+    return HTMLResponse(content=html_content)
+
 
 @app.get("/api/active-rooms")
 async def get_active_rooms():
