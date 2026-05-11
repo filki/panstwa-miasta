@@ -27,9 +27,7 @@ _WS = re.compile(r"\s+")
 def fold(s: str) -> str:
     s = s.strip().lower().replace("-", " ").replace("/", " ")
     s = _WS.sub(" ", s)
-    return "".join(
-        c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn"
-    )
+    return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
 
 
 def _load_pkd(path: Path) -> list[tuple[str, str, str]]:
