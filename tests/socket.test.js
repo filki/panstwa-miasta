@@ -248,6 +248,14 @@ describe('ws.onmessage dispatch', () => {
         expect(global.WebSocket).toHaveBeenCalledTimes(1);
         jest.useRealTimers();
     });
+
+    test('room_dissolved does not alert after leaveRoom()', () => {
+        const { connect, leaveRoom } = loadSocket();
+        connect();
+        leaveRoom();
+        lastWs.onmessage({ data: JSON.stringify({ type: 'room_dissolved', message: 'gone' }) });
+        expect(global.alert).not.toHaveBeenCalled();
+    });
 });
 
 describe('leaveRoom()', () => {

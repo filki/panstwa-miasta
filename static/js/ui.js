@@ -138,6 +138,17 @@ function applyRoomSettingsFromUrl() {
 
 function tryAutoJoin(savedNick, roomId) {
     if (!savedNick?.trim()) return;
+    // After a host "dissolves room" we redirect players to landing,
+    // but some browsers may briefly reload the room page. Avoid auto-join
+    // back into a dissolved room in that case.
+    try {
+        if (globalThis.sessionStorage?.getItem('pm_skip_auto_join') === '1') {
+            globalThis.sessionStorage.removeItem('pm_skip_auto_join');
+            return;
+        }
+    } catch (e) {
+        // ignore storage issues
+    }
     console.log("Auto-joining room:", roomId);
     setTimeout(() => {
         if (typeof connect === 'function') connect();

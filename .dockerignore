@@ -1,0 +1,15 @@
+.git
+.github
+.venv
+**/__pycache__
+.pytest_cache
+.coverage
+coverage.xml
+coverage-js
+htmlcov
+node_modules
+.scannerwork
+.sonar
+*.db
+dist
+build

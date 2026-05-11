@@ -22,6 +22,21 @@ uv run uvicorn panstwa_miasta.main:app --reload
 
 Aplikacja działa pod `http://localhost:8000`.
 
+### Docker (serwer cały czas w tle)
+
+Żeby nie odpalać `uvicorn` po każdym restarcie IDE:
+
+```bash
+docker compose up -d
+```
+
+- Adres jak wyżej: `http://localhost:8000` (port zbindowany tylko na loopback).
+- **`--reload`**: zmiany w `src/` i `static/` na hoście widać po zapisie pliku.
+- Baza `panstwa-miasta.db` leży w katalogu projektu na hoście (montowanie `.:/app`).
+- Zatrzymanie: `docker compose down`.
+
+Po zmianie zależności w `pyproject.toml` / `uv.lock`: `docker compose build --no-cache` i znowu `up`.
+
 ## Quality gates
 
 Wszystko leci w CI na każdy push i PR do `main`:
