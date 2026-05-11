@@ -1,0 +1,52 @@
+---
+description: Git/PR workflow — branch naming, auto-merge, CI, Dependabot
+alwaysApply: true
+---
+
+# Branch & PR Workflow
+
+## Branches
+
+Never push to `main` directly. Create a feature branch first:
+
+```bash
+git checkout -b feat/short-description   # new feature
+git checkout -b fix/short-description    # bug fix
+git checkout -b chore/short-description  # tooling / config
+git checkout -b refactor/scope-name      # no behavior change
+git checkout -b docs/scope-name          # docs / rules / comments
+```
+
+## Pull requests
+
+After pushing, **enable auto-merge with squash** rather than blocking:
+
+```bash
+git push -u origin HEAD
+gh pr create --title "..." --body "$(cat <<'EOF' ... EOF)"
+gh pr merge <n> --auto --squash
+```
+
+PR body should have `## Summary`, `## Test plan`. Use a HEREDOC so the
+shell doesn't eat backticks. Include before/after metrics when fixing
+performance, Sonar, or test coverage.
+
+## CI
+
+Required checks (set in branch protection on `main`):
+- **Backend** — `ruff check` + `ruff format --check` + `ty check` + `pytest -q`
+- **Frontend (jest)** — `jest` against `static/js/*.js`
+
+Both must be green for auto-merge to fire. If a Dependabot PR sits red
+because `main` moved, comment `@dependabot rebase` on it.
+
+## Verifying state
+
+Before declaring "merged":
+
+```bash
+gh pr view <n> --json mergeable,mergeStateStatus,autoMergeRequest
+```
+
+Look for `state: CLEAN` and `mergeable: MERGEABLE`. After merge,
+prune local branches: `git fetch --prune && git branch -d <name>`.

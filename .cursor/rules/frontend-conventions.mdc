@@ -1,0 +1,79 @@
+---
+description: Frontend conventions — vanilla JS, globalThis, WSL/Jest, modular handlers
+globs: static/**/*
+alwaysApply: false
+---
+
+# Frontend Conventions
+
+## Stack
+
+- Vanilla JS, no framework, no jQuery, no build step (browser loads
+  `static/js/*.js` directly as ES modules).
+- Files: `audio.js`, `game.js`, `socket.js`, `ui.js`, plus `sw.js`
+  service worker.
+
+## `globalThis` over `window` / `self`
+
+Prefer `globalThis` everywhere — it works in browsers, service workers,
+and tests under Node. Sonar will flag `window.X` and `self.X` as
+`javascript:S7764`.
+
+```js
+// ❌ BAD
+window.location.href = '/';
+self.addEventListener('install', ...);
+
+// ✅ GOOD
+globalThis.location.href = '/';
+globalThis.addEventListener('install', ...);
+```
+
+## WebSocket message handlers
+
+`socket.js` keeps handlers as **named top-level functions** plus a flat
+`MESSAGE_HANDLERS` map. Don't inline them into the `ws.onmessage`
+closure — that pushes cognitive complexity over Sonar's 15 limit.
+
+```js
+function onChatMessage(m) { /* ... */ }
+function onRoomDissolved(m) { /* ... */ }
+
+const MESSAGE_HANDLERS = {
+    chat: onChatMessage,
+    room_dissolved: onRoomDissolved,
+    /* ... */
+};
+
+ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    const handler = MESSAGE_HANDLERS[msg.type];
+    if (handler) handler(msg);
+};
+```
+
+## Jest under WSL — use Docker
+
+`npm test` from a WSL prompt fails because the Windows-side `npm`
+resolves the workspace as a UNC path. Always run tests through Docker:
+
+```bash
+docker run --rm -v "$PWD:/work" -w /work node:20-alpine \
+  sh -c "npm ci --silent && npm test -- --coverage \
+         --coverageReporters=lcov --coverageDirectory=coverage-js"
+```
+
+The lcov output is used by Sonar (`sonar.javascript.lcov.reportPaths`).
+
+## Accessibility
+
+- Use `<button type="button">` for clickable controls — never
+  `<a role="button">`. Sonar `Web:S6819`.
+- Every `<label>` must have `for="..."` pointing to its control's `id`.
+- Add `aria-label` to `<aside>`, `<section>`, and icon-only buttons.
+
+## CDN scripts
+
+`canvas-confetti` loads from a CDN. The game must **not** crash if the
+CDN is blocked — `fireConfetti()` in `socket.js` wraps the call in a
+`typeof confetti !== 'function'` guard plus `try/catch`.

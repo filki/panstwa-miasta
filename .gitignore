@@ -40,3 +40,6 @@ logs/
 # PESEL first-name extracts (seed lives in names_seed.py)
 data/8_-_Wykaz_imion_męskich*.csv
 data/8_-_Wykaz_imion_żeńskich*.csv
+
+# MCP memory graph — dynamic, agent-managed, machine-local
+.cursor/memory.json
