@@ -126,6 +126,16 @@ function restoreNickname() {
     return savedNick;
 }
 
+function applyRoomSettingsFromUrl() {
+    const params = new URLSearchParams(globalThis.location.search);
+    const rounds = params.get('rounds');
+    const limit = params.get('limit');
+    const roundsSel = document.getElementById('max_rounds');
+    const limitSel = document.getElementById('time_limit');
+    if (rounds && roundsSel) roundsSel.value = rounds;
+    if (limit && limitSel) limitSel.value = limit;
+}
+
 function tryAutoJoin(savedNick, roomId) {
     if (!savedNick?.trim()) return;
     console.log("Auto-joining room:", roomId);
@@ -151,6 +161,7 @@ function handleRoomRouteOnLoad(savedNick) {
         }
     }
 
+    applyRoomSettingsFromUrl();
     tryAutoJoin(savedNick, roomId);
     return isRoomRoute;
 }

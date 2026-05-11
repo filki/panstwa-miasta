@@ -68,6 +68,14 @@ function connect() {
     const timeLimit = document.getElementById('time_limit').value || 90;
 
     localStorage.setItem('pm_nickname', myNick);
+
+    // Landing page has no game UI; redirect to the dedicated room page,
+    // which auto-joins using the stored nickname + url params.
+    if (!globalThis.location.pathname.startsWith('/room/')) {
+        globalThis.location.href = `/room/${roomId}?rounds=${maxRounds}&limit=${timeLimit}`;
+        return;
+    }
+
     globalThis.history.replaceState(null, '', `/room/${roomId}`);
 
     const protocol = globalThis.location.protocol === 'https:' ? 'wss:' : 'ws:';

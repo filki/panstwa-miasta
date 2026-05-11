@@ -1,0 +1,67 @@
+---
+description: Commit cadence — keep commits small and frequent (100–200 changed lines)
+alwaysApply: true
+---
+
+# Commit Cadence
+
+Keep history reviewable by committing every **100–200 changed lines** of work
+(combined insertions + deletions). Don't pile up large unrelated diffs.
+
+## When to commit
+
+Stop and run `git add` + `git commit` as soon as **any** of these is true:
+
+- The accumulated diff reaches **~100 lines** of meaningful change (excluding
+  generated files, `.coverage`, `node_modules/`, `dist/`, `.scannerwork/`, etc.).
+- You finished a logically coherent piece of work (one fix, one refactor,
+  one feature slice) — commit before starting the next one.
+- You're about to switch context to a different file area / concern.
+- A noisy step is coming (mass rename, formatter run) — commit first so the
+  noise lands in its own commit.
+
+Hard ceiling: **never let the diff grow past ~200 changed lines** without a
+commit. If it does, split into multiple commits before pushing.
+
+## How to commit
+
+Always check status + diff before composing the message:
+
+```bash
+git status --short
+git diff --stat HEAD
+```
+
+Stage explicitly (don't blanket `git add .`); skip `.coverage`,
+`.scannerwork/`, build artifacts, lockfiles you didn't touch.
+
+Use a conventional prefix and a short, scoped subject:
+
+- `feat(scope): ...` new functionality
+- `fix(scope): ...` bug fix
+- `refactor(scope): ...` no behavior change
+- `chore(scope): ...` tooling, config, sonar, deps
+- `docs(scope): ...` README / rules / comments only
+- `test(scope): ...` tests only
+
+Pass the message via heredoc to preserve formatting:
+
+```bash
+git commit -m "$(cat <<'EOF'
+fix(socket): redirect to /room/{id} from landing instead of in-place swap
+
+The landing page has no game container; calling connect() left the user
+stuck on the hero. Now we navigate first, then auto-join on the room page.
+EOF
+)"
+```
+
+## Don't
+
+- **Never** commit secrets, tokens, `.env`, coverage DBs, or scanner caches.
+- Don't amend a commit that's already on `origin`.
+- Don't squash commits the user already reviewed without asking.
+- Don't commit at all unless the user asked for it (this rule defines
+  **when** to commit, not whether the user delegated the action — for
+  unattended sessions, batch commits at the cadence above and surface them
+  in the response).

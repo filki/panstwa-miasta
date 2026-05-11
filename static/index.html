@@ -170,10 +170,18 @@
     <script src="/static/js/game.js"></script>
     <script src="/static/js/socket.js"></script>
     <script>
+        // Disable service worker on local dev to avoid stale assets while iterating.
+        const isLocalDev = ['localhost', '127.0.0.1'].includes(location.hostname);
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').catch(() => {});
-            });
+            if (isLocalDev) {
+                navigator.serviceWorker.getRegistrations()
+                    .then((regs) => regs.forEach((r) => r.unregister()))
+                    .catch(() => {});
+            } else {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js').catch(() => {});
+                });
+            }
         }
     </script>
 </body>
