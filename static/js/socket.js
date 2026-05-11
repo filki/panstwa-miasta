@@ -83,7 +83,7 @@ function connect() {
         document.getElementById('chat-section').style.display = 'block';
         document.getElementById('btn-leave').style.display = 'block';
         document.getElementById('current-room').textContent = roomId;
-        document.getElementById('scoreboard-sidebar').classList.add('hidden');
+        if (typeof updateScoreboard === 'function') updateScoreboard({}, '');
     };
 
     ws.onclose = (e) => {
@@ -228,11 +228,6 @@ function onRoundResults(msg) {
     const html = buildRoundResultsHtml(msg);
     addLog(html, "results-msg");
     updateScoreboard(msg.total_scores, msg.host_name);
-    
-    // Ukrywamy ranking w trakcie gry (jeśli nie koniec gry)
-    if (!msg.game_over) {
-        document.getElementById('scoreboard-sidebar').classList.add('hidden');
-    }
 
     if (msg.game_over) handleGameOver(msg.host_name);
     else resetReadyButton();
@@ -289,7 +284,7 @@ function onGameRestarted(msg) {
     document.getElementById('game-layout').classList.remove('game-over');
     document.getElementById('game-main-area').style.display = 'block';
     document.getElementById('chat-sidebar').classList.remove('hidden');
-    document.getElementById('scoreboard-sidebar').classList.add('hidden');
+    document.getElementById('scoreboard-sidebar').classList.remove('hidden');
     
     // Przywracamy panel restartu na jego miejsce w main-area (jeśli był przeniesiony)
     const restartArea = document.getElementById('restart-settings');

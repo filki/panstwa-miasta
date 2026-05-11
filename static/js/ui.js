@@ -37,6 +37,16 @@ function updateScoreboard(scores = {}, hostName = '') {
     scoreboard.innerHTML = '';
 
     const entries = Object.entries(scores).sort((a, b) => Number(b[1]) - Number(a[1]));
+
+    if (entries.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'score-item';
+        empty.style.opacity = '0.6';
+        empty.innerHTML = '<span>Czekamy na graczy…</span><strong>—</strong>';
+        scoreboard.appendChild(empty);
+        return;
+    }
+
     entries.forEach(([name, points]) => {
         const row = document.createElement('div');
         row.className = 'score-item';

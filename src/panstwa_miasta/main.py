@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 import aiofiles
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from .db import delete_room, init_db
@@ -41,6 +41,8 @@ app.mount("/static", StaticFiles(directory=static_path), name="static")
 
 INDEX_PATH = pathlib.Path(__file__).parent.parent.parent / "static" / "index.html"
 ROOM_PATH = pathlib.Path(__file__).parent.parent.parent / "static" / "room.html"
+SW_PATH = pathlib.Path(__file__).parent.parent.parent / "static" / "sw.js"
+MANIFEST_PATH = pathlib.Path(__file__).parent.parent.parent / "static" / "manifest.json"
 
 
 # ---------------------------------------------------------------------------
@@ -108,6 +110,17 @@ async def get_room(room_id: str) -> HTMLResponse:
     async with aiofiles.open(ROOM_PATH, encoding="utf-8") as f:
         html_content = await f.read()
     return HTMLResponse(content=html_content)
+
+
+# Service worker must be served from a top-level scope to control all routes.
+@app.get("/sw.js")
+async def get_service_worker() -> FileResponse:
+    return FileResponse(SW_PATH, media_type="application/javascript")
+
+
+@app.get("/manifest.json")
+async def get_manifest() -> FileResponse:
+    return FileResponse(MANIFEST_PATH, media_type="application/manifest+json")
 
 
 @app.get("/api/active-rooms")
