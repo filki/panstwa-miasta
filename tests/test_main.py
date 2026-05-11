@@ -39,6 +39,27 @@ def test_api_active_rooms_with_data():
             del manager.rooms[room_id]
 
 
+def test_api_active_rooms_hides_finished_game():
+    """Finished sessions (game_over) should not look joinable on the landing page."""
+    from panstwa_miasta.manager import Room
+
+    room_id = "test_room_game_over"
+    mock_room = Room(room_id)
+    mock_room.host_name = "Host1"
+    mock_room.connections = {"Host1": None}
+    mock_room.game_over = True
+
+    manager.rooms[room_id] = mock_room
+    try:
+        response = client.get("/api/active-rooms")
+        assert response.status_code == 200
+        rooms = response.json()
+        assert not any(r["id"] == room_id for r in rooms)
+    finally:
+        if room_id in manager.rooms:
+            del manager.rooms[room_id]
+
+
 def test_websocket_join_and_message():
     with client.websocket_connect("/ws/room_ws/Player1") as websocket:
         # Initial messages (score_update, system)
