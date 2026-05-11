@@ -17,9 +17,14 @@ package-lock.json
 coverage/
 coverage-js/
 coverage.xml
+.coverage
 test-results.xml
 .sonar/
+.scannerwork/
 *.txt
+
+# Ruff cache
+.ruff_cache/
 
 # Logs and DB
 logs/
