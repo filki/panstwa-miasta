@@ -11,7 +11,7 @@ import asyncio
 
 import pytest
 
-from panstwa_miasta import db
+from panstwa_miasta import data, db
 
 
 @pytest.fixture(autouse=True)
@@ -19,9 +19,11 @@ def _isolated_test_db(tmp_path: object):
     """Fresh, isolated SQLite database per test.
 
     Function-scoped so `test_db_lifecycle` (which creates/deletes the DB
-    itself) cannot corrupt sibling tests.
+    itself) cannot corrupt sibling tests. Also primes the in-memory
+    ``data.COUNTRIES`` cache from the freshly seeded ``countries`` table.
     """
     test_db = tmp_path / "test.db"  # type: ignore[operator]
     db.DB_PATH = test_db
     asyncio.run(db.init_db())
+    asyncio.run(data.reload_countries())
     yield
