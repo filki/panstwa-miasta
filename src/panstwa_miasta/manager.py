@@ -1,7 +1,8 @@
-from typing import Dict, Optional
-from fastapi import WebSocket
 import asyncio
-from .db import save_room, save_player_score, get_active_rooms
+
+from fastapi import WebSocket
+
+from .db import get_active_rooms, save_player_score, save_room
 
 # Logger import
 from .logger import get_logger
@@ -12,18 +13,20 @@ ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
 GAME_CATEGORIES = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
 WIKI_CATEGORIES = ["Miasto", "Zwierzę", "Roślina"]
 
+
 def normalize_text(text: str) -> str:
     return text.strip().lower().replace("-", " ").replace("  ", " ")
+
 
 class Room:
     def __init__(self, room_id: str, max_rounds: int = 5, time_limit: int = 90):
         self.room_id = room_id
         self.max_rounds = max_rounds
         self.time_limit = time_limit
-        self.connections: Dict[str, WebSocket] = {}
-        self.scores: Dict[str, int] = {}
+        self.connections: dict[str, WebSocket] = {}
+        self.scores: dict[str, int] = {}
         self.host_name = ""
-        
+
         # Stan gry i rundy
         self.current_round = 0
         self.used_letters = set()
@@ -31,7 +34,7 @@ class Room:
         self.is_playing = False
         self.stop_triggered = False
         self.current_letter = ""
-        self.answers_received: Dict[str, Dict[str, str]] = {}
+        self.answers_received: dict[str, dict[str, str]] = {}
         self.expected_answers = 0
         self.game_over = False
 
@@ -40,9 +43,9 @@ class Room:
         self._refill_letter_queue()
 
         # Task references to prevent premature GC (SonarQube MAJOR)
-        self._timeout_task: Optional[asyncio.Task] = None
-        self._force_end_task: Optional[asyncio.Task] = None
-        self._global_timeout_task: Optional[asyncio.Task] = None
+        self._timeout_task: asyncio.Task | None = None
+        self._force_end_task: asyncio.Task | None = None
+        self._global_timeout_task: asyncio.Task | None = None
 
     async def broadcast(self, message: str):
         """Wysyła wiadomość do wszystkich w pokoju"""
@@ -53,6 +56,7 @@ class Room:
     def _refill_letter_queue(self):
         """Miesza cały alfabet i ładuje go do kolejki (deck-shuffle)."""
         import secrets
+
         deck = list(ALPHABET)
         secrets.SystemRandom().shuffle(deck)
         self.letter_queue = deck
@@ -69,7 +73,9 @@ class Room:
             self._refill_letter_queue()
 
         self.current_letter = self.letter_queue.pop()
-        logger.info(f"Room {self.room_id}: round {self.current_round} – letter '{self.current_letter}' (remaining in queue: {len(self.letter_queue)})")
+        logger.info(
+            f"Room {self.room_id}: round {self.current_round} – letter '{self.current_letter}' (remaining in queue: {len(self.letter_queue)})"
+        )
 
         self.answers_received = {}
         self.expected_answers = len(self.connections)
@@ -87,12 +93,14 @@ class Room:
         self._refill_letter_queue()
         for p, s in self.scores.items():
             await save_player_score(self.room_id, p, s)
-        await save_room(self.room_id, self.max_rounds, self.time_limit, self.current_round, self.host_name)
+        await save_room(
+            self.room_id, self.max_rounds, self.time_limit, self.current_round, self.host_name
+        )
 
     def _calculate_base_category_score(self, category: str, ans_norm: str) -> int:
         """Determines if an answer is valid based on static data. Returns -1 if valid but needs multiplier check."""
-        from .data import COUNTRIES, NAMES, JOBS
-        
+        from .data import COUNTRIES, JOBS, NAMES
+
         if category == "Państwo":
             return -1 if ans_norm in {normalize_text(c) for c in COUNTRIES} else 0
         if category == "Imię":
@@ -103,20 +111,20 @@ class Room:
             return -2  # Special value for wiki validation
         return -1  # Rzecz / other
 
-    def _assign_round_points(self, round_scores: Dict[str, Dict]):
+    def _assign_round_points(self, round_scores: dict[str, dict]):
         """Applies 15/10/5 points logic based on uniqueness of answers."""
         for category in GAME_CATEGORIES:
             valid_answers = {}  # ans -> count
             players_with_valid = []
-            
+
             for player in self.answers_received:
                 if round_scores[player]["details"].get(category) == -1:
                     ans = normalize_text(self.answers_received[player].get(category, ""))
                     valid_answers[ans] = valid_answers.get(ans, 0) + 1
                     players_with_valid.append(player)
-            
+
             num_valid = len(players_with_valid)
-            
+
             for player in players_with_valid:
                 ans = normalize_text(self.answers_received[player].get(category, ""))
                 # 15 pkt: Tylko Ty masz poprawną odpowiedź w tej kategorii
@@ -128,13 +136,16 @@ class Room:
                 # 5 pkt: Inni mają tę samą poprawną odpowiedź co Ty
                 else:
                     pts = 5
-                
+
                 round_scores[player]["details"][category] = pts
                 round_scores[player]["total"] += pts
 
-    def _gather_answers_and_validation_tasks(self, round_scores: Dict[str, Dict]) -> tuple[list, list]:
+    def _gather_answers_and_validation_tasks(
+        self, round_scores: dict[str, dict]
+    ) -> tuple[list, list]:
         """Iterates over categories and players to fill base scores and gather wiki validation tasks."""
         from .validator import validator
+
         validation_tasks = []
         task_info = []
 
@@ -146,85 +157,102 @@ class Room:
                     continue
 
                 res = self._calculate_base_category_score(category, normalize_text(ans_raw))
-                if res == -2: # Wiki
+                if res == -2:  # Wiki
                     validation_tasks.append(validator.validate(ans_raw, category))
                     task_info.append((player, category, ans_raw))
                 else:
                     round_scores[player]["details"][category] = res
         return validation_tasks, task_info
 
-    async def _update_global_scores_and_save(self, round_scores: Dict[str, Dict]):
+    async def _update_global_scores_and_save(self, round_scores: dict[str, dict]):
         """Updates global scores in memory and persists to database."""
         for player, score_data in round_scores.items():
             self.scores[player] = self.scores.get(player, 0) + score_data["total"]
             await save_player_score(self.room_id, player, self.scores[player])
-            
-        await save_room(self.room_id, self.max_rounds, self.time_limit, self.current_round, self.host_name)
 
-    async def calculate_scores(self) -> Dict[str, Dict]:
+        await save_room(
+            self.room_id, self.max_rounds, self.time_limit, self.current_round, self.host_name
+        )
+
+    async def calculate_scores(self) -> dict[str, dict]:
         """
         Zwraca: {player: {"total": int, "details": {category: points}}}
         """
-        round_scores: Dict[str, Dict] = {player: {"total": 0, "details": {}} for player in self.answers_received}
-        
+        round_scores: dict[str, dict] = {
+            player: {"total": 0, "details": {}} for player in self.answers_received
+        }
+
         # 1. Sprawdzanie bazowe i zbieranie zadań walidacji
         validation_tasks, task_info = self._gather_answers_and_validation_tasks(round_scores)
 
         # 2. Wykonanie walidacji zewnętrznych
         if validation_tasks:
             wiki_results = await asyncio.gather(*validation_tasks)
-            for (player, category, ans), is_valid in zip(task_info, wiki_results):
+            for (player, category, _ans), is_valid in zip(task_info, wiki_results, strict=False):
                 round_scores[player]["details"][category] = -1 if is_valid else 0
 
         # 3. Przyznawanie punktów
         self._assign_round_points(round_scores)
-                    
+
         # 4. Aktualizacja punktacji globalnej i zapis
         await self._update_global_scores_and_save(round_scores)
         return round_scores
 
+
 class ConnectionManager:
     def __init__(self):
-        self.rooms: Dict[str, Room] = {}
+        self.rooms: dict[str, Room] = {}
 
-    async def connect(self, websocket: WebSocket, room_id: str, client_name: str, max_rounds: int, time_limit: int) -> bool:
-        logger.info(f"Attempting connection: room_id={room_id}, client_name={client_name}, max_rounds={max_rounds}, time_limit={time_limit}")
-        
+    async def connect(
+        self, websocket: WebSocket, room_id: str, client_name: str, max_rounds: int, time_limit: int
+    ) -> bool:
+        logger.info(
+            f"Attempting connection: room_id={room_id}, client_name={client_name}, max_rounds={max_rounds}, time_limit={time_limit}"
+        )
+
         if not client_name or not client_name.strip():
             logger.warning(f"Rejected connection: empty client_name in room {room_id}")
             return False
 
         if room_id not in self.rooms:
             self.rooms[room_id] = Room(room_id, max_rounds, time_limit)
-            logger.info(f"Created new room: {room_id} (max_rounds={max_rounds}, time_limit={time_limit})")
-            
+            logger.info(
+                f"Created new room: {room_id} (max_rounds={max_rounds}, time_limit={time_limit})"
+            )
+
         room = self.rooms[room_id]
-        
+
         # If a player joins with an existing nickname, close previous connection
         if client_name in room.connections:
             try:
                 await room.connections[client_name].close()
-                logger.info(f"Closed previous connection for nickname '{client_name}' in room {room_id}")
+                logger.info(
+                    f"Closed previous connection for nickname '{client_name}' in room {room_id}"
+                )
             except Exception as e:
-                logger.error(f"Error closing previous connection for '{client_name}' in room {room_id}: {e}")
-            
+                logger.error(
+                    f"Error closing previous connection for '{client_name}' in room {room_id}: {e}"
+                )
+
         await websocket.accept()
         room.connections[client_name] = websocket
         logger.info(f"WebSocket accepted for client '{client_name}' in room {room_id}")
-        
+
         if not room.host_name:
             room.host_name = client_name
             logger.info(f"Set host for room {room_id} to '{client_name}'")
-        
+
         if client_name not in room.scores:
             room.scores[client_name] = 0
             logger.info(f"Initialized score for '{client_name}' in room {room_id}")
-            
+
         # Save/update room and player in DB
-        await save_room(room_id, room.max_rounds, room.time_limit, room.current_round, room.host_name)
+        await save_room(
+            room_id, room.max_rounds, room.time_limit, room.current_round, room.host_name
+        )
         await save_player_score(room_id, client_name, room.scores[client_name])
         logger.debug(f"Persisted room {room_id} and player {client_name} to DB")
-            
+
         return True
 
     async def load_from_db(self):
@@ -245,17 +273,19 @@ class ConnectionManager:
             if client_name in room.connections:
                 del room.connections[client_name]
                 logger.info(f"Removed connection for '{client_name}' from room {room_id}")
-                
+
                 # Decrease expected answer count
                 if room.is_playing:
                     room.expected_answers = max(0, room.expected_answers - 1)
-                    logger.debug(f"Adjusted expected_answers for room {room_id}: {room.expected_answers}")
-                
+                    logger.debug(
+                        f"Adjusted expected_answers for room {room_id}: {room.expected_answers}"
+                    )
+
                 # If host left, assign new host
                 if client_name == room.host_name and room.connections:
                     room.host_name = next(iter(room.connections.keys()))
                     logger.info(f"New host for room {room_id} is '{room.host_name}'")
-            
+
             # Remove empty room
             if not room.connections:
                 del self.rooms[room_id]

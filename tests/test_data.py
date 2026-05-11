@@ -1,10 +1,11 @@
-import pytest
-from panstwa_miasta.data import NAMES, JOBS, COUNTRIES
+from panstwa_miasta.data import COUNTRIES, JOBS, NAMES
+
 
 def test_data_sets_not_empty():
     assert len(NAMES) > 100
     assert len(JOBS) > 0
     assert len(COUNTRIES) > 100
+
 
 def test_sample_data_presence():
     assert "polska" in COUNTRIES

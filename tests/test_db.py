@@ -1,13 +1,23 @@
-import pytest
 import os
-from panstwa_miasta.db import init_db, save_room, save_player_score, get_active_rooms, delete_room, DB_PATH
+
+import pytest
+
+from panstwa_miasta.db import (
+    DB_PATH,
+    delete_room,
+    get_active_rooms,
+    init_db,
+    save_player_score,
+    save_room,
+)
+
 
 @pytest.mark.asyncio
 async def test_db_lifecycle():
     # Setup: ensure clean DB
     if DB_PATH.exists():
         os.remove(DB_PATH)
-    
+
     await init_db()
     assert DB_PATH.exists()
 

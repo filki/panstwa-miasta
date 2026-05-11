@@ -1,8 +1,9 @@
-import aiosqlite
 import pathlib
-import json
+
+import aiosqlite
 
 DB_PATH = pathlib.Path(__file__).parent.parent.parent / "panstwa_miasta.db"
+
 
 async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:
@@ -27,9 +28,11 @@ async def init_db():
         """)
         await db.commit()
 
+
 async def save_room(room_id, max_rounds, time_limit, current_round, host_name):
     async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute("""
+        await db.execute(
+            """
             INSERT INTO rooms (room_id, max_rounds, time_limit, current_round, host_name)
             VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(room_id) DO UPDATE SET
@@ -38,22 +41,30 @@ async def save_room(room_id, max_rounds, time_limit, current_round, host_name):
                 current_round=excluded.current_round,
                 host_name=excluded.host_name,
                 is_active=1
-        """, (room_id, max_rounds, time_limit, current_round, host_name))
+        """,
+            (room_id, max_rounds, time_limit, current_round, host_name),
+        )
         await db.commit()
+
 
 async def save_player_score(room_id, player_name, score):
     async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute("""
+        await db.execute(
+            """
             INSERT INTO players (room_id, player_name, score)
             VALUES (?, ?, ?)
             ON CONFLICT(room_id, player_name) DO UPDATE SET score=excluded.score
-        """, (room_id, player_name, score))
+        """,
+            (room_id, player_name, score),
+        )
         await db.commit()
+
 
 async def delete_room(room_id):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("DELETE FROM rooms WHERE room_id = ?", (room_id,))
         await db.commit()
+
 
 async def get_active_rooms():
     async with aiosqlite.connect(DB_PATH) as db:
@@ -63,7 +74,9 @@ async def get_active_rooms():
             result = []
             for r in rooms:
                 room_data = dict(r)
-                async with db.execute("SELECT player_name, score FROM players WHERE room_id = ?", (r["room_id"],)) as p_cursor:
+                async with db.execute(
+                    "SELECT player_name, score FROM players WHERE room_id = ?", (r["room_id"],)
+                ) as p_cursor:
                     players = await p_cursor.fetchall()
                     room_data["players"] = {p["player_name"]: p["score"] for p in players}
                 result.append(room_data)

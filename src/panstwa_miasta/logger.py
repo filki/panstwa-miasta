@@ -62,6 +62,7 @@ _console_handler = logging.StreamHandler()
 _console_handler.setLevel(LOG_LEVEL)
 _console_handler.setFormatter(formatter)
 
+
 # ---------------------------------------------------------------------------
 # Helper to retrieve a logger with the shared configuration.
 # ---------------------------------------------------------------------------
@@ -81,6 +82,7 @@ def get_logger(name: str = "panstwa_miasta") -> logging.Logger:
         # Avoid propagating to the root logger (which may have its own handlers).
         logger.propagate = False
     return logger
+
 
 # Provide a module‑level default logger for quick imports.
 default_logger = get_logger()

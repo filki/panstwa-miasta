@@ -23,6 +23,7 @@ from .manager import ConnectionManager
 
 logger = get_logger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Application startup: initializing DB and loading rooms")
@@ -31,6 +32,7 @@ async def lifespan(app: FastAPI):
     logger.info("Startup completed")
     yield
     logger.info("Application shutdown")
+
 
 app = FastAPI(title="Państwa-Miasta Engine", lifespan=lifespan)
 manager = ConnectionManager()
@@ -49,6 +51,7 @@ MANIFEST_PATH = pathlib.Path(__file__).parent.parent.parent / "static" / "manife
 # Round timeout helpers
 # ---------------------------------------------------------------------------
 
+
 async def global_round_timeout(room_id: str, round_num: int, wait_time: int) -> None:
     """Fires a stop_round event when time runs out."""
     await asyncio.sleep(wait_time)
@@ -57,11 +60,15 @@ async def global_round_timeout(room_id: str, round_num: int, wait_time: int) -> 
     room = manager.rooms[room_id]
     if room.is_playing and room.current_round == round_num and not room.stop_triggered:
         room.stop_triggered = True
-        await room.broadcast(json.dumps({
-            "type": "stop_round",
-            "sender": "System (Koniec czasu)",
-            "time_left": 10,
-        }))
+        await room.broadcast(
+            json.dumps(
+                {
+                    "type": "stop_round",
+                    "sender": "System (Koniec czasu)",
+                    "time_left": 10,
+                }
+            )
+        )
         # Store task reference to prevent premature GC (SonarQube MAJOR)
         task = asyncio.ensure_future(force_end_round(room_id))
         room._global_timeout_task = task
@@ -82,14 +89,18 @@ async def force_end_round(room_id: str) -> None:
     is_game_over = room.current_round >= room.max_rounds
     if is_game_over:
         room.game_over = True
-    await room.broadcast(json.dumps({
-        "type": "round_results",
-        "answers": room.answers_received,
-        "round_scores": round_scores,
-        "total_scores": room.scores,
-        "game_over": is_game_over,
-        "host_name": room.host_name,
-    }))
+    await room.broadcast(
+        json.dumps(
+            {
+                "type": "round_results",
+                "answers": room.answers_received,
+                "round_scores": round_scores,
+                "total_scores": room.scores,
+                "game_over": is_game_over,
+                "host_name": room.host_name,
+            }
+        )
+    )
     logger.info(f"Force-ended round for room {room_id}. game_over={is_game_over}")
 
 
@@ -97,12 +108,14 @@ async def force_end_round(room_id: str) -> None:
 # HTTP endpoints
 # ---------------------------------------------------------------------------
 
+
 @app.get("/")
 async def get_root() -> HTMLResponse:
     # Use async file read (SonarQube MAJOR: avoid sync open in async function)
     async with aiofiles.open(INDEX_PATH, encoding="utf-8") as f:
         html_content = await f.read()
     return HTMLResponse(content=html_content)
+
 
 @app.get("/room/{room_id}")
 async def get_room(room_id: str) -> HTMLResponse:
@@ -133,7 +146,7 @@ async def get_active_rooms():
             "current_round": room.current_round,
             "max_rounds": room.max_rounds,
             "time_limit": room.time_limit,
-            "mode": "Standard" # Na razie wszystkie standardowe
+            "mode": "Standard",  # Na razie wszystkie standardowe
         }
         for r_id, room in manager.rooms.items()
         if room.connections
@@ -144,29 +157,42 @@ async def get_active_rooms():
 # WebSocket endpoint
 # ---------------------------------------------------------------------------
 
+
 async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> None:
     """Broadcast join messages and resume state if a round is in progress."""
-    await room.broadcast(json.dumps({"type": "system", "message": f"{client_name} dołączył do gry"}))
-    await room.broadcast(json.dumps({"type": "score_update", "scores": room.scores, "host_name": room.host_name}))
+    await room.broadcast(
+        json.dumps({"type": "system", "message": f"{client_name} dołączył do gry"})
+    )
+    await room.broadcast(
+        json.dumps({"type": "score_update", "scores": room.scores, "host_name": room.host_name})
+    )
 
     if room.is_playing:
-        await websocket.send_text(json.dumps({
-            "type": "round_started",
-            "letter": room.current_letter,
-            "sender": "Serwer (Wznowienie)",
-            "current_round": room.current_round,
-            "max_rounds": room.max_rounds,
-            "time_limit": room.time_limit,
-        }))
+        await websocket.send_text(
+            json.dumps(
+                {
+                    "type": "round_started",
+                    "letter": room.current_letter,
+                    "sender": "Serwer (Wznowienie)",
+                    "current_round": room.current_round,
+                    "max_rounds": room.max_rounds,
+                    "time_limit": room.time_limit,
+                }
+            )
+        )
     elif room.game_over:
-        await websocket.send_text(json.dumps({
-            "type": "round_results",
-            "answers": {},
-            "round_scores": {},
-            "total_scores": room.scores,
-            "game_over": True,
-            "host_name": room.host_name,
-        }))
+        await websocket.send_text(
+            json.dumps(
+                {
+                    "type": "round_results",
+                    "answers": {},
+                    "round_scores": {},
+                    "total_scores": room.scores,
+                    "game_over": True,
+                    "host_name": room.host_name,
+                }
+            )
+        )
 
 
 async def _dispatch(msg: dict, room, room_id: str, client_name: str) -> None:
@@ -200,7 +226,9 @@ async def websocket_endpoint(
     rounds: int = 5,
     limit: int = 90,
 ) -> None:
-    logger.info(f"WebSocket attempt: room={room_id}, client={client_name}, rounds={rounds}, limit={limit}")
+    logger.info(
+        f"WebSocket attempt: room={room_id}, client={client_name}, rounds={rounds}, limit={limit}"
+    )
     success = await manager.connect(websocket, room_id, client_name, rounds, limit)
     if not success:
         logger.warning(f"Connection rejected for {client_name} in room {room_id}")
@@ -226,6 +254,12 @@ async def websocket_endpoint(
         manager.disconnect(room_id, client_name)
         if room_id in manager.rooms:
             room = manager.rooms[room_id]
-            await room.broadcast(json.dumps({"type": "system", "message": f"{client_name} opuścił grę"}))
-            await room.broadcast(json.dumps({"type": "score_update", "scores": room.scores, "host_name": room.host_name}))
+            await room.broadcast(
+                json.dumps({"type": "system", "message": f"{client_name} opuścił grę"})
+            )
+            await room.broadcast(
+                json.dumps(
+                    {"type": "score_update", "scores": room.scores, "host_name": room.host_name}
+                )
+            )
             logger.info(f"Notified room {room_id} about departure of '{client_name}'")
