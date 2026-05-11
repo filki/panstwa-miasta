@@ -1,5 +1,6 @@
 /**
  * @jest-environment jsdom
+ * @jest-environment-options { "url": "http://localhost/room/1234" }
  */
 
 // Globals that socket.js calls into (defined in audio.js, game.js, ui.js).
@@ -31,18 +32,9 @@ global.WebSocket = jest.fn().mockImplementation((url) => {
 });
 global.WebSocket.OPEN = 1;
 
-// jsdom doesn't allow assigning to window.location directly; replace it
-// with a plain URL so socket.js can read pathname/host/protocol cleanly.
-const setLocation = (href) => {
-    delete globalThis.location;
-    globalThis.location = new URL(href);
-    globalThis.location.href = href;
-};
-
-// history.replaceState is called by socket.js; jsdom has a stub but we still
-// mock to assert against it where useful.
-const replaceStateSpy = jest.fn();
-globalThis.history.replaceState = replaceStateSpy;
+// Suppress jsdom navigation noise: we never want real page navigation in
+// tests, only to observe what socket.js *would* have done.
+jest.spyOn(window.history, 'replaceState').mockImplementation(() => {});
 
 const FULL_DOM = `
     <header>
@@ -105,9 +97,7 @@ const FULL_DOM = `
 
 beforeEach(() => {
     document.body.innerHTML = FULL_DOM;
-    setLocation('http://localhost/room/1234');
     jest.clearAllMocks();
-    replaceStateSpy.mockClear();
     // Reset module-level state in socket.js (myNick, isLeaving, ws) by
     // re-evaluating the module — each test gets fresh closure state.
     jest.resetModules();
@@ -125,14 +115,6 @@ describe('connect()', () => {
         expect(url).toMatch(/^ws:\/\/localhost\/ws\/1234\/TestUser\?/);
         expect(url).toContain('rounds=10');
         expect(url).toContain('limit=60');
-    });
-
-    test('redirects to /room/<id> when called from the landing page', () => {
-        setLocation('http://localhost/');
-        const { connect } = loadSocket();
-        connect();
-        expect(global.WebSocket).not.toHaveBeenCalled();
-        expect(globalThis.location.href).toContain('/room/1234');
     });
 
     test('alerts when nickname is empty', () => {

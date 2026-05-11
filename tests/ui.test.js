@@ -260,20 +260,19 @@ describe('restoreNickname', () => {
 });
 
 describe('applyRoomSettingsFromUrl', () => {
+    afterEach(() => {
+        window.history.replaceState({}, '', '/');
+    });
+
     test('applies rounds and limit from URL search params to selects', () => {
-        const originalLocation = globalThis.location;
-        delete globalThis.location;
-        globalThis.location = new URL('http://localhost/room/1234?rounds=10&limit=60');
+        window.history.replaceState({}, '', '/room/1234?rounds=10&limit=60');
         applyRoomSettingsFromUrl();
         expect(document.getElementById('max_rounds').value).toBe('10');
         expect(document.getElementById('time_limit').value).toBe('60');
-        globalThis.location = originalLocation;
     });
 
     test('no-op when params are absent', () => {
-        const originalLocation = globalThis.location;
-        delete globalThis.location;
-        globalThis.location = new URL('http://localhost/');
+        window.history.replaceState({}, '', '/');
         const roundsSel = document.getElementById('max_rounds');
         const limitSel = document.getElementById('time_limit');
         roundsSel.value = '5';
@@ -281,6 +280,5 @@ describe('applyRoomSettingsFromUrl', () => {
         applyRoomSettingsFromUrl();
         expect(roundsSel.value).toBe('5');
         expect(limitSel.value).toBe('90');
-        globalThis.location = originalLocation;
     });
 });
