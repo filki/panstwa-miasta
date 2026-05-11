@@ -210,3 +210,23 @@ globalThis.loadActiveRooms = loadActiveRooms;
 globalThis.addLog = addLog;
 globalThis.updateScoreboard = updateScoreboard;
 globalThis.sendChat = sendChat;
+
+if (typeof module !== 'undefined') {
+    module.exports = {
+        showJoinModal,
+        showCreateModal,
+        hideModals,
+        addLog,
+        updateScoreboard,
+        sendChat,
+        buildRoomRow,
+        renderActiveRooms,
+        loadActiveRooms,
+        restoreNickname,
+        applyRoomSettingsFromUrl,
+        tryAutoJoin,
+        handleRoomRouteOnLoad,
+        bindChatEnter,
+        bindCategoryEnter,
+    };
+}
