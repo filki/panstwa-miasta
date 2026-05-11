@@ -6,6 +6,15 @@ function sendJson(obj) {
     if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
 }
 
+// Confetti is loaded from a CDN (canvas-confetti). If the CDN is blocked
+// or the library fails to load we must NOT let the game flow break --
+// a missing confetti() previously crashed the letter lottery interval and
+// hung every game right after drawing the letter.
+function fireConfetti(opts) {
+    if (typeof confetti !== 'function') return;
+    try { confetti(opts); } catch (e) { console.warn('confetti failed', e); }
+}
+
 // Funkcja wyjścia z pokoju – zamyka WebSocket, czyści UI i usuwa parametr pokoju z URL
 function leaveRoom() {
     // Flag to suppress auto-reconnect
@@ -288,8 +297,8 @@ function handleGameOver(hostName) {
         document.getElementById('btn-dissolve').style.display = 'block';
     }
     
-    confetti({ particleCount: 200, spread: 100, origin: { y: 0.3 } });
-    setTimeout(() => confetti({ particleCount: 200, spread: 120, origin: { y: 0.4 } }), 1000);
+    fireConfetti({ particleCount: 200, spread: 100, origin: { y: 0.3 } });
+    setTimeout(() => fireConfetti({ particleCount: 200, spread: 120, origin: { y: 0.4 } }), 1000);
 }
 
 function resetReadyButton() {
@@ -356,7 +365,7 @@ function runLetterLottery(targetLetter, onComplete) {
             letterDiv.style.filter = 'none';
             letterDiv.style.transform = 'scale(1.2)';
             letterDiv.style.color = 'var(--success)';
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            fireConfetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
             setTimeout(() => {
                 modal.style.display = 'none';
                 letterDiv.style.transform = 'scale(1)';
