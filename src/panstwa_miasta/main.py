@@ -8,6 +8,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+from .data import reload_countries
 from .db import delete_room, init_db
 from .handlers import (
     handle_answers,
@@ -28,6 +29,7 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     logger.info("Application startup: initializing DB and loading rooms")
     await init_db()
+    await reload_countries()
     await manager.load_from_db()
     logger.info("Startup completed")
     yield

@@ -20,7 +20,15 @@ coverage.xml
 test-results.xml
 .sonar/
 .scannerwork/
-*.txt
+
+# Test / scanner output dumps (local-only)
+test_output.txt
+jest_full_output.txt
+*.output.txt
+
+# Generated / intermediate dictionary sources (regenerowalne przez scripts/extract_jobs.py)
+data/hierarchiczny.json
+data/raw_jobs.txt
 
 # Ruff cache
 .ruff_cache/

@@ -102,7 +102,7 @@ class Room:
         from .data import COUNTRIES, JOBS, NAMES
 
         if category == "Państwo":
-            return -1 if ans_norm in {normalize_text(c) for c in COUNTRIES} else 0
+            return -1 if ans_norm in COUNTRIES else 0
         if category == "Imię":
             return -1 if ans_norm in {normalize_text(n) for n in NAMES} else 0
         if category == "Zawód":
