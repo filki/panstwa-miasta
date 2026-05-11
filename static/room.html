@@ -46,7 +46,7 @@
             <div id="chat-section" style="display: none;">
                 <div class="layout-grid" id="game-layout">
 
-                    <aside class="sidebar" id="scoreboard-sidebar">
+                    <aside class="sidebar" id="scoreboard-sidebar" aria-label="Ranking graczy">
                         <div class="sidebar-header">🏆 Ranking graczy</div>
                         <div class="scoreboard" id="scoreboard"></div>
 
@@ -54,7 +54,7 @@
                             <h3>Zagraj ponownie</h3>
                             <div class="settings-grid">
                                 <div>
-                                    <label>Rundy</label>
+                                    <label for="restart-rounds">Rundy</label>
                                     <select id="restart-rounds">
                                         <option value="1">1</option>
                                         <option value="3">3</option>
@@ -62,7 +62,7 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label>Czas</label>
+                                    <label for="restart-limit">Czas</label>
                                     <select id="restart-limit">
                                         <option value="60">60</option>
                                         <option value="90" selected>90</option>
@@ -93,13 +93,13 @@
                         </header>
 
                         <div class="categories-grid" id="categories">
-                            <div class="form-group"><label>🌍 Państwo</label><input type="text" id="cat-panstwo" data-category="Państwo" disabled></div>
-                            <div class="form-group"><label>🏙️ Miasto</label><input type="text" id="cat-miasto" data-category="Miasto" disabled></div>
-                            <div class="form-group"><label>📦 Rzecz</label><input type="text" id="cat-rzecz" data-category="Rzecz" disabled></div>
-                            <div class="form-group"><label>🐾 Zwierzę</label><input type="text" id="cat-zwierze" data-category="Zwierzę" disabled></div>
-                            <div class="form-group"><label>🌿 Roślina</label><input type="text" id="cat-roslina" data-category="Roślina" disabled></div>
-                            <div class="form-group"><label>👤 Imię</label><input type="text" id="cat-imie" data-category="Imię" disabled></div>
-                            <div class="form-group"><label>💼 Zawód</label><input type="text" id="cat-zawod" data-category="Zawód" disabled></div>
+                            <div class="form-group"><label for="cat-panstwo">🌍 Państwo</label><input type="text" id="cat-panstwo" data-category="Państwo" disabled></div>
+                            <div class="form-group"><label for="cat-miasto">🏙️ Miasto</label><input type="text" id="cat-miasto" data-category="Miasto" disabled></div>
+                            <div class="form-group"><label for="cat-rzecz">📦 Rzecz</label><input type="text" id="cat-rzecz" data-category="Rzecz" disabled></div>
+                            <div class="form-group"><label for="cat-zwierze">🐾 Zwierzę</label><input type="text" id="cat-zwierze" data-category="Zwierzę" disabled></div>
+                            <div class="form-group"><label for="cat-roslina">🌿 Roślina</label><input type="text" id="cat-roslina" data-category="Roślina" disabled></div>
+                            <div class="form-group"><label for="cat-imie">👤 Imię</label><input type="text" id="cat-imie" data-category="Imię" disabled></div>
+                            <div class="form-group"><label for="cat-zawod">💼 Zawód</label><input type="text" id="cat-zawod" data-category="Zawód" disabled></div>
                         </div>
 
                         <div class="game-actions">
@@ -108,7 +108,7 @@
                         </div>
                     </section>
 
-                    <aside class="sidebar" id="chat-sidebar">
+                    <aside class="sidebar" id="chat-sidebar" aria-label="Czat i logi">
                         <div class="sidebar-header">💬 Czat i logi</div>
                         <div id="logs"></div>
                         <div class="chat-input-group">

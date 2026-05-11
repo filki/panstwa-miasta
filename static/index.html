@@ -57,22 +57,20 @@
                     </div>
 
                     <div id="buttons-grid" class="choice-cards">
-                        <div class="choice-card" role="button" tabindex="0" onclick="showCreateModal()">
-                            <div class="choice-icon">✨</div>
-                            <div class="choice-content">
-                                <h3>Stwórz pokój</h3>
-                                <p>Zostań hostem i ustaw zasady.</p>
-                                <button type="button" class="choice-action" onclick="event.stopPropagation(); showCreateModal();">Stwórz</button>
-                            </div>
-                        </div>
-                        <div class="choice-card" role="button" tabindex="0" onclick="showJoinModal()">
-                            <div class="choice-icon">🔗</div>
-                            <div class="choice-content">
-                                <h3>Dołącz do gry</h3>
-                                <p>Wpisz kod od znajomego.</p>
-                                <button type="button" class="choice-action" onclick="event.stopPropagation(); showJoinModal();">Dołącz</button>
-                            </div>
-                        </div>
+                        <button type="button" class="choice-card" onclick="showCreateModal()" aria-label="Stwórz nowy pokój">
+                            <span class="choice-icon" aria-hidden="true">✨</span>
+                            <span class="choice-content">
+                                <span class="choice-title">Stwórz pokój</span>
+                                <span class="choice-desc">Zostań hostem i ustaw zasady.</span>
+                            </span>
+                        </button>
+                        <button type="button" class="choice-card" onclick="showJoinModal()" aria-label="Dołącz do istniejącego pokoju">
+                            <span class="choice-icon" aria-hidden="true">🔗</span>
+                            <span class="choice-content">
+                                <span class="choice-title">Dołącz do gry</span>
+                                <span class="choice-desc">Wpisz kod od znajomego.</span>
+                            </span>
+                        </button>
                     </div>
 
                     <div id="active-rooms-section" style="margin-top: var(--space-8); display: none;">
@@ -137,7 +135,7 @@
             <h3>Nowy pokój</h3>
             <div class="settings-grid">
                 <div class="form-group">
-                    <label>Rundy</label>
+                    <label for="max_rounds">Rundy</label>
                     <select id="max_rounds">
                         <option value="1">1</option>
                         <option value="3">3</option>
@@ -145,7 +143,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Czas (s)</label>
+                    <label for="time_limit">Czas (s)</label>
                     <select id="time_limit">
                         <option value="60">60</option>
                         <option value="90" selected>90</option>

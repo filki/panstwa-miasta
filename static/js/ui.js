@@ -74,39 +74,39 @@ function sendChat() {
     }
 }
 
-// Funkcja ładowania aktywnych pokoi
+function buildRoomRow(room) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td style="font-weight:800; color:var(--accent);">${room.id}</td>
+        <td>${room.host || 'Anonim'}</td>
+        <td><span class="badge badge-rules">${room.players} graczy</span></td>
+        <td>${room.current_round}/${room.max_rounds}</td>
+        <td><span class="badge badge-rules">${room.time_limit}s</span></td>
+        <td><span class="badge badge-mode">${room.mode}</span></td>
+        <td>
+            <button class="btn-join-small" onclick="joinRoom('${room.id}')">DOŁĄCZ</button>
+        </td>
+    `;
+    return tr;
+}
+
+function renderActiveRooms(rooms) {
+    const list = document.getElementById('rooms-list');
+    const section = document.getElementById('active-rooms-section');
+
+    const hasRooms = Array.isArray(rooms) && rooms.length > 0;
+    if (section) section.style.display = hasRooms ? 'block' : 'none';
+    if (!hasRooms || !list) return;
+
+    list.innerHTML = '';
+    rooms.forEach((room) => list.appendChild(buildRoomRow(room)));
+}
+
 async function loadActiveRooms() {
     try {
         const resp = await fetch('/api/active-rooms');
         const rooms = await resp.json();
-        
-        const list = document.getElementById('rooms-list');
-        const section = document.getElementById('active-rooms-section');
-
-        if (!rooms || rooms.length === 0) {
-            if (section) section.style.display = 'none';
-            return;
-        }
-
-        if (section) section.style.display = 'block';
-        if (list) {
-            list.innerHTML = '';
-            rooms.forEach(room => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="font-weight:800; color:var(--accent);">${room.id}</td>
-                    <td>${room.host || 'Anonim'}</td>
-                    <td><span class="badge badge-rules">${room.players} graczy</span></td>
-                    <td>${room.current_round}/${room.max_rounds}</td>
-                    <td><span class="badge badge-rules">${room.time_limit}s</span></td>
-                    <td><span class="badge badge-mode">${room.mode}</span></td>
-                    <td>
-                        <button class="btn-join-small" onclick="joinRoom('${room.id}')">DOŁĄCZ</button>
-                    </td>
-                `;
-                list.appendChild(tr);
-            });
-        }
+        renderActiveRooms(rooms);
     } catch (err) {
         console.error("Błąd podczas ładowania pokoi:", err);
     }
@@ -119,71 +119,76 @@ globalThis.joinRoom = (roomId) => {
     showJoinModal();
 };
 
-// Inicjalizacja przy załadowaniu strony
-globalThis.window.onload = () => {
-    const isRoomRoute = globalThis.location.pathname.startsWith('/room/');
-    const roomInlineLabel = document.getElementById('room-inline-label');
-
-    // 1. Załaduj nick z localStorage
+function restoreNickname() {
     const savedNick = localStorage.getItem('pm_nickname');
-    if (savedNick && document.getElementById('nickname')) {
-        document.getElementById('nickname').value = savedNick;
-    }
+    const input = document.getElementById('nickname');
+    if (savedNick && input) input.value = savedNick;
+    return savedNick;
+}
 
-    // 2. Obsługa wejścia bezpośrednio przez link /room/ID
+function tryAutoJoin(savedNick, roomId) {
+    if (!savedNick?.trim()) return;
+    console.log("Auto-joining room:", roomId);
+    setTimeout(() => {
+        if (typeof connect === 'function') connect();
+    }, 500);
+}
+
+function handleRoomRouteOnLoad(savedNick) {
+    const isRoomRoute = globalThis.location.pathname.startsWith('/room/');
     const pathParts = globalThis.location.pathname.split('/');
-    if (pathParts.length >= 3 && pathParts[1] === 'room') {
-        const roomId = pathParts[2];
-        if (roomInlineLabel) roomInlineLabel.textContent = `Pokój: ${roomId}`;
-        const roomIdInput = document.getElementById('room_id');
-        if (roomIdInput) {
-            roomIdInput.value = roomId;
-            if (!isRoomRoute || !document.getElementById('room-inline-join')) {
-                showJoinModal();
-            }
-        }
-        
-        // AUTO-JOIN: Jeśli mamy nick, próbujemy połączyć od razu
-        if (savedNick && savedNick.trim() !== "") {
-            console.log("Auto-joining room:", roomId);
-            setTimeout(() => {
-                if (typeof connect === 'function') connect();
-            }, 500);
+    if (pathParts.length < 3 || pathParts[1] !== 'room') return isRoomRoute;
+
+    const roomId = pathParts[2];
+    const roomInlineLabel = document.getElementById('room-inline-label');
+    if (roomInlineLabel) roomInlineLabel.textContent = `Pokój: ${roomId}`;
+
+    const roomIdInput = document.getElementById('room_id');
+    if (roomIdInput) {
+        roomIdInput.value = roomId;
+        if (!isRoomRoute || !document.getElementById('room-inline-join')) {
+            showJoinModal();
         }
     }
 
-    // 3. Załaduj pokoje i ustaw interwał
+    tryAutoJoin(savedNick, roomId);
+    return isRoomRoute;
+}
+
+function bindChatEnter() {
+    const msgInput = document.getElementById('message-input');
+    if (!msgInput) return;
+    msgInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && typeof sendChat === 'function') sendChat();
+    });
+}
+
+function bindCategoryEnter() {
+    const catInputs = document.querySelectorAll('#categories input');
+    catInputs.forEach((inp, i) => {
+        inp.addEventListener('keypress', (e) => {
+            if (e.key !== 'Enter') return;
+            if (i < catInputs.length - 1) {
+                catInputs[i + 1].focus();
+                return;
+            }
+            const stopBtn = document.getElementById('btn-stop');
+            if (stopBtn && !stopBtn.disabled && typeof stopGame === 'function') {
+                stopGame();
+            }
+        });
+    });
+}
+
+globalThis.window.onload = () => {
+    const savedNick = restoreNickname();
+    const isRoomRoute = handleRoomRouteOnLoad(savedNick);
     if (!isRoomRoute) {
         loadActiveRooms();
         setInterval(loadActiveRooms, 10000);
     }
-
-    // 4. Obsługa klawisza Enter na czacie
-    const msgInput = document.getElementById('message-input');
-    if (msgInput) {
-        msgInput.addEventListener('keypress', e => {
-            if (e.key === 'Enter') {
-                if (typeof sendChat === 'function') sendChat();
-            }
-        });
-    }
-
-    // 5. Obsługa Enter na inputach kategorii (przechodzenie do następnego)
-    const catInputs = document.querySelectorAll('#categories input');
-    catInputs.forEach((inp, i) => {
-        inp.addEventListener('keypress', e => {
-            if (e.key === 'Enter') {
-                if (i < catInputs.length - 1) {
-                    catInputs[i + 1].focus();
-                } else {
-                    const stopBtn = document.getElementById('btn-stop');
-                    if (stopBtn && !stopBtn.disabled) {
-                        if (typeof stopGame === 'function') stopGame();
-                    }
-                }
-            }
-        });
-    });
+    bindChatEnter();
+    bindCategoryEnter();
 };
 
 // Eksport dla socket.js i innych

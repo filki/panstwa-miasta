@@ -5,7 +5,7 @@
  *  - Static assets (CSS/JS/icons/manifest): stale-while-revalidate
  *  - WebSocket / API: never cached
  */
-const VERSION = 'pm-v1';
+const VERSION = 'pm-v2';
 const STATIC_CACHE = `${VERSION}-static`;
 const HTML_CACHE = `${VERSION}-html`;
 
@@ -19,14 +19,14 @@ const STATIC_ASSETS = [
     '/static/icons/icon.svg',
 ];
 
-self.addEventListener('install', (event) => {
+globalThis.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS)).catch(() => {})
     );
-    self.skipWaiting();
+    globalThis.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
+globalThis.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((keys) =>
             Promise.all(
@@ -36,7 +36,7 @@ self.addEventListener('activate', (event) => {
             )
         )
     );
-    self.clients.claim();
+    globalThis.clients.claim();
 });
 
 function isStaticAsset(url) {
@@ -47,7 +47,7 @@ function isApiOrWs(url) {
     return url.pathname.startsWith('/api/') || url.pathname.startsWith('/ws/');
 }
 
-self.addEventListener('fetch', (event) => {
+globalThis.addEventListener('fetch', (event) => {
     const req = event.request;
     if (req.method !== 'GET') return;
 
