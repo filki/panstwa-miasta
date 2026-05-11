@@ -799,16 +799,51 @@ input.pts-0  { border-color: var(--danger); }
     margin-top: var(--space-5);
 }
 
-/* ---------- Floating leave button ---------- */
-#btn-leave {
-    position: fixed;
-    top: calc(env(safe-area-inset-top, 0) + 10px);
-    right: 12px;
-    width: auto;
-    min-height: 38px;
-    padding: 0.4rem 0.8rem;
+/* ---------- Navbar leave button ---------- */
+.nav-cta--leave {
+    background: rgba(239, 68, 68, 0.12);
+    color: #fecaca;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    text-transform: none;
+    letter-spacing: 0.2px;
+    font-weight: 700;
+    box-shadow: none;
+}
+
+.nav-cta--leave:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.2);
+    color: white;
+    border-color: rgba(239, 68, 68, 0.7);
+    filter: none;
+    box-shadow: none;
+    transform: none;
+}
+
+.nav-cta--leave::before {
+    content: "🚪 ";
+}
+
+.nav-room-info {
+    color: var(--text-muted);
     font-size: var(--fs-sm);
-    z-index: 1100;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.nav-room-info strong {
+    color: var(--accent);
+    font-weight: 800;
+    margin-left: 4px;
+    letter-spacing: 1px;
+}
+
+/* Pokaż info o pokoju tylko od md w górę, na mobile zostaje sam button. */
+@media (max-width: 767px) {
+    .nav-room-info { display: none !important; }
+    .nav-cta--leave {
+        padding: 0.4rem 0.7rem;
+        font-size: 0.8rem;
+    }
 }
 
 /* ---------- Utility ---------- */

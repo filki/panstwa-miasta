@@ -16,6 +16,11 @@ function leaveRoom() {
     const inlineJoin = document.getElementById('room-inline-join');
     if (inlineJoin) inlineJoin.style.display = 'block';
     document.getElementById('btn-leave').style.display = 'none';
+
+    const navRoomInfo = document.getElementById('nav-room-info');
+    const navHomeLink = document.getElementById('nav-home-link');
+    if (navRoomInfo) navRoomInfo.style.display = 'none';
+    if (navHomeLink) navHomeLink.style.display = '';
     // Remove room param from URL
     globalThis.history.replaceState(null, '', globalThis.location.pathname);
     // Close WebSocket if open
@@ -89,8 +94,16 @@ function connect() {
         const inlineJoin = document.getElementById('room-inline-join');
         if (inlineJoin) inlineJoin.style.display = 'none';
         document.getElementById('chat-section').style.display = 'block';
-        document.getElementById('btn-leave').style.display = 'block';
+        document.getElementById('btn-leave').style.display = 'inline-flex';
         document.getElementById('current-room').textContent = roomId;
+
+        const navRoomInfo = document.getElementById('nav-room-info');
+        const navRoomCode = document.getElementById('nav-room-code');
+        const navHomeLink = document.getElementById('nav-home-link');
+        if (navRoomCode) navRoomCode.textContent = roomId;
+        if (navRoomInfo) navRoomInfo.style.display = 'inline-flex';
+        if (navHomeLink) navHomeLink.style.display = 'none';
+
         if (typeof updateScoreboard === 'function') updateScoreboard({}, '');
     };
 

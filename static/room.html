@@ -19,7 +19,11 @@
         <div class="nav-container">
             <a href="/" class="logo" style="text-decoration:none;">Państwa<span>Miasta</span></a>
             <div class="nav-links">
-                <a href="/" class="nav-link-extra">Strona główna</a>
+                <span id="nav-room-info" class="nav-room-info" style="display: none;">
+                    Pokój <strong id="nav-room-code">—</strong>
+                </span>
+                <a href="/" class="nav-link-extra" id="nav-home-link">Strona główna</a>
+                <button type="button" id="btn-leave" onclick="leaveRoom()" class="nav-cta nav-cta--leave" style="display: none;">Wyjdź z pokoju</button>
             </div>
         </div>
     </nav>
@@ -121,9 +125,6 @@
             </div>
         </div>
     </main>
-
-    <!-- Floating leave button while in game -->
-    <button type="button" id="btn-leave" onclick="leaveRoom()" class="danger" style="display: none;">🚪 Wyjdź</button>
 
     <!-- Hidden, shared with index.html for socket.js compatibility -->
     <div id="join-modal" class="modal-overlay" style="display: none;">
