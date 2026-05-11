@@ -1,4 +1,6 @@
 import asyncio
+import secrets
+from collections import deque
 
 from fastapi import WebSocket
 
@@ -12,6 +14,12 @@ logger = get_logger(__name__)
 ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
 GAME_CATEGORIES = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
 WIKI_CATEGORIES = ["Miasto", "Zwierzę", "Roślina"]
+
+# Ile ostatnich wylosowanych liter przesuwamy na DNO nowej talii przy
+# re-shuffle, żeby kolejny cykl nie zaczął się od litery, która właśnie
+# wypadła. Wartość mniejsza od długości alfabetu (22) -- inaczej talia
+# byłaby pusta po wykluczeniu.
+RECENT_LETTERS_MEMORY = 7
 
 
 def normalize_text(text: str) -> str:
@@ -29,7 +37,6 @@ class Room:
 
         # Stan gry i rundy
         self.current_round = 0
-        self.used_letters = set()
         self.ready_players = set()
         self.is_playing = False
         self.stop_triggered = False
@@ -38,7 +45,14 @@ class Room:
         self.expected_answers = 0
         self.game_over = False
 
-        # Deck-shuffle: talia liter – każda litera pojawi się raz zanim jakakolwiek się powtórzy
+        # Deck-shuffle: talia liter – każda litera pojawi się raz zanim
+        # jakakolwiek się powtórzy. Ostatnie N wylosowanych liter trzymamy
+        # w `_recent_letters` i przy re-shuffle wpychamy je na DNO nowej
+        # talii, żeby kolejny cykl nie zaczął się od litery, która właśnie
+        # wyszła. To zachowuje brak powtórek wewnątrz cyklu, a dodatkowo
+        # tłumi kolizje na styku dwóch cykli (czyli też między grami w
+        # tym samym pokoju -- patrz `restart_game`).
+        self._recent_letters: deque[str] = deque(maxlen=RECENT_LETTERS_MEMORY)
         self.letter_queue: list[str] = []
         self._refill_letter_queue()
 
@@ -54,13 +68,26 @@ class Room:
             await connection.send_text(message)
 
     def _refill_letter_queue(self):
-        """Miesza cały alfabet i ładuje go do kolejki (deck-shuffle)."""
-        import secrets
+        """Miesza alfabet i ładuje do kolejki.
 
-        deck = list(ALPHABET)
-        secrets.SystemRandom().shuffle(deck)
-        self.letter_queue = deck
-        logger.info(f"Room {self.room_id}: letter queue refilled -> {self.letter_queue}")
+        Ostatnie ``RECENT_LETTERS_MEMORY`` wylosowanych liter trafia na DNO
+        nowej talii (czyli zostanie wyciągnięte jako OSTATNIE -- ``pop()``
+        bierze z końca). Reszta jest tasowana niezależnie i ląduje wyżej.
+        """
+        rng = secrets.SystemRandom()
+        recent = set(self._recent_letters)
+        fresh = [c for c in ALPHABET if c not in recent]
+        stale = list(recent)
+        rng.shuffle(fresh)
+        rng.shuffle(stale)
+        # ``letter_queue.pop()`` bierze z końca, więc fresh na końcu,
+        # stale na początku -> stale pojawi się dopiero, gdy fresh się
+        # wyczerpie.
+        self.letter_queue = stale + fresh
+        logger.info(
+            f"Room {self.room_id}: letter queue refilled "
+            f"(fresh={len(fresh)}, stale-tail={len(stale)})"
+        )
 
     def start_round(self) -> str:
         self.is_playing = True
@@ -72,9 +99,12 @@ class Room:
         if not self.letter_queue:
             self._refill_letter_queue()
 
-        self.current_letter = self.letter_queue.pop()
+        letter = self.letter_queue.pop()
+        self._recent_letters.append(letter)
+        self.current_letter = letter
         logger.info(
-            f"Room {self.room_id}: round {self.current_round} – letter '{self.current_letter}' (remaining in queue: {len(self.letter_queue)})"
+            f"Room {self.room_id}: round {self.current_round} – letter '{letter}' "
+            f"(remaining in queue: {len(self.letter_queue)})"
         )
 
         self.answers_received = {}
@@ -89,8 +119,9 @@ class Room:
         self.game_over = False
         self.is_playing = False
         self.ready_players = set()
-        self.used_letters = set()
-        self._refill_letter_queue()
+        # NIE wywołujemy _refill_letter_queue() -- kontynuujemy istniejącą
+        # talię, żeby dwie sąsiednie gry w tym samym pokoju używały kolejnych
+        # unikalnych liter (do 22 zanim cokolwiek się powtórzy).
         for p, s in self.scores.items():
             await save_player_score(self.room_id, p, s)
         await save_room(
