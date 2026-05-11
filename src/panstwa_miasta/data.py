@@ -8,16 +8,22 @@ Source of truth:
   initialised. Importing this module before :func:`db.init_db` runs is fine
   -- ``COUNTRIES`` will simply be empty until the first reload.
 * ``NAMES``      -> SQL table ``names`` (seeded from :mod:`panstwa_miasta.names_seed`).
-  The set is an in-memory cache filled by :func:`reload_names` after
-  :func:`db.init_db` runs.
-* ``JOBS``       -> ``data/*.txt`` (currently ``zawody.txt``) with a smart
-  first-word alias for multi-word PKD entries.
+* ``JOBS``       -> SQL table ``jobs`` (seeded from :mod:`panstwa_miasta.jobs_seed`).
+  Regeneracja modułu seed: ``uv run python scripts/build_jobs_seed.py --zawody … --liniowy …``.
+
+In-memory caches are filled by the FastAPI lifespan handler (and pytest
+fixtures via :func:`db.init_db`).
 """
 
-import pathlib
+from __future__ import annotations
 
 COUNTRIES: set[str] = set()
 NAMES: set[str] = set()
+JOBS: set[str] = set()
+
+# Alias: dla wielowyrazowych zawodów dodajemy pierwsze słowo (>3 znaki) jako
+# osobny wpis w zbiorze — tak jak wcześniej przy ``zawody.txt``.
+JOB_ALIAS_PREFIX_SKIP = frozenset({"akredytowany", "pomocniczy"})
 
 
 async def reload_countries() -> None:
@@ -43,39 +49,16 @@ async def reload_names() -> None:
     NAMES.update(norms)
 
 
-# Dynamiczne ścieżki do plików danych
-base_path = pathlib.Path(__file__).parent.parent.parent
-data_dir = base_path / "data"
+async def reload_jobs() -> None:
+    """Odświeża ``JOBS`` z tabeli ``jobs`` + aliasy pierwszego słowa."""
+    from .db import load_job_norms
 
-# Ladowanie zawodow z curated zawody.txt.
-#
-# Historia bledu: wczesniej rozbijalismy kazda linie na slowa >3 znaki, co
-# wpychalo do JOBS smieci typu "spraw" / "specjalista" / "ofert" (z PKD-owych
-# wielowyrazowych nazw w surowym raw_jobs.txt). raw_jobs.txt zniknal z repo,
-# a tu zostawiamy pelne frazy plus jeden bezpieczny alias.
-#
-# Alias: dla N-wyrazowych entries dodajemy pierwsze slowo (>3 znakow) jako
-# pojedynczy zawod -- zeby gracz wpisujacy "agent" trafial w zbior, gdy w
-# zawody.txt jest tylko "agent celny", "agent klarujacy" itd. Pierwsze slowo
-# w PKD jest niemal zawsze rzeczownikiem glownym (lekarz, agent, analityk),
-# z wyjatkiem nielicznych entries zaczynajacych sie od przymiotnika
-# kwalifikujacego -- te pomijamy.
-JOB_ALIAS_PREFIX_SKIP = frozenset({"akredytowany", "pomocniczy"})
-
-JOBS = set()
-for txt_file in data_dir.glob("*.txt"):
-    try:
-        with open(txt_file, encoding="utf-8") as f:
-            for line in f:
-                job = line.strip().lower()
-                if not job:
-                    continue
-                JOBS.add(job)
-                words = job.split()
-                if len(words) >= 2:
-                    head = words[0]
-                    if len(head) > 3 and head not in JOB_ALIAS_PREFIX_SKIP:
-                        JOBS.add(head)
-        print(f"OK Zaladowano zawody z pliku: {txt_file.name}")
-    except Exception as e:
-        print(f"BLAD podczas ladowania zawodow {txt_file.name}: {e}")
+    norms = await load_job_norms()
+    JOBS.clear()
+    for n in norms:
+        JOBS.add(n)
+        words = n.split()
+        if len(words) >= 2:
+            head = words[0]
+            if len(head) > 3 and head not in JOB_ALIAS_PREFIX_SKIP:
+                JOBS.add(head)

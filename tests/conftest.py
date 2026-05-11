@@ -20,12 +20,13 @@ def _isolated_test_db(tmp_path: object):
 
     Function-scoped so `test_db_lifecycle` (which creates/deletes the DB
     itself) cannot corrupt sibling tests. Also primes the in-memory
-    ``data.COUNTRIES`` and ``data.NAMES`` caches from the freshly seeded
-    ``countries`` and ``names`` tables.
+    ``data.COUNTRIES``, ``data.NAMES`` i ``data.JOBS`` z tabel
+    ``countries``, ``names`` i ``jobs``.
     """
     test_db = tmp_path / "test.db"  # type: ignore[operator]
     db.DB_PATH = test_db
     asyncio.run(db.init_db())
     asyncio.run(data.reload_countries())
     asyncio.run(data.reload_names())
+    asyncio.run(data.reload_jobs())
     yield

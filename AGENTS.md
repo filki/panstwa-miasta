@@ -64,12 +64,14 @@ Static game data lives in **SQLite tables**, not files:
   continent, capital, population, etc.)
 - `names` table — seeded from `src/panstwa_miasta/names_seed.py`
   (1455 Polish first names, M/F, with occurrence count from PESEL register)
-- `JOBS` — **still a Python set in `data.py`**. Don't touch it until the
-  user explicitly asks. The user said: *"narazie nie dotykaj zawodów"*.
+- `jobs` table — seeded from `src/panstwa_miasta/jobs_seed.py` (~1450
+  zawodów + opcjonalny `kod` PKD). Cache ``JOBS`` w ``data.py`` wypełnia
+  ``reload_jobs()`` (pełna fraza + alias pierwszego słowa). Regeneracja
+  seeda: ``uv run python scripts/build_jobs_seed.py --zawody PLIK --liniowy PLIK``.
 
-In-memory caches `COUNTRIES`, `NAMES` (sets of normalized strings) are
-populated by `reload_countries()` / `reload_names()` in the FastAPI
-lifespan handler (and pytest fixtures via `tests/conftest.py`).
+In-memory caches `COUNTRIES`, `NAMES`, `JOBS` are populated by
+`reload_*` in the FastAPI lifespan handler (and pytest fixtures via
+`tests/conftest.py`).
 
 Normalization is `manager.normalize_text` / `db._name_norm`: lowercase,
 strip, collapse whitespace. Both DB and validation must use it.
@@ -96,9 +98,7 @@ continues the existing queue — does **not** reshuffle.
 
 - **Faza 3**: animacja losowania litery + countdown + wibracja mobilna
 - **Faza 4**: `share_store.py` integration in game flow + endpointy
-- **Eventual**: `JOBS` → SQL table (mirror countries/names pattern, but
-  the user wants to redesign job names first — they come from PKD
-  register and are awkward as game answers)
+- **Jobs**: nazwy są curatowane w ``jobs_seed.py`` (nie surowe PKD w grze).
 
 ## Persistent memory (this file + Cursor rules)
 

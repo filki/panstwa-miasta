@@ -3,6 +3,7 @@ import pathlib
 import aiosqlite
 
 from .countries_seed import COUNTRIES_SEED
+from .jobs_seed import JOBS_SEED
 from .names_seed import NAMES_SEED
 
 DB_PATH = pathlib.Path(__file__).parent.parent.parent / "panstwa_miasta.db"
@@ -93,6 +94,23 @@ async def init_db():
                 for row in NAMES_SEED
             ],
         )
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS jobs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                kod TEXT,
+                opis TEXT NOT NULL,
+                opis_norm TEXT NOT NULL,
+                UNIQUE(opis_norm)
+            )
+        """)
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_jobs_kod ON jobs(kod)")
+        await db.executemany(
+            """
+            INSERT OR IGNORE INTO jobs (kod, opis, opis_norm)
+            VALUES (?, ?, ?)
+            """,
+            [(row["kod"], row["opis"], _name_norm(row["opis"])) for row in JOBS_SEED],
+        )
         await db.commit()
 
 
@@ -168,3 +186,13 @@ async def load_name_norms() -> set[str]:
     ):
         rows = await cursor.fetchall()
         return {row[0] for row in rows}
+
+
+async def load_job_norms() -> list[str]:
+    """Zwraca listę znormalizowanych opisów zawodów (kolejność bez znaczenia)."""
+    async with (
+        aiosqlite.connect(DB_PATH) as db,
+        db.execute("SELECT opis_norm FROM jobs") as cursor,
+    ):
+        rows = await cursor.fetchall()
+        return [row[0] for row in rows]

@@ -26,9 +26,11 @@ test_output.txt
 jest_full_output.txt
 *.output.txt
 
-# Generated / intermediate dictionary sources (regenerowalne przez scripts/extract_jobs.py)
-data/hierarchiczny.json
-data/raw_jobs.txt
+# Lokalne zrzuty PKD / surowe listy (gra: SQLite + *_seed.py)
+data/
+
+# Wyjście scripts/extract_jobs.py
+scripts/pkd_raw_jobs.txt
 
 # Ruff cache
 .ruff_cache/
@@ -37,9 +39,9 @@ data/raw_jobs.txt
 logs/
 *.db
 
-# PESEL first-name extracts (seed lives in names_seed.py)
-data/8_-_Wykaz_imion_męskich*.csv
-data/8_-_Wykaz_imion_żeńskich*.csv
+# PESEL CSV extracts (seed lives in names_seed.py)
+**/8_-_Wykaz_imion_męskich*.csv
+**/8_-_Wykaz_imion_żeńskich*.csv
 
 # MCP memory graph — dynamic, agent-managed, machine-local
 .cursor/memory.json
