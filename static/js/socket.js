@@ -137,39 +137,50 @@ function connect() {
 
     ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-        const handlers = {
-            system: (m) => addLog(`<em>${m.message}</em>`, "system-msg"),
-            score_update: (m) => updateScoreboard(m.scores, m.host_name),
-            chat: (m) => {
-                const container = document.createElement('div');
-                const senderDiv = document.createElement('div');
-                senderDiv.className = 'sender';
-                senderDiv.textContent = m.sender;
-                const textDiv = document.createElement('div');
-                textDiv.textContent = m.text;
-                container.appendChild(senderDiv);
-                container.appendChild(textDiv);
-                addLog(container, "");
-            },
-            round_started: onRoundStarted,
-            stop_round: onStopRound,
-            round_results: onRoundResults,
-            game_restarted: onGameRestarted,
-            room_dissolved: (m) => {
-                alert(m.message);
-                globalThis.location.href = globalThis.location.pathname;
-            }
-        };
-
-        if (handlers[msg.type]) {
-            handlers[msg.type](msg);
-        }
+        const handler = MESSAGE_HANDLERS[msg.type];
+        if (handler) handler(msg);
     };
 
     ws.onerror = (e) => {
         console.error("WS Error:", e);
     };
 }
+
+function onSystemMessage(m) {
+    addLog(`<em>${m.message}</em>`, "system-msg");
+}
+
+function onScoreUpdate(m) {
+    updateScoreboard(m.scores, m.host_name);
+}
+
+function onChatMessage(m) {
+    const container = document.createElement('div');
+    const senderDiv = document.createElement('div');
+    senderDiv.className = 'sender';
+    senderDiv.textContent = m.sender;
+    const textDiv = document.createElement('div');
+    textDiv.textContent = m.text;
+    container.appendChild(senderDiv);
+    container.appendChild(textDiv);
+    addLog(container, "");
+}
+
+function onRoomDissolved(m) {
+    alert(m.message);
+    globalThis.location.href = globalThis.location.pathname;
+}
+
+const MESSAGE_HANDLERS = {
+    system: onSystemMessage,
+    score_update: onScoreUpdate,
+    chat: onChatMessage,
+    round_started: onRoundStarted,
+    stop_round: onStopRound,
+    round_results: onRoundResults,
+    game_restarted: onGameRestarted,
+    room_dissolved: onRoomDissolved,
+};
 
 function onRoundStarted(msg) {
     globalThis.currentLetter = msg.letter;
