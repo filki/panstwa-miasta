@@ -101,6 +101,18 @@ async def test_room_broadcast():
 
 
 @pytest.mark.asyncio
+async def test_room_broadcast_continues_after_one_send_fails():
+    room = Room("test")
+    ws1 = AsyncMock(spec=WebSocket)
+    ws2 = AsyncMock(spec=WebSocket)
+    ws1.send_text = AsyncMock(side_effect=RuntimeError("stale socket"))
+    room.connections = {"p1": ws1, "p2": ws2}
+
+    await room.broadcast("hello")
+    ws2.send_text.assert_called_once_with("hello")
+
+
+@pytest.mark.asyncio
 async def test_manager_connect():
     manager = ConnectionManager()
     ws = AsyncMock(spec=WebSocket)

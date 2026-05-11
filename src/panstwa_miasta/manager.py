@@ -62,10 +62,16 @@ class Room:
         self._global_timeout_task: asyncio.Task | None = None
 
     async def broadcast(self, message: str):
-        """Wysyła wiadomość do wszystkich w pokoju"""
-        # SonarQube MINOR: Remove unnecessary list() call
-        for connection in self.connections.values():
-            await connection.send_text(message)
+        """Wysyła wiadomość do wszystkich w pokoju.
+
+        Snapshot + obsługa błędów: jedno martwe gniazdo (np. po długiej grze)
+        nie blokuje wysyłki do reszty ani rozwiązania pokoju.
+        """
+        for connection in list(self.connections.values()):
+            try:
+                await connection.send_text(message)
+            except Exception as exc:
+                logger.warning("broadcast send_text failed: %s", exc)
 
     def _refill_letter_queue(self):
         """Miesza alfabet i ładuje do kolejki.
