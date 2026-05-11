@@ -12,6 +12,24 @@ Solo project, prod target: smartphone-first, no ads, no accounts.
 - **Lint/format/types**: `ruff` (lint + format), `ty` (type check)
 - **Quality gate**: SonarQube local (`localhost:9000`, project key `panstwa-masta`)
 
+## WSL setup (one-time)
+
+This workspace lives on WSL but the host PATH may resolve `npm` / `npx`
+to the Windows-side binaries under `/mnt/c/Program Files/nodejs/`. They
+choke on Linux-style paths (`ERR_INVALID_URL`). Always use a Linux-side
+Node installed via nvm:
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh"
+nvm install --lts          # currently Node 24
+```
+
+After install: `which npx` should point at
+`/home/filip/.nvm/versions/node/v<x>/bin/npx`. The MCP memory server in
+`.cursor/mcp.json` references that absolute path explicitly — if you
+upgrade Node via `nvm install`, update that path too.
+
 ## Daily QA loop (run before every commit)
 
 ```bash
