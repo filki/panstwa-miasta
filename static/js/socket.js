@@ -13,6 +13,8 @@ function leaveRoom() {
     // Hide chat UI and show join UI
     document.getElementById('chat-section').style.display = 'none';
     document.getElementById('join-section').style.display = 'block';
+    const inlineJoin = document.getElementById('room-inline-join');
+    if (inlineJoin) inlineJoin.style.display = 'block';
     document.getElementById('btn-leave').style.display = 'none';
     // Remove room param from URL
     globalThis.history.replaceState(null, '', globalThis.location.pathname);
@@ -76,6 +78,8 @@ function connect() {
     ws.onopen = () => {
         if (typeof hideModals === 'function') hideModals();
         document.getElementById('join-section').style.display = 'none';
+        const inlineJoin = document.getElementById('room-inline-join');
+        if (inlineJoin) inlineJoin.style.display = 'none';
         document.getElementById('chat-section').style.display = 'block';
         document.getElementById('btn-leave').style.display = 'block';
         document.getElementById('current-room').textContent = roomId;

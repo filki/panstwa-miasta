@@ -40,6 +40,7 @@ static_path = pathlib.Path(__file__).parent.parent.parent / "static"
 app.mount("/static", StaticFiles(directory=static_path), name="static")
 
 INDEX_PATH = pathlib.Path(__file__).parent.parent.parent / "static" / "index.html"
+ROOM_PATH = pathlib.Path(__file__).parent.parent.parent / "static" / "room.html"
 
 
 # ---------------------------------------------------------------------------
@@ -103,8 +104,8 @@ async def get_root() -> HTMLResponse:
 
 @app.get("/room/{room_id}")
 async def get_room(room_id: str) -> HTMLResponse:
-    # Use async file read (SonarQube MAJOR: avoid sync open in async function)
-    async with aiofiles.open(INDEX_PATH, encoding="utf-8") as f:
+    # Use separate room page instead of rendering landing page.
+    async with aiofiles.open(ROOM_PATH, encoding="utf-8") as f:
         html_content = await f.read()
     return HTMLResponse(content=html_content)
 

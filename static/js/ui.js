@@ -13,6 +13,57 @@ function hideModals() {
     document.getElementById('lottery-modal').style.display = 'none';
 }
 
+function addLog(content, className = '') {
+    const logs = document.getElementById('logs');
+    if (!logs) return;
+
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${className || ''}`.trim();
+
+    if (content instanceof HTMLElement) {
+        entry.appendChild(content);
+    } else {
+        entry.innerHTML = String(content ?? '');
+    }
+
+    logs.appendChild(entry);
+    logs.scrollTop = logs.scrollHeight;
+}
+
+function updateScoreboard(scores = {}, hostName = '') {
+    const scoreboard = document.getElementById('scoreboard');
+    if (!scoreboard) return;
+
+    scoreboard.innerHTML = '';
+
+    const entries = Object.entries(scores).sort((a, b) => Number(b[1]) - Number(a[1]));
+    entries.forEach(([name, points]) => {
+        const row = document.createElement('div');
+        row.className = 'score-item';
+        if (hostName && name === hostName) row.classList.add('is-host');
+
+        const safePoints = Number(points) || 0;
+        row.innerHTML = `
+            <span>${name === hostName ? '<span class="crown">👑</span>' : ''}${name}</span>
+            <strong>${safePoints} pkt</strong>
+        `;
+        scoreboard.appendChild(row);
+    });
+}
+
+function sendChat() {
+    const input = document.getElementById('message-input');
+    if (!input) return;
+
+    const text = input.value.trim();
+    if (!text) return;
+
+    if (typeof sendJson === 'function') {
+        sendJson({ type: 'chat', text });
+        input.value = '';
+    }
+}
+
 // Funkcja ładowania aktywnych pokoi
 async function loadActiveRooms() {
     try {
@@ -60,6 +111,9 @@ globalThis.joinRoom = (roomId) => {
 
 // Inicjalizacja przy załadowaniu strony
 globalThis.window.onload = () => {
+    const isRoomRoute = globalThis.location.pathname.startsWith('/room/');
+    const roomInlineLabel = document.getElementById('room-inline-label');
+
     // 1. Załaduj nick z localStorage
     const savedNick = localStorage.getItem('pm_nickname');
     if (savedNick && document.getElementById('nickname')) {
@@ -70,10 +124,13 @@ globalThis.window.onload = () => {
     const pathParts = globalThis.location.pathname.split('/');
     if (pathParts.length >= 3 && pathParts[1] === 'room') {
         const roomId = pathParts[2];
+        if (roomInlineLabel) roomInlineLabel.textContent = `Pokój: ${roomId}`;
         const roomIdInput = document.getElementById('room_id');
         if (roomIdInput) {
             roomIdInput.value = roomId;
-            showJoinModal();
+            if (!isRoomRoute || !document.getElementById('room-inline-join')) {
+                showJoinModal();
+            }
         }
         
         // AUTO-JOIN: Jeśli mamy nick, próbujemy połączyć od razu
@@ -86,8 +143,10 @@ globalThis.window.onload = () => {
     }
 
     // 3. Załaduj pokoje i ustaw interwał
-    loadActiveRooms();
-    setInterval(loadActiveRooms, 10000);
+    if (!isRoomRoute) {
+        loadActiveRooms();
+        setInterval(loadActiveRooms, 10000);
+    }
 
     // 4. Obsługa klawisza Enter na czacie
     const msgInput = document.getElementById('message-input');
@@ -122,3 +181,6 @@ globalThis.showJoinModal = showJoinModal;
 globalThis.showCreateModal = showCreateModal;
 globalThis.hideModals = hideModals;
 globalThis.loadActiveRooms = loadActiveRooms;
+globalThis.addLog = addLog;
+globalThis.updateScoreboard = updateScoreboard;
+globalThis.sendChat = sendChat;

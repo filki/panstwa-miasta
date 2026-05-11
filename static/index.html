@@ -27,23 +27,25 @@
         </div>
     </nav>
 
-    <!-- HERO SECTION -->
-    <header class="hero">
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-            <div class="status-badge"><div class="live-dot"></div> 1,240 GRACZY ONLINE</div>
-            <h1 class="hero-title">Klasyczna Gra w<br><span>Nowoczesnym</span> Wydaniu</h1>
-            <p class="hero-subtitle">Graj ze znajomymi w czasie rzeczywistym. Bez reklam, bez instalacji, całkowicie za darmo.</p>
-            <div class="hero-btns">
-                <button class="btn-primary" onclick="document.getElementById('lobby').scrollIntoView({behavior:'smooth'})">SZYBKI START</button>
-                <button class="btn-secondary" onclick="showCreateModal()">STWÓRZ POKÓJ</button>
+    <!-- GŁÓWNY KONTENER STRONY (Vertical Flow) -->
+    <main class="page-wrapper">
+        <!-- HERO SECTION -->
+        <header class="hero">
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <div class="status-badge"><div class="live-dot"></div> 1,240 GRACZY ONLINE</div>
+                <h1 class="hero-title">Klasyczna Gra w<br><span>Nowoczesnym</span> Wydaniu</h1>
+                <p class="hero-subtitle">Graj ze znajomymi w czasie rzeczywistym. Bez reklam, bez instalacji, całkowicie za darmo.</p>
+                <div class="hero-btns">
+                    <button class="btn-primary" onclick="document.getElementById('lobby').scrollIntoView({behavior:'smooth'})">SZYBKI START</button>
+                    <button class="btn-secondary" onclick="showCreateModal()">STWÓRZ POKÓJ</button>
+                </div>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <div class="container">
-        <!-- SEKCJA LOBBY -->
-        <section id="lobby" class="lobby-section">
+        <div class="container">
+            <!-- SEKCJA LOBBY -->
+            <section id="lobby" class="lobby-section">
             <div class="section-header">
                 <h2>Dołącz do Akcji</h2>
                 <p>Wybierz aktywny pokój lub stwórz własny i zaproś znajomych.</p>
@@ -62,6 +64,9 @@
                             <div class="choice-content">
                                 <h3>STWÓRZ POKÓJ</h3>
                                 <p>Zostań hostem i ustalaj własne zasady.</p>
+                                <button type="button" class="choice-action" onclick="event.stopPropagation(); showCreateModal();">
+                                    STWÓRZ
+                                </button>
                             </div>
                         </div>
                         <div class="choice-card" onclick="showJoinModal()" style="cursor:pointer;">
@@ -69,6 +74,9 @@
                             <div class="choice-content">
                                 <h3>DOŁĄCZ DO GRY</h3>
                                 <p>Wpisz kod od znajomego i graj.</p>
+                                <button type="button" class="choice-action" onclick="event.stopPropagation(); showJoinModal();">
+                                    DOŁĄCZ
+                                </button>
                             </div>
                         </div>
                     </div>
