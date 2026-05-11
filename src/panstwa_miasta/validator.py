@@ -1,16 +1,63 @@
 import httpx
-import asyncio
-from typing import Dict, Set
+from typing import Dict, List, Optional, Any
+
+# Logger import
+from .logger import get_logger
+logger = get_logger(__name__)
 
 class WikipediaValidator:
     def __init__(self):
         self.cache: Dict[str, bool] = {}
         self.client = httpx.AsyncClient(timeout=5.0)
+        logger.info("WikipediaValidator initialized.")
         
+    async def _search_wikidata(self, term: str) -> Optional[str]:
+        """Searches for an entity on Wikidata and returns its ID if a label matches."""
+        params = {
+            "action": "wbsearchentities",
+            "search": term,
+            "language": "pl",
+            "format": "json"
+        }
+        response = await self.client.get("https://www.wikidata.org/w/api.php", params=params)
+        data = response.json()
+        for result in data.get("search", []):
+            if result.get("label", "").lower() == term:
+                return result["id"]
+        return None
+
+    async def _get_claims(self, entity_id: str) -> Dict[str, List[Any]]:
+        """Fetches claims for a given Wikidata entity."""
+        params = {
+            "action": "wbgetentities",
+            "ids": entity_id,
+            "props": "claims",
+            "format": "json"
+        }
+        response = await self.client.get("https://www.wikidata.org/w/api.php", params=params)
+        data = response.json()
+        return data.get("entities", {}).get(entity_id, {}).get("claims", {})
+
+    def _check_category(self, claims: Dict[str, List[Any]], category: str) -> bool:
+        """Checks if any P31 (instance of) claim matches the target category."""
+        category_map = {
+            "Miasto": {"Q515", "Q1549591", "Q5119"},  # city, town, village
+            "Zwierzę": {"Q729", "Q16521"},           # animal, organism
+            "Roślina": {"Q756"}                      # plant
+        }
+        if category not in category_map:
+            return True
+
+        p31_claims = claims.get("P31", [])
+        for claim in p31_claims:
+            mainsnak = claim.get("mainsnak", {}).get("datavalue", {}).get("value", {}).get("id")
+            if mainsnak in category_map[category]:
+                return True
+        return False
+
     async def validate(self, term: str, category: str) -> bool:
         """
-        Sprawdza czy dany termin istnieje w polskiej Wikipedii.
-        Opcjonalnie można sprawdzać kategorie, ale na razie sprawdzamy samą egzystencję strony.
+        Sprawdza czy dany termin istnieje w Wikidata i pasuje do kategorii.
         """
         term = term.strip().lower()
         if not term:
@@ -21,59 +68,25 @@ class WikipediaValidator:
             return self.cache[cache_key]
             
         try:
-            params = {
-                "action": "wbsearchentities",
-                "search": term,
-                "language": "pl",
-                "format": "json"
-            }
-            # Używamy API Wikidata - jest dużo bardziej restrykcyjne i precyzyjne (opisy to np. "miasto w Polsce", "gatunek ssaka")
-            response = await self.client.get("https://www.wikidata.org/w/api.php", params=params)
-            data = response.json()
+            entity_id = await self._search_wikidata(term)
+            if not entity_id:
+                self.cache[cache_key] = False
+                return False
+
+            logger.info(f"Entity found for {term}: {entity_id}")
+            claims = await self._get_claims(entity_id)
+            found = self._check_category(claims, category)
             
-            search_results = data.get("search", [])
-            if search_results:
-                # Bierzemy pierwszy (najbardziej trafny) wynik
-                first_result = search_results[0]
-                title = first_result.get("label", "").lower()
-                description = first_result.get("description", "").lower()
-                
-                # Słowa kluczowe dla kategorii
-                keywords = {
-                    "Miasto": ["miasto", "miejscowość", "stolica", "wieś", "osada", "gmina", "aglomeracja", "prowincja"],
-                    "Zwierzę": ["zwierzę", "gatunek", "rodzina", "rząd", "ptak", "ryba", "ssak", "gad", "płaz", "owad", "pająk", "stawonóg"],
-                    "Roślina": ["roślina", "gatunek", "drzewo", "krzew", "kwiat", "bylina", "zioło", "owoc", "warzywo", "grzyb", "roślin"]
-                }
-                
-                # Czarna lista - terminy które nie powinny być zaliczone, mimo że pasują do słów kluczowych
-                BLACKLIST = {
-                    "Roślina": {"zalia", "trawa"},  # np. "zalia" to nazwisko, nie roślina
-                }
-                
-                # Jeśli tytuł się zgadza (lub jest bardzo blisko)
-                if term in title or title in term:
-                    # Sprawdzamy czarną listę najpierw
-                    if category in BLACKLIST and term in BLACKLIST[category]:
-                        self.cache[cache_key] = False
-                        return False
-                    if category in keywords:
-                        # Wyszukujemy słów kluczowych w precyzyjnym opisie Wikidata
-                        if any(kw in description for kw in keywords[category]):
-                            self.cache[cache_key] = True
-                            return True
-                    else:
-                        self.cache[cache_key] = True
-                        return True
-            
-            self.cache[cache_key] = False
-            return False
+            self.cache[cache_key] = found
+            logger.info(f"Validation result for {term} in {category}: {found}")
+            return found
         except Exception as e:
-            print(f"⚠️ Błąd walidacji Wikipedia dla {term}: {e}")
-            # W razie błędu sieci, domyślnie uznajemy (żeby nie psuć gry)
-            return True
+            logger.error(f"⚠️ Błąd walidacji Wikidata dla {term}: {e}")
+            return True # Fail-open to not break the game
 
     async def close(self):
         await self.client.aclose()
+        logger.info("WikipediaValidator client closed.")
 
 # Globalny instancja walidatora
 validator = WikipediaValidator()

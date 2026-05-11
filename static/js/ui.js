@@ -1,9 +1,15 @@
-function addLog(htmlContent, typeClass) {
+function addLog(content, typeClass, isRawHtml = true) {
     const logsDiv = document.getElementById('logs');
     if (!logsDiv) return;
     const entry = document.createElement('div');
     entry.className = `log-entry ${typeClass}`;
-    entry.innerHTML = htmlContent;
+    if (content instanceof HTMLElement) {
+        entry.appendChild(content);
+    } else if (isRawHtml) {
+        entry.innerHTML = content;
+    } else {
+        entry.textContent = content;
+    }
     logsDiv.appendChild(entry);
     logsDiv.scrollTop = logsDiv.scrollHeight;
 }
@@ -20,8 +26,20 @@ function updateScoreboard(scores, hostName) {
         div.className = 'score-item';
         if (player === hostName) div.classList.add('is-host');
         
-        const crown = player === hostName ? '<span class="crown">👑</span>' : '';
-        div.innerHTML = `<span>${crown}${player}</span> <strong>${score} pkt</strong>`;
+        const nameSpan = document.createElement('span');
+        if (player === hostName) {
+            const crown = document.createElement('span');
+            crown.className = 'crown';
+            crown.textContent = '👑';
+            nameSpan.appendChild(crown);
+        }
+        nameSpan.appendChild(document.createTextNode(player));
+        
+        const scoreStrong = document.createElement('strong');
+        scoreStrong.textContent = ` ${score} pkt`;
+        
+        div.appendChild(nameSpan);
+        div.appendChild(scoreStrong);
         sb.appendChild(div);
     });
 }
@@ -39,10 +57,12 @@ function createRoom() {
 }
 
 function doCreateRoom() {
-    const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
+    const array = new Uint32Array(1);
+    globalThis.crypto.getRandomValues(array);
+    const randomCode = (1000 + (array[0] % 9000)).toString();
     document.getElementById('room_id').value = randomCode;
-    window.roomRounds = document.getElementById('rounds-input').value || 5;
-    window.roomLimit = document.getElementById('limit-input').value || 90;
+    globalThis.roomRounds = document.getElementById('rounds-input').value || 5;
+    globalThis.roomLimit = document.getElementById('limit-input').value || 90;
     connect();
 }
 
@@ -76,22 +96,46 @@ async function loadActiveRooms() {
                 document.getElementById('room_id').value = room.id;
                 showJoinInputs();
                 document.getElementById('buttons-grid').style.display = 'none';
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                globalThis.scrollTo({ top: 0, behavior: 'smooth' });
             };
             
-            card.innerHTML = `
-                <div class="room-info">
-                    <h4>Pokój #${room.id}</h4>
-                    <p>Host: <strong>${room.host}</strong> | Runda: ${room.round}</p>
-                </div>
-                <div class="player-count">
-                    <div class="live-dot"></div>
-                    ${room.players} graczy
-                </div>
-            `;
+            const info = document.createElement('div');
+            info.className = 'room-info';
+            const h4 = document.createElement('h4');
+            h4.textContent = `Pokój #${room.id}`;
+            const p = document.createElement('p');
+            p.textContent = `Host: `;
+            const strongHost = document.createElement('strong');
+            strongHost.textContent = room.host;
+            p.appendChild(strongHost);
+            p.appendChild(document.createTextNode(` | Runda: ${room.round}`));
+            info.appendChild(h4);
+            info.appendChild(p);
+
+            const count = document.createElement('div');
+            count.className = 'player-count';
+            const dot = document.createElement('div');
+            dot.className = 'live-dot';
+            count.appendChild(dot);
+            count.appendChild(document.createTextNode(` ${room.players} graczy`));
+
+            card.appendChild(info);
+            card.appendChild(count);
             list.appendChild(card);
         });
     } catch (err) {
         console.error("Błąd podczas ładowania pokoi:", err);
     }
+}
+
+if (typeof module !== 'undefined') {
+    module.exports = {
+        addLog,
+        updateScoreboard,
+        showJoinInputs,
+        createRoom,
+        doCreateRoom,
+        sendChat,
+        loadActiveRooms
+    };
 }

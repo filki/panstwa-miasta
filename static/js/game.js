@@ -15,7 +15,7 @@ function toggleReady() {
 
 function stopGame() {
     const stopBtn = document.getElementById('btn-stop');
-    stopBtn.setAttribute('data-stopped', 'true');
+    stopBtn.dataset.stopped = 'true';
     stopBtn.disabled = true;
     
     // Natychmiastowe wysłanie swoich wyników jak się wciśnie STOP
@@ -24,8 +24,8 @@ function stopGame() {
 }
 
 function requestRestart() {
-    const rounds = parseInt(document.getElementById('restart-rounds').value) || 5;
-    const limit = parseInt(document.getElementById('restart-limit').value) || 90;
+    const rounds = Number.parseInt(document.getElementById('restart-rounds').value) || 5;
+    const limit = Number.parseInt(document.getElementById('restart-limit').value) || 90;
     sendJson({
         type: "restart_game",
         rounds: rounds,
@@ -41,7 +41,7 @@ function dissolveRoom() {
 }
 
 function enableInputs() {
-    if(window.currentCountdown) clearInterval(window.currentCountdown);
+    if(globalThis.currentCountdown) clearInterval(globalThis.currentCountdown);
     const inputs = document.querySelectorAll('#categories input');
     inputs.forEach(inp => {
         inp.disabled = false;
@@ -76,12 +76,12 @@ function enableInputs() {
     
     const btnStop = document.getElementById('btn-stop');
     btnStop.disabled = true;
-    btnStop.removeAttribute('data-stopped');
+    delete btnStop.dataset.stopped;
     btnStop.innerHTML = '🛑 STOP!';
     
     // Przywracamy literę jeśli zniknęła
-    if(window.currentLetter) {
-        document.getElementById('current-letter').innerHTML = window.currentLetter;
+    if(globalThis.currentLetter) {
+        document.getElementById('current-letter').innerHTML = globalThis.currentLetter;
     }
 }
 
@@ -90,7 +90,7 @@ function checkAllFilled() {
     const allFilled = inputs.every(inp => inp.value.trim().length > 0);
     const stopBtn = document.getElementById('btn-stop');
     
-    if (allFilled && !stopBtn.hasAttribute('data-stopped')) {
+    if (allFilled && !('stopped' in stopBtn.dataset)) {
         stopBtn.disabled = false;
     } else {
         stopBtn.disabled = true;
@@ -98,9 +98,9 @@ function checkAllFilled() {
 }
 
 function validateFirstLetter(inp) {
-    if (!window.currentLetter) return;
+    if (!globalThis.currentLetter) return;
     const val = inp.value.trim();
-    if (val.length > 0 && val[0].toUpperCase() !== window.currentLetter) {
+    if (val.length > 0 && val[0].toUpperCase() !== globalThis.currentLetter) {
         inp.style.borderColor = 'var(--danger)';
     } else {
         inp.style.borderColor = ''; 
@@ -117,4 +117,17 @@ function disableAndSubmit() {
     
     document.getElementById('btn-stop').disabled = true;
     sendJson({ type: "answers", answers: answers });
+}
+
+if (typeof module !== 'undefined') {
+    module.exports = {
+        toggleReady,
+        stopGame,
+        requestRestart,
+        dissolveRoom,
+        enableInputs,
+        checkAllFilled,
+        validateFirstLetter,
+        disableAndSubmit
+    };
 }

@@ -8,3 +8,19 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Node modules
+node_modules/
+package-lock.json
+
+# Coverage and Sonar
+coverage/
+coverage-js/
+coverage.xml
+test-results.xml
+.sonar/
+*.txt
+
+# Logs and DB
+logs/
+*.db

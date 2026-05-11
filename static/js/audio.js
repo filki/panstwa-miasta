@@ -3,7 +3,7 @@ let audioCtx = null;
 
 function initAudio() {
     if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        audioCtx = new (globalThis.AudioContext || globalThis.webkitAudioContext)();
     }
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
@@ -37,4 +37,12 @@ function playGong() {
     gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
     osc.start();
     osc.stop(audioCtx.currentTime + 1.5);
+}
+
+if (typeof module !== 'undefined') {
+    module.exports = {
+        initAudio,
+        playTick,
+        playGong
+    };
 }
