@@ -3,6 +3,7 @@ import pathlib
 import aiosqlite
 
 from .countries_seed import COUNTRIES_SEED
+from .names_seed import NAMES_SEED
 
 DB_PATH = pathlib.Path(__file__).parent.parent.parent / "panstwa_miasta.db"
 
@@ -71,6 +72,27 @@ async def init_db():
                 for row in COUNTRIES_SEED
             ],
         )
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS names (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                imie TEXT NOT NULL,
+                imie_norm TEXT NOT NULL,
+                plec TEXT NOT NULL CHECK (plec IN ('M','K')),
+                liczebnosc INTEGER NOT NULL,
+                UNIQUE(imie_norm, plec)
+            )
+        """)
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_names_norm ON names(imie_norm)")
+        await db.executemany(
+            """
+            INSERT OR IGNORE INTO names (imie, imie_norm, plec, liczebnosc)
+            VALUES (?, ?, ?, ?)
+            """,
+            [
+                (row["imie"], _name_norm(row["imie"]), row["plec"], row["liczebnosc"])
+                for row in NAMES_SEED
+            ],
+        )
         await db.commit()
 
 
@@ -133,6 +155,16 @@ async def load_country_norms() -> set[str]:
     async with (
         aiosqlite.connect(DB_PATH) as db,
         db.execute("SELECT name_norm FROM countries") as cursor,
+    ):
+        rows = await cursor.fetchall()
+        return {row[0] for row in rows}
+
+
+async def load_name_norms() -> set[str]:
+    """Return the set of normalised first names for in-memory validation."""
+    async with (
+        aiosqlite.connect(DB_PATH) as db,
+        db.execute("SELECT imie_norm FROM names") as cursor,
     ):
         rows = await cursor.fetchall()
         return {row[0] for row in rows}
