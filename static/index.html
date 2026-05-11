@@ -66,7 +66,24 @@
 
                 <div id="active-rooms-section" style="margin-top: 4rem; display: none;">
                     <h2 style="text-align: center; font-size: 1.5rem; margin-bottom: 2rem; color: var(--accent);">🔥 Aktywne Pokoje</h2>
-                    <div id="rooms-list" class="active-rooms-grid"></div>
+                    <div class="table-container">
+                        <table class="rooms-table">
+                            <thead>
+                                <tr>
+                                    <th>KOD</th>
+                                    <th>HOST</th>
+                                    <th>GRACZE</th>
+                                    <th>RUNDY</th>
+                                    <th>ZASADY</th>
+                                    <th>TRYB</th>
+                                    <th>AKCJA</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rooms-list">
+                                <!-- Lista pokoi renderowana dynamicznie -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

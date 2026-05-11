@@ -388,111 +388,88 @@ input.pts-0 { border-color: var(--danger); }
     margin-bottom: 2rem;
 }
 
-.active-rooms-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1rem;
+/* Table Styles */
+.table-container {
+    overflow-x: auto;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    margin-top: 1rem;
 }
 
-@media (max-width: 600px) {
-    .settings-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
+.rooms-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.9rem;
 }
 
-/* Responsywność */
-@media (max-width: 1024px) {
-    .layout-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .sidebar {
-        order: 2;
-    }
-    
-    .main-game {
-        order: 1;
-    }
-    
-    #logs {
-        height: 250px;
-    }
+.rooms-table th {
+    background: rgba(14, 165, 233, 0.1);
+    color: var(--accent);
+    padding: 1.2rem 1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border);
+}
+
+.rooms-table td {
+    padding: 1.2rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+
+.rooms-table tr:last-child td {
+    border-bottom: none;
+}
+
+.rooms-table tr:hover td {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-mode {
+    background: rgba(168, 85, 247, 0.1);
+    color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+.badge-rules {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.btn-join-small {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.8rem;
+}
+
+.btn-join-small:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
 }
 
 @media (max-width: 768px) {
-    body {
-        padding: 0.5rem;
-    }
-    
-    .container {
-        padding: 1rem;
-        border-radius: 12px;
-        width: 100%;
-        max-width: none;
-    }
-    
-    h1 {
-        font-size: 2.2rem;
-        margin-top: 1rem;
-    }
-    
-    .hero-subtext {
-        font-size: 0.9rem;
-        margin-bottom: 2rem;
-    }
-
-    .choice-cards {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-    
-    .choice-card {
-        padding: 1.2rem;
-        display: flex;
-        align-items: center;
-        text-align: left;
-        gap: 1rem;
-    }
-
-    .choice-card i {
-        font-size: 2rem;
-        margin-bottom: 0;
-    }
-
-    .choice-card h3 {
-        font-size: 1.2rem;
-        margin-bottom: 0.2rem;
-    }
-
-    .choice-card p {
-        font-size: 0.8rem;
-    }
-
-    .categories-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .game-header {
-        grid-template-columns: 1fr 1fr;
-        padding: 1rem;
-    }
-    
-    .letter-display {
-        font-size: 2.5rem;
-    }
-
-    #lottery-letter {
-        font-size: 6rem !important;
-    }
-}
-
-@media (max-width: 480px) {
-    h1 {
-        font-size: 1.8rem;
-    }
-    
-    .letter-display {
-        font-size: 2rem;
+    .rooms-table th:nth-child(4),
+    .rooms-table td:nth-child(4),
+    .rooms-table th:nth-child(5),
+    .rooms-table td:nth-child(5) {
+        display: none;
     }
 }

@@ -116,7 +116,10 @@ async def get_active_rooms():
             "id": r_id,
             "players": len(room.connections),
             "host": room.host_name or "Anonim",
-            "round": f"{room.current_round}/{room.max_rounds}",
+            "current_round": room.current_round,
+            "max_rounds": room.max_rounds,
+            "time_limit": room.time_limit,
+            "mode": "Standard" # Na razie wszystkie standardowe
         }
         for r_id, room in manager.rooms.items()
         if room.connections
