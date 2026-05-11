@@ -1,24 +1,20 @@
 """Jednorazowy helper: ekstrakcja surowych nazw zawodow z hierarchii PKD/ZRSZ.
 
-Wejscie:  data/hierarchiczny.json  (pobrany recznie z API ZRSZ /
-                                    Klasyfikacji Zawodow i Specjalnosci;
-                                    NIE jest trackowany w gicie -- zbyt duzy
-                                    i wlasciwie zawsze regenerowalny)
-Wyjscie:  data/raw_jobs.txt        (intermediate; tez nietrackowany)
+Wejscie:  JSON hierarchiczny (np. pobrany z API ZRSZ) — podaj ścieżką.
+Wyjscie:  domyślnie ``scripts/pkd_raw_jobs.txt`` (gitignored).
 
-Po wygenerowaniu raw_jobs.txt curacja odbywa sie recznie do
-data/zawody.txt (juz w gicie) -- patrz README sekcja "Dane slownikowe".
+Po wygenerowaniu można curować wpisy do ``src/panstwa_miasta/jobs_seed.py``.
 
 Uruchomienie z roota repo:
-    python scripts/extract_jobs.py
+    uv run python scripts/extract_jobs.py --src /sciezka/do/hierarchiczny.json
 """
 
+import argparse
 import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "data" / "hierarchiczny.json"
-DST = ROOT / "data" / "raw_jobs.txt"
+DEFAULT_DST = ROOT / "scripts" / "pkd_raw_jobs.txt"
 
 
 def extract_opis(obj, result):
@@ -33,19 +29,21 @@ def extract_opis(obj, result):
 
 
 def main() -> None:
-    if not SRC.exists():
-        raise SystemExit(
-            f"Brak pliku zrodlowego {SRC}. Pobierz go recznie z API ZRSZ "
-            "(Klasyfikacja Zawodow i Specjalnosci) i polozyc w data/."
-        )
-    with SRC.open(encoding="utf-8") as fh:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--src", type=Path, required=True, help="hierarchiczny.json z ZRSZ")
+    ap.add_argument("--out", type=Path, default=DEFAULT_DST, help="plik wyjściowy z nazwami")
+    args = ap.parse_args()
+    if not args.src.is_file():
+        raise SystemExit(f"Brak pliku źródłowego: {args.src}")
+    with args.src.open(encoding="utf-8") as fh:
         data = json.load(fh)
     result: set[str] = set()
     extract_opis(data, result)
-    with DST.open("w", encoding="utf-8") as f:
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    with args.out.open("w", encoding="utf-8") as f:
         for opis in sorted(result):
             f.write(opis + "\n")
-    print(f"Zapisano {len(result)} unikalnych nazw zawodow do {DST}.")
+    print(f"Zapisano {len(result)} unikalnych nazw zawodow do {args.out}.")
 
 
 if __name__ == "__main__":
