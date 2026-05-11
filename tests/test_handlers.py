@@ -92,3 +92,26 @@ async def test_handle_dissolve_room():
     await handle_dissolve_room(room, "room1", "Host1", delete_mock)
     room.broadcast.assert_called()
     delete_mock.assert_called_once_with("room1")
+
+
+@pytest.mark.asyncio
+async def test_handle_dissolve_room_iterates_snapshot_not_live_dict():
+    """Closing sockets runs disconnect() in other tasks, mutating connections."""
+    room = Room("room1")
+    room.host_name = "Host1"
+    ws_a = AsyncMock()
+    ws_b = AsyncMock()
+    room.connections = {"Host1": ws_a, "Guest": ws_b}
+    room.broadcast = AsyncMock()
+    delete_mock = AsyncMock()
+
+    async def close_a():
+        room.connections.pop("Guest", None)
+
+    ws_a.close = AsyncMock(side_effect=close_a)
+    ws_b.close = AsyncMock()
+
+    await handle_dissolve_room(room, "room1", "Host1", delete_mock)
+    ws_a.close.assert_called_once()
+    ws_b.close.assert_called_once()
+    delete_mock.assert_called_once_with("room1")

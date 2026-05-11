@@ -236,6 +236,18 @@ describe('ws.onmessage dispatch', () => {
         lastWs.onmessage({ data: JSON.stringify({ type: 'room_dissolved', message: 'gone' }) });
         expect(global.alert).toHaveBeenCalledWith('gone');
     });
+
+    test('room_dissolved suppresses auto-reconnect on subsequent onclose', () => {
+        jest.useFakeTimers();
+        const { connect } = loadSocket();
+        connect();
+        lastWs.onopen();
+        lastWs.onmessage({ data: JSON.stringify({ type: 'room_dissolved', message: 'gone' }) });
+        lastWs.onclose({ code: 1000 });
+        jest.advanceTimersByTime(2500);
+        expect(global.WebSocket).toHaveBeenCalledTimes(1);
+        jest.useRealTimers();
+    });
 });
 
 describe('leaveRoom()', () => {

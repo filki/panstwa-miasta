@@ -167,6 +167,9 @@ function onChatMessage(m) {
 }
 
 function onRoomDissolved(m) {
+    // Zapobiega auto-reconnect (onclose) gdy serwer zamyka socket tuż po
+    // room_dissolved — inaczej po grze często odtwarzał się „pusty” pokój.
+    isLeaving = true;
     alert(m.message);
     globalThis.location.href = globalThis.location.pathname;
 }

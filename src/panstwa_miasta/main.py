@@ -254,8 +254,11 @@ async def websocket_endpoint(
                 logger.exception(f"Error handling message from '{client_name}': {exc}")
     except WebSocketDisconnect:
         logger.info(f"WebSocketDisconnect: '{client_name}' left room {room_id}")
+        room_was_in_memory = room_id in manager.rooms
         manager.disconnect(room_id, client_name)
-        if room_id in manager.rooms:
+        if room_was_in_memory and room_id not in manager.rooms:
+            await delete_room(room_id)
+        elif room_id in manager.rooms:
             room = manager.rooms[room_id]
             await room.broadcast(
                 json.dumps({"type": "system", "message": f"{client_name} opuścił grę"})
