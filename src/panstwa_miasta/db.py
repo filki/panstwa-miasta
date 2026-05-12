@@ -9,6 +9,10 @@ from .names_seed import NAMES_SEED
 
 DB_PATH = pathlib.Path(__file__).parent.parent.parent / "panstwa_miasta.db"
 
+# Opóźnienie przed trwałym usunięciem pokoju z SQLite po opuszczeniu przez
+# wszystkich (reconnect w krótkim oknie odzyskuje stan z DB).
+ROOM_EMPTY_GRACE_SECONDS = 90
+
 
 async def _ensure_rooms_visibility_column(db) -> None:
     """Migracja: kolumna visibility (publiczny / prywatny lobby)."""
@@ -194,6 +198,24 @@ async def delete_room(room_id):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("DELETE FROM rooms WHERE room_id = ?", (room_id,))
         await db.commit()
+
+
+async def fetch_room_snapshot(room_id: str) -> dict[str, object] | None:
+    """Zwraca wiersz ``rooms`` + ``players`` jako słownik, albo ``None`` gdy brak pokoju."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM rooms WHERE room_id = ?", (room_id,)) as cur:
+            row = await cur.fetchone()
+        if row is None:
+            return None
+        out: dict[str, object] = dict(row)
+        async with db.execute(
+            "SELECT player_name, score FROM players WHERE room_id = ?",
+            (room_id,),
+        ) as pcur:
+            players = await pcur.fetchall()
+        out["players"] = {str(p["player_name"]): int(p["score"]) for p in players}
+        return out
 
 
 async def remove_player(room_id: str, player_name: str) -> None:

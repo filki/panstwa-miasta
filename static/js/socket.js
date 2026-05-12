@@ -145,7 +145,9 @@ function connect() {
         if (navRoomInfo) navRoomInfo.style.display = 'inline-flex';
         if (navHomeLink) navHomeLink.style.display = 'none';
 
-        if (typeof updateScoreboard === 'function') updateScoreboard({}, '', globalThis.myNick || '');
+        // Nie czyść rankingu tutaj — serwer wysyła ``score_update`` w ``_send_initial_state``.
+        // Wywołanie ``updateScoreboard({}, …)`` przy reconnect powodowało wyścig z wiadomościami
+        // i zerowanie punktów w UI mimo poprawnego stanu na backendzie.
     };
 
     ws.onclose = (e) => {

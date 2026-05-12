@@ -1,3 +1,4 @@
+import asyncio
 from unittest.mock import AsyncMock
 
 import pytest
@@ -180,6 +181,7 @@ async def test_manager_disconnect():
 
     manager.disconnect("room1", "p2")
     assert "room1" not in manager.rooms  # room deleted
+    manager.cancel_delayed_room_delete("room1")
 
 
 @pytest.mark.asyncio
@@ -197,6 +199,86 @@ async def test_disconnect_ignores_stale_socket():
 
     assert manager.disconnect("room1", "p1", ws_new) is True
     assert "room1" not in manager.rooms
+    manager.cancel_delayed_room_delete("room1")
+
+
+@pytest.mark.asyncio
+async def test_connect_resyncs_expected_answers_mid_round_reconnect(monkeypatch):
+    """Po disconnect w rundzie `expected_answers` maleje; reconnect ustawia z powrotem na N graczy."""
+    import panstwa_miasta.manager as mod
+
+    monkeypatch.setattr(mod, "save_room", AsyncMock())
+    monkeypatch.setattr(mod, "save_player_score", AsyncMock())
+
+    manager = ConnectionManager()
+    ws_a = AsyncMock(spec=WebSocket)
+    ws_b = AsyncMock(spec=WebSocket)
+    await manager.connect(ws_a, "rx_exp", "A", 3, 60)
+    await manager.connect(ws_b, "rx_exp", "B", 3, 60)
+    room = manager.rooms["rx_exp"]
+    room.start_round()
+    assert room.expected_answers == 2
+
+    manager.disconnect("rx_exp", "B", ws_b)
+    assert room.expected_answers == 1
+
+    ws_b2 = AsyncMock(spec=WebSocket)
+    await manager.connect(ws_b2, "rx_exp", "B", 3, 60)
+    assert room.expected_answers == 2
+
+
+@pytest.mark.asyncio
+async def test_connect_restores_room_snapshot_from_sqlite(monkeypatch):
+    """Gdy RAM jest pusty, ale w SQLite jest pokój — `connect` odtwarza Room ze scores."""
+    import panstwa_miasta.manager as mod
+    from panstwa_miasta import db as dbmod
+
+    rid = "hroom_snap"
+    await dbmod.save_room(rid, 9, 120, 3, "A", "private")
+    await dbmod.save_player_score(rid, "A", 15)
+    await dbmod.save_player_score(rid, "B", 7)
+
+    monkeypatch.setattr(mod, "save_room", AsyncMock())
+    monkeypatch.setattr(mod, "save_player_score", AsyncMock())
+
+    manager = ConnectionManager()
+    ws = AsyncMock(spec=WebSocket)
+    ok = await manager.connect(ws, rid, "A", 5, 90, "public")
+    assert ok is True
+    room = manager.rooms[rid]
+    assert room.max_rounds == 9
+    assert room.time_limit == 120
+    assert room.current_round == 3
+    assert room.visibility == "private"
+    assert room.scores["A"] == 15
+    assert room.scores["B"] == 7
+
+    manager.cancel_delayed_room_delete(rid)
+    await dbmod.delete_room(rid)
+
+
+@pytest.mark.asyncio
+async def test_delayed_delete_removes_room_from_sqlite(monkeypatch):
+    """Po opuszczeniu przez ostatniego gracza rekord w DB znika po grace (skróconym w teście)."""
+    import panstwa_miasta.manager as mod
+    from panstwa_miasta import db as dbmod
+
+    monkeypatch.setattr(dbmod, "ROOM_EMPTY_GRACE_SECONDS", 0.05)
+    monkeypatch.setattr(mod, "save_room", dbmod.save_room)
+    monkeypatch.setattr(mod, "save_player_score", dbmod.save_player_score)
+
+    manager = ConnectionManager()
+    ws = AsyncMock(spec=WebSocket)
+    rid = "droom_grace"
+    await manager.connect(ws, rid, "solo", 3, 60)
+
+    manager.disconnect(rid, "solo", ws)
+    assert rid not in manager.rooms
+    assert await dbmod.fetch_room_snapshot(rid) is not None
+
+    await asyncio.sleep(0.2)
+    assert await dbmod.fetch_room_snapshot(rid) is None
+    manager.cancel_delayed_room_delete(rid)
 
 
 @pytest.mark.asyncio
@@ -289,6 +371,24 @@ async def test_calculate_scores_zwierze_prefix_too_short_rejected():
     room.answers_received = {"solo": {"Zwierzę": "la"}}
     scores = await room.calculate_scores()
     assert scores["solo"]["details"]["Zwierzę"] == 0
+
+
+@pytest.mark.asyncio
+async def test_calculate_scores_miasto_uran_blocklisted():
+    """„uran” nie jest akceptowane jako Miasto (GeoNames: Uran, Indie vs pierwiastek)."""
+    import panstwa_miasta.manager as mod
+    from panstwa_miasta import data
+
+    mod.save_room = AsyncMock()
+    mod.save_player_score = AsyncMock()
+
+    room = Room("room_uran_city", max_rounds=1, time_limit=30)
+    room.start_round()
+    room.current_letter = "u"
+    room.answers_received = {"solo": {"Miasto": "uran"}}
+    scores = await room.calculate_scores()
+    assert scores["solo"]["details"]["Miasto"] == 0
+    assert "uran" not in data.MIASTA
 
 
 def test_answer_first_letter_matches_polish_diacritics():

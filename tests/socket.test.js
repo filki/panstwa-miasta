@@ -163,7 +163,22 @@ describe('connect()', () => {
         expect(document.getElementById('current-room').textContent).toBe('1234');
         expect(document.getElementById('nav-room-info').style.display).toBe('inline-flex');
         expect(document.getElementById('nav-home-link').style.display).toBe('none');
-        expect(global.updateScoreboard).toHaveBeenCalledWith({}, '', 'TestUser');
+        expect(global.updateScoreboard).not.toHaveBeenCalled();
+    });
+
+    test('ws.onopen does not wipe scoreboard; score_update from server fills it', () => {
+        const { connect } = loadSocket();
+        connect();
+        lastWs.onopen();
+        expect(global.updateScoreboard).not.toHaveBeenCalled();
+        lastWs.onmessage({
+            data: JSON.stringify({
+                type: 'score_update',
+                scores: { Anna: 7, Bob: 3 },
+                host_name: 'Anna',
+            }),
+        });
+        expect(global.updateScoreboard).toHaveBeenCalledWith({ Anna: 7, Bob: 3 }, 'Anna', 'TestUser');
     });
 });
 
