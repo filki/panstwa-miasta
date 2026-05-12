@@ -107,10 +107,43 @@ def test_websocket_join_and_message():
 
 
 def test_websocket_rejection():
+    """Whitespace-only nick is rejected at path validation (close 1008)."""
+    from starlette.websockets import WebSocketDisconnect
+
+    with pytest.raises(WebSocketDisconnect) as excinfo, client.websocket_connect("/ws/room_rej/  "):
+        pass
+    assert excinfo.value.code == 1008
+
+
+def test_get_room_invalid_id_returns_422():
+    response = client.get("/room/not@valid")
+    assert response.status_code == 422
+
+
+def test_websocket_invalid_path_returns_1008():
+    """Path validation rejects invalid room_id before accept."""
     from starlette.websockets import WebSocketDisconnect
 
     with (
-        pytest.raises(WebSocketDisconnect),
-        client.websocket_connect("/ws/room_rej/  ") as ws,
+        pytest.raises(WebSocketDisconnect) as excinfo,
+        client.websocket_connect("/ws/bad@room/Player1"),
     ):
-        ws.receive_json()
+        pass
+    assert excinfo.value.code == 1008
+
+
+def test_websocket_extra_keys_get_error_message():
+    with client.websocket_connect("/ws/room_extra/Player1") as websocket:
+        for _ in range(8):
+            data = websocket.receive_json()
+            if data.get("type") == "system":
+                break
+        websocket.send_json({"type": "chat", "text": "hi", "evil": True})
+        err = None
+        for _ in range(6):
+            msg = websocket.receive_json()
+            if msg.get("type") == "error":
+                err = msg
+                break
+        assert err is not None
+        assert err.get("message") == "Invalid message"

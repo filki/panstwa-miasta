@@ -183,6 +183,23 @@ async def test_manager_disconnect():
 
 
 @pytest.mark.asyncio
+async def test_disconnect_ignores_stale_socket():
+    """Reconnect: old socket's WebSocketDisconnect must not remove the new socket."""
+    manager = ConnectionManager()
+    room = Room("room1")
+    ws_new = AsyncMock(spec=WebSocket)
+    ws_old = AsyncMock(spec=WebSocket)
+    room.connections = {"p1": ws_new}
+    manager.rooms["room1"] = room
+
+    assert manager.disconnect("room1", "p1", ws_old) is False
+    assert room.connections["p1"] is ws_new
+
+    assert manager.disconnect("room1", "p1", ws_new) is True
+    assert "room1" not in manager.rooms
+
+
+@pytest.mark.asyncio
 async def test_manager_kick_player_removes_target(monkeypatch):
     import panstwa_miasta.manager as mod
 

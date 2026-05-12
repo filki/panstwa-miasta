@@ -437,27 +437,54 @@ class ConnectionManager:
         logger.info("Host '%s' kicked '%s' from room %s", actor_name, target_name, room_id)
         return True, ""
 
-    def disconnect(self, room_id: str, client_name: str):
-        logger.info(f"Disconnect requested: room_id={room_id}, client_name={client_name}")
-        if room_id in self.rooms:
-            room = self.rooms[room_id]
-            if client_name in room.connections:
-                del room.connections[client_name]
-                logger.info(f"Removed connection for '{client_name}' from room {room_id}")
+    def disconnect(
+        self, room_id: str, client_name: str, websocket: WebSocket | None = None
+    ) -> bool:
+        """Remove *client_name* from *room_id*.
 
-                # Decrease expected answer count
-                if room.is_playing:
-                    room.expected_answers = max(0, room.expected_answers - 1)
-                    logger.debug(
-                        f"Adjusted expected_answers for room {room_id}: {room.expected_answers}"
-                    )
+        If *websocket* is set, only removes when it matches the stored socket (reconnect
+        race: old socket disconnect must not evict the new one). Returns whether a player
+        was actually removed.
+        """
+        logger.info(
+            "Disconnect requested: room_id=%s, client_name=%s, has_socket=%s",
+            room_id,
+            client_name,
+            websocket is not None,
+        )
+        if room_id not in self.rooms:
+            return False
+        room = self.rooms[room_id]
+        if client_name not in room.connections:
+            return False
+        current_ws = room.connections.get(client_name)
+        if websocket is not None and current_ws is not websocket:
+            logger.info(
+                "Ignoring stale disconnect for '%s' in room %s (socket mismatch)",
+                client_name,
+                room_id,
+            )
+            return False
 
-                # If host left, assign new host
-                if client_name == room.host_name and room.connections:
-                    room.host_name = next(iter(room.connections.keys()))
-                    logger.info(f"New host for room {room_id} is '{room.host_name}'")
+        del room.connections[client_name]
+        logger.info("Removed connection for '%s' from room %s", client_name, room_id)
 
-            # Remove empty room
-            if not room.connections:
-                del self.rooms[room_id]
-                logger.info(f"Room {room_id} deleted because it became empty")
+        # Decrease expected answer count
+        if room.is_playing:
+            room.expected_answers = max(0, room.expected_answers - 1)
+            logger.debug(
+                "Adjusted expected_answers for room %s: %s",
+                room_id,
+                room.expected_answers,
+            )
+
+        # If host left, assign new host
+        if client_name == room.host_name and room.connections:
+            room.host_name = next(iter(room.connections.keys()))
+            logger.info("New host for room %s is '%s'", room_id, room.host_name)
+
+        # Remove empty room
+        if not room.connections:
+            del self.rooms[room_id]
+            logger.info("Room %s deleted because it became empty", room_id)
+        return True

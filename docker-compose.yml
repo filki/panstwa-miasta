@@ -17,6 +17,8 @@ services:
       - "0.0.0.0"
       - --port
       - "8000"
+      - --ws-max-size
+      - "262144"
 
   ngrok:
     # Włącz: w .env ustaw COMPOSE_PROFILES=tunnel oraz NGROK_AUTHTOKEN (bez tego ERR_NGROK_4018).
