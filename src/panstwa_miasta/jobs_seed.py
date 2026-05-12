@@ -1315,7 +1315,7 @@ JOBS_SEED: Final[list[JobSeed]] = [
     {"opis": "urbanista", "kod": None},
     {"opis": "urzędnik podatkowy", "kod": None},
     {"opis": "ustawiacz", "kod": None},
-    {"opis": "vloger", "kod": None},
+    {"opis": "wloger", "kod": None},
     {"opis": "wagowy", "kod": None},
     {"opis": "warzywne", "kod": None},
     {"opis": "weterynaryjny kontroler sanitarny", "kod": None},
@@ -1466,4 +1466,5 @@ JOBS_SEED: Final[list[JobSeed]] = [
     {"opis": "urolog", "kod": None},
     {"opis": "urolog dziecięcy", "kod": None},
     {"opis": "weterynarz", "kod": None},
+    {"opis": "taternik", "kod": None},
 ]
