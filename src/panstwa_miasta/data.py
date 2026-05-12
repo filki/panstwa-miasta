@@ -12,6 +12,17 @@ Source of truth:
   Regeneracja modułu seed: ``uv run python scripts/build_jobs_seed.py --zawody … --liniowy …``.
 * ``MIASTA``     -> SQL table ``cities`` (seeded from :mod:`panstwa_miasta.cities_seed`):
   ``nazwa``, ``kraj`` (polska nazwa państwa jak w ``countries``), normy w DB.
+  Dodatkowo każda nazwa dostaje odpowiednik **bez polskich znaków** (np. wpis
+  „kalińingrad” → można też wpisać „kaliningrad”).
+* ``ZWIERZETA`` / ``ROSLINY`` — zbiory znormalizowanych napisów z modułów
+  ``animals_seed_generated`` / ``plants_seed_generated``. W grze pole nazywa
+  się „Roślina”, ale zbiór to **szeroka flora** (rośliny ozdobne, drzewa, krzewy,
+  owoce i warzywa w katalogu, zioła itd.) — bez osobnej tabeli SQLite, jak
+  zwierzęta. Walidacja: dokładne trafienie albo prefiks pierwszego słowa
+  (min. 3 znaki), np. „dzięcioł” przy wpisie „dzięcioł duży”.
+  Dodatkowo alias **bez polskich znaków** jak przy ``MIASTA`` (np. „jabłoń” → „jablon”).
+  ``ZWIERZETA``: ten sam alias ASCII co ``ROSLINY`` + wpisy z ``ZWIERZETA_EXTRA``
+  (np. potoczne „źrebak” / „żrebak”, ogólne „koza”).
 
 In-memory caches are filled by the FastAPI lifespan handler (and pytest
 fixtures via :func:`db.init_db`).
@@ -23,10 +34,38 @@ COUNTRIES: set[str] = set()
 MIASTA: set[str] = set()
 NAMES: set[str] = set()
 JOBS: set[str] = set()
+ZWIERZETA: set[str] = set()
+ROSLINY: set[str] = set()
 
 # Alias: dla wielowyrazowych zawodów dodajemy pierwsze słowo (>3 znaki) jako
 # osobny wpis w zbiorze — tak jak wcześniej przy ``zawody.txt``.
 JOB_ALIAS_PREFIX_SKIP = frozenset({"akredytowany", "pomocniczy"})
+
+# Potoczne / luki w seedzie z Wikipedii (norma: małe litery jak ``normalize_text``).
+ZWIERZETA_EXTRA: frozenset[str] = frozenset({"źrebak", "żrebak", "koza"})
+
+_PL_FOLD_TRANS = str.maketrans(
+    {
+        "ą": "a",
+        "ć": "c",
+        "ę": "e",
+        "ł": "l",
+        "ń": "n",
+        "ó": "o",
+        "ś": "s",
+        "ź": "z",
+        "ż": "z",
+    }
+)
+
+
+def fold_polish_diacritics(s: str) -> str:
+    """Małe litery PL → ASCII (tylko mapowanie znaków, bez NFKD).
+
+    Używane przy aliasach ASCII (``MIASTA``, ``ROSLINY``, ``ZWIERZETA``) oraz przy
+    sprawdzaniu litery rundy (np. Ś → S, Ź/Ż → Z).
+    """
+    return s.translate(_PL_FOLD_TRANS)
 
 
 async def reload_countries() -> None:
@@ -44,12 +83,16 @@ async def reload_countries() -> None:
 
 
 async def reload_miasta() -> None:
-    """Odświeża ``MIASTA`` z kolumny ``cities.nazwa_norm``."""
+    """Odświeża ``MIASTA`` z kolumny ``cities.nazwa_norm`` + aliasy bez polskich znaków."""
     from .db import load_city_norms
 
     norms = await load_city_norms()
     MIASTA.clear()
     MIASTA.update(norms)
+    for n in norms:
+        folded = fold_polish_diacritics(n)
+        if folded != n:
+            MIASTA.add(folded)
 
 
 async def reload_names() -> None:
@@ -74,3 +117,28 @@ async def reload_jobs() -> None:
             head = words[0]
             if len(head) > 3 and head not in JOB_ALIAS_PREFIX_SKIP:
                 JOBS.add(head)
+
+
+async def reload_zwierzeta() -> None:
+    """Ładuje ``ZWIERZETA`` z ``animals_seed_generated`` + ``ZWIERZETA_EXTRA`` + aliasy ASCII."""
+    from .animals_seed_generated import ANIMALS_NORMS
+
+    base = set(ANIMALS_NORMS) | set(ZWIERZETA_EXTRA)
+    ZWIERZETA.clear()
+    ZWIERZETA.update(base)
+    for n in base:
+        folded = fold_polish_diacritics(n)
+        if folded != n:
+            ZWIERZETA.add(folded)
+
+
+async def reload_rosliny() -> None:
+    """Ładuje ``ROSLINY`` (flora pod polem „Roślina”) z modułu ``plants_seed_generated`` + aliasy ASCII."""
+    from .plants_seed_generated import PLANTS_NORMS
+
+    ROSLINY.clear()
+    ROSLINY.update(PLANTS_NORMS)
+    for n in PLANTS_NORMS:
+        folded = fold_polish_diacritics(n)
+        if folded != n:
+            ROSLINY.add(folded)

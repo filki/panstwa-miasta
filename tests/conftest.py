@@ -21,7 +21,8 @@ def _isolated_test_db(tmp_path: object):
     Function-scoped so `test_db_lifecycle` (which creates/deletes the DB
     itself) cannot corrupt sibling tests. Also primes the in-memory
     ``data.COUNTRIES``, ``data.MIASTA``, ``data.NAMES`` i ``data.JOBS`` z tabel
-    ``countries``, ``cities``, ``names`` i ``jobs``.
+    ``countries``, ``cities``, ``names``, ``jobs`` oraz ``ZWIERZETA`` / ``ROSLINY``
+    (flora pod polem „Roślina” — moduły seed, nie SQL).
     """
     test_db = tmp_path / "test.db"  # type: ignore[operator]
     db.DB_PATH = test_db
@@ -30,4 +31,6 @@ def _isolated_test_db(tmp_path: object):
     asyncio.run(data.reload_miasta())
     asyncio.run(data.reload_names())
     asyncio.run(data.reload_jobs())
+    asyncio.run(data.reload_zwierzeta())
+    asyncio.run(data.reload_rosliny())
     yield

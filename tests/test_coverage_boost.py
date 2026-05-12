@@ -1,9 +1,8 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from panstwa_miasta.manager import ConnectionManager, Room
-from panstwa_miasta.validator import WikipediaValidator
 
 
 @pytest.mark.asyncio
@@ -42,18 +41,6 @@ def test_normalize_text():
     from panstwa_miasta.manager import normalize_text
 
     assert normalize_text("  Polska-Warszawa  ") == "polska warszawa"
-
-
-@pytest.mark.asyncio
-async def test_validator_comprehensive():
-    validator = WikipediaValidator()
-    # Test different categories with cache
-    validator.cache["państwo:polska"] = True
-    assert await validator.validate("polska", "państwo") is True
-
-    # Test empty term
-    assert await validator.validate("", "państwo") is False
-    await validator.close()
 
 
 @pytest.mark.asyncio
@@ -128,38 +115,6 @@ async def test_main_lifespan():
     with TestClient(app) as client:
         response = client.get("/")
         assert response.status_code == 200
-
-
-@pytest.mark.asyncio
-async def test_validator_full_flow():
-    validator = WikipediaValidator()
-
-    # Mock search and claims
-    mock_search_resp = MagicMock()
-    mock_search_resp.json.return_value = {"search": [{"label": "Polska", "id": "Q36"}]}
-
-    mock_claims_resp = MagicMock()
-    mock_claims_resp.json.return_value = {
-        "entities": {
-            "Q36": {
-                "claims": {
-                    "P31": [
-                        {"mainsnak": {"datavalue": {"value": {"id": "Q6256"}}}}
-                    ]  # sovereign state
-                }
-            }
-        }
-    }
-
-    with patch.object(validator.client, "get") as mock_get:
-        mock_get.side_effect = [mock_search_resp, mock_claims_resp]
-
-        # This will trigger _search_wikidata then _get_claims then _check_category
-        result = await validator.validate("Polska", "Państwo")
-        assert result is True
-        assert "Państwo:polska" in validator.cache
-
-    await validator.close()
 
 
 @pytest.mark.asyncio

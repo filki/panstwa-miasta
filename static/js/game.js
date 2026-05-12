@@ -97,13 +97,31 @@ function checkAllFilled() {
     }
 }
 
+/** Pierwsza litera odpowiedzi → mała ASCII (jak ``fold_polish_diacritics`` w backendzie). */
+function _foldPolishAsciiChar(ch) {
+    const map = {
+        ą: 'a', ć: 'c', ę: 'e', ł: 'l', ń: 'n', ó: 'o', ś: 's', ź: 'z', ż: 'z',
+        Ą: 'a', Ć: 'c', Ę: 'e', Ł: 'l', Ń: 'n', Ó: 'o', Ś: 's', Ź: 'z', Ż: 'z',
+    };
+    const c = map[ch];
+    if (c) return c;
+    return ch.toLowerCase();
+}
+
 function validateFirstLetter(inp) {
     if (!globalThis.currentLetter) return;
     const val = inp.value.trim();
-    if (val.length > 0 && val[0].toUpperCase() !== globalThis.currentLetter) {
+    if (val.length === 0) {
+        inp.style.borderColor = '';
+        return;
+    }
+    const target = globalThis.currentLetter.toLowerCase();
+    const first = val[0];
+    const folded = _foldPolishAsciiChar(first);
+    if (folded !== target) {
         inp.style.borderColor = 'var(--danger)';
     } else {
-        inp.style.borderColor = ''; 
+        inp.style.borderColor = '';
     }
 }
 
