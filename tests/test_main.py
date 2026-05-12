@@ -21,6 +21,16 @@ def test_read_root():
     assert "/polityka-prywatnosci" in response.text
 
 
+def test_sw_js_and_manifest_served():
+    sw = client.get("/sw.js")
+    assert sw.status_code == 200
+    assert "serviceWorker" in sw.text or "addEventListener" in sw.text
+    mf = client.get("/manifest.json")
+    assert mf.status_code == 200
+    assert mf.headers.get("content-type", "").startswith("application/")
+    assert "Państwa" in mf.text or "panstwa" in mf.text.lower()
+
+
 @pytest.mark.parametrize(
     "path,needle",
     [
