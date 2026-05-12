@@ -180,7 +180,7 @@ class Room:
 
     def _calculate_base_category_score(self, category: str, ans_norm: str) -> int:
         """Determines if an answer is valid based on static data. Returns -1 if valid but needs multiplier check."""
-        from .data import COUNTRIES, JOBS, MIASTA, NAMES, ROSLINY, ZWIERZETA
+        from .data import COUNTRIES, MIASTA, NAMES, ROSLINY, ZWIERZETA, job_answer_accepted
 
         if category == "Państwo":
             return -1 if ans_norm in COUNTRIES else 0
@@ -189,7 +189,7 @@ class Room:
         if category == "Imię":
             return -1 if ans_norm in NAMES else 0
         if category == "Zawód":
-            return -1 if ans_norm in JOBS else 0
+            return -1 if job_answer_accepted(ans_norm) else 0
         if category == "Zwierzę":
             return -1 if _fauna_flora_norm_valid(ans_norm, ZWIERZETA) else 0
         if category == "Roślina":
