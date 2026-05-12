@@ -131,7 +131,12 @@ async def get_manifest() -> FileResponse:
     return FileResponse(MANIFEST_PATH, media_type="application/manifest+json")
 
 
-@app.get("/api/share/{room_id}")
+@app.get(
+    "/api/share/{room_id}",
+    responses={
+        404: {"description": "Brak zapisanego wyniku dla tego pokoju."},
+    },
+)
 async def get_share_json(room_id: RoomIdPath) -> ShareSnapshotOut:
     """JSON z wynikiem zakończonej gry (np. dla klienta lub integracji)."""
     from .share_store import get_snapshot
@@ -144,7 +149,12 @@ async def get_share_json(room_id: RoomIdPath) -> ShareSnapshotOut:
     )
 
 
-@app.get("/share/{room_id}")
+@app.get(
+    "/share/{room_id}",
+    responses={
+        404: {"description": "Brak zapisanego wyniku dla tego kodu pokoju."},
+    },
+)
 async def get_share_page(room_id: RoomIdPath) -> HTMLResponse:
     """Lekka strona z meta OG dla podglądu linków (Messenger, itp.)."""
     from .share_store import get_snapshot

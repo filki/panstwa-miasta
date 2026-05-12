@@ -1,0 +1,4 @@
+# Ścieżki w coverage.xml muszą być zgodne z indeksem SonarQube (względem katalogu projektu,
+# np. src/panstwa_miasta/manager.py). Bez tego SQ pokazuje 0% mimo lokalnego pytest --cov.
+[run]
+relative_files = true
