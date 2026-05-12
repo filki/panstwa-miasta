@@ -12,7 +12,14 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
 from .api_models import ActiveRoomRow, ClientNamePath, RoomIdPath, ShareSnapshotOut
-from .data import reload_countries, reload_jobs, reload_miasta, reload_names
+from .data import (
+    reload_countries,
+    reload_jobs,
+    reload_miasta,
+    reload_names,
+    reload_rosliny,
+    reload_zwierzeta,
+)
 from .db import delete_room, init_db
 from .handlers import (
     _finish_round,
@@ -40,6 +47,8 @@ async def lifespan(app: FastAPI):
     await reload_miasta()
     await reload_names()
     await reload_jobs()
+    await reload_zwierzeta()
+    await reload_rosliny()
     await manager.load_from_db()
     logger.info("Startup completed")
     yield

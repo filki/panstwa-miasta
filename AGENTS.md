@@ -71,11 +71,13 @@ Static game data lives in **SQLite tables**, not files:
 - `cities` table — `id`, `nazwa`, `nazwa_norm`, `kraj` (jak w ``countries.name``),
   `kraj_norm`. Walidacja **Miasto** z cache
   ``MIASTA`` (`reload_miasta()`), bez Wikidata. **Zwierzę** / **Roślina**
-  nadal przez ``WikipediaValidator`` (API Wikidata).
+  z lokalnych zbiorów ``ZWIERZETA`` / ``ROSLINY`` (`animals_seed_generated.py`,
+  `plants_seed_generated.py`; ``reload_zwierzeta()`` / ``reload_rosliny()``) —
+  **bez** odpytywania API w runtime.
 
-In-memory caches `COUNTRIES`, `MIASTA`, `NAMES`, `JOBS` are populated by
-`reload_*` in the FastAPI lifespan handler (and pytest fixtures via
-`tests/conftest.py`).
+In-memory caches `COUNTRIES`, `MIASTA`, `NAMES`, `JOBS`, `ZWIERZETA`, `ROSLINY`
+are populated by `reload_*` in the FastAPI lifespan handler (and pytest
+fixtures via `tests/conftest.py`).
 
 Normalization is `manager.normalize_text` / `db._name_norm`: lowercase,
 strip, collapse whitespace. Both DB and validation must use it.

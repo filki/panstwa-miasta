@@ -98,6 +98,19 @@ describe('Game Logic', () => {
         expect(input.style.borderColor).toBe('');
     });
 
+    test('validateFirstLetter accepts Polish diacritic when round letter is ASCII', () => {
+        globalThis.currentLetter = 'S';
+        const input = document.querySelector('#categories input');
+        input.value = 'świerk';
+        validateFirstLetter(input);
+        expect(input.style.borderColor).toBe('');
+
+        globalThis.currentLetter = 'Z';
+        input.value = 'źrebak';
+        validateFirstLetter(input);
+        expect(input.style.borderColor).toBe('');
+    });
+
     test('disableAndSubmit gathers answers and sends json', () => {
         const inputs = document.querySelectorAll('#categories input');
         inputs[0].value = 'Polska';

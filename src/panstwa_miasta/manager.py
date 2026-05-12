@@ -15,7 +15,6 @@ logger = get_logger(__name__)
 
 ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
 GAME_CATEGORIES = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
-WIKI_CATEGORIES = ["Zwierzę", "Roślina"]
 
 # Ile ostatnich wylosowanych liter przesuwamy na DNO nowej talii przy
 # re-shuffle, żeby kolejny cykl nie zaczął się od litery, która właśnie
@@ -26,6 +25,31 @@ RECENT_LETTERS_MEMORY = 7
 
 def normalize_text(text: str) -> str:
     return text.strip().lower().replace("-", " ").replace("  ", " ")
+
+
+def _answer_first_letter_matches_round(ans_raw: str, letter: str) -> bool:
+    """Litera rundy z ``ALPHABET`` (ASCII); pierwsza litera odpowiedzi po złożeniu PL → ASCII (np. Ś → S)."""
+    from .data import fold_polish_diacritics
+
+    if not ans_raw or not letter:
+        return False
+    t = letter.strip().lower()
+    if len(t) != 1:
+        return False
+    s = ans_raw.strip().lower()
+    if not s:
+        return False
+    return fold_polish_diacritics(s[0]) == t
+
+
+def _fauna_flora_norm_valid(ans_norm: str, bucket: set[str]) -> bool:
+    """Czy odpowiedź jest w zbiorze albo jest pierwszym słowem wpisu wielowyrazowego (np. „dzięcioł” → „dzięcioł duży”)."""
+    if ans_norm in bucket:
+        return True
+    if len(ans_norm) < 3:
+        return False
+    prefix = ans_norm + " "
+    return any(s.startswith(prefix) for s in bucket)
 
 
 def normalize_room_visibility(raw: str) -> str:
@@ -156,18 +180,20 @@ class Room:
 
     def _calculate_base_category_score(self, category: str, ans_norm: str) -> int:
         """Determines if an answer is valid based on static data. Returns -1 if valid but needs multiplier check."""
-        from .data import COUNTRIES, JOBS, MIASTA, NAMES
+        from .data import COUNTRIES, JOBS, MIASTA, NAMES, ROSLINY, ZWIERZETA
 
         if category == "Państwo":
             return -1 if ans_norm in COUNTRIES else 0
         if category == "Miasto":
             return -1 if ans_norm in MIASTA else 0
         if category == "Imię":
-            return -1 if ans_norm in {normalize_text(n) for n in NAMES} else 0
+            return -1 if ans_norm in NAMES else 0
         if category == "Zawód":
             return -1 if ans_norm in JOBS else 0
-        if category in WIKI_CATEGORIES:
-            return -2  # Special value for wiki validation
+        if category == "Zwierzę":
+            return -1 if _fauna_flora_norm_valid(ans_norm, ZWIERZETA) else 0
+        if category == "Roślina":
+            return -1 if _fauna_flora_norm_valid(ans_norm, ROSLINY) else 0
         return -1  # Rzecz / other
 
     def _assign_round_points(self, round_scores: dict[str, dict]):
@@ -199,29 +225,24 @@ class Room:
                 round_scores[player]["details"][category] = pts
                 round_scores[player]["total"] += pts
 
-    def _gather_answers_and_validation_tasks(
-        self, round_scores: dict[str, dict]
-    ) -> tuple[list, list]:
-        """Iterates over categories and players to fill base scores and gather wiki validation tasks."""
-        from .validator import validator
-
-        validation_tasks = []
-        task_info = []
-
+    def _fill_base_scores(self, round_scores: dict[str, dict]) -> None:
+        """Wypełnia ``round_scores[*][details][kategoria]`` wstępnymi 0 lub -1 (poprawna odpowiedź)."""
         for category in GAME_CATEGORIES:
             for player, answers in self.answers_received.items():
                 ans_raw = answers.get(category, "").strip().lower()
-                if not (ans_raw.startswith(self.current_letter.lower()) and ans_raw != ""):
+                if not (
+                    _answer_first_letter_matches_round(ans_raw, self.current_letter)
+                    and ans_raw != ""
+                ):
+                    round_scores[player]["details"][category] = 0
+                    continue
+
+                if category in ("Zwierzę", "Roślina") and len(normalize_text(ans_raw)) < 2:
                     round_scores[player]["details"][category] = 0
                     continue
 
                 res = self._calculate_base_category_score(category, normalize_text(ans_raw))
-                if res == -2:  # Wiki
-                    validation_tasks.append(validator.validate(ans_raw, category))
-                    task_info.append((player, category, ans_raw))
-                else:
-                    round_scores[player]["details"][category] = res
-        return validation_tasks, task_info
+                round_scores[player]["details"][category] = res
 
     async def _update_global_scores_and_save(self, round_scores: dict[str, dict]):
         """Updates global scores in memory and persists to database."""
@@ -246,19 +267,13 @@ class Room:
             player: {"total": 0, "details": {}} for player in self.answers_received
         }
 
-        # 1. Sprawdzanie bazowe i zbieranie zadań walidacji
-        validation_tasks, task_info = self._gather_answers_and_validation_tasks(round_scores)
+        # 1. Sprawdzanie bazowe (lokalne zbiory; bez zewnętrznego API)
+        self._fill_base_scores(round_scores)
 
-        # 2. Wykonanie walidacji zewnętrznych
-        if validation_tasks:
-            wiki_results = await asyncio.gather(*validation_tasks)
-            for (player, category, _ans), is_valid in zip(task_info, wiki_results, strict=False):
-                round_scores[player]["details"][category] = -1 if is_valid else 0
-
-        # 3. Przyznawanie punktów
+        # 2. Przyznawanie punktów
         self._assign_round_points(round_scores)
 
-        # 4. Aktualizacja punktacji globalnej i zapis
+        # 3. Aktualizacja punktacji globalnej i zapis
         await self._update_global_scores_and_save(round_scores)
         return round_scores
 

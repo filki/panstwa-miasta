@@ -224,3 +224,103 @@ async def test_manager_kick_player_removes_target(monkeypatch):
     assert "kicked" in ws_g.send_text.call_args[0][0]
     ws_g.close.assert_called_once_with(code=4401)
     mod.remove_player.assert_called_once_with("room1", "Guest")
+
+
+@pytest.mark.asyncio
+async def test_calculate_scores_zwierze_roslina_local():
+    """Zwierzę / Roślina z lokalnych zbiorów (bez HTTP)."""
+    import panstwa_miasta.manager as mod
+
+    mod.save_room = AsyncMock()
+    mod.save_player_score = AsyncMock()
+
+    room = Room("room_fauna", max_rounds=1, time_limit=30)
+    room.start_round()
+    room.current_letter = "L"
+    room.answers_received = {"solo": {"Zwierzę": "labraks", "Roślina": "lipa"}}
+    scores = await room.calculate_scores()
+    assert scores["solo"]["details"]["Zwierzę"] == 15
+    assert scores["solo"]["details"]["Roślina"] == 15
+
+
+@pytest.mark.asyncio
+async def test_calculate_scores_zwierze_first_word_prefix():
+    """Ogólna nazwa rodzaju (np. „dzięcioł”) zalicza się, gdy w seedzie są gatunki „dzięcioł …”."""
+    import panstwa_miasta.manager as mod
+
+    mod.save_room = AsyncMock()
+    mod.save_player_score = AsyncMock()
+
+    room = Room("room_woodpecker", max_rounds=1, time_limit=30)
+    room.start_round()
+    room.current_letter = "D"
+    room.answers_received = {"solo": {"Zwierzę": "dzięcioł"}}
+    scores = await room.calculate_scores()
+    assert scores["solo"]["details"]["Zwierzę"] == 15
+
+
+@pytest.mark.asyncio
+async def test_calculate_scores_roslina_first_word_prefix():
+    """To samo dla flory: „bez” → wpisy „bez czarny” itd."""
+    import panstwa_miasta.manager as mod
+
+    mod.save_room = AsyncMock()
+    mod.save_player_score = AsyncMock()
+
+    room = Room("room_elder", max_rounds=1, time_limit=30)
+    room.start_round()
+    room.current_letter = "B"
+    room.answers_received = {"solo": {"Roślina": "bez"}}
+    scores = await room.calculate_scores()
+    assert scores["solo"]["details"]["Roślina"] == 15
+
+
+@pytest.mark.asyncio
+async def test_calculate_scores_zwierze_prefix_too_short_rejected():
+    """Prefiks < 3 znaków nie włącza dopasowania „pierwsze słowo + reszta”."""
+    import panstwa_miasta.manager as mod
+
+    mod.save_room = AsyncMock()
+    mod.save_player_score = AsyncMock()
+
+    room = Room("room_short", max_rounds=1, time_limit=30)
+    room.start_round()
+    room.current_letter = "L"
+    room.answers_received = {"solo": {"Zwierzę": "la"}}
+    scores = await room.calculate_scores()
+    assert scores["solo"]["details"]["Zwierzę"] == 0
+
+
+def test_answer_first_letter_matches_polish_diacritics():
+    """Runda losuje ASCII; odpowiedź może zaczynać się od Ś, Ć, Ź, Ż, Ł, …"""
+    from panstwa_miasta.manager import _answer_first_letter_matches_round
+
+    assert _answer_first_letter_matches_round("świerk", "S")
+    assert _answer_first_letter_matches_round("Świerk", "S")
+    assert _answer_first_letter_matches_round("źrebak", "Z")
+    assert _answer_first_letter_matches_round("żrebak", "Z")
+    assert _answer_first_letter_matches_round("ćma", "C")
+    assert _answer_first_letter_matches_round("łódź", "L")
+
+
+@pytest.mark.asyncio
+async def test_calculate_scores_zwierze_zrebak_letter_z():
+    """Litera Z + potoczne „źrebak” / „zrebak” (EXTRA + alias ASCII)."""
+    import panstwa_miasta.manager as mod
+
+    mod.save_room = AsyncMock()
+    mod.save_player_score = AsyncMock()
+
+    room = Room("room_foal", max_rounds=1, time_limit=30)
+    room.start_round()
+    room.current_letter = "Z"
+    room.answers_received = {"solo": {"Zwierzę": "źrebak"}}
+    scores = await room.calculate_scores()
+    assert scores["solo"]["details"]["Zwierzę"] == 15
+
+    room2 = Room("room_foal2", max_rounds=1, time_limit=30)
+    room2.start_round()
+    room2.current_letter = "Z"
+    room2.answers_received = {"solo": {"Zwierzę": "zrebak"}}
+    scores2 = await room2.calculate_scores()
+    assert scores2["solo"]["details"]["Zwierzę"] == 15
