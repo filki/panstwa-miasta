@@ -37,6 +37,7 @@ async def _finish_round(room: Room, room_id: str) -> None:
         json.dumps(
             {
                 "type": "round_results",
+                "room_id": room_id,
                 "answers": room.answers_received,
                 "round_scores": round_scores,
                 "total_scores": room.scores,

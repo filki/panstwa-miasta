@@ -78,6 +78,15 @@
                                 <button type="button" id="btn-restart-game" onclick="requestRestart()" style="display: none;">Nowa gra</button>
                                 <button type="button" id="btn-dissolve" onclick="dissolveRoom()" class="danger" style="display: none;">Rozwiąż pokój</button>
                             </div>
+                            <div id="game-over-share" class="game-over-share" style="display: none;" aria-live="polite">
+                                <p class="game-over-share-title">Udostępnij wynik</p>
+                                <p class="game-over-share-hint">Link z podglądem (np. w komunikatorze) jest ważny, dopóki serwer pamięta ten pokój.</p>
+                                <div class="game-over-share-actions">
+                                    <a class="btn-secondary" id="share-link-anchor" href="#" target="_blank" rel="noopener noreferrer">Karta wyniku</a>
+                                    <button type="button" class="btn-secondary" id="btn-copy-share">Kopiuj link</button>
+                                    <button type="button" class="btn-secondary" id="btn-native-share" style="display: none;">Udostępnij…</button>
+                                </div>
+                            </div>
                         </div>
                     </aside>
 
@@ -128,6 +137,10 @@
     </main>
 
     <!-- SITE_FOOTER -->
+
+    <div id="round-countdown-overlay" class="round-countdown-overlay" hidden aria-hidden="true">
+        <div id="round-countdown-num" class="round-countdown-num" role="status" aria-live="assertive"></div>
+    </div>
 
     <!-- Hidden, shared with index.html for socket.js compatibility -->
     <div id="join-modal" class="modal-overlay" style="display: none;">

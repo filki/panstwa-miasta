@@ -239,24 +239,28 @@ const MESSAGE_HANDLERS = {
 
 function onRoundStarted(msg) {
     globalThis.currentLetter = msg.letter;
-    const lotteryFunc = globalThis.runLetterLottery || runLetterLottery;
-    lotteryFunc(msg.letter, () => {
-        document.getElementById("current-letter").textContent = msg.letter;
-        const btn = document.getElementById("btn-draw");
-        btn.classList.remove('ready');
-        btn.style.display = 'none';
-        addLog(`<em>Gra rozpoczęta! Litera: <strong>${msg.letter}</strong> (Runda ${msg.current_round}/${msg.max_rounds}). Limit czasu: ${msg.time_limit}s</em>`, "system-msg");
-        clearInputColors();
-        enableInputs();
-        let timeLeft = msg.time_limit;
-        document.getElementById("round-timer").textContent = timeLeft + "s";
-        document.getElementById("round-timer").style.display = "block";
-        if (globalThis.globalRoundTimer) clearInterval(globalThis.globalRoundTimer);
-        globalThis.globalRoundTimer = setInterval(() => {
-            timeLeft--;
-            if (timeLeft >= 0) document.getElementById("round-timer").textContent = timeLeft + "s";
-        }, 1000);
-    });
+    const afterReveal = () => {
+        const lotteryFunc = globalThis.runLetterLottery || runLetterLottery;
+        lotteryFunc(msg.letter, () => {
+            document.getElementById("current-letter").textContent = msg.letter;
+            const btn = document.getElementById("btn-draw");
+            btn.classList.remove('ready');
+            btn.style.display = 'none';
+            addLog(`<em>Gra rozpoczęta! Litera: <strong>${msg.letter}</strong> (Runda ${msg.current_round}/${msg.max_rounds}). Limit czasu: ${msg.time_limit}s</em>`, "system-msg");
+            clearInputColors();
+            enableInputs();
+            let timeLeft = msg.time_limit;
+            document.getElementById("round-timer").textContent = timeLeft + "s";
+            document.getElementById("round-timer").style.display = "block";
+            if (globalThis.globalRoundTimer) clearInterval(globalThis.globalRoundTimer);
+            globalThis.globalRoundTimer = setInterval(() => {
+                timeLeft--;
+                if (timeLeft >= 0) document.getElementById("round-timer").textContent = timeLeft + "s";
+            }, 1000);
+        });
+    };
+    const countdownFn = globalThis.runRoundStartCountdown || runRoundStartCountdown;
+    countdownFn(afterReveal);
 }
 
 function onStopRound(msg) {
@@ -400,8 +404,69 @@ function onRoundResults(msg) {
     addLog(html, "results-msg");
     updateScoreboard(msg.total_scores, msg.host_name, globalThis.myNick || '');
 
-    if (msg.game_over) handleGameOver(msg.host_name);
+    if (msg.game_over) handleGameOver(msg.host_name, msg.room_id);
     else resetReadyButton();
+}
+
+function hideGameOverShare() {
+    const share = document.getElementById('game-over-share');
+    if (!share) return;
+    share.style.display = 'none';
+    const copyBtn = document.getElementById('btn-copy-share');
+    const nativeBtn = document.getElementById('btn-native-share');
+    if (copyBtn) copyBtn.onclick = null;
+    if (nativeBtn) {
+        nativeBtn.onclick = null;
+        nativeBtn.style.display = 'none';
+    }
+}
+
+/**
+ * Udostępnianie wyniku (Faza 4): link do /share/{room_id}, kopiowanie, Web Share API.
+ */
+function wireGameOverShare(roomId) {
+    hideGameOverShare();
+    const rid = String(roomId || '').trim();
+    if (!rid) return;
+    const share = document.getElementById('game-over-share');
+    const anchor = document.getElementById('share-link-anchor');
+    const copyBtn = document.getElementById('btn-copy-share');
+    const nativeBtn = document.getElementById('btn-native-share');
+    if (!share || !anchor || !copyBtn) return;
+
+    let base = '';
+    try {
+        base = globalThis.location.origin || '';
+    } catch (e) {
+        console.debug('pm: location.origin skipped', e);
+    }
+    const url = `${base}/share/${encodeURIComponent(rid)}`;
+    anchor.href = url;
+
+    copyBtn.onclick = async () => {
+        try {
+            await globalThis.navigator.clipboard.writeText(url);
+            addLog('<em>Skopiowano link do schowka.</em>', 'system-msg');
+        } catch (e) {
+            addLog('<em>Nie udało się skopiować — otwórz link lub zaznacz go ręcznie.</em>', 'system-msg');
+            console.warn('clipboard', e);
+        }
+    };
+
+    if (nativeBtn && typeof globalThis.navigator?.share === 'function') {
+        nativeBtn.style.display = 'inline-block';
+        nativeBtn.onclick = () => {
+            globalThis.navigator
+                .share({
+                    title: 'Państwa-Miasta — wynik',
+                    text: `Wynik pokoju ${rid}`,
+                    url,
+                })
+                .catch(() => {});
+        };
+    }
+
+    share.style.display = 'block';
 }
 
 function highlightMyInputs(rScore) {
@@ -419,7 +484,7 @@ function highlightMyInputs(rScore) {
     });
 }
 
-function handleGameOver(hostName) {
+function handleGameOver(hostName, roomId) {
     addLog(`<div style="margin-top:1rem; font-weight:800; color:var(--pts-15); text-align:center;">🏁 KONIEC GRY!</div>`, "system-msg");
     
     // Pokaż ranking jako główny element
@@ -440,6 +505,8 @@ function handleGameOver(hostName) {
     
     fireConfetti({ particleCount: 200, spread: 100, origin: { y: 0.3 } });
     setTimeout(() => fireConfetti({ particleCount: 200, spread: 120, origin: { y: 0.4 } }), 1000);
+
+    wireGameOverShare(roomId);
 }
 
 function resetReadyButton() {
@@ -451,6 +518,7 @@ function resetReadyButton() {
 }
 
 function onGameRestarted(msg) {
+    hideGameOverShare();
     // Przywracamy obszary gry
     document.getElementById('game-layout').classList.remove('game-over');
     document.getElementById('game-main-area').style.display = 'block';
@@ -483,6 +551,44 @@ function clearInputColors() {
     inputs.forEach(inp => {
         inp.classList.remove('pts-15', 'pts-10', 'pts-5', 'pts-0', 'success-10', 'warning-5', 'error-0');
     });
+}
+
+/**
+ * Odliczanie 3–2–1 przed animacją losowania litery (Faza 3). Przy ``prefers-reduced-motion`` pomija.
+ */
+function runRoundStartCountdown(onComplete) {
+    if (typeof onComplete !== 'function') return;
+    if (globalThis.matchMedia && globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        onComplete();
+        return;
+    }
+    const overlay = document.getElementById('round-countdown-overlay');
+    const numEl = document.getElementById('round-countdown-num');
+    if (!overlay || !numEl) {
+        onComplete();
+        return;
+    }
+    overlay.removeAttribute('hidden');
+    overlay.setAttribute('aria-hidden', 'false');
+    const labels = ['3', '2', '1'];
+    let step = 0;
+    const INTER_MS = 720;
+    const tick = () => {
+        if (step < labels.length) {
+            numEl.textContent = labels[step];
+            if (typeof globalThis.playCountdownHaptic === 'function') {
+                globalThis.playCountdownHaptic();
+            }
+            step += 1;
+            globalThis.setTimeout(tick, INTER_MS);
+            return;
+        }
+        numEl.textContent = '';
+        overlay.setAttribute('hidden', '');
+        overlay.setAttribute('aria-hidden', 'true');
+        onComplete();
+    };
+    tick();
 }
 
 function runLetterLottery(targetLetter, onComplete) {
@@ -538,8 +644,11 @@ if (typeof module !== 'undefined') {
         onRoundResults,
         highlightMyInputs,
         handleGameOver,
+        hideGameOverShare,
+        wireGameOverShare,
         resetReadyButton,
         onGameRestarted,
+        runRoundStartCountdown,
         runLetterLottery,
         sendJson
     };
