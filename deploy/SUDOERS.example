@@ -1,0 +1,5 @@
+# Fragment do: sudo visudo -f /etc/sudoers.d/panstwa-miasta-deploy
+# Zamień TWOJ_UNIX_USER na użytkownika SSH z GitHub Actions (bez roota).
+# Pozwala tylko na restart jednostki — bez pełnego sudo.
+
+TWOJ_UNIX_USER ALL=(root) NOPASSWD: /bin/systemctl restart panstwa-miasta

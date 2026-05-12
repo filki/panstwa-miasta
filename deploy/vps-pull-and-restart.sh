@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# Uruchamiany na VPS (np. z GitHub Actions przez SSH). Wymaga czystego drzewa git
-# (deploy tylko z main) oraz zainstalowanego `uv` w PATH (np. ~/.local/bin).
+# Uruchamiany na VPS (np. z GitHub Actions przez SSH). Wymaga istniejącego klona
+# repozytorium (deploy/README §1), gałęzi main oraz `uv` w PATH (np. ~/.local/bin).
 set -euo pipefail
 
-APP_DIR="${DEPLOY_APP_DIR:-/var/www/panstwa-miasta}"
+APP_DIR="${DEPLOY_APP_DIR:-/srv/panstwa-miasta}"
+if [[ ! -d "$APP_DIR/.git" ]]; then
+  echo "Brak repozytorium git w $APP_DIR — na VPS wykonaj clone (patrz deploy/README.md §1)." >&2
+  exit 1
+fi
 cd "$APP_DIR"
 
 export PATH="${HOME}/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -18,6 +22,8 @@ git config --global --add safe.directory "$APP_DIR" 2>/dev/null || true
 git fetch origin
 git checkout main
 git pull --ff-only origin main
+
+echo "Deploy: $(git rev-parse --short HEAD) ($(git log -1 --format=%ci))"
 
 uv sync --frozen
 

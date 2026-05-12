@@ -51,15 +51,16 @@ Caddy sam wystawi Let’s Encrypt po poprawnym DNS.
 
 Po każdym **pushu na `main`** z zielonym CI możesz automatycznie robić `git pull`, `uv sync --frozen` i `systemctl restart panstwa-miasta` na VPS.
 
-### Zmienna repozytorium
+Workflow: [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml). Skrypt na serwerze: `deploy/vps-pull-and-restart.sh` (wgrywany do `/tmp` na czas joba).
 
-W **Settings → Secrets and variables → Actions → Variables** dodaj:
+### Zmienne repozytorium
+
+W **Settings → Secrets and variables → Actions → Variables**:
 
 | Nazwa | Wartość |
 |--------|---------|
-| `DEPLOY_ENABLED` | `true` |
-
-Bez tej zmiennej deploy **nie** uruchomi się po CI (nie blokuje merge). Ręczne **Run workflow** zawsze może odpalić deploy (patrz poniżej).
+| `DEPLOY_ENABLED` | `true` — włącza auto-deploy po zakończeniu CI na `main` (push). Bez tego tylko ręczny **Run workflow**. |
+| `DEPLOY_APP_DIR` | Opcjonalnie: katalog z klone repozytorium na VPS (np. `/srv/panstwa-miasta`). **Musi być zgodny** z `WorkingDirectory` w unit systemd. Puste = domyślna ścieżka ze skryptu (`/srv/panstwa-miasta`). |
 
 ### Sekrety
 
@@ -68,22 +69,30 @@ W **Settings → Secrets and variables → Actions → Secrets**:
 | Sekret | Opis |
 |--------|------|
 | `DEPLOY_HOST` | IPv4 lub hostname VPS (np. `46.62.225.116`) |
-| `DEPLOY_USER` | Użytkownik SSH (np. `root` lub dedykowany `deploy`) |
+| `DEPLOY_USER` | Użytkownik SSH (np. `root` lub dedykowany użytkownik z dostępem do katalogu aplikacji) |
 | `DEPLOY_SSH_KEY` | Prywatny klucz OpenSSH — **tylko** do logowania runnera GitHub Actions na VPS (nie wgrywaj tego klucza na serwer). Na VPS `git pull` z **publicznego** repo zwykle działa przez `https://…` jako `origin` bez osobnego tokenu. |
-| `DEPLOY_APP_DIR` | Opcjonalnie: katalog aplikacji (domyślnie na VPS zakładamy `/var/www/panstwa-miasta`). Puste = domyślna ścieżka ze skryptu |
 
-Skrypt na serwerze: `deploy/vps-pull-and-restart.sh` (kopiowany do `/tmp` podczas joba).
+### Uprawnienia na VPS
 
-**Uprawnienia:** jeśli `DEPLOY_USER` nie jest rootem, na VPS ustaw **passwordless sudo** tylko dla `systemctl restart panstwa-miasta` (lub uruchamiaj skrypt jako root — mniej elegancko).
+- Katalog z aplikacją musi należeć do `DEPLOY_USER` (`chown`), żeby `git pull` i `uv sync` działały.
+- Jeśli `DEPLOY_USER` **nie** jest rootem, `systemctl restart` wymaga sudo bez hasła — przykład: [`deploy/SUDOERS.example`](SUDOERS.example) (`sudo visudo -f /etc/sudoers.d/...`).
+- Pierwszy deploy: **Actions → Deploy → Run workflow** (gałąź `main`) — nie wymaga `DEPLOY_ENABLED`; job sprawdza obecność sekretów i uruchamia ten sam skrypt co auto-deploy.
 
-**Pierwszy kontakt SSH:** przy pierwszym połączeniu rozważ `ssh-keyscan` i wpisanie host key do sekretu albo polityki `KnownHosts` w runnerze — zależnie od wersji `appleboy/*` domyślne zachowanie może akceptować nowy klucz (`accept-new`).
+### Uwagi
 
-### Ręczny deploy
-
-**Actions → Deploy → Run workflow** (gałąź `main`) — odpala ten sam skrypt bez czekania na `DEPLOY_ENABLED` (przydatne przed włączeniem automatyzacji).
-
-- Workflow **Deploy** podpina się pod zakończenie workflowu **CI** na gałęzi `main` (`workflow_run`). Nazwa workflowu musi być dokładnie **`CI`** (jak w `.github/workflows/ci.yml`).
+- Nazwa workflowu wyzwalającego musi być dokładnie **`CI`** (jak w `.github/workflows/ci.yml`). Job **SonarQube Cloud** jest częścią CI na `main` — jeśli Sonar padnie, **deploy się nie uruchomi** (`conclusion: success`). Napraw analizę albo tymczasowo wyłącz job Sonar w CI.
 - Nie commituj sekretów do repo.
+
+### Rozwiązywanie problemów
+
+| Objaw | Co sprawdzić |
+|--------|----------------|
+| `Brak sekretu Actions` | Uzupełnij `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`. |
+| `Brak repozytorium git w ...` | Na VPS wykonaj clone do katalogu z §1 / `DEPLOY_APP_DIR`. |
+| `uv nie znaleziony` | Zainstaluj `uv` dla tego samego użytkownika co SSH; skrypt dodaje `~/.local/bin` do `PATH`. |
+| `sudo: a password is required` | Sudoers jak w `SUDOERS.example` albo deploy jako root (mniej zalecane). |
+| Smoke test ≠ 200 | `journalctl -u panstwa-miasta -e`; Caddy / firewall; czy usługa nasłuchuje na `127.0.0.1:8000`. |
+| SSH / host key | Domyślnie `appleboy/ssh-action` może akceptować nowy klucz; dla produkcji rozważ `known_hosts` (dokumentacja akcji). |
 
 ## 6. Uwagi ogólne
 
