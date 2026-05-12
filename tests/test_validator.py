@@ -14,8 +14,8 @@ async def validator():
 
 @pytest.mark.asyncio
 async def test_validator_cache(validator):
-    validator.cache["Miasto:warszawa"] = True
-    assert await validator.validate("warszawa", "Miasto") is True
+    validator.cache["Zwierzę:lew"] = True
+    assert await validator.validate("lew", "Zwierzę") is True
 
 
 @pytest.mark.asyncio
@@ -25,7 +25,6 @@ async def test_validator_empty_term(validator):
 
 @pytest.mark.asyncio
 async def test_validator_short_term_fails_for_wiki_categories(validator):
-    assert await validator.validate("P", "Miasto") is False
     assert await validator.validate("A", "Zwierzę") is False
     assert await validator.validate("O", "Roślina") is False
 
@@ -42,13 +41,16 @@ async def test_validator_search_wikidata_match(validator):
 
 @pytest.mark.asyncio
 async def test_check_category_logic(validator):
-    claims = {
+    claims_city = {
         "P31": [
             {"mainsnak": {"datavalue": {"value": {"id": "Q515"}}}}  # city
         ]
     }
-    assert validator._check_category(claims, "Miasto") is True
-    assert validator._check_category(claims, "Zwierzę") is False
-    assert (
-        validator._check_category(claims, "Unknown") is True
-    )  # Default pass for unknown categories
+    assert validator._check_category(claims_city, "Zwierzę") is False
+    claims_animal = {
+        "P31": [
+            {"mainsnak": {"datavalue": {"value": {"id": "Q729"}}}}  # animal
+        ]
+    }
+    assert validator._check_category(claims_animal, "Zwierzę") is True
+    assert validator._check_category(claims_city, "Unknown") is True

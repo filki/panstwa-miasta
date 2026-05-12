@@ -17,3 +17,20 @@ services:
       - "0.0.0.0"
       - --port
       - "8000"
+
+  ngrok:
+    # Włącz: w .env ustaw COMPOSE_PROFILES=tunnel oraz NGROK_AUTHTOKEN (bez tego ERR_NGROK_4018).
+    profiles:
+      - tunnel
+    image: ngrok/ngrok:latest
+    restart: "no"
+    depends_on:
+      - web
+    command:
+      - "http"
+      - "http://web:8000"
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN:-}
+    # Host 4040 often conflicts with a locally installed ngrok agent (same inspect port).
+    ports:
+      - "127.0.0.1:${NGROK_INSPECT_PORT:-14040}:4040"

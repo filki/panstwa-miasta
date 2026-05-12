@@ -10,6 +10,8 @@ Source of truth:
 * ``NAMES``      -> SQL table ``names`` (seeded from :mod:`panstwa_miasta.names_seed`).
 * ``JOBS``       -> SQL table ``jobs`` (seeded from :mod:`panstwa_miasta.jobs_seed`).
   Regeneracja modułu seed: ``uv run python scripts/build_jobs_seed.py --zawody … --liniowy …``.
+* ``MIASTA``     -> SQL table ``cities`` (seeded from :mod:`panstwa_miasta.cities_seed`):
+  ``nazwa``, ``kraj`` (polska nazwa państwa jak w ``countries``), normy w DB.
 
 In-memory caches are filled by the FastAPI lifespan handler (and pytest
 fixtures via :func:`db.init_db`).
@@ -18,6 +20,7 @@ fixtures via :func:`db.init_db`).
 from __future__ import annotations
 
 COUNTRIES: set[str] = set()
+MIASTA: set[str] = set()
 NAMES: set[str] = set()
 JOBS: set[str] = set()
 
@@ -38,6 +41,15 @@ async def reload_countries() -> None:
     norms = await load_country_norms()
     COUNTRIES.clear()
     COUNTRIES.update(norms)
+
+
+async def reload_miasta() -> None:
+    """Odświeża ``MIASTA`` z kolumny ``cities.nazwa_norm``."""
+    from .db import load_city_norms
+
+    norms = await load_city_norms()
+    MIASTA.clear()
+    MIASTA.update(norms)
 
 
 async def reload_names() -> None:

@@ -32,10 +32,31 @@ docker compose up -d
 
 - Adres jak wyżej: `http://localhost:8000` (port zbindowany tylko na loopback).
 - **`--reload`**: zmiany w `src/` i `static/` na hoście widać po zapisie pliku.
-- Baza `panstwa-miasta.db` leży w katalogu projektu na hoście (montowanie `.:/app`).
+- Baza `panstwa_miasta.db` leży w katalogu projektu na hoście (montowanie `.:/app`).
 - Zatrzymanie: `docker compose down`.
 
 Po zmianie zależności w `pyproject.toml` / `uv.lock`: `docker compose build --no-cache` i znowu `up`.
+
+#### Docker + ngrok (tunel w drugim kontenerze)
+
+Serwis **`ngrok`** jest na profilu Compose **`tunnel`** — domyślne `docker compose up -d` uruchamia **tylko `web`** (bez błędów auth przy pustym tokenie). Tunel włączasz tak:
+
+1. **Token** z [ngrok — Your Authtoken](https://dashboard.ngrok.com/get-started/your-authtoken) (konto **zweryfikowane** e‑mailem — inaczej `ERR_NGROK_4018`).
+2. W katalogu z `docker-compose.yml` plik **`.env`** (skopiuj z `.env.example`), np.:
+   - **Sposób A:** `COMPOSE_PROFILES=tunnel` oraz `NGROK_AUTHTOKEN=...` → potem `docker compose up -d` (Docker Desktop też wczyta `.env`).
+   - **Sposób B:** sam `NGROK_AUTHTOKEN=...` w `.env`, a tunel tylko gdy uruchomisz:  
+     `docker compose --profile tunnel up -d`
+
+Publiczny URL: `docker compose logs ngrok` albo panel inspect: **`http://127.0.0.1:14040`** (zmiana portu: `NGROK_INSPECT_PORT` w `.env`). Konflikt z lokalnym ngrok na **4040** na hoście — dlatego domyślnie **14040**.
+
+#### Windows: skrypt z tunelem
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned   # jednorazowo, jeśli skrypty są zablokowane
+.\scripts\dev-docker-ngrok.ps1
+```
+
+To `docker compose --profile tunnel up -d --build` + przypomnienie adresów. Bez `NGROK_AUTHTOKEN` w `.env` kontener ngrok zakończy się błędem — `web` nadal działa pod `http://127.0.0.1:8000`.
 
 ## Quality gates
 

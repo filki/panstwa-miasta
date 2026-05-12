@@ -1,10 +1,12 @@
 import asyncio
+import json
 import secrets
 from collections import deque
 
 from fastapi import WebSocket
+from starlette.websockets import WebSocketState
 
-from .db import get_active_rooms, save_player_score, save_room
+from .db import get_active_rooms, remove_player, save_player_score, save_room
 
 # Logger import
 from .logger import get_logger
@@ -13,7 +15,7 @@ logger = get_logger(__name__)
 
 ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
 GAME_CATEGORIES = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
-WIKI_CATEGORIES = ["Miasto", "Zwierzę", "Roślina"]
+WIKI_CATEGORIES = ["Zwierzę", "Roślina"]
 
 # Ile ostatnich wylosowanych liter przesuwamy na DNO nowej talii przy
 # re-shuffle, żeby kolejny cykl nie zaczął się od litery, która właśnie
@@ -26,11 +28,24 @@ def normalize_text(text: str) -> str:
     return text.strip().lower().replace("-", " ").replace("  ", " ")
 
 
+def normalize_room_visibility(raw: str) -> str:
+    v = (raw or "public").strip().lower()
+    return v if v in ("public", "private") else "public"
+
+
 class Room:
-    def __init__(self, room_id: str, max_rounds: int = 5, time_limit: int = 90):
+    def __init__(
+        self,
+        room_id: str,
+        max_rounds: int = 5,
+        time_limit: int = 90,
+        *,
+        visibility: str = "public",
+    ):
         self.room_id = room_id
         self.max_rounds = max_rounds
         self.time_limit = time_limit
+        self.visibility = normalize_room_visibility(visibility)
         self.connections: dict[str, WebSocket] = {}
         self.scores: dict[str, int] = {}
         self.host_name = ""
@@ -131,15 +146,22 @@ class Room:
         for p, s in self.scores.items():
             await save_player_score(self.room_id, p, s)
         await save_room(
-            self.room_id, self.max_rounds, self.time_limit, self.current_round, self.host_name
+            self.room_id,
+            self.max_rounds,
+            self.time_limit,
+            self.current_round,
+            self.host_name,
+            self.visibility,
         )
 
     def _calculate_base_category_score(self, category: str, ans_norm: str) -> int:
         """Determines if an answer is valid based on static data. Returns -1 if valid but needs multiplier check."""
-        from .data import COUNTRIES, JOBS, NAMES
+        from .data import COUNTRIES, JOBS, MIASTA, NAMES
 
         if category == "Państwo":
             return -1 if ans_norm in COUNTRIES else 0
+        if category == "Miasto":
+            return -1 if ans_norm in MIASTA else 0
         if category == "Imię":
             return -1 if ans_norm in {normalize_text(n) for n in NAMES} else 0
         if category == "Zawód":
@@ -208,7 +230,12 @@ class Room:
             await save_player_score(self.room_id, player, self.scores[player])
 
         await save_room(
-            self.room_id, self.max_rounds, self.time_limit, self.current_round, self.host_name
+            self.room_id,
+            self.max_rounds,
+            self.time_limit,
+            self.current_round,
+            self.host_name,
+            self.visibility,
         )
 
     async def calculate_scores(self) -> dict[str, dict]:
@@ -241,10 +268,17 @@ class ConnectionManager:
         self.rooms: dict[str, Room] = {}
 
     async def connect(
-        self, websocket: WebSocket, room_id: str, client_name: str, max_rounds: int, time_limit: int
+        self,
+        websocket: WebSocket,
+        room_id: str,
+        client_name: str,
+        max_rounds: int,
+        time_limit: int,
+        visibility: str = "public",
     ) -> bool:
         logger.info(
-            f"Attempting connection: room_id={room_id}, client_name={client_name}, max_rounds={max_rounds}, time_limit={time_limit}"
+            f"Attempting connection: room_id={room_id}, client_name={client_name}, "
+            f"max_rounds={max_rounds}, time_limit={time_limit}, visibility={visibility}"
         )
 
         if not client_name or not client_name.strip():
@@ -252,23 +286,34 @@ class ConnectionManager:
             return False
 
         if room_id not in self.rooms:
-            self.rooms[room_id] = Room(room_id, max_rounds, time_limit)
+            self.rooms[room_id] = Room(
+                room_id,
+                max_rounds,
+                time_limit,
+                visibility=normalize_room_visibility(visibility),
+            )
             logger.info(
-                f"Created new room: {room_id} (max_rounds={max_rounds}, time_limit={time_limit})"
+                f"Created new room: {room_id} (max_rounds={max_rounds}, time_limit={time_limit}, "
+                f"visibility={self.rooms[room_id].visibility})"
             )
 
         room = self.rooms[room_id]
 
         # If a player joins with an existing nickname, close previous connection
         if client_name in room.connections:
+            prev_ws = room.connections[client_name]
             try:
-                await room.connections[client_name].close()
-                logger.info(
-                    f"Closed previous connection for nickname '{client_name}' in room {room_id}"
-                )
+                if prev_ws.application_state != WebSocketState.DISCONNECTED:
+                    await prev_ws.close()
+                    logger.info(
+                        f"Closed previous connection for nickname '{client_name}' in room {room_id}"
+                    )
             except Exception as e:
-                logger.error(
-                    f"Error closing previous connection for '{client_name}' in room {room_id}: {e}"
+                logger.warning(
+                    "Reconnect: could not close previous socket for %r in %s: %s",
+                    client_name,
+                    room_id,
+                    e,
                 )
 
         await websocket.accept()
@@ -285,7 +330,12 @@ class ConnectionManager:
 
         # Save/update room and player in DB
         await save_room(
-            room_id, room.max_rounds, room.time_limit, room.current_round, room.host_name
+            room_id,
+            room.max_rounds,
+            room.time_limit,
+            room.current_round,
+            room.host_name,
+            room.visibility,
         )
         await save_player_score(room_id, client_name, room.scores[client_name])
         logger.debug(f"Persisted room {room_id} and player {client_name} to DB")
@@ -296,12 +346,96 @@ class ConnectionManager:
         """Ładuje aktywne pokoje i wyniki z bazy danych przy starcie"""
         active_rooms = await get_active_rooms()
         for r_data in active_rooms:
-            room = Room(r_data["room_id"], r_data["max_rounds"], r_data["time_limit"])
+            vis = normalize_room_visibility(str(r_data.get("visibility", "public")))
+            room = Room(
+                r_data["room_id"],
+                r_data["max_rounds"],
+                r_data["time_limit"],
+                visibility=vis,
+            )
             room.current_round = r_data["current_round"]
             room.host_name = r_data["host_name"]
             room.scores = r_data["players"]
             self.rooms[r_data["room_id"]] = room
         print(f"✅ Załadowano {len(active_rooms)} pokoi z bazy danych.")
+
+    async def kick_player(
+        self, room_id: str, actor_name: str, target_name: str
+    ) -> tuple[bool, str]:
+        """Host removes another player from the room. Returns (ok, error_code). error_code empty on success."""
+        if room_id not in self.rooms:
+            return False, "no_room"
+        room = self.rooms[room_id]
+        if actor_name != room.host_name:
+            return False, "not_host"
+        if not target_name or target_name == actor_name:
+            return False, "bad_target"
+        if target_name not in room.connections:
+            return False, "not_found"
+
+        ws = room.connections[target_name]
+        room.ready_players.discard(target_name)
+        room.answers_received.pop(target_name, None)
+        room.scores.pop(target_name, None)
+        del room.connections[target_name]
+        if room.is_playing:
+            room.expected_answers = max(0, room.expected_answers - 1)
+
+        await remove_player(room_id, target_name)
+        await save_room(
+            room.room_id,
+            room.max_rounds,
+            room.time_limit,
+            room.current_round,
+            room.host_name,
+            room.visibility,
+        )
+
+        try:
+            await ws.send_text(
+                json.dumps(
+                    {
+                        "type": "kicked",
+                        "message": "Host wyrzucił Cię z pokoju.",
+                    }
+                )
+            )
+        except Exception as exc:
+            logger.warning("kick: send kicked message failed: %s", exc)
+        try:
+            await ws.close(code=4401)
+        except Exception as exc:
+            logger.warning("kick: close socket failed: %s", exc)
+
+        await room.broadcast(
+            json.dumps(
+                {
+                    "type": "system",
+                    "message": f"<em>Host wyrzucił {target_name} z pokoju.</em>",
+                }
+            )
+        )
+        await room.broadcast(
+            json.dumps(
+                {
+                    "type": "score_update",
+                    "scores": room.scores,
+                    "host_name": room.host_name,
+                }
+            )
+        )
+
+        if (
+            room.is_playing
+            and room.expected_answers > 0
+            and len(room.answers_received) >= room.expected_answers
+        ):
+            from .handlers import _finish_round
+
+            await _finish_round(room, room_id)
+
+        logger.info("Host '%s' kicked '%s' from room %s", actor_name, target_name, room_id)
+        return True, ""
 
     def disconnect(self, room_id: str, client_name: str):
         logger.info(f"Disconnect requested: room_id={room_id}, client_name={client_name}")

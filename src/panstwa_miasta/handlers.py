@@ -6,12 +6,9 @@ Each handler is a small, single-responsibility async function.
 
 import asyncio
 import json
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .manager import Room
 
 from .logger import get_logger
+from .manager import ConnectionManager, Room
 
 logger = get_logger(__name__)
 
@@ -21,12 +18,12 @@ logger = get_logger(__name__)
 # ---------------------------------------------------------------------------
 
 
-def _broadcast_json(room: "Room", payload: dict) -> asyncio.Task:
+def _broadcast_json(room: Room, payload: dict) -> asyncio.Task:
     """Broadcast a JSON payload and return a Task stored to prevent GC."""
     return asyncio.ensure_future(room.broadcast(json.dumps(payload)))
 
 
-async def _finish_round(room: "Room", room_id: str) -> None:
+async def _finish_round(room: Room, room_id: str) -> None:
     """Calculate scores, broadcast results and mark game_over if needed."""
     room.is_playing = False
     room.stop_triggered = False
@@ -54,7 +51,7 @@ async def _finish_round(room: "Room", room_id: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-async def handle_chat(room: "Room", client_name: str, msg: dict) -> None:
+async def handle_chat(room: Room, client_name: str, msg: dict) -> None:
     await room.broadcast(
         json.dumps(
             {
@@ -66,7 +63,7 @@ async def handle_chat(room: "Room", client_name: str, msg: dict) -> None:
     )
 
 
-async def handle_ready(room: "Room", room_id: str, client_name: str, timeout_coro) -> None:
+async def handle_ready(room: Room, room_id: str, client_name: str, timeout_coro) -> None:
     if room.is_playing or room.game_over:
         return
     room.ready_players.add(client_name)
@@ -99,7 +96,7 @@ async def handle_ready(room: "Room", room_id: str, client_name: str, timeout_cor
         logger.info(f"Round {room.current_round} started in room {room_id} with letter '{letter}'")
 
 
-async def handle_not_ready(room: "Room", client_name: str) -> None:
+async def handle_not_ready(room: Room, client_name: str) -> None:
     if room.is_playing:
         return
     room.ready_players.discard(client_name)
@@ -113,7 +110,7 @@ async def handle_not_ready(room: "Room", client_name: str) -> None:
     )
 
 
-async def handle_restart_game(room: "Room", client_name: str, msg: dict) -> None:
+async def handle_restart_game(room: Room, client_name: str, msg: dict) -> None:
     if not room.game_over or client_name != room.host_name:
         return
     await room.restart_game(msg.get("rounds", 5), msg.get("limit", 90))
@@ -130,9 +127,7 @@ async def handle_restart_game(room: "Room", client_name: str, msg: dict) -> None
     logger.info(f"Game restarted in room {room.room_id} by '{client_name}'")
 
 
-async def handle_dissolve_room(
-    room: "Room", room_id: str, client_name: str, delete_room_fn
-) -> None:
+async def handle_dissolve_room(room: Room, room_id: str, client_name: str, delete_room_fn) -> None:
     if client_name != room.host_name:
         return
     await room.broadcast(
@@ -154,7 +149,7 @@ async def handle_dissolve_room(
     logger.info(f"Room {room_id} dissolved by '{client_name}'")
 
 
-async def handle_stop(room: "Room", room_id: str, client_name: str, force_end_coro) -> None:
+async def handle_stop(room: Room, room_id: str, client_name: str, force_end_coro) -> None:
     if not room.is_playing or room.stop_triggered:
         return
     room.stop_triggered = True
@@ -173,7 +168,7 @@ async def handle_stop(room: "Room", room_id: str, client_name: str, force_end_co
     logger.info(f"Round stopped by '{client_name}' in room {room_id}")
 
 
-async def handle_answers(room: "Room", room_id: str, client_name: str, msg: dict) -> None:
+async def handle_answers(room: Room, room_id: str, client_name: str, msg: dict) -> None:
     if not room.is_playing:
         return
     room.answers_received[client_name] = msg.get("answers", {})
@@ -182,6 +177,30 @@ async def handle_answers(room: "Room", room_id: str, client_name: str, msg: dict
     )
     if len(room.answers_received) >= room.expected_answers:
         await _finish_round(room, room_id)
+
+
+KICK_DENIED_MESSAGES = {
+    "no_room": "Pokój nie istnieje.",
+    "not_host": "Tylko host może wyrzucać graczy.",
+    "bad_target": "Nie można wyrzucić tego gracza.",
+    "not_found": "Ta osoba nie jest w pokoju.",
+}
+
+
+async def handle_kick_player(
+    room: Room, room_id: str, client_name: str, msg: dict, manager: ConnectionManager
+) -> None:
+    target = (msg.get("target") or "").strip()
+    ok, err = await manager.kick_player(room_id, client_name, target)
+    if ok:
+        return
+    text = KICK_DENIED_MESSAGES.get(err, "Nie udało się wyrzucić gracza.")
+    ws = room.connections.get(client_name)
+    if ws:
+        try:
+            await ws.send_text(json.dumps({"type": "kick_denied", "message": text}))
+        except Exception as exc:
+            logger.warning("kick_denied send failed: %s", exc)
 
 
 # ---------------------------------------------------------------------------

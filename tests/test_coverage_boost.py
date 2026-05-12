@@ -22,15 +22,13 @@ async def test_room_complex_logic():
         "player1": {"Państwo": "Polska", "Miasto": "Poznań"},
         "player2": {"Państwo": "Polska", "Miasto": "Płock"},
     }
-    # Mock validator results
-    with patch("panstwa_miasta.validator.validator.validate", AsyncMock(return_value=True)):
-        scores = await room.calculate_scores()
-        # "Państwo" is duplicate -> 5 points each
-        # "Miasto" unique -> 10 points each
-        assert scores["player1"]["details"]["Państwo"] == 5
-        assert scores["player1"]["details"]["Miasto"] == 10
-        assert scores["player2"]["details"]["Państwo"] == 5
-        assert scores["player2"]["details"]["Miasto"] == 10
+    scores = await room.calculate_scores()
+    # "Państwo" is duplicate -> 5 points each
+    # "Miasto" unique -> 10 points each (walidacja z lokalnej tabeli cities)
+    assert scores["player1"]["details"]["Państwo"] == 5
+    assert scores["player1"]["details"]["Miasto"] == 10
+    assert scores["player2"]["details"]["Państwo"] == 5
+    assert scores["player2"]["details"]["Miasto"] == 10
 
     # Test restart_game
     await room.restart_game(rounds=3, limit=60)

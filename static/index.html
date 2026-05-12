@@ -7,9 +7,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="description" content="Państwa-Miasta w 5 sekund na telefonie — bez kont i bez reklam, z Wikipedią jako sędzią. Zagraj ze znajomymi w przeglądarce.">
+    <meta name="description" content="Państwa-Miasta w 5 sekund na telefonie — bez kont i bez reklam. Słowniki w grze + Wikidata tam, gdzie trzeba. Zagraj ze znajomymi w przeglądarce.">
     <link rel="manifest" href="/manifest.json">
-    <title>Państwa-Miasta — 5 sekund, Wikipedia, zero reklam</title>
+    <title>Państwa-Miasta — 5 sekund, zero reklam</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
@@ -32,14 +32,14 @@
         <header class="hero">
             <div class="hero-content">
                 <h1 class="hero-title">Państwa-Miasta w <span>5 sekund</span>.</h1>
-                <p class="hero-subtitle">Bez kont, bez reklam, z Wikipedią jako sędzią.</p>
+                <p class="hero-subtitle">Bez kont, bez reklam — państwa, miasta i zawody z bazy; zwierzęta i rośliny przez Wikidata.</p>
                 <div class="hero-btns">
                     <button type="button" class="btn-primary" onclick="showCreateModal()">Stwórz pokój</button>
                     <button type="button" class="btn-secondary" onclick="showJoinModal()">Mam kod</button>
                 </div>
                 <ul class="hero-trust-pills" aria-label="Dlaczego warto">
                     <li class="hero-trust-pill">5-sekundowy start</li>
-                    <li class="hero-trust-pill">Sędzia z Wikipedii</li>
+                    <li class="hero-trust-pill">Lokalne słowniki + Wikidata</li>
                     <li class="hero-trust-pill">Bez reklam, bez kont</li>
                 </ul>
             </div>
@@ -87,7 +87,8 @@
                                         <th>Host</th>
                                         <th>Gracze</th>
                                         <th>Rundy</th>
-                                        <th>Zasady</th>
+                                        <th>Czas</th>
+                                        <th>Typ</th>
                                         <th>Akcja</th>
                                     </tr>
                                 </thead>
@@ -108,7 +109,7 @@
                 <div class="feature-item">
                     <div class="feature-icon">🛡️</div>
                     <h3>Fair Play</h3>
-                    <p>Automatyczna walidacja odpowiedzi przez Wikipedię.</p>
+                    <p>Walidacja z bazy (m.in. miasta) i z Wikidata tam, gdzie potrzeba.</p>
                 </div>
                 <div class="feature-item">
                     <div class="feature-icon">📱</div>
@@ -151,6 +152,13 @@
                     <select id="time_limit">
                         <option value="60">60</option>
                         <option value="90" selected>90</option>
+                    </select>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="room_visibility">Widoczność w lobby</label>
+                    <select id="room_visibility">
+                        <option value="public" selected>Publiczny — widać na liście aktywnych pokoi</option>
+                        <option value="private">Prywatny — tylko z linku / kodu</option>
                     </select>
                 </div>
             </div>

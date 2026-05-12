@@ -30,9 +30,11 @@ function addLog(content, className = '') {
     logs.scrollTop = logs.scrollHeight;
 }
 
-function updateScoreboard(scores = {}, hostName = '') {
+function updateScoreboard(scores = {}, hostName = '', viewerNick = '') {
     const scoreboard = document.getElementById('scoreboard');
     if (!scoreboard) return;
+
+    const viewer = viewerNick || globalThis.myNick || '';
 
     scoreboard.innerHTML = '';
 
@@ -52,11 +54,44 @@ function updateScoreboard(scores = {}, hostName = '') {
         row.className = 'score-item';
         if (hostName && name === hostName) row.classList.add('is-host');
 
-        const safePoints = Number(points) || 0;
-        row.innerHTML = `
-            <span>${name === hostName ? '<span class="crown">👑</span>' : ''}${name}</span>
-            <strong>${safePoints} pkt</strong>
-        `;
+        const left = document.createElement('div');
+        left.className = 'score-item-left';
+
+        const nameSpan = document.createElement('span');
+        if (name === hostName) {
+            const crown = document.createElement('span');
+            crown.className = 'crown';
+            crown.textContent = '👑';
+            nameSpan.appendChild(crown);
+        }
+        nameSpan.appendChild(document.createTextNode(name));
+
+        left.appendChild(nameSpan);
+
+        const canKick =
+            hostName &&
+            viewer &&
+            viewer === hostName &&
+            name !== viewer &&
+            typeof sendJson === 'function';
+        if (canKick) {
+            const kickBtn = document.createElement('button');
+            kickBtn.type = 'button';
+            kickBtn.className = 'btn-kick';
+            kickBtn.setAttribute('aria-label', `Wyrzuć gracza ${name} z pokoju`);
+            kickBtn.textContent = 'Wyrzuć';
+            kickBtn.addEventListener('click', () => {
+                if (!globalThis.confirm(`Wyrzucić ${name} z pokoju?`)) return;
+                sendJson({ type: 'kick_player', target: name });
+            });
+            left.appendChild(kickBtn);
+        }
+
+        const pts = document.createElement('strong');
+        pts.textContent = `${Number(points) || 0} pkt`;
+
+        row.appendChild(left);
+        row.appendChild(pts);
         scoreboard.appendChild(row);
     });
 }
@@ -75,6 +110,9 @@ function sendChat() {
 }
 
 function buildRoomRow(room) {
+    const visLabel =
+        room.visibility_label ||
+        (room.visibility === 'private' ? 'Prywatny' : 'Publiczny');
     const tr = document.createElement('tr');
     tr.innerHTML = `
         <td style="font-weight:800; color:var(--accent);">${room.id}</td>
@@ -82,7 +120,7 @@ function buildRoomRow(room) {
         <td><span class="badge badge-rules">${room.players} graczy</span></td>
         <td>${room.current_round}/${room.max_rounds}</td>
         <td><span class="badge badge-rules">${room.time_limit}s</span></td>
-        <td><span class="badge badge-mode">${room.mode}</span></td>
+        <td><span class="badge badge-mode">${visLabel}</span></td>
         <td>
             <button class="btn-join-small" onclick="joinRoom('${room.id}')">DOŁĄCZ</button>
         </td>
@@ -134,6 +172,9 @@ function applyRoomSettingsFromUrl() {
     const limitSel = document.getElementById('time_limit');
     if (rounds && roundsSel) roundsSel.value = rounds;
     if (limit && limitSel) limitSel.value = limit;
+    const vis = params.get('visibility');
+    const visSel = document.getElementById('room_visibility');
+    if (visSel && (vis === 'public' || vis === 'private')) visSel.value = vis;
 }
 
 function tryAutoJoin(savedNick, roomId) {
@@ -202,6 +243,16 @@ function bindCategoryEnter() {
     });
 }
 
+function playLotterySpinHaptic() {
+    if (typeof globalThis.navigator?.vibrate !== 'function') return;
+    globalThis.navigator.vibrate(12);
+}
+
+function playLotteryRevealHaptic() {
+    if (typeof globalThis.navigator?.vibrate !== 'function') return;
+    globalThis.navigator.vibrate([22, 48, 28]);
+}
+
 globalThis.window.onload = () => {
     const savedNick = restoreNickname();
     const isRoomRoute = handleRoomRouteOnLoad(savedNick);
@@ -221,6 +272,8 @@ globalThis.loadActiveRooms = loadActiveRooms;
 globalThis.addLog = addLog;
 globalThis.updateScoreboard = updateScoreboard;
 globalThis.sendChat = sendChat;
+globalThis.playLotterySpinHaptic = playLotterySpinHaptic;
+globalThis.playLotteryRevealHaptic = playLotteryRevealHaptic;
 
 if (typeof module !== 'undefined') {
     module.exports = {
@@ -239,5 +292,7 @@ if (typeof module !== 'undefined') {
         handleRoomRouteOnLoad,
         bindChatEnter,
         bindCategoryEnter,
+        playLotterySpinHaptic,
+        playLotteryRevealHaptic,
     };
 }

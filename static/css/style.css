@@ -705,6 +705,32 @@ button.choice-card:focus-visible {
 .score-item.is-host { border-color: var(--warning); }
 .crown { margin-right: 6px; }
 
+.score-item-left {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.55rem;
+    flex: 1;
+    min-width: 0;
+}
+
+button.btn-kick {
+    font-size: var(--fs-xs);
+    padding: 0.2rem 0.45rem;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--danger);
+    background: transparent;
+    color: var(--danger);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+button.btn-kick:hover,
+button.btn-kick:focus-visible {
+    background: color-mix(in srgb, var(--danger) 18%, transparent);
+    outline: none;
+}
+
 /* ---------- Logs / chat ---------- */
 #logs {
     height: 280px;

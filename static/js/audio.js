@@ -39,10 +39,50 @@ function playGong() {
     osc.stop(audioCtx.currentTime + 1.5);
 }
 
+function playLotterySpinTick(elapsed, duration) {
+    if (!audioCtx) return;
+    const safeDur = Math.max(duration, 1);
+    const progress = Math.min(1, elapsed / safeDur);
+    const freq = 380 + progress * 520;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = 'sine';
+    const t = audioCtx.currentTime;
+    osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(0.038, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.034);
+    osc.start(t);
+    osc.stop(t + 0.036);
+}
+
+function playRoundStartReveal() {
+    if (!audioCtx) return;
+    const t0 = audioCtx.currentTime;
+    const notes = [523.25, 659.25];
+    notes.forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const start = t0 + i * 0.07;
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.13, start + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.32);
+        osc.start(start);
+        osc.stop(start + 0.33);
+    });
+}
+
 if (typeof module !== 'undefined') {
     module.exports = {
         initAudio,
         playTick,
-        playGong
+        playGong,
+        playLotterySpinTick,
+        playRoundStartReveal,
     };
 }

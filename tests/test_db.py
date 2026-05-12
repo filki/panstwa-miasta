@@ -30,6 +30,12 @@ async def test_db_lifecycle():
     rooms = await get_active_rooms()
     assert rooms[0]["players"]["Player1"] == 10
 
+    from panstwa_miasta.db import remove_player
+
+    await remove_player("test-room", "Player1")
+    rooms = await get_active_rooms()
+    assert "Player1" not in rooms[0]["players"]
+
     await delete_room("test-room")
     rooms = await get_active_rooms()
     assert len(rooms) == 0
