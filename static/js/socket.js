@@ -296,17 +296,92 @@ function getScoreColor(pts) {
     return "var(--danger)";
 }
 
-function buildPlayerResultHtml(player, rScore, pAnswers) {
-    // Uproszczony log: tylko kto ile punktów dostał w sumie, bez detali kategorii (kolory są na inputach)
-    return `<div style="margin-bottom: 0.5rem"><strong>${player}: +${rScore.total} pkt</strong></div>`;
+/** Kolejność jak w backendzie ``GAME_CATEGORIES`` — spójna tabela wyników. */
+const ROUND_RESULT_CATEGORIES = [
+    "Państwo",
+    "Miasto",
+    "Rzecz",
+    "Zwierzę",
+    "Roślina",
+    "Imię",
+    "Zawód",
+];
+
+function escapeHtml(text) {
+    if (text == null || text === "") return "";
+    const d = document.createElement("div");
+    d.textContent = String(text);
+    return d.innerHTML;
+}
+
+function isWideRoundResultsLayout() {
+    try {
+        return Boolean(globalThis.matchMedia && globalThis.matchMedia("(min-width: 768px)").matches);
+    } catch {
+        return false;
+    }
+}
+
+function roundResultsPtsClass(pts) {
+    if (pts === 15) return "round-results-pts round-results-pts--15";
+    if (pts === 10) return "round-results-pts round-results-pts--10";
+    if (pts === 5) return "round-results-pts round-results-pts--5";
+    return "round-results-pts round-results-pts--0";
+}
+
+/**
+ * Jedna osoba w podsumowaniu: na mobile zwijalne ``details`` (oprócz widza na szerokim ekranie
+ * wszystkie startują otwarte), w środku siatka kategoria → odpowiedź → pkt.
+ */
+function buildPlayerResultHtml(player, rScore, pAnswers, viewerNick, wideLayout) {
+    const answers = pAnswers && typeof pAnswers === "object" ? pAnswers : {};
+    const details = rScore && rScore.details && typeof rScore.details === "object" ? rScore.details : {};
+    const isViewer = Boolean(viewerNick && player === viewerNick);
+    const startOpen = Boolean(wideLayout || isViewer);
+    const total = typeof rScore.total === "number" ? rScore.total : 0;
+    let innerRows = "";
+    for (const cat of ROUND_RESULT_CATEGORIES) {
+        const raw = answers[cat];
+        const hasAns = raw != null && String(raw).trim() !== "";
+        const ansDisp = hasAns ? String(raw).trim() : "—";
+        const ptsRaw = details[cat];
+        const pts = typeof ptsRaw === "number" ? ptsRaw : 0;
+        const escapedAns = hasAns ? escapeHtml(ansDisp) : "—";
+        innerRows += `<div class="round-results-row">
+<span class="round-results-cat">${escapeHtml(cat)}</span>
+<span class="round-results-val">${escapedAns}</span>
+<span class="${roundResultsPtsClass(pts)}">${pts}</span>
+</div>`;
+    }
+    const meClass = isViewer ? " round-results-player--me" : "";
+    const openAttr = startOpen ? " open" : "";
+    return `<details class="round-results-player${meClass}"${openAttr}>
+<summary class="round-results-player-summary" aria-label="Wyniki ${escapeHtml(player)}, suma ${total} punktów">
+<span class="round-results-player-name">${escapeHtml(player)}</span>
+<span class="round-results-player-total">+${total} pkt</span>
+</summary>
+<div class="round-results-rows">${innerRows}</div>
+</details>`;
 }
 
 function buildRoundResultsHtml(msg) {
-    let html = `<div class="sender">Podsumowanie Rundy:</div>`;
-    for (const [player, rScore] of Object.entries(msg.round_scores)) {
-        html += buildPlayerResultHtml(player, rScore, {});
-        if (player === myNick) highlightMyInputs(rScore);
+    const answersRoot = msg.answers && typeof msg.answers === "object" ? msg.answers : {};
+    const viewer = globalThis.myNick || myNick || "";
+    const wide = isWideRoundResultsLayout();
+    const scores = msg.round_scores && typeof msg.round_scores === "object" ? msg.round_scores : {};
+    const rows = Object.entries(scores).sort((a, b) => {
+        const aw = a[0] === viewer ? 1 : 0;
+        const bw = b[0] === viewer ? 1 : 0;
+        if (aw !== bw) return bw - aw;
+        return (b[1].total || 0) - (a[1].total || 0);
+    });
+    let html = `<div class="round-results-block"><div class="round-results-head">Podsumowanie rundy</div>`;
+    for (const [player, rScore] of rows) {
+        if (!rScore || typeof rScore !== "object") continue;
+        html += buildPlayerResultHtml(player, rScore, answersRoot[player], viewer, wide);
+        if (player === viewer) highlightMyInputs(rScore);
     }
+    html += "</div>";
     return html;
 }
 
@@ -456,6 +531,8 @@ if (typeof module !== 'undefined') {
         onRoundStarted,
         onStopRound,
         getScoreColor,
+        escapeHtml,
+        isWideRoundResultsLayout,
         buildPlayerResultHtml,
         buildRoundResultsHtml,
         onRoundResults,

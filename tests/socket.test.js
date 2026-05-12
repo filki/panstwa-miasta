@@ -379,11 +379,56 @@ describe('pure helpers', () => {
         expect(getScoreColor(0)).toBe('var(--danger)');
     });
 
-    test('buildPlayerResultHtml renders a single-line summary', () => {
+    test('buildPlayerResultHtml builds accordion with category rows', () => {
         const { buildPlayerResultHtml } = loadSocket();
-        const html = buildPlayerResultHtml('Filip', { total: 15, details: {} }, {});
-        expect(html).toContain('Filip');
-        expect(html).toContain('+15 pkt');
+        const html = buildPlayerResultHtml(
+            'Anna',
+            { total: 10, details: { Państwo: 10, Miasto: 0 } },
+            { Państwo: 'Polska', Miasto: '' },
+            '',
+            false,
+        );
+        expect(html).toContain('round-results-player');
+        expect(html).not.toContain(' open');
+        expect(html).toContain('Polska');
+        expect(html).toContain('Państwo');
+    });
+
+    test('buildPlayerResultHtml opens for the viewer on narrow layout', () => {
+        const { buildPlayerResultHtml } = loadSocket();
+        const html = buildPlayerResultHtml(
+            'Filip',
+            { total: 15, details: { Państwo: 15 } },
+            { Państwo: 'Polska' },
+            'Filip',
+            false,
+        );
+        expect(html).toContain(' open');
+        expect(html).toContain('round-results-player--me');
+    });
+
+    test('escapeHtml escapes angle brackets', () => {
+        const { escapeHtml } = loadSocket();
+        expect(escapeHtml('<img>')).toBe('&lt;img&gt;');
+    });
+
+    test('buildRoundResultsHtml includes answers and escapes XSS', () => {
+        const { buildRoundResultsHtml } = loadSocket();
+        globalThis.myNick = 'A';
+        const html = buildRoundResultsHtml({
+            round_scores: {
+                A: { total: 0, details: { Państwo: 0 } },
+                B: { total: 0, details: { Państwo: 0 } },
+            },
+            answers: {
+                A: { Państwo: '<b>x</b>' },
+                B: { Państwo: 'OK' },
+            },
+        });
+        expect(html).toContain('round-results-block');
+        expect(html).toContain('&lt;b&gt;');
+        expect(html).not.toContain('<b>x</b>');
+        delete globalThis.myNick;
     });
 });
 
