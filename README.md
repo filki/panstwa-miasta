@@ -2,15 +2,15 @@
 
 [![CI](https://github.com/filki/panstwa-miasta/actions/workflows/ci.yml/badge.svg)](https://github.com/filki/panstwa-miasta/actions/workflows/ci.yml)
 
-Klasyczna gra Państwa-Miasta odpalana w pięć sekund na telefonie. Bez kont, bez reklam, z Wikipedią jako sędzią.
+Klasyczna gra Państwa-Miasta odpalana w kilka sekund na telefonie. Bez kont; odpowiedzi sprawdzane względem **lokalnych** list na serwerze (m.in. miasta, zwierzęta, rośliny).
 
 > Stwórz pokój, wyślij kod znajomym, grajcie razem w czasie rzeczywistym.
 
 ## Stack
 
-- **Backend**: FastAPI + WebSockets, `aiosqlite`, `httpx` (Wikidata)
+- **Backend**: FastAPI + WebSockets, `aiosqlite`
 - **Frontend**: Pure HTML/CSS/JS, PWA (manifest + service worker), mobile-first
-- **Walidacja**: Wikidata API — koniec sporów typu „Audi to miasto?"
+- **Walidacja**: zbiory w SQLite / cache w pamięci (build offline dla części danych) — bez zewnętrznego API w locie przy punktacji
 - **Package manager**: [uv](https://docs.astral.sh/uv/)
 
 ## Quickstart (dev)
