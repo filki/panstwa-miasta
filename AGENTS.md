@@ -10,7 +10,7 @@ Solo project, prod target: smartphone-first, no ads, no accounts.
 - **Frontend**: vanilla JS / HTML / CSS, no framework, no jQuery. ES modules in `static/js/`
 - **Tests**: `pytest` (Python, 35 tests) + `jest` (JS, 59 tests)
 - **Lint/format/types**: `ruff` (lint + format), `ty` (type check)
-- **Quality gate**: SonarQube Cloud (projekt `filip-org_panstwa-masta`; CI: `SONAR_TOKEN` w GitHub Secrets)
+- **Quality gate**: SonarQube Cloud (projekt `filip-org_panstwa-masta`; CI: `SONAR_TOKEN` w GitHub Secrets). W SonarCloud ustaw **main branch** na `main` (nie `master`), inaczej darmowy plan nie zmapuje analizy na gałąź `main` z GitHuba.
 
 ## WSL setup (one-time)
 
