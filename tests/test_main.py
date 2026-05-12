@@ -147,3 +147,30 @@ def test_websocket_extra_keys_get_error_message():
                 break
         assert err is not None
         assert err.get("message") == "Invalid message"
+
+
+def test_api_share_returns_404_when_missing():
+    from panstwa_miasta.share_store import clear_share_snapshots
+
+    clear_share_snapshots()
+    response = client.get("/api/share/nope12345")
+    assert response.status_code == 404
+
+
+def test_api_share_json_and_share_page():
+    from panstwa_miasta.share_store import clear_share_snapshots, record_finished_game
+
+    clear_share_snapshots()
+    record_finished_game("share_room_1", {"Gracz1": 15, "Gracz2": 8}, "Gracz1")
+
+    rj = client.get("/api/share/share_room_1")
+    assert rj.status_code == 200
+    data = rj.json()
+    assert data["room_id"] == "share_room_1"
+    assert data["host_name"] == "Gracz1"
+    assert data["scores"]["Gracz1"] == 15
+
+    rh = client.get("/share/share_room_1")
+    assert rh.status_code == 200
+    assert "og:title" in rh.text
+    assert "Gracz1" in rh.text

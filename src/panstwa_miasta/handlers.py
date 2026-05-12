@@ -9,6 +9,7 @@ import json
 
 from .logger import get_logger
 from .manager import ConnectionManager, Room
+from .share_store import record_finished_game
 
 logger = get_logger(__name__)
 
@@ -31,6 +32,7 @@ async def _finish_round(room: Room, room_id: str) -> None:
     is_game_over = room.current_round >= room.max_rounds
     if is_game_over:
         room.game_over = True
+        record_finished_game(room_id, dict(room.scores), room.host_name or "")
     await room.broadcast(
         json.dumps(
             {

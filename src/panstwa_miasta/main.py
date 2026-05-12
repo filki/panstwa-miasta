@@ -2,18 +2,20 @@ import asyncio
 import json
 import pathlib
 from contextlib import asynccontextmanager, suppress
+from html import escape
 from typing import Annotated, Literal, cast
 
 import aiofiles
-from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
-from .api_models import ActiveRoomRow, ClientNamePath, RoomIdPath
+from .api_models import ActiveRoomRow, ClientNamePath, RoomIdPath, ShareSnapshotOut
 from .data import reload_countries, reload_jobs, reload_miasta, reload_names
 from .db import delete_room, init_db
 from .handlers import (
+    _finish_round,
     handle_answers,
     handle_chat,
     handle_dissolve_room,
@@ -93,25 +95,8 @@ async def force_end_round(room_id: str) -> None:
     room = manager.rooms[room_id]
     if not (room.is_playing and room.stop_triggered):
         return
-    room.is_playing = False
-    room.stop_triggered = False
-    round_scores = await room.calculate_scores()
-    is_game_over = room.current_round >= room.max_rounds
-    if is_game_over:
-        room.game_over = True
-    await room.broadcast(
-        json.dumps(
-            {
-                "type": "round_results",
-                "answers": room.answers_received,
-                "round_scores": round_scores,
-                "total_scores": room.scores,
-                "game_over": is_game_over,
-                "host_name": room.host_name,
-            }
-        )
-    )
-    logger.info(f"Force-ended round for room {room_id}. game_over={is_game_over}")
+    await _finish_round(room, room_id)
+    logger.info("Force-ended round for room %s via _finish_round", room_id)
 
 
 # ---------------------------------------------------------------------------
@@ -144,6 +129,55 @@ async def get_service_worker() -> FileResponse:
 @app.get("/manifest.json")
 async def get_manifest() -> FileResponse:
     return FileResponse(MANIFEST_PATH, media_type="application/manifest+json")
+
+
+@app.get("/api/share/{room_id}")
+async def get_share_json(room_id: RoomIdPath) -> ShareSnapshotOut:
+    """JSON z wynikiem zakończonej gry (np. dla klienta lub integracji)."""
+    from .share_store import get_snapshot
+
+    snap = get_snapshot(room_id)
+    if snap is None:
+        raise HTTPException(status_code=404, detail="Brak zapisanego wyniku dla tego pokoju.")
+    return ShareSnapshotOut(
+        room_id=snap.room_id, host_name=snap.host_name, scores=dict(snap.scores)
+    )
+
+
+@app.get("/share/{room_id}")
+async def get_share_page(room_id: RoomIdPath) -> HTMLResponse:
+    """Lekka strona z meta OG dla podglądu linków (Messenger, itp.)."""
+    from .share_store import get_snapshot
+
+    snap = get_snapshot(room_id)
+    if snap is None:
+        body = (
+            '<!DOCTYPE html><html lang="pl"><head><meta charset="utf-8"/>'
+            "<title>Wynik — brak danych</title></head><body>"
+            "<p>Nie ma zapisanego wyniku dla tego kodu.</p>"
+            '<p><a href="/">Strona główna</a></p></body></html>'
+        )
+        return HTMLResponse(content=body, status_code=404)
+    title = f"Państwa-Miasta — wynik ({escape(snap.room_id)})"
+    score_bits = ", ".join(
+        f"{escape(n)}: {s}" for n, s in sorted(snap.scores.items(), key=lambda x: (-x[1], x[0]))
+    )
+    desc = f"Host: {escape(snap.host_name or '—')}. {score_bits}"[:500]
+    body = (
+        f'<!DOCTYPE html><html lang="pl"><head><meta charset="utf-8"/>'
+        f"<title>{title}</title>"
+        f'<meta property="og:title" content="{escape(title)}" />'
+        f'<meta property="og:description" content="{escape(desc)}" />'
+        f'<meta name="description" content="{escape(desc)}" />'
+        "</head><body>"
+        f"<h1>{escape(snap.room_id)}</h1>"
+        f"<p><strong>Host:</strong> {escape(snap.host_name or '—')}</p>"
+        f"<p><strong>Wyniki:</strong> {escape(score_bits)}</p>"
+        '<p><a href="/">Strona główna</a> · '
+        f'<a href="/room/{escape(snap.room_id)}">Pokój</a></p>'
+        "</body></html>"
+    )
+    return HTMLResponse(content=body)
 
 
 @app.get("/api/active-rooms")

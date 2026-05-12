@@ -32,3 +32,13 @@ class ActiveRoomRow(BaseModel):
     time_limit: int = Field(..., ge=1)
     visibility: Literal["public", "private"]
     visibility_label: str = Field(..., max_length=32)
+
+
+class ShareSnapshotOut(BaseModel):
+    """Zapis wyniku końcowego gry (udostępnianie / OG)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    room_id: str = Field(..., max_length=64)
+    host_name: str = Field(default="", max_length=200)
+    scores: dict[str, int] = Field(default_factory=dict)

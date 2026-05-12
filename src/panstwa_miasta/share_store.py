@@ -42,3 +42,8 @@ def get_snapshot(room_id: str) -> ShareSnapshot | None:
         return None
     _snapshots.move_to_end(room_id)
     return snap
+
+
+def clear_share_snapshots() -> None:
+    """Usuwa wszystkie snapshoty (wyłącznie pod testy)."""
+    _snapshots.clear()
