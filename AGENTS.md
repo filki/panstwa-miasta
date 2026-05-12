@@ -10,7 +10,7 @@ Solo project, prod target: smartphone-first, no ads, no accounts.
 - **Frontend**: vanilla JS / HTML / CSS, no framework, no jQuery. ES modules in `static/js/`
 - **Tests**: `pytest` (Python, 35 tests) + `jest` (JS, 59 tests)
 - **Lint/format/types**: `ruff` (lint + format), `ty` (type check)
-- **Quality gate**: SonarQube local (`localhost:9000`, project key `panstwa-masta`)
+- **Quality gate**: SonarQube Cloud (projekt `filip-org_panstwa-masta`; CI: `SONAR_TOKEN` w GitHub Secrets)
 
 ## WSL setup (one-time)
 
