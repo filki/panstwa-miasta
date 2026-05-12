@@ -131,6 +131,11 @@ describe('connect()', () => {
         expect(url).toContain('rounds=10');
         expect(url).toContain('limit=60');
         expect(url).toContain('visibility=public');
+        expect(window.history.replaceState).toHaveBeenCalledWith(
+            null,
+            '',
+            '/room/1234?rounds=10&limit=60&visibility=public',
+        );
     });
 
     test('uses visibility=private from create modal when connecting', () => {
@@ -337,6 +342,26 @@ describe('round event handlers', () => {
         jest.advanceTimersByTime(1000);
         expect(timer.textContent).toBe('29s');
         jest.useRealTimers();
+        delete globalThis.runLetterLottery;
+        delete globalThis.runRoundStartCountdown;
+    });
+
+    test('onRoundStarted with resume skips lottery and countdown', () => {
+        const spin = jest.fn();
+        globalThis.runLetterLottery = spin;
+        globalThis.runRoundStartCountdown = jest.fn();
+        const { onRoundStarted } = loadSocket();
+        onRoundStarted({
+            letter: 'M',
+            time_limit: 90,
+            current_round: 2,
+            max_rounds: 5,
+            resume: true,
+        });
+        expect(spin).not.toHaveBeenCalled();
+        expect(globalThis.runRoundStartCountdown).not.toHaveBeenCalled();
+        expect(global.enableInputs).toHaveBeenCalled();
+        expect(document.getElementById('round-timer').textContent).toBe('—');
         delete globalThis.runLetterLottery;
         delete globalThis.runRoundStartCountdown;
     });

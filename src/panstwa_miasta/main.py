@@ -286,6 +286,7 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
                     "current_round": room.current_round,
                     "max_rounds": room.max_rounds,
                     "time_limit": room.time_limit,
+                    "resume": True,
                 }
             )
         )
@@ -294,6 +295,7 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
             json.dumps(
                 {
                     "type": "round_results",
+                    "room_id": room.room_id,
                     "answers": {},
                     "round_scores": {},
                     "total_scores": room.scores,
