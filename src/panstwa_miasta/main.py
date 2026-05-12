@@ -1,13 +1,16 @@
 import asyncio
 import json
 import pathlib
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
+from typing import Annotated, Literal, cast
 
 import aiofiles
 from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import ValidationError
 
+from .api_models import ActiveRoomRow, ClientNamePath, RoomIdPath
 from .data import reload_countries, reload_jobs, reload_miasta, reload_names
 from .db import delete_room, init_db
 from .handlers import (
@@ -22,6 +25,7 @@ from .handlers import (
 )
 from .logger import get_logger
 from .manager import ConnectionManager
+from .ws_messages import ws_inbound_adapter
 
 logger = get_logger(__name__)
 
@@ -124,7 +128,7 @@ async def get_root() -> HTMLResponse:
 
 
 @app.get("/room/{room_id}")
-async def get_room(room_id: str) -> HTMLResponse:
+async def get_room(room_id: RoomIdPath) -> HTMLResponse:
     # Use separate room page instead of rendering landing page.
     async with aiofiles.open(ROOM_PATH, encoding="utf-8") as f:
         html_content = await f.read()
@@ -142,19 +146,19 @@ async def get_manifest() -> FileResponse:
     return FileResponse(MANIFEST_PATH, media_type="application/manifest+json")
 
 
-@app.get("/api/active-rooms")
-async def get_active_rooms():
+@app.get("/api/active-rooms", response_model=list[ActiveRoomRow])
+async def get_active_rooms() -> list[ActiveRoomRow]:
     return [
-        {
-            "id": r_id,
-            "players": len(room.connections),
-            "host": room.host_name or "Anonim",
-            "current_round": room.current_round,
-            "max_rounds": room.max_rounds,
-            "time_limit": room.time_limit,
-            "visibility": room.visibility,
-            "visibility_label": ("Publiczny" if room.visibility == "public" else "Prywatny"),
-        }
+        ActiveRoomRow(
+            id=r_id,
+            players=len(room.connections),
+            host=room.host_name or "Anonim",
+            current_round=room.current_round,
+            max_rounds=room.max_rounds,
+            time_limit=room.time_limit,
+            visibility=cast(Literal["public", "private"], room.visibility),
+            visibility_label=("Publiczny" if room.visibility == "public" else "Prywatny"),
+        )
         for r_id, room in manager.rooms.items()
         if room.connections and not room.game_over and room.visibility == "public"
     ]
@@ -230,11 +234,11 @@ async def _dispatch(msg: dict, room, room_id: str, client_name: str) -> None:
 @app.websocket("/ws/{room_id}/{client_name}")
 async def websocket_endpoint(
     websocket: WebSocket,
-    room_id: str,
-    client_name: str,
-    rounds: int = Query(5),
-    limit: int = Query(90),
-    visibility: str = Query("public"),
+    room_id: RoomIdPath,
+    client_name: ClientNamePath,
+    rounds: Annotated[int, Query(ge=1, le=50)] = 5,
+    limit: Annotated[int, Query(ge=10, le=600)] = 90,
+    visibility: Annotated[Literal["public", "private"], Query()] = "public",
 ) -> None:
     logger.info(
         f"WebSocket attempt: room={room_id}, client={client_name}, "
@@ -246,7 +250,11 @@ async def websocket_endpoint(
         await websocket.close(code=1008)
         return
 
-    room = manager.rooms[room_id]
+    room = manager.rooms.get(room_id)
+    if room is None:
+        logger.error("Room missing after successful connect: room_id=%s", room_id)
+        await websocket.close(code=1011)
+        return
     await _send_initial_state(websocket, room, client_name)
 
     try:
@@ -254,19 +262,28 @@ async def websocket_endpoint(
             data = await websocket.receive_text()
             logger.debug(f"Raw data from '{client_name}': {data}")
             try:
-                msg = json.loads(data)
-                await _dispatch(msg, room, room_id, client_name)
+                msg = ws_inbound_adapter.validate_json(data)
+                await _dispatch(msg.model_dump(), room, room_id, client_name)
             except json.JSONDecodeError:
                 logger.warning(f"Invalid JSON from '{client_name}': {data}")
+            except ValidationError as exc:
+                logger.warning(
+                    "Invalid WS payload from %r in %s: %s",
+                    client_name,
+                    room_id,
+                    exc,
+                )
+                with suppress(Exception):
+                    await websocket.send_json({"type": "error", "message": "Invalid message"})
             except Exception as exc:
                 logger.exception(f"Error handling message from '{client_name}': {exc}")
     except WebSocketDisconnect:
         logger.info(f"WebSocketDisconnect: '{client_name}' left room {room_id}")
-        room_was_in_memory = room_id in manager.rooms
-        manager.disconnect(room_id, client_name)
-        if room_was_in_memory and room_id not in manager.rooms:
+        if not manager.disconnect(room_id, client_name, websocket):
+            return
+        if room_id not in manager.rooms:
             await delete_room(room_id)
-        elif room_id in manager.rooms:
+        else:
             room = manager.rooms[room_id]
             await room.broadcast(
                 json.dumps({"type": "system", "message": f"{client_name} opuścił grę"})

@@ -88,7 +88,7 @@ async def test_websocket_handlers_comprehensive():
         ws.receive_json()
 
         # Test all types
-        for msg_type in ["ready", "not_ready", "ping"]:
+        for msg_type in ["ready", "not_ready"]:
             ws.send_json({"type": msg_type})
 
         ws.send_json({"type": "answers", "answers": {"Państwo": "Polska"}})
