@@ -50,6 +50,7 @@ jobs:
           name: coverage-python
           path: |
             coverage.xml
+            test-results.xml
           if-no-files-found: ignore
           retention-days: 7
 
@@ -81,3 +82,36 @@ jobs:
           path: coverage-js
           if-no-files-found: ignore
           retention-days: 7
+
+  # Tylko po merge na main (push do main), nie na każdym PR — mniej minut, brak skanów z forków.
+  # SONAR_TOKEN → Secrets. SONAR_HOST_URL → Repository Variables (łatwiej podmieniać przy
+  # nowym URL ngrok); nie używaj localhost — runner GitHub nie widzi Twojego PC.
+  sonar:
+    name: SonarQube
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [python, js]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download Python coverage + JUnit
+        uses: actions/download-artifact@v7
+        with:
+          name: coverage-python
+          path: .
+
+      - name: Download JS coverage (lcov)
+        uses: actions/download-artifact@v7
+        with:
+          name: coverage-js
+          path: coverage-js
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
