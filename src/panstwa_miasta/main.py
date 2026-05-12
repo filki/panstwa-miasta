@@ -146,7 +146,7 @@ async def get_manifest() -> FileResponse:
     return FileResponse(MANIFEST_PATH, media_type="application/manifest+json")
 
 
-@app.get("/api/active-rooms", response_model=list[ActiveRoomRow])
+@app.get("/api/active-rooms")
 async def get_active_rooms() -> list[ActiveRoomRow]:
     return [
         ActiveRoomRow(

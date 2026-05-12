@@ -7,6 +7,16 @@ function sendJson(obj) {
     if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
 }
 
+/** Home redirect; Jest has no real `location` (Sonar: handle or avoid empty catch). */
+function safeNavigateHome() {
+    try {
+        const isJestEnv = typeof process !== 'undefined' && process?.env?.JEST_WORKER_ID;
+        if (!isJestEnv) globalThis.location.href = '/';
+    } catch (e) {
+        console.debug('pm: home navigation skipped', e);
+    }
+}
+
 // Confetti is loaded from a CDN (canvas-confetti). If the CDN is blocked
 // or the library fails to load we must NOT let the game flow break --
 // a missing confetti() previously crashed the letter lottery interval and
@@ -51,12 +61,7 @@ function leaveRoom() {
     }
     // Przenieś użytkownika na stronę główną (landing)
     // In jsdom tests navigation is not implemented, so we must not crash.
-    try {
-        const isJestEnv = typeof process !== 'undefined' && process?.env?.JEST_WORKER_ID;
-        if (!isJestEnv) globalThis.location.href = "/";
-    } catch (e) {
-        // noop (test environment)
-    }
+    safeNavigateHome();
 }
 
 function generateRoomId() {
@@ -99,7 +104,7 @@ function connect() {
     let visibility = urlParams.get('visibility') === 'private' ? 'private' : 'public';
     if (isCreating) {
         const visEl = document.getElementById('room_visibility');
-        const v = visEl && visEl.value;
+        const v = visEl?.value;
         if (v === 'private' || v === 'public') visibility = v;
     }
 
@@ -143,12 +148,7 @@ function connect() {
         if (e.code === 4401) {
             isLeaving = true;
             alert('Host wyrzucił Cię z pokoju.');
-            try {
-                const isJestEnv = typeof process !== 'undefined' && process?.env?.JEST_WORKER_ID;
-                if (!isJestEnv) globalThis.location.href = '/';
-            } catch (err) {
-                // noop
-            }
+            safeNavigateHome();
             return;
         }
         if (e.code === 1008) {
@@ -203,12 +203,7 @@ function onChatMessage(m) {
 function onKicked(m) {
     isLeaving = true;
     alert(m.message || 'Host wyrzucił Cię z pokoju.');
-    try {
-        const isJestEnv = typeof process !== 'undefined' && process?.env?.JEST_WORKER_ID;
-        if (!isJestEnv) globalThis.location.href = '/';
-    } catch (e) {
-        // noop
-    }
+    safeNavigateHome();
 }
 
 function onKickDenied(m) {
@@ -223,15 +218,10 @@ function onRoomDissolved(m) {
     try {
         globalThis.sessionStorage?.setItem('pm_skip_auto_join', '1');
     } catch (e) {
-        // noop (private mode / disabled storage)
+        console.debug('pm: sessionStorage setItem skipped', e);
     }
     alert(m.message);
-    try {
-        const isJestEnv = typeof process !== 'undefined' && process?.env?.JEST_WORKER_ID;
-        if (!isJestEnv) globalThis.location.href = '/';
-    } catch (e) {
-        // noop (test environment)
-    }
+    safeNavigateHome();
 }
 
 const MESSAGE_HANDLERS = {
