@@ -14,7 +14,8 @@ Source of truth:
 * ``MIASTA``     -> SQL table ``cities`` (seeded from :mod:`panstwa_miasta.cities_seed`):
   ``nazwa``, ``kraj`` (polska nazwa państwa jak w ``countries``), normy w DB.
   Dodatkowo każda nazwa dostaje odpowiednik **bez polskich znaków** (np. wpis
-  „kalińingrad” → można też wpisać „kaliningrad”).
+  „kalińingrad” → można też wpisać „kaliningrad”). Wybrane homonimy są usuwane
+  z walidacji (``MIASTA_NORM_BLOCKLIST``).
 * ``ZWIERZETA`` / ``ROSLINY`` — zbiory znormalizowanych napisów z modułów
   ``animals_seed_generated`` / ``plants_seed_generated``. W grze pole nazywa
   się „Roślina”, ale zbiór to **szeroka flora** (Zielony Ogródek + skorowidz
@@ -74,6 +75,14 @@ JOB_STANDALONE_OR_PREFIX: frozenset[str] = frozenset(
 
 # Potoczne / luki w seedzie z Wikipedii (norma: małe litery jak ``normalize_text``).
 ZWIERZETA_EXTRA: frozenset[str] = frozenset({"źrebak", "żrebak", "koza"})
+
+# Miasta z bazy (GeoNames itd.), które w polskiej grze brzmią jak typowa odpowiedź
+# w innej kategorii — odrzucamy przy walidacji „Miasto”, żeby uniknąć absurdalnych punktów.
+MIASTA_NORM_BLOCKLIST: frozenset[str] = frozenset(
+    {
+        "uran",  # Uran (Indie) vs pierwiastek „uran” (Rzecz)
+    }
+)
 
 _PL_FOLD_TRANS = str.maketrans(
     {
@@ -135,6 +144,7 @@ async def reload_miasta() -> None:
         folded = fold_polish_diacritics(n)
         if folded != n:
             MIASTA.add(folded)
+    MIASTA.difference_update(MIASTA_NORM_BLOCKLIST)
 
 
 async def reload_names() -> None:
