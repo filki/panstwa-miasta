@@ -1300,6 +1300,7 @@ PLANTS_NORMS: Final[frozenset[str]] = frozenset(
         "cytryniec",
         "cytryniec chiński",
         "cytryniec czerwonokwiatowy",
+        "cytryna",
         "czarcikęs łąkowy",
         "czarcikęsik kluka",
         "czareczka",

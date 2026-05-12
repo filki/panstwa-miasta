@@ -65,6 +65,12 @@ app = FastAPI(title="Państwa-Miasta Engine", lifespan=lifespan)
 manager = ConnectionManager()
 
 
+async def delete_room_immediate(room_id: str) -> None:
+    """Rozwiązanie pokoju przez hosta: anuluj grace-delete i skasuj z SQLite."""
+    manager.cancel_delayed_room_delete(room_id)
+    await delete_room(room_id)
+
+
 @app.middleware("http")
 async def rate_limit_http_middleware(request: Request, call_next):
     if request.method not in ("GET", "HEAD"):
@@ -286,6 +292,7 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
                     "current_round": room.current_round,
                     "max_rounds": room.max_rounds,
                     "time_limit": room.time_limit,
+                    "resume": True,
                 }
             )
         )
@@ -294,6 +301,7 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
             json.dumps(
                 {
                     "type": "round_results",
+                    "room_id": room.room_id,
                     "answers": {},
                     "round_scores": {},
                     "total_scores": room.scores,
@@ -318,7 +326,7 @@ async def _dispatch(msg: dict, room, room_id: str, client_name: str) -> None:
     elif msg_type == "restart_game":
         await handle_restart_game(room, client_name, msg)
     elif msg_type == "dissolve_room":
-        await handle_dissolve_room(room, room_id, client_name, delete_room)
+        await handle_dissolve_room(room, room_id, client_name, delete_room_immediate)
     elif msg_type == "stop":
         await handle_stop(room, room_id, client_name, force_end_round)
     elif msg_type == "answers":
@@ -383,15 +391,13 @@ async def websocket_endpoint(
         if not manager.disconnect(room_id, client_name, websocket):
             return
         if room_id not in manager.rooms:
-            await delete_room(room_id)
-        else:
-            room = manager.rooms[room_id]
-            await room.broadcast(
-                json.dumps({"type": "system", "message": f"{client_name} opuścił grę"})
-            )
-            await room.broadcast(
-                json.dumps(
-                    {"type": "score_update", "scores": room.scores, "host_name": room.host_name}
-                )
-            )
-            logger.info(f"Notified room {room_id} about departure of '{client_name}'")
+            # Pusty pokój: `disconnect` już zaplanował opóźnione `delete_room`.
+            return
+        room = manager.rooms[room_id]
+        await room.broadcast(
+            json.dumps({"type": "system", "message": f"{client_name} opuścił grę"})
+        )
+        await room.broadcast(
+            json.dumps({"type": "score_update", "scores": room.scores, "host_name": room.host_name})
+        )
+        logger.info(f"Notified room {room_id} about departure of '{client_name}'")

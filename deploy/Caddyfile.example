@@ -1,0 +1,7 @@
+# Skopiuj jako /etc/caddy/Caddyfile (lub do sites-enabled wg dystrybucji).
+# Przed użyciem: podmień domenę. DNS A/AAAA → IP serwera.
+
+twoja-domena.pl {
+	encode gzip zstd
+	reverse_proxy 127.0.0.1:8000
+}

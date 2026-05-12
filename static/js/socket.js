@@ -117,7 +117,11 @@ function connect() {
         return;
     }
 
-    globalThis.history.replaceState(null, '', `/room/${roomId}`);
+    globalThis.history.replaceState(
+        null,
+        '',
+        `/room/${roomId}?rounds=${encodeURIComponent(String(maxRounds))}&limit=${encodeURIComponent(String(timeLimit))}&visibility=${encodeURIComponent(visibility)}`,
+    );
 
     const protocol = globalThis.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const encNick = encodeURIComponent(myNick);
@@ -141,7 +145,9 @@ function connect() {
         if (navRoomInfo) navRoomInfo.style.display = 'inline-flex';
         if (navHomeLink) navHomeLink.style.display = 'none';
 
-        if (typeof updateScoreboard === 'function') updateScoreboard({}, '', globalThis.myNick || '');
+        // Nie czyść rankingu tutaj — serwer wysyła ``score_update`` w ``_send_initial_state``.
+        // Wywołanie ``updateScoreboard({}, …)`` przy reconnect powodowało wyścig z wiadomościami
+        // i zerowanie punktów w UI mimo poprawnego stanu na backendzie.
     };
 
     ws.onclose = (e) => {
@@ -239,6 +245,29 @@ const MESSAGE_HANDLERS = {
 
 function onRoundStarted(msg) {
     globalThis.currentLetter = msg.letter;
+
+    if (msg.resume) {
+        const letterEl = document.getElementById('current-letter');
+        if (letterEl) letterEl.textContent = msg.letter;
+        const btn = document.getElementById('btn-draw');
+        if (btn) {
+            btn.classList.remove('ready');
+            btn.style.display = 'none';
+        }
+        addLog(
+            `<em>Połączenie przywrócone. Runda ${msg.current_round}/${msg.max_rounds}, litera: <strong>${msg.letter}</strong>.</em>`,
+            'system-msg',
+        );
+        clearInputColors();
+        enableInputs();
+        const rt = document.getElementById('round-timer');
+        if (rt) {
+            rt.style.display = 'block';
+            rt.textContent = '—';
+        }
+        return;
+    }
+
     const afterReveal = () => {
         const lotteryFunc = globalThis.runLetterLottery || runLetterLottery;
         lotteryFunc(msg.letter, () => {

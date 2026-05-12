@@ -5,6 +5,7 @@ import pytest
 from panstwa_miasta import db as db_module
 from panstwa_miasta.db import (
     delete_room,
+    fetch_room_snapshot,
     get_active_rooms,
     init_db,
     save_player_score,
@@ -39,3 +40,21 @@ async def test_db_lifecycle():
     await delete_room("test-room")
     rooms = await get_active_rooms()
     assert len(rooms) == 0
+
+
+@pytest.mark.asyncio
+async def test_fetch_room_snapshot_returns_players_map():
+    rid = "snap-room-88"
+    await save_room(rid, 7, 45, 2, "HostX", "public")
+    await save_player_score(rid, "Alice", 5)
+    await save_player_score(rid, "Bob", 12)
+    snap = await fetch_room_snapshot(rid)
+    assert snap is not None
+    assert snap["room_id"] == rid
+    assert snap["max_rounds"] == 7
+    assert snap["time_limit"] == 45
+    assert snap["current_round"] == 2
+    assert snap["host_name"] == "HostX"
+    assert snap["players"] == {"Alice": 5, "Bob": 12}
+    await delete_room(rid)
+    assert await fetch_room_snapshot(rid) is None

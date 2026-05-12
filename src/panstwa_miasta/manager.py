@@ -2,11 +2,19 @@ import asyncio
 import json
 import secrets
 from collections import deque
+from typing import Any, cast
 
 from fastapi import WebSocket
 from starlette.websockets import WebSocketState
 
-from .db import get_active_rooms, remove_player, save_player_score, save_room
+from .db import (
+    delete_room,
+    fetch_room_snapshot,
+    get_active_rooms,
+    remove_player,
+    save_player_score,
+    save_room,
+)
 from .limits import check_ws_before_connect, max_rooms_cap, record_ws_connect_ok
 
 # Logger import
@@ -282,6 +290,36 @@ class Room:
 class ConnectionManager:
     def __init__(self):
         self.rooms: dict[str, Room] = {}
+        self._room_delete_tasks: dict[str, asyncio.Task[None]] = {}
+
+    def cancel_delayed_room_delete(self, room_id: str) -> None:
+        """Anuluje zaplanowane usunięcie pokoju z SQLite (np. przed reconnect)."""
+        t = self._room_delete_tasks.pop(room_id, None)
+        if t is not None and not t.done():
+            t.cancel()
+
+    def schedule_delayed_room_delete(self, room_id: str) -> None:
+        """Po opuszczeniu pokoju przez wszystkich — usuwa wiersz z DB po grace (reconnect)."""
+        self.cancel_delayed_room_delete(room_id)
+
+        async def _delayed() -> None:
+            from . import db as dbmod
+
+            try:
+                await asyncio.sleep(dbmod.ROOM_EMPTY_GRACE_SECONDS)
+            except asyncio.CancelledError:
+                return
+            self._room_delete_tasks.pop(room_id, None)
+            if room_id not in self.rooms:
+                await delete_room(room_id)
+                logger.info("Delayed delete_room completed for empty room %s", room_id)
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            logger.warning("schedule_delayed_room_delete: no running loop for room %s", room_id)
+            return
+        self._room_delete_tasks[room_id] = loop.create_task(_delayed())
 
     async def connect(
         self,
@@ -319,17 +357,41 @@ class ConnectionManager:
             )
             return False
 
+        self.cancel_delayed_room_delete(room_id)
+
         if room_id not in self.rooms:
-            self.rooms[room_id] = Room(
-                room_id,
-                max_rounds,
-                time_limit,
-                visibility=normalize_room_visibility(visibility),
-            )
-            logger.info(
-                f"Created new room: {room_id} (max_rounds={max_rounds}, time_limit={time_limit}, "
-                f"visibility={self.rooms[room_id].visibility})"
-            )
+            snap = await fetch_room_snapshot(room_id)
+            if snap is not None:
+                snap_any = cast(dict[str, Any], snap)
+                vis = normalize_room_visibility(str(snap_any.get("visibility", "public")))
+                room = Room(
+                    room_id,
+                    int(snap_any["max_rounds"]),
+                    int(snap_any["time_limit"]),
+                    visibility=vis,
+                )
+                room.current_round = int(snap_any.get("current_round") or 0)
+                room.host_name = str(snap_any.get("host_name") or "")
+                players = snap_any.get("players")
+                if isinstance(players, dict):
+                    room.scores = {str(k): int(cast(int | str, v)) for k, v in players.items()}
+                self.rooms[room_id] = room
+                logger.info(
+                    "Restored room %s from DB (scores=%s players)",
+                    room_id,
+                    len(room.scores),
+                )
+            else:
+                self.rooms[room_id] = Room(
+                    room_id,
+                    max_rounds,
+                    time_limit,
+                    visibility=normalize_room_visibility(visibility),
+                )
+                logger.info(
+                    f"Created new room: {room_id} (max_rounds={max_rounds}, time_limit={time_limit}, "
+                    f"visibility={self.rooms[room_id].visibility})"
+                )
 
         room = self.rooms[room_id]
 
@@ -373,6 +435,9 @@ class ConnectionManager:
         )
         await save_player_score(room_id, client_name, room.scores[client_name])
         logger.debug(f"Persisted room {room_id} and player {client_name} to DB")
+
+        if room.is_playing:
+            room.expected_answers = len(room.connections)
 
         await record_ws_connect_ok(client_ip, is_new_room=is_new_room)
 
@@ -523,4 +588,5 @@ class ConnectionManager:
         if not room.connections:
             del self.rooms[room_id]
             logger.info("Room %s deleted because it became empty", room_id)
+            self.schedule_delayed_room_delete(room_id)
         return True
