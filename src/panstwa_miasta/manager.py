@@ -230,7 +230,10 @@ class Room:
         for category in GAME_CATEGORIES:
             for player, answers in self.answers_received.items():
                 ans_raw = answers.get(category, "").strip().lower()
-                if not (_answer_first_letter_matches_round(ans_raw, self.current_letter) and ans_raw != ""):
+                if not (
+                    _answer_first_letter_matches_round(ans_raw, self.current_letter)
+                    and ans_raw != ""
+                ):
                     round_scores[player]["details"][category] = 0
                     continue
 
