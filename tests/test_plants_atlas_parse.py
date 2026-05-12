@@ -23,7 +23,7 @@ def _load_build_plants():
 def test_atlas_skorowidz_extracts_polish_common_name():
     mod = _load_build_plants()
     html = (
-        '<html><body>'
+        "<html><body>"
         '<a href="/gatunki/Abelia_chinensis.htm">'
         "— ✦ Abelia chinensis R.Br. - abelia chińska"
         "</a>"
@@ -37,7 +37,7 @@ def test_atlas_skorowidz_extracts_polish_common_name():
 def test_atlas_skips_latin_only_segment():
     mod = _load_build_plants()
     html = (
-        '<html><body>'
+        "<html><body>"
         '<a href="/gatunki/Urtica_dioica.htm">'
         "— ** Urtica dioica L. - pokrzywa zwyczajna"
         "</a>"
@@ -49,11 +49,7 @@ def test_atlas_skips_latin_only_segment():
 
 def test_atlas_skips_arrow_synonym_lines():
     mod = _load_build_plants()
-    html = (
-        '<html><body>'
-        '<a href="/gatunki/x.htm">stare ⟶ nowe - coś polskiego</a>'
-        "</body></html>"
-    )
+    html = '<html><body><a href="/gatunki/x.htm">stare ⟶ nowe - coś polskiego</a></body></html>'
     assert not mod.names_from_atlas_skorowidz_html(html)
 
 
