@@ -82,7 +82,7 @@ class Room:
         Snapshot + obsługa błędów: jedno martwe gniazdo (np. po długiej grze)
         nie blokuje wysyłki do reszty ani rozwiązania pokoju.
         """
-        for connection in list(self.connections.values()):
+        for connection in tuple(self.connections.values()):
             try:
                 await connection.send_text(message)
             except Exception as exc:

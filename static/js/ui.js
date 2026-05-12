@@ -188,7 +188,7 @@ function tryAutoJoin(savedNick, roomId) {
             return;
         }
     } catch (e) {
-        // ignore storage issues
+        console.debug('pm: sessionStorage read skipped', e);
     }
     console.log("Auto-joining room:", roomId);
     setTimeout(() => {

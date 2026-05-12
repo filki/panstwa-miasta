@@ -9,6 +9,7 @@ import json
 
 from .logger import get_logger
 from .manager import ConnectionManager, Room
+from .share_store import record_finished_game
 
 logger = get_logger(__name__)
 
@@ -31,6 +32,7 @@ async def _finish_round(room: Room, room_id: str) -> None:
     is_game_over = room.current_round >= room.max_rounds
     if is_game_over:
         room.game_over = True
+        record_finished_game(room_id, dict(room.scores), room.host_name or "")
     await room.broadcast(
         json.dumps(
             {
@@ -142,8 +144,7 @@ async def handle_dissolve_room(room: Room, room_id: str, client_name: str, delet
     # removes that client from room.connections — mutating the dict mid-iterate
     # raises RuntimeError. Close other clients before the host so we do not
     # close the requester's socket while still handling their dissolve message.
-    pairs = list(room.connections.items())
-    for _name, conn in sorted(pairs, key=lambda nc: nc[0] == client_name):
+    for _name, conn in sorted(room.connections.items(), key=lambda nc: nc[0] == client_name):
         await conn.close()
     await delete_room_fn(room_id)
     logger.info(f"Room {room_id} dissolved by '{client_name}'")

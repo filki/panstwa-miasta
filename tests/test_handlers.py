@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from panstwa_miasta.handlers import (
+    _finish_round,
     handle_answers,
     handle_chat,
     handle_dissolve_room,
@@ -14,6 +15,42 @@ from panstwa_miasta.handlers import (
     handle_stop,
 )
 from panstwa_miasta.manager import Room
+
+
+@pytest.mark.asyncio
+async def test_finish_round_records_share_when_game_over():
+    import panstwa_miasta.share_store as ss
+
+    ss.clear_share_snapshots()
+    room = Room("rg1", max_rounds=1)
+    room.current_round = 1
+    room.is_playing = True
+    room.scores = {"P1": 42, "P2": 10}
+    room.host_name = "P1"
+    room.broadcast = AsyncMock()
+    room.calculate_scores = AsyncMock(return_value={})
+    await _finish_round(room, "rg1")
+    snap = ss.get_snapshot("rg1")
+    assert snap is not None
+    assert snap.scores["P1"] == 42
+    assert room.game_over is True
+
+
+@pytest.mark.asyncio
+async def test_finish_round_skips_share_when_not_game_over():
+    import panstwa_miasta.share_store as ss
+
+    ss.clear_share_snapshots()
+    room = Room("rg2", max_rounds=3)
+    room.current_round = 1
+    room.is_playing = True
+    room.scores = {"P1": 5}
+    room.host_name = "P1"
+    room.broadcast = AsyncMock()
+    room.calculate_scores = AsyncMock(return_value={})
+    await _finish_round(room, "rg2")
+    assert ss.get_snapshot("rg2") is None
+    assert room.game_over is False
 
 
 @pytest.mark.asyncio
