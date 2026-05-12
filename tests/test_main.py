@@ -17,6 +17,24 @@ def test_read_root():
     response = client.get("/")
     assert response.status_code == 200
     assert "Państwa-Miasta" in response.text
+    assert "site-footer" in response.text
+    assert "/polityka-prywatnosci" in response.text
+
+
+@pytest.mark.parametrize(
+    "path,needle",
+    [
+        ("/polityka-prywatnosci", "Polityka prywatności"),
+        ("/cookies", "localStorage"),
+        ("/regulamin", "Regulamin"),
+    ],
+)
+def test_legal_pages_and_injected_footer(path: str, needle: str):
+    response = client.get(path)
+    assert response.status_code == 200
+    assert needle in response.text
+    assert "site-footer" in response.text
+    assert "/regulamin" in response.text
 
 
 def test_api_active_rooms_with_data():
@@ -118,6 +136,13 @@ def test_websocket_rejection():
 def test_get_room_invalid_id_returns_422():
     response = client.get("/room/not@valid")
     assert response.status_code == 422
+
+
+def test_get_room_shell_includes_footer():
+    response = client.get("/room/abcd")
+    assert response.status_code == 200
+    assert "site-footer" in response.text
+    assert "/polityka-prywatnosci" in response.text
 
 
 def test_websocket_invalid_path_returns_1008():

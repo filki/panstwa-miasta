@@ -1,4 +1,12 @@
-from panstwa_miasta.data import COUNTRIES, JOBS, MIASTA, NAMES, ROSLINY, ZWIERZETA
+from panstwa_miasta.data import (
+    COUNTRIES,
+    JOBS,
+    MIASTA,
+    NAMES,
+    ROSLINY,
+    ZWIERZETA,
+    job_answer_accepted,
+)
 
 
 def test_data_sets_not_empty():
@@ -16,6 +24,19 @@ def test_sample_data_presence():
     assert "adwokat" in JOBS
     assert "agent" in JOBS
     assert "warszawa" in MIASTA
+
+
+def test_job_answer_compound_job_prefixes():
+    """Częste złożenia „stem specjalizacja” zaliczają się poza pełną frazą w ``JOBS``."""
+    assert job_answer_accepted("technik")
+    assert job_answer_accepted("technik spawalnik testowy")
+    assert job_answer_accepted("inżynier")
+    assert job_answer_accepted("inżynier lądowy wojskowy")
+    assert job_answer_accepted("specjalista ds bezpieczeństwa")
+    assert job_answer_accepted("lekarz medycyny pracy")
+    assert not job_answer_accepted("technikowski")
+    assert not job_answer_accepted("fotechnik")
+    assert not job_answer_accepted("inzynier bez polskich znaków")
 
 
 def test_miasta_ascii_without_polish_diacritics():

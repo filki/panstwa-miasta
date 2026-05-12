@@ -62,10 +62,15 @@ manager = ConnectionManager()
 static_path = pathlib.Path(__file__).parent.parent.parent / "static"
 app.mount("/static", StaticFiles(directory=static_path), name="static")
 
-INDEX_PATH = pathlib.Path(__file__).parent.parent.parent / "static" / "index.html"
-ROOM_PATH = pathlib.Path(__file__).parent.parent.parent / "static" / "room.html"
-SW_PATH = pathlib.Path(__file__).parent.parent.parent / "static" / "sw.js"
-MANIFEST_PATH = pathlib.Path(__file__).parent.parent.parent / "static" / "manifest.json"
+INDEX_PATH = static_path / "index.html"
+ROOM_PATH = static_path / "room.html"
+SW_PATH = static_path / "sw.js"
+MANIFEST_PATH = static_path / "manifest.json"
+POLITYKA_PATH = static_path / "polityka-prywatnosci.html"
+COOKIES_LEGAL_PATH = static_path / "cookies.html"
+REGULAMIN_PATH = static_path / "regulamin.html"
+FOOTER_PARTIAL_PATH = static_path / "partials" / "site-footer.html"
+FOOTER_HTML = FOOTER_PARTIAL_PATH.read_text(encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
@@ -113,20 +118,39 @@ async def force_end_round(room_id: str) -> None:
 # ---------------------------------------------------------------------------
 
 
+async def _html_with_injected_footer(page_path: pathlib.Path) -> HTMLResponse:
+    """Serves HTML and replaces ``<!-- SITE_FOOTER -->`` with shared footer markup."""
+    async with aiofiles.open(page_path, encoding="utf-8") as f:
+        html_content = await f.read()
+    if "<!-- SITE_FOOTER -->" in html_content:
+        html_content = html_content.replace("<!-- SITE_FOOTER -->", FOOTER_HTML, 1)
+    return HTMLResponse(content=html_content)
+
+
 @app.get("/")
 async def get_root() -> HTMLResponse:
-    # Use async file read (SonarQube MAJOR: avoid sync open in async function)
-    async with aiofiles.open(INDEX_PATH, encoding="utf-8") as f:
-        html_content = await f.read()
-    return HTMLResponse(content=html_content)
+    return await _html_with_injected_footer(INDEX_PATH)
 
 
 @app.get("/room/{room_id}")
 async def get_room(room_id: RoomIdPath) -> HTMLResponse:
-    # Use separate room page instead of rendering landing page.
-    async with aiofiles.open(ROOM_PATH, encoding="utf-8") as f:
-        html_content = await f.read()
-    return HTMLResponse(content=html_content)
+    _ = room_id  # validated path param; HTML shell is the same for every room
+    return await _html_with_injected_footer(ROOM_PATH)
+
+
+@app.get("/polityka-prywatnosci")
+async def get_polityka_prywatnosci() -> HTMLResponse:
+    return await _html_with_injected_footer(POLITYKA_PATH)
+
+
+@app.get("/cookies")
+async def get_cookies_policy() -> HTMLResponse:
+    return await _html_with_injected_footer(COOKIES_LEGAL_PATH)
+
+
+@app.get("/regulamin")
+async def get_regulamin() -> HTMLResponse:
+    return await _html_with_injected_footer(REGULAMIN_PATH)
 
 
 # Service worker must be served from a top-level scope to control all routes.

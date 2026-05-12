@@ -10,15 +10,16 @@ Source of truth:
 * ``NAMES``      -> SQL table ``names`` (seeded from :mod:`panstwa_miasta.names_seed`).
 * ``JOBS``       -> SQL table ``jobs`` (seeded from :mod:`panstwa_miasta.jobs_seed`).
   Regeneracja modułu seed: ``uv run python scripts/build_jobs_seed.py --zawody … --liniowy …``.
+  Walidacja w grze: :func:`job_answer_accepted` — m.in. złożenia ``technik …``, ``inżynier …`` itd. (PKD).
 * ``MIASTA``     -> SQL table ``cities`` (seeded from :mod:`panstwa_miasta.cities_seed`):
   ``nazwa``, ``kraj`` (polska nazwa państwa jak w ``countries``), normy w DB.
   Dodatkowo każda nazwa dostaje odpowiednik **bez polskich znaków** (np. wpis
   „kalińingrad” → można też wpisać „kaliningrad”).
 * ``ZWIERZETA`` / ``ROSLINY`` — zbiory znormalizowanych napisów z modułów
   ``animals_seed_generated`` / ``plants_seed_generated``. W grze pole nazywa
-  się „Roślina”, ale zbiór to **szeroka flora** (rośliny ozdobne, drzewa, krzewy,
-  owoce i warzywa w katalogu, zioła itd.) — bez osobnej tabeli SQLite, jak
-  zwierzęta. Walidacja: dokładne trafienie albo prefiks pierwszego słowa
+  się „Roślina”, ale zbiór to **szeroka flora** (Zielony Ogródek + skorowidz
+  Atlas roślin Polski + en.wiki, generowane ``build_plants_bs4.py``).
+  Walidacja: dokładne trafienie albo prefiks pierwszego słowa
   (min. 3 znaki), np. „dzięcioł” przy wpisie „dzięcioł duży”.
   Wpisy z synonimami (``figowiec / fikus``) rozbijamy przy ładowaniu na fragmenty,
   żeby działało też samo „fikus” (prefiks do ``fikus benjamina`` itd.).
@@ -42,6 +43,34 @@ ROSLINY: set[str] = set()
 # Alias: dla wielowyrazowych zawodów dodajemy pierwsze słowo (>3 znaki) jako
 # osobny wpis w zbiorze — tak jak wcześniej przy ``zawody.txt``.
 JOB_ALIAS_PREFIX_SKIP = frozenset({"akredytowany", "pomocniczy"})
+
+# Zawód: złożenia „{stem} {specjalizacja}” poza pełną listą ``jobs`` (norma jak ``normalize_text``).
+# Wybrane tylko typowe przedrostki złożeń zawodowych (PKD/SYS); bez ultra-szerokich (np. pracownik).
+JOB_STANDALONE_OR_PREFIX: frozenset[str] = frozenset(
+    {
+        "analityk",
+        "asystent",
+        "blacharz",
+        "chirurg",
+        "doradca",
+        "elektryk",
+        "fryzjer",
+        "inżynier",
+        "inspektor",
+        "instruktor",
+        "kontroler",
+        "laborant",
+        "lekarz",
+        "mechanik",
+        "monter",
+        "operator",
+        "ratownik",
+        "specjalista",
+        "technik",
+        "tokarz",
+        "ślusarz",
+    }
+)
 
 # Potoczne / luki w seedzie z Wikipedii (norma: małe litery jak ``normalize_text``).
 ZWIERZETA_EXTRA: frozenset[str] = frozenset({"źrebak", "żrebak", "koza"})
@@ -130,6 +159,16 @@ async def reload_jobs() -> None:
             head = words[0]
             if len(head) > 3 and head not in JOB_ALIAS_PREFIX_SKIP:
                 JOBS.add(head)
+
+
+def job_answer_accepted(ans_norm: str) -> bool:
+    """Czy odpowiedź w kategorii Zawód jest poprawna (``JOBS`` + :data:`JOB_STANDALONE_OR_PREFIX`)."""
+    if ans_norm in JOBS:
+        return True
+    for stem in JOB_STANDALONE_OR_PREFIX:
+        if ans_norm == stem or ans_norm.startswith(f"{stem} "):
+            return True
+    return False
 
 
 async def reload_zwierzeta() -> None:

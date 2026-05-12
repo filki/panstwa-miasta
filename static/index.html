@@ -7,13 +7,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="description" content="Państwa-Miasta w 5 sekund na telefonie — bez kont i bez reklam. Słowniki w grze + Wikidata tam, gdzie trzeba. Zagraj ze znajomymi w przeglądarce.">
+    <meta name="description" content="Państwa-Miasta w kilka sekund na telefonie — bez kont, gra w przeglądarce ze znajomymi. Słowniki sprawdzane na serwerze, offline, bez śledzenia odpowiedzi w sieci.">
     <link rel="manifest" href="/manifest.json">
-    <title>Państwa-Miasta — 5 sekund, zero reklam</title>
+    <title>Państwa-Miasta — gra online, szybki start</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/site-footer.css">
 </head>
 <body>
     <nav class="navbar">
@@ -32,15 +33,15 @@
         <header class="hero">
             <div class="hero-content">
                 <h1 class="hero-title">Państwa-Miasta w <span>5 sekund</span>.</h1>
-                <p class="hero-subtitle">Bez kont, bez reklam — państwa, miasta i zawody z bazy; zwierzęta i rośliny przez Wikidata.</p>
+                <p class="hero-subtitle">Bez kont — państwa, miasta, imiona i zawody z lokalnej bazy; zwierzęta i rośliny z rozbudowanych list na serwerze. Graj ze znajomymi w przeglądarce.</p>
                 <div class="hero-btns">
                     <button type="button" class="btn-primary" onclick="showCreateModal()">Stwórz pokój</button>
                     <button type="button" class="btn-secondary" onclick="showJoinModal()">Mam kod</button>
                 </div>
                 <ul class="hero-trust-pills" aria-label="Dlaczego warto">
                     <li class="hero-trust-pill">5-sekundowy start</li>
-                    <li class="hero-trust-pill">Lokalne słowniki + Wikidata</li>
-                    <li class="hero-trust-pill">Bez reklam, bez kont</li>
+                    <li class="hero-trust-pill">Lokalne słowniki na serwerze</li>
+                    <li class="hero-trust-pill">Bez logowania</li>
                 </ul>
             </div>
         </header>
@@ -109,7 +110,7 @@
                 <div class="feature-item">
                     <div class="feature-icon">🛡️</div>
                     <h3>Fair Play</h3>
-                    <p>Walidacja z bazy (m.in. miasta) i z Wikidata tam, gdzie potrzeba.</p>
+                    <p>Walidacja odpowiedzi z lokalnych list na serwerze — uczciwa punktacja bez „zgadywania z internetem” w locie.</p>
                 </div>
                 <div class="feature-item">
                     <div class="feature-icon">📱</div>
@@ -176,6 +177,8 @@
     </div>
 
     <button type="button" id="btn-leave" onclick="location.href = '/'" class="danger" style="display: none;">🚪 Wyjdź</button>
+
+    <!-- SITE_FOOTER -->
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" integrity="sha384-HAH79XdRvHr6axVGh4xQWVCp14kcd32bNk4Xu0sHDHtFQ42n6BAM8ykvB47dGz6D" crossorigin="anonymous"></script>
     <script src="/static/js/audio.js"></script>
