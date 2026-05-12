@@ -36,3 +36,12 @@ def test_zwierzeta_extra_and_ascii_aliases():
     assert "żrebak" in ZWIERZETA
     assert "zrebak" in ZWIERZETA
     assert "koza" in ZWIERZETA
+
+
+def test_rosliny_slash_synonyms_and_fikus_prefix():
+    """``figowiec / fikus`` w jednym stringu → osobne fragmenty; „fikus” zalicza prefiksem."""
+    assert "figowiec benjamina / fikus benjamina" in ROSLINY
+    assert "fikus benjamina" in ROSLINY
+    from panstwa_miasta.manager import _fauna_flora_norm_valid
+
+    assert _fauna_flora_norm_valid("fikus", ROSLINY)

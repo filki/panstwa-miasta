@@ -20,6 +20,8 @@ Source of truth:
   owoce i warzywa w katalogu, zioła itd.) — bez osobnej tabeli SQLite, jak
   zwierzęta. Walidacja: dokładne trafienie albo prefiks pierwszego słowa
   (min. 3 znaki), np. „dzięcioł” przy wpisie „dzięcioł duży”.
+  Wpisy z synonimami (``figowiec / fikus``) rozbijamy przy ładowaniu na fragmenty,
+  żeby działało też samo „fikus” (prefiks do ``fikus benjamina`` itd.).
   Dodatkowo alias **bez polskich znaków** jak przy ``MIASTA`` (np. „jabłoń” → „jablon”).
   ``ZWIERZETA``: ten sam alias ASCII co ``ROSLINY`` + wpisy z ``ZWIERZETA_EXTRA``
   (np. potoczne „źrebak” / „żrebak”, ogólne „koza”).
@@ -66,6 +68,17 @@ def fold_polish_diacritics(s: str) -> str:
     sprawdzaniu litery rundy (np. Ś → S, Ź/Ż → Z).
     """
     return s.translate(_PL_FOLD_TRANS)
+
+
+def _add_slash_synonym_fragments(bucket: set[str]) -> None:
+    """Dopisuje części po ``/`` (np. ``figowiec x / fikus x`` → osobno ``fikus x``)."""
+    for n in list(bucket):
+        if "/" not in n:
+            continue
+        for part in n.split("/"):
+            p = part.strip()
+            if len(p) >= 2:
+                bucket.add(p)
 
 
 async def reload_countries() -> None:
@@ -126,7 +139,8 @@ async def reload_zwierzeta() -> None:
     base = set(ANIMALS_NORMS) | set(ZWIERZETA_EXTRA)
     ZWIERZETA.clear()
     ZWIERZETA.update(base)
-    for n in base:
+    _add_slash_synonym_fragments(ZWIERZETA)
+    for n in list(ZWIERZETA):
         folded = fold_polish_diacritics(n)
         if folded != n:
             ZWIERZETA.add(folded)
@@ -138,7 +152,8 @@ async def reload_rosliny() -> None:
 
     ROSLINY.clear()
     ROSLINY.update(PLANTS_NORMS)
-    for n in PLANTS_NORMS:
+    _add_slash_synonym_fragments(ROSLINY)
+    for n in list(ROSLINY):
         folded = fold_polish_diacritics(n)
         if folded != n:
             ROSLINY.add(folded)
