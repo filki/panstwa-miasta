@@ -14082,7 +14082,7 @@ CITIES_SEED_GEONAMES: Final[list[tuple[str, str]]] = [
     ("Takab", "Iran"),
     ("Takestan", "Iran"),
     ("Taybad", "Iran"),
-    ("Tehran", "Iran"),
+    ("Teheran", "Iran"),
     ("Tiran", "Iran"),
     ("Tonekabon", "Iran"),
     ("Torbat-e Heydariyeh", "Iran"),

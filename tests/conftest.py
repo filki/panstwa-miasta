@@ -34,3 +34,11 @@ def _isolated_test_db(tmp_path: object):
     asyncio.run(data.reload_zwierzeta())
     asyncio.run(data.reload_rosliny())
     yield
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limit_counters():
+    from panstwa_miasta.limits import reset_counters_for_tests
+
+    reset_counters_for_tests()
+    yield

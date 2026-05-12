@@ -7,6 +7,7 @@ from fastapi import WebSocket
 from starlette.websockets import WebSocketState
 
 from .db import get_active_rooms, remove_player, save_player_score, save_room
+from .limits import check_ws_before_connect, max_rooms_cap, record_ws_connect_ok
 
 # Logger import
 from .logger import get_logger
@@ -290,6 +291,7 @@ class ConnectionManager:
         max_rounds: int,
         time_limit: int,
         visibility: str = "public",
+        client_ip: str = "unknown",
     ) -> bool:
         logger.info(
             f"Attempting connection: room_id={room_id}, client_name={client_name}, "
@@ -298,6 +300,23 @@ class ConnectionManager:
 
         if not client_name or not client_name.strip():
             logger.warning(f"Rejected connection: empty client_name in room {room_id}")
+            return False
+
+        is_new_room = room_id not in self.rooms
+        if is_new_room and len(self.rooms) >= max_rooms_cap():
+            logger.warning(
+                "Rejected connection: max rooms (%s) reached, cannot create %s",
+                max_rooms_cap(),
+                room_id,
+            )
+            return False
+        if not await check_ws_before_connect(client_ip, is_new_room=is_new_room):
+            logger.warning(
+                "Rejected connection: WS rate limit (ip=%s, new_room=%s, room=%s)",
+                client_ip,
+                is_new_room,
+                room_id,
+            )
             return False
 
         if room_id not in self.rooms:
@@ -354,6 +373,8 @@ class ConnectionManager:
         )
         await save_player_score(room_id, client_name, room.scores[client_name])
         logger.debug(f"Persisted room {room_id} and player {client_name} to DB")
+
+        await record_ws_connect_ok(client_ip, is_new_room=is_new_room)
 
         return True
 

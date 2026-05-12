@@ -6,7 +6,7 @@ from html import escape
 from typing import Annotated, Literal, cast
 
 import aiofiles
-from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
@@ -31,6 +31,12 @@ from .handlers import (
     handle_ready,
     handle_restart_game,
     handle_stop,
+)
+from .limits import (
+    check_http_rate_limit,
+    client_ip_from_request,
+    client_ip_from_websocket,
+    http_rate_bucket_name,
 )
 from .logger import get_logger
 from .manager import ConnectionManager
@@ -57,6 +63,21 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Państwa-Miasta Engine", lifespan=lifespan)
 manager = ConnectionManager()
+
+
+@app.middleware("http")
+async def rate_limit_http_middleware(request: Request, call_next):
+    if request.method not in ("GET", "HEAD"):
+        return await call_next(request)
+    bucket = http_rate_bucket_name(request.url.path)
+    if bucket is None:
+        return await call_next(request)
+    ip = client_ip_from_request(request)
+    blocked = await check_http_rate_limit(ip, bucket)
+    if blocked is not None:
+        return blocked
+    return await call_next(request)
+
 
 # Montowanie plików statycznych
 static_path = pathlib.Path(__file__).parent.parent.parent / "static"
@@ -321,7 +342,10 @@ async def websocket_endpoint(
         f"WebSocket attempt: room={room_id}, client={client_name}, "
         f"rounds={rounds}, limit={limit}, visibility={visibility}"
     )
-    success = await manager.connect(websocket, room_id, client_name, rounds, limit, visibility)
+    client_ip = client_ip_from_websocket(websocket)
+    success = await manager.connect(
+        websocket, room_id, client_name, rounds, limit, visibility, client_ip=client_ip
+    )
     if not success:
         logger.warning(f"Connection rejected for {client_name} in room {room_id}")
         await websocket.close(code=1008)
