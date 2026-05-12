@@ -30,6 +30,10 @@ async def test_finish_round_records_share_when_game_over():
     room.broadcast = AsyncMock()
     room.calculate_scores = AsyncMock(return_value={})
     await _finish_round(room, "rg1")
+    call_args = room.broadcast.call_args[0][0]
+    payload = json.loads(call_args)
+    assert payload["room_id"] == "rg1"
+    assert payload["game_over"] is True
     snap = ss.get_snapshot("rg1")
     assert snap is not None
     assert snap.scores["P1"] == 42
@@ -49,6 +53,10 @@ async def test_finish_round_skips_share_when_not_game_over():
     room.broadcast = AsyncMock()
     room.calculate_scores = AsyncMock(return_value={})
     await _finish_round(room, "rg2")
+    call_args = room.broadcast.call_args[0][0]
+    payload = json.loads(call_args)
+    assert payload["room_id"] == "rg2"
+    assert payload["game_over"] is False
     assert ss.get_snapshot("rg2") is None
     assert room.game_over is False
 

@@ -253,6 +253,12 @@ function playLotteryRevealHaptic() {
     globalThis.navigator.vibrate([22, 48, 28]);
 }
 
+/** Krótka wibracja przy odliczaniu 3–2–1 przed rundą (Faza 3). */
+function playCountdownHaptic() {
+    if (typeof globalThis.navigator?.vibrate !== 'function') return;
+    globalThis.navigator.vibrate(10);
+}
+
 globalThis.window.onload = () => {
     const savedNick = restoreNickname();
     const isRoomRoute = handleRoomRouteOnLoad(savedNick);
@@ -274,6 +280,7 @@ globalThis.updateScoreboard = updateScoreboard;
 globalThis.sendChat = sendChat;
 globalThis.playLotterySpinHaptic = playLotterySpinHaptic;
 globalThis.playLotteryRevealHaptic = playLotteryRevealHaptic;
+globalThis.playCountdownHaptic = playCountdownHaptic;
 
 if (typeof module !== 'undefined') {
     module.exports = {
@@ -294,5 +301,6 @@ if (typeof module !== 'undefined') {
         bindCategoryEnter,
         playLotterySpinHaptic,
         playLotteryRevealHaptic,
+        playCountdownHaptic,
     };
 }

@@ -21,6 +21,7 @@ const {
     applyRoomSettingsFromUrl,
     playLotterySpinHaptic,
     playLotteryRevealHaptic,
+    playCountdownHaptic,
 } = require('../static/js/ui.js');
 
 const baseDom = () => `
@@ -359,6 +360,13 @@ describe('lottery haptics', () => {
         expect(vibrate).toHaveBeenCalledWith([22, 48, 28]);
     });
 
+    test('playCountdownHaptic uses a short pulse', () => {
+        const vibrate = jest.fn();
+        globalThis.navigator.vibrate = vibrate;
+        playCountdownHaptic();
+        expect(vibrate).toHaveBeenCalledWith(10);
+    });
+
     test('does not throw when vibrate is missing', () => {
         const saved = globalThis.navigator.vibrate;
         try {
@@ -369,6 +377,7 @@ describe('lottery haptics', () => {
         expect(() => {
             playLotterySpinHaptic();
             playLotteryRevealHaptic();
+            playCountdownHaptic();
         }).not.toThrow();
         if (saved !== undefined) globalThis.navigator.vibrate = saved;
     });

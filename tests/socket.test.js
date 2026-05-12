@@ -11,6 +11,7 @@ global.playLotterySpinTick = jest.fn();
 global.playRoundStartReveal = jest.fn();
 global.playLotterySpinHaptic = jest.fn();
 global.playLotteryRevealHaptic = jest.fn();
+global.playCountdownHaptic = jest.fn();
 global.addLog = jest.fn();
 global.updateScoreboard = jest.fn();
 global.enableInputs = jest.fn();
@@ -57,6 +58,7 @@ const FULL_DOM = `
     <div id="lottery-modal" style="display: none;">
         <div id="lottery-letter"></div>
     </div>
+    <div id="round-countdown-overlay" hidden><div id="round-countdown-num"></div></div>
 
     <input id="nickname" value="TestUser" />
     <input id="room_id" value="1234" />
@@ -95,6 +97,11 @@ const FULL_DOM = `
             <div id="restart-settings" style="display: none;">
                 <button id="btn-restart-game" style="display: none;"></button>
                 <button id="btn-dissolve" style="display: none;"></button>
+                <div id="game-over-share" style="display: none;">
+                    <a id="share-link-anchor" href="#">link</a>
+                    <button type="button" id="btn-copy-share"></button>
+                    <button type="button" id="btn-native-share" style="display: none;"></button>
+                </div>
             </div>
         </main>
         <aside id="chat-sidebar"></aside>
@@ -321,6 +328,7 @@ describe('round event handlers', () => {
     test('onRoundStarted reveals the letter and starts a countdown timer', () => {
         jest.useFakeTimers();
         globalThis.runLetterLottery = (_letter, cb) => cb();
+        globalThis.runRoundStartCountdown = (cb) => cb();
         const { onRoundStarted } = loadSocket();
         onRoundStarted({ letter: 'A', time_limit: 30, current_round: 1, max_rounds: 5 });
         const timer = document.getElementById('round-timer');
@@ -330,6 +338,7 @@ describe('round event handlers', () => {
         expect(timer.textContent).toBe('29s');
         jest.useRealTimers();
         delete globalThis.runLetterLottery;
+        delete globalThis.runRoundStartCountdown;
     });
 
     test('onStopRound starts a 10s countdown and submits when it elapses', () => {
@@ -353,6 +362,7 @@ describe('round event handlers', () => {
             total_scores: { TestUser: 10 },
             host_name: 'TestUser',
             game_over: false,
+            room_id: '1234',
         });
         expect(global.addLog).toHaveBeenCalled();
         expect(global.updateScoreboard).toHaveBeenCalledWith({ TestUser: 10 }, 'TestUser', '');
@@ -367,6 +377,18 @@ describe('round event handlers', () => {
         expect(document.getElementById('chat-sidebar').classList.contains('hidden')).toBe(false);
         expect(document.getElementById('btn-draw').style.display).toBe('inline-block');
         expect(global.updateScoreboard).toHaveBeenCalledWith({ TestUser: 0 }, 'TestUser', '');
+    });
+
+    test('onGameRestarted hides share panel after game over', () => {
+        globalThis.myNick = 'HostX';
+        Object.assign(globalThis.navigator, {
+            clipboard: { writeText: jest.fn().mockResolvedValue(undefined) },
+        });
+        const { handleGameOver, onGameRestarted } = loadSocket();
+        handleGameOver('HostX', 'ROOMX');
+        expect(document.getElementById('game-over-share').style.display).toBe('block');
+        onGameRestarted({ scores: { HostX: 0 }, host_name: 'HostX', sender: 'HostX' });
+        expect(document.getElementById('game-over-share').style.display).toBe('none');
     });
 });
 
@@ -433,13 +455,43 @@ describe('pure helpers', () => {
 });
 
 describe('handleGameOver()', () => {
-    test('reshuffles layout, reveals restart settings and fires confetti', () => {
+    test('reshuffles layout, reveals restart settings, share link and confetti', () => {
+        globalThis.myNick = 'TestUser';
+        Object.assign(globalThis.navigator, {
+            clipboard: { writeText: jest.fn().mockResolvedValue(undefined) },
+        });
         const { handleGameOver } = loadSocket();
-        handleGameOver('TestUser');
+        handleGameOver('TestUser', '1234');
         expect(document.getElementById('game-layout').classList.contains('game-over')).toBe(true);
         expect(document.getElementById('game-main-area').style.display).toBe('none');
         expect(document.getElementById('restart-settings').style.display).toBe('block');
+        expect(document.getElementById('game-over-share').style.display).toBe('block');
+        expect(document.getElementById('share-link-anchor').getAttribute('href')).toContain('1234');
         expect(global.confetti).toHaveBeenCalled();
+    });
+});
+
+describe('runRoundStartCountdown()', () => {
+    test('waits three intervals then completes', () => {
+        jest.useFakeTimers();
+        const prevMatchMedia = globalThis.matchMedia;
+        globalThis.matchMedia = jest.fn(() => ({
+            matches: false,
+            media: '',
+            addListener: jest.fn(),
+            removeListener: jest.fn(),
+            addEventListener: jest.fn(),
+            removeEventListener: jest.fn(),
+            dispatchEvent: jest.fn(),
+        }));
+        const done = jest.fn();
+        const { runRoundStartCountdown } = loadSocket();
+        runRoundStartCountdown(done);
+        expect(done).not.toHaveBeenCalled();
+        jest.advanceTimersByTime(720 * 3);
+        expect(done).toHaveBeenCalledTimes(1);
+        jest.useRealTimers();
+        globalThis.matchMedia = prevMatchMedia;
     });
 });
 

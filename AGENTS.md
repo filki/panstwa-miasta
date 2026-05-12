@@ -102,9 +102,11 @@ continues the existing queue — does **not** reshuffle.
 
 ## Open work
 
-- **Faza 3**: animacja losowania litery + countdown + wibracja mobilna
-- **Faza 4**: `share_store.py` integration in game flow + endpointy
 - **Jobs**: nazwy są curatowane w ``jobs_seed.py`` (nie surowe PKD w grze).
+
+Zrobione: **Faza 3** (overlay 3–2–1 przed loterią litery, `playCountdownHaptic`,
+`prefers-reduced-motion`), **Faza 4** (panel udostępniania po `game_over`,
+`room_id` w `round_results`, `/share/{id}`).
 
 ## Persistent memory (this file + Cursor rules)
 

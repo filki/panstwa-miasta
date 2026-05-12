@@ -610,6 +610,76 @@ button.choice-card:focus-visible {
     margin: 0 auto;
 }
 
+/* ---------- Faza 3: odliczanie przed rundą ---------- */
+.round-countdown-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(2, 6, 23, 0.82);
+    backdrop-filter: blur(6px);
+}
+
+.round-countdown-overlay[hidden] {
+    display: none !important;
+}
+
+.round-countdown-num {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: clamp(4rem, 18vw, 7rem);
+    font-weight: 900;
+    color: var(--accent);
+    text-shadow: 0 0 32px rgba(34, 211, 238, 0.45);
+    line-height: 1;
+    min-height: 1.2em;
+}
+
+/* ---------- Faza 4: udostępnianie wyniku ---------- */
+.game-over-share {
+    margin-top: var(--space-5);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--border);
+}
+
+.game-over-share-title {
+    font-weight: 800;
+    font-size: var(--fs-sm);
+    color: var(--accent);
+    margin: 0 0 var(--space-2);
+}
+
+.game-over-share-hint {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    margin: 0 0 var(--space-4);
+    line-height: 1.4;
+}
+
+.game-over-share-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+@media (min-width: 480px) {
+    .game-over-share-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+}
+
+.game-over-share-actions .btn-secondary {
+    text-align: center;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--tap);
+}
+
 .sidebar {
     background: var(--surface-0);
     border: 1px solid var(--border);
