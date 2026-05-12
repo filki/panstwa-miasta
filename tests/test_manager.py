@@ -11,11 +11,28 @@ def room():
     return Room("test_room", max_rounds=3, time_limit=60)
 
 
+def test_normalize_room_visibility():
+    from panstwa_miasta.manager import normalize_room_visibility
+
+    assert normalize_room_visibility("private") == "private"
+    assert normalize_room_visibility("PUBLIC") == "public"
+    assert normalize_room_visibility("") == "public"
+    assert normalize_room_visibility("evil") == "public"
+
+
 def test_room_initialization(room):
     assert room.room_id == "test_room"
     assert room.max_rounds == 3
     assert room.time_limit == 60
+    assert room.visibility == "public"
     assert len(room.letter_queue) == 22  # ALPHABET size
+
+
+def test_room_private_visibility():
+    r = Room("x", visibility="private")
+    assert r.visibility == "private"
+    r2 = Room("y", visibility="bogus")
+    assert r2.visibility == "public"
 
 
 def test_deck_shuffle_refill(room):
@@ -131,6 +148,24 @@ async def test_manager_connect():
 
 
 @pytest.mark.asyncio
+async def test_manager_connect_visibility_only_on_first_join():
+    """Pierwsze połączenie ustawia widoczność; kolejni gracze nie nadpisują."""
+    manager = ConnectionManager()
+    import panstwa_miasta.manager
+
+    panstwa_miasta.manager.save_room = AsyncMock()
+    panstwa_miasta.manager.save_player_score = AsyncMock()
+
+    ws1 = AsyncMock(spec=WebSocket)
+    await manager.connect(ws1, "r_vis", "p1", 5, 90, "private")
+    assert manager.rooms["r_vis"].visibility == "private"
+
+    ws2 = AsyncMock(spec=WebSocket)
+    await manager.connect(ws2, "r_vis", "p2", 5, 90, "public")
+    assert manager.rooms["r_vis"].visibility == "private"
+
+
+@pytest.mark.asyncio
 async def test_manager_disconnect():
     manager = ConnectionManager()
     room = Room("room1")
@@ -145,3 +180,30 @@ async def test_manager_disconnect():
 
     manager.disconnect("room1", "p2")
     assert "room1" not in manager.rooms  # room deleted
+
+
+@pytest.mark.asyncio
+async def test_manager_kick_player_removes_target(monkeypatch):
+    import panstwa_miasta.manager as mod
+
+    mod.remove_player = AsyncMock()
+    mod.save_room = AsyncMock()
+
+    manager = ConnectionManager()
+    room = Room("room1")
+    ws_h = AsyncMock()
+    ws_g = AsyncMock()
+    room.connections = {"Host": ws_h, "Guest": ws_g}
+    room.host_name = "Host"
+    room.scores = {"Host": 0, "Guest": 10}
+    manager.rooms["room1"] = room
+
+    ok, err = await manager.kick_player("room1", "Host", "Guest")
+    assert ok is True
+    assert err == ""
+    assert "Guest" not in room.connections
+    assert "Guest" not in room.scores
+    ws_g.send_text.assert_called_once()
+    assert "kicked" in ws_g.send_text.call_args[0][0]
+    ws_g.close.assert_called_once_with(code=4401)
+    mod.remove_player.assert_called_once_with("room1", "Guest")

@@ -33,7 +33,28 @@ def test_api_active_rooms_with_data():
         response = client.get("/api/active-rooms")
         assert response.status_code == 200
         rooms = response.json()
-        assert any(r["id"] == room_id for r in rooms)
+        entry = next(r for r in rooms if r["id"] == room_id)
+        assert entry["visibility"] == "public"
+        assert entry["visibility_label"] == "Publiczny"
+    finally:
+        if room_id in manager.rooms:
+            del manager.rooms[room_id]
+
+
+def test_api_active_rooms_hides_private_room():
+    from panstwa_miasta.manager import Room
+
+    room_id = "test_room_private"
+    mock_room = Room(room_id, visibility="private")
+    mock_room.host_name = "Host1"
+    mock_room.connections = {"Host1": None}
+
+    manager.rooms[room_id] = mock_room
+    try:
+        response = client.get("/api/active-rooms")
+        assert response.status_code == 200
+        rooms = response.json()
+        assert not any(r["id"] == room_id for r in rooms)
     finally:
         if room_id in manager.rooms:
             del manager.rooms[room_id]

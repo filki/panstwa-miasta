@@ -19,6 +19,7 @@ function fireConfetti(opts) {
 function leaveRoom() {
     leftByUser = true;
     isLeaving = true;
+    globalThis.myNick = '';
     // Hide chat UI and show join UI (keeps tests stable and helps if navigation
     // is blocked by environment or user agent).
     const chatSection = document.getElementById('chat-section');
@@ -68,6 +69,7 @@ function connect() {
     leftByUser = false;
     initAudio();
     myNick = document.getElementById('nickname').value.trim();
+    globalThis.myNick = myNick;
     if (!myNick) return alert('Proszę najpierw podać swój nickname!');
 
     const pathParts = globalThis.location.pathname.split('/');
@@ -93,19 +95,28 @@ function connect() {
     const maxRounds = document.getElementById('max_rounds').value || 5;
     const timeLimit = document.getElementById('time_limit').value || 90;
 
+    const urlParams = new URLSearchParams(globalThis.location.search);
+    let visibility = urlParams.get('visibility') === 'private' ? 'private' : 'public';
+    if (isCreating) {
+        const visEl = document.getElementById('room_visibility');
+        const v = visEl && visEl.value;
+        if (v === 'private' || v === 'public') visibility = v;
+    }
+
     localStorage.setItem('pm_nickname', myNick);
 
     // Landing page has no game UI; redirect to the dedicated room page,
     // which auto-joins using the stored nickname + url params.
     if (!globalThis.location.pathname.startsWith('/room/')) {
-        globalThis.location.href = `/room/${roomId}?rounds=${maxRounds}&limit=${timeLimit}`;
+        globalThis.location.href = `/room/${roomId}?rounds=${maxRounds}&limit=${timeLimit}&visibility=${visibility}`;
         return;
     }
 
     globalThis.history.replaceState(null, '', `/room/${roomId}`);
 
     const protocol = globalThis.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    let wsUrl = `${protocol}//${globalThis.location.host}/ws/${roomId}/${myNick}?rounds=${maxRounds}&limit=${timeLimit}`;
+    const encNick = encodeURIComponent(myNick);
+    let wsUrl = `${protocol}//${globalThis.location.host}/ws/${roomId}/${encNick}?rounds=${maxRounds}&limit=${timeLimit}&visibility=${visibility}`;
     
     ws = new WebSocket(wsUrl);
 
@@ -125,10 +136,21 @@ function connect() {
         if (navRoomInfo) navRoomInfo.style.display = 'inline-flex';
         if (navHomeLink) navHomeLink.style.display = 'none';
 
-        if (typeof updateScoreboard === 'function') updateScoreboard({}, '');
+        if (typeof updateScoreboard === 'function') updateScoreboard({}, '', globalThis.myNick || '');
     };
 
     ws.onclose = (e) => {
+        if (e.code === 4401) {
+            isLeaving = true;
+            alert('Host wyrzucił Cię z pokoju.');
+            try {
+                const isJestEnv = typeof process !== 'undefined' && process?.env?.JEST_WORKER_ID;
+                if (!isJestEnv) globalThis.location.href = '/';
+            } catch (err) {
+                // noop
+            }
+            return;
+        }
         if (e.code === 1008) {
             alert('Nick jest już zajęty lub nieprawidłowy!');
             return;
@@ -163,7 +185,7 @@ function onSystemMessage(m) {
 }
 
 function onScoreUpdate(m) {
-    updateScoreboard(m.scores, m.host_name);
+    updateScoreboard(m.scores, m.host_name, globalThis.myNick || '');
 }
 
 function onChatMessage(m) {
@@ -176,6 +198,21 @@ function onChatMessage(m) {
     container.appendChild(senderDiv);
     container.appendChild(textDiv);
     addLog(container, "");
+}
+
+function onKicked(m) {
+    isLeaving = true;
+    alert(m.message || 'Host wyrzucił Cię z pokoju.');
+    try {
+        const isJestEnv = typeof process !== 'undefined' && process?.env?.JEST_WORKER_ID;
+        if (!isJestEnv) globalThis.location.href = '/';
+    } catch (e) {
+        // noop
+    }
+}
+
+function onKickDenied(m) {
+    addLog(`<em>${m.message || 'Nie można wyrzucić gracza.'}</em>`, 'system-msg');
 }
 
 function onRoomDissolved(m) {
@@ -206,6 +243,8 @@ const MESSAGE_HANDLERS = {
     round_results: onRoundResults,
     game_restarted: onGameRestarted,
     room_dissolved: onRoomDissolved,
+    kicked: onKicked,
+    kick_denied: onKickDenied,
 };
 
 function onRoundStarted(msg) {
@@ -294,7 +333,7 @@ function onRoundResults(msg) {
 
     const html = buildRoundResultsHtml(msg);
     addLog(html, "results-msg");
-    updateScoreboard(msg.total_scores, msg.host_name);
+    updateScoreboard(msg.total_scores, msg.host_name, globalThis.myNick || '');
 
     if (msg.game_over) handleGameOver(msg.host_name);
     else resetReadyButton();
@@ -364,7 +403,7 @@ function onGameRestarted(msg) {
     btn.innerHTML = '👍 Gotowy do rundy';
     btn.style.backgroundColor = 'var(--primary)';
     document.getElementById('current-letter').innerHTML = '?';
-    updateScoreboard(msg.scores, msg.host_name);
+    updateScoreboard(msg.scores, msg.host_name, globalThis.myNick || '');
     const inputs = document.querySelectorAll('#categories input');
     inputs.forEach(inp => {
         inp.value = '';
@@ -402,6 +441,8 @@ function runLetterLottery(targetLetter, onComplete) {
             letterDiv.style.filter = 'none';
             letterDiv.style.transform = 'scale(1.2)';
             letterDiv.style.color = 'var(--success)';
+            playRoundStartReveal();
+            if (typeof playLotteryRevealHaptic === 'function') playLotteryRevealHaptic();
             fireConfetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
             setTimeout(() => {
                 modal.style.display = 'none';
@@ -409,6 +450,11 @@ function runLetterLottery(targetLetter, onComplete) {
                 letterDiv.style.color = 'var(--accent)';
                 if (onComplete) onComplete();
             }, 1500);
+        } else {
+            playLotterySpinTick(elapsed, duration);
+            if (elapsed % 100 === 0 && typeof playLotterySpinHaptic === 'function') {
+                playLotterySpinHaptic();
+            }
         }
     }, intervalTime);
 }

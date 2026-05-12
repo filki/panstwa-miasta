@@ -68,8 +68,12 @@ Static game data lives in **SQLite tables**, not files:
   zawodów + opcjonalny `kod` PKD). Cache ``JOBS`` w ``data.py`` wypełnia
   ``reload_jobs()`` (pełna fraza + alias pierwszego słowa). Regeneracja
   seeda: ``uv run python scripts/build_jobs_seed.py --zawody PLIK --liniowy PLIK``.
+- `cities` table — `id`, `nazwa`, `nazwa_norm`, `kraj` (jak w ``countries.name``),
+  `kraj_norm`. Walidacja **Miasto** z cache
+  ``MIASTA`` (`reload_miasta()`), bez Wikidata. **Zwierzę** / **Roślina**
+  nadal przez ``WikipediaValidator`` (API Wikidata).
 
-In-memory caches `COUNTRIES`, `NAMES`, `JOBS` are populated by
+In-memory caches `COUNTRIES`, `MIASTA`, `NAMES`, `JOBS` are populated by
 `reload_*` in the FastAPI lifespan handler (and pytest fixtures via
 `tests/conftest.py`).
 

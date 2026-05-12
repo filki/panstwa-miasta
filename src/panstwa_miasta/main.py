@@ -4,16 +4,17 @@ import pathlib
 from contextlib import asynccontextmanager
 
 import aiofiles
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from .data import reload_countries, reload_jobs, reload_names
+from .data import reload_countries, reload_jobs, reload_miasta, reload_names
 from .db import delete_room, init_db
 from .handlers import (
     handle_answers,
     handle_chat,
     handle_dissolve_room,
+    handle_kick_player,
     handle_not_ready,
     handle_ready,
     handle_restart_game,
@@ -30,6 +31,7 @@ async def lifespan(app: FastAPI):
     logger.info("Application startup: initializing DB and loading rooms")
     await init_db()
     await reload_countries()
+    await reload_miasta()
     await reload_names()
     await reload_jobs()
     await manager.load_from_db()
@@ -150,10 +152,11 @@ async def get_active_rooms():
             "current_round": room.current_round,
             "max_rounds": room.max_rounds,
             "time_limit": room.time_limit,
-            "mode": "Standard",  # Na razie wszystkie standardowe
+            "visibility": room.visibility,
+            "visibility_label": ("Publiczny" if room.visibility == "public" else "Prywatny"),
         }
         for r_id, room in manager.rooms.items()
-        if room.connections and not room.game_over
+        if room.connections and not room.game_over and room.visibility == "public"
     ]
 
 
@@ -218,6 +221,8 @@ async def _dispatch(msg: dict, room, room_id: str, client_name: str) -> None:
         await handle_stop(room, room_id, client_name, force_end_round)
     elif msg_type == "answers":
         await handle_answers(room, room_id, client_name, msg)
+    elif msg_type == "kick_player":
+        await handle_kick_player(room, room_id, client_name, msg, manager)
     else:
         logger.warning(f"Unknown message type '{msg_type}' from '{client_name}'")
 
@@ -227,13 +232,15 @@ async def websocket_endpoint(
     websocket: WebSocket,
     room_id: str,
     client_name: str,
-    rounds: int = 5,
-    limit: int = 90,
+    rounds: int = Query(5),
+    limit: int = Query(90),
+    visibility: str = Query("public"),
 ) -> None:
     logger.info(
-        f"WebSocket attempt: room={room_id}, client={client_name}, rounds={rounds}, limit={limit}"
+        f"WebSocket attempt: room={room_id}, client={client_name}, "
+        f"rounds={rounds}, limit={limit}, visibility={visibility}"
     )
-    success = await manager.connect(websocket, room_id, client_name, rounds, limit)
+    success = await manager.connect(websocket, room_id, client_name, rounds, limit, visibility)
     if not success:
         logger.warning(f"Connection rejected for {client_name} in room {room_id}")
         await websocket.close(code=1008)

@@ -26,8 +26,8 @@ test_output.txt
 jest_full_output.txt
 *.output.txt
 
-# Lokalne zrzuty PKD / surowe listy (gra: SQLite + *_seed.py)
-data/
+# Lokalne zrzuty PKD / surowe listy (gra: SQLite + *_seed.py) — tylko katalog w rootcie
+/data/
 
 # Wyjście scripts/extract_jobs.py
 scripts/pkd_raw_jobs.txt
@@ -38,6 +38,9 @@ scripts/pkd_raw_jobs.txt
 # Logs and DB
 logs/
 *.db
+
+# Local secrets (e.g. NGROK_AUTHTOKEN for docker-compose)
+.env
 
 # PESEL CSV extracts (seed lives in names_seed.py)
 **/8_-_Wykaz_imion_męskich*.csv

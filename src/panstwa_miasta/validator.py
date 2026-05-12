@@ -34,7 +34,6 @@ class WikipediaValidator:
     def _check_category(self, claims: dict[str, list[Any]], category: str) -> bool:
         """Checks if any P31 (instance of) claim matches the target category."""
         category_map = {
-            "Miasto": {"Q515", "Q1549591", "Q5119"},  # city, town, village
             "Zwierzę": {"Q729", "Q16521"},  # animal, organism
             "Roślina": {"Q756"},  # plant
         }
@@ -61,7 +60,7 @@ class WikipediaValidator:
         # either match unrelated entities or fail in a way that previously
         # returned True (fail-open), which gives points for typing just the
         # current letter (e.g. "P" always scoring as a city).
-        if category in {"Miasto", "Zwierzę", "Roślina"} and len(term) < 2:
+        if category in {"Zwierzę", "Roślina"} and len(term) < 2:
             cache_key = f"{category}:{term}"
             self.cache[cache_key] = False
             return False

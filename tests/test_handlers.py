@@ -1,3 +1,4 @@
+import json
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -6,6 +7,7 @@ from panstwa_miasta.handlers import (
     handle_answers,
     handle_chat,
     handle_dissolve_room,
+    handle_kick_player,
     handle_not_ready,
     handle_ready,
     handle_restart_game,
@@ -115,3 +117,29 @@ async def test_handle_dissolve_room_iterates_snapshot_not_live_dict():
     ws_a.close.assert_called_once()
     ws_b.close.assert_called_once()
     delete_mock.assert_called_once_with("room1")
+
+
+@pytest.mark.asyncio
+async def test_handle_kick_player_denied_sends_kick_denied():
+    room = Room("room1")
+    room.host_name = "Host1"
+    ws_guest = AsyncMock()
+    room.connections = {"Host1": AsyncMock(), "Guest": ws_guest}
+    manager = MagicMock()
+    manager.kick_player = AsyncMock(return_value=(False, "not_host"))
+    await handle_kick_player(room, "room1", "Guest", {"target": "Someone"}, manager)
+    ws_guest.send_text.assert_called_once()
+    payload = json.loads(ws_guest.send_text.call_args[0][0])
+    assert payload["type"] == "kick_denied"
+    assert "host" in payload["message"].lower()
+
+
+@pytest.mark.asyncio
+async def test_handle_kick_player_success_no_denied_message():
+    room = Room("room1")
+    room.host_name = "Host1"
+    room.connections = {"Host1": AsyncMock()}
+    manager = MagicMock()
+    manager.kick_player = AsyncMock(return_value=(True, ""))
+    await handle_kick_player(room, "room1", "Host1", {"target": "Guest"}, manager)
+    manager.kick_player.assert_called_once_with("room1", "Host1", "Guest")

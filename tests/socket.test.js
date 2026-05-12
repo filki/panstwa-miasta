@@ -7,6 +7,10 @@
 global.initAudio = jest.fn();
 global.playGong = jest.fn();
 global.playTick = jest.fn();
+global.playLotterySpinTick = jest.fn();
+global.playRoundStartReveal = jest.fn();
+global.playLotterySpinHaptic = jest.fn();
+global.playLotteryRevealHaptic = jest.fn();
 global.addLog = jest.fn();
 global.updateScoreboard = jest.fn();
 global.enableInputs = jest.fn();
@@ -65,6 +69,10 @@ const FULL_DOM = `
         <option value="60" selected>60</option>
         <option value="90">90</option>
     </select>
+    <select id="room_visibility">
+        <option value="public" selected>public</option>
+        <option value="private">private</option>
+    </select>
 
     <span id="current-room"></span>
     <button id="btn-leave" style="display: none;"></button>
@@ -115,6 +123,15 @@ describe('connect()', () => {
         expect(url).toMatch(/^ws:\/\/localhost\/ws\/1234\/TestUser\?/);
         expect(url).toContain('rounds=10');
         expect(url).toContain('limit=60');
+        expect(url).toContain('visibility=public');
+    });
+
+    test('uses visibility=private from create modal when connecting', () => {
+        document.getElementById('create-modal').style.display = 'flex';
+        document.getElementById('room_visibility').value = 'private';
+        const { connect } = loadSocket();
+        connect();
+        expect(lastWs.url).toContain('visibility=private');
     });
 
     test('alerts when nickname is empty', () => {
@@ -134,7 +151,7 @@ describe('connect()', () => {
         expect(document.getElementById('current-room').textContent).toBe('1234');
         expect(document.getElementById('nav-room-info').style.display).toBe('inline-flex');
         expect(document.getElementById('nav-home-link').style.display).toBe('none');
-        expect(global.updateScoreboard).toHaveBeenCalledWith({}, '');
+        expect(global.updateScoreboard).toHaveBeenCalledWith({}, '', 'TestUser');
     });
 });
 
@@ -162,6 +179,18 @@ describe('ws lifecycle', () => {
         connect();
         lastWs.onclose({ code: 1008 });
         expect(global.alert).toHaveBeenCalledWith(expect.stringContaining('Nick'));
+    });
+
+    test('onclose 4401 alerts kicked by host and suppresses reconnect', () => {
+        jest.useFakeTimers();
+        const { connect } = loadSocket();
+        connect();
+        lastWs.onopen();
+        lastWs.onclose({ code: 4401 });
+        expect(global.alert).toHaveBeenCalledWith(expect.stringContaining('wyrzucił'));
+        jest.advanceTimersByTime(2500);
+        expect(global.WebSocket).toHaveBeenCalledTimes(1);
+        jest.useRealTimers();
     });
 
     test('onclose triggers reconnect when chat is visible and not leaving', () => {
@@ -227,7 +256,19 @@ describe('ws.onmessage dispatch', () => {
         lastWs.onmessage({
             data: JSON.stringify({ type: 'score_update', scores: { Filip: 5 }, host_name: 'Filip' }),
         });
-        expect(global.updateScoreboard).toHaveBeenCalledWith({ Filip: 5 }, 'Filip');
+        expect(global.updateScoreboard).toHaveBeenCalledWith({ Filip: 5 }, 'Filip', 'TestUser');
+    });
+
+    test('kick_denied logs a system message', () => {
+        const { connect } = loadSocket();
+        connect();
+        lastWs.onmessage({
+            data: JSON.stringify({ type: 'kick_denied', message: 'Tylko host może wyrzucać graczy.' }),
+        });
+        expect(global.addLog).toHaveBeenCalledWith(
+            '<em>Tylko host może wyrzucać graczy.</em>',
+            'system-msg',
+        );
     });
 
     test('room_dissolved alerts the user', () => {
@@ -314,7 +355,7 @@ describe('round event handlers', () => {
             game_over: false,
         });
         expect(global.addLog).toHaveBeenCalled();
-        expect(global.updateScoreboard).toHaveBeenCalledWith({ TestUser: 10 }, 'TestUser');
+        expect(global.updateScoreboard).toHaveBeenCalledWith({ TestUser: 10 }, 'TestUser', '');
     });
 
     test('onGameRestarted resets game layout and inputs', () => {
@@ -325,7 +366,7 @@ describe('round event handlers', () => {
         expect(document.getElementById('game-layout').classList.contains('game-over')).toBe(false);
         expect(document.getElementById('chat-sidebar').classList.contains('hidden')).toBe(false);
         expect(document.getElementById('btn-draw').style.display).toBe('inline-block');
-        expect(global.updateScoreboard).toHaveBeenCalledWith({ TestUser: 0 }, 'TestUser');
+        expect(global.updateScoreboard).toHaveBeenCalledWith({ TestUser: 0 }, 'TestUser', '');
     });
 });
 
@@ -365,6 +406,10 @@ describe('runLetterLottery()', () => {
         const { runLetterLottery } = loadSocket();
         runLetterLottery('X', onComplete);
         jest.advanceTimersByTime(2500);
+        expect(global.playLotterySpinTick).toHaveBeenCalled();
+        expect(global.playRoundStartReveal).toHaveBeenCalledTimes(1);
+        expect(global.playLotterySpinHaptic).toHaveBeenCalledTimes(24);
+        expect(global.playLotteryRevealHaptic).toHaveBeenCalledTimes(1);
         jest.advanceTimersByTime(1500);
         expect(onComplete).toHaveBeenCalled();
         expect(document.getElementById('lottery-letter').innerText).toBe('X');
