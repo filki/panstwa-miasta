@@ -30,8 +30,16 @@ describe('avatar assets', () => {
     });
 
     test('randomAvatarId avoids current id when possible', () => {
-        expect(randomAvatarId(0)).toBe(1);
-        expect(randomAvatarId(1)).toBe(0);
+        globalThis.crypto = {
+            getRandomValues: (arr) => {
+                arr[0] = 0;
+                return arr;
+            },
+        };
+        const picked = randomAvatarId(0);
+        expect(picked).toBeGreaterThanOrEqual(0);
+        expect(picked).toBeLessThan(AVATAR_OPTIONS.length);
+        expect(picked).not.toBe(0);
     });
 
     test('initAvatarSelection sets preview src', () => {
@@ -41,9 +49,15 @@ describe('avatar assets', () => {
     });
 
     test('rerollPlayerAvatar switches preview', () => {
+        globalThis.crypto = {
+            getRandomValues: (arr) => {
+                arr[0] = 0;
+                return arr;
+            },
+        };
         persistAvatarId(0);
         rerollPlayerAvatar();
         const img = document.getElementById('landing-anon-avatar');
-        expect(img.src).toContain(AVATAR_OPTIONS[1]);
+        expect(img.src).not.toContain(AVATAR_OPTIONS[0]);
     });
 });

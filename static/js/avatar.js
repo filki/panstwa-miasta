@@ -3,6 +3,8 @@ const PM_AVATAR_KEY = 'pm_avatar_id';
 const AVATAR_OPTIONS = [
     '/static/img/avatars/avatar-01.png',
     '/static/img/avatars/avatar-02.png',
+    '/static/img/avatars/avatar-03.png',
+    '/static/img/avatars/avatar-04.png',
 ];
 
 function normalizeAvatarId(raw) {
