@@ -36,6 +36,7 @@ const baseDom = () => `
     <div id="create-modal" style="display: none;"></div>
     <div id="lottery-modal" style="display: none;"></div>
     <input id="nickname" />
+    <input id="nickname_join" />
     <input id="room_id" />
     <select id="max_rounds"><option value="3">3</option><option value="5">5</option><option value="10">10</option></select>
     <select id="time_limit"><option value="60">60</option><option value="90">90</option></select>
@@ -149,18 +150,12 @@ describe('modal helpers', () => {
         expect(document.getElementById('lottery-modal').style.display).toBe('none');
     });
 
-    test('focusStartPanel scrolls to lobby and focuses nickname', () => {
-        document.body.innerHTML = `
-            <section id="lobby"></section>
-            <input id="nickname" />
-        `;
+    test('focusStartPanel scrolls to lobby', () => {
+        document.body.innerHTML = '<section id="lobby"></section>';
         const lobby = document.getElementById('lobby');
-        const nickname = document.getElementById('nickname');
         lobby.scrollIntoView = jest.fn();
-        nickname.focus = jest.fn();
         focusStartPanel();
         expect(lobby.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'nearest' });
-        expect(nickname.focus).toHaveBeenCalledWith({ preventScroll: true });
     });
 
     test('toggleLandingMarketing reveals marketing and unlocks landing scroll', () => {
@@ -326,20 +321,23 @@ describe('joinRoom global', () => {
 });
 
 describe('restoreNickname', () => {
-    test('restores nickname from localStorage', () => {
+    test('restores custom nickname from localStorage', () => {
         localStorage.setItem('pm_nickname', 'Filip');
+        localStorage.setItem('pm_nickname_custom', '1');
         const restored = restoreNickname();
         expect(restored).toBe('Filip');
         expect(document.getElementById('nickname').value).toBe('Filip');
         localStorage.removeItem('pm_nickname');
+        localStorage.removeItem('pm_nickname_custom');
     });
 
-    test('assigns a generated Gracz# nick when storage is empty', () => {
+    test('assigns a generated Gracz# nick when no custom nick saved', () => {
         localStorage.removeItem('pm_nickname');
+        localStorage.removeItem('pm_nickname_custom');
         const restored = restoreNickname();
         expect(restored).toMatch(/^Gracz#\d{4}$/);
         expect(document.getElementById('nickname').value).toBe(restored);
-        expect(localStorage.getItem('pm_nickname')).toBe(restored);
+        expect(localStorage.getItem('pm_nickname')).toBeNull();
     });
 });
 

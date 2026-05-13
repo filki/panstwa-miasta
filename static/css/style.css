@@ -573,12 +573,11 @@ button.choice-card:focus-visible {
 
 /* ---------- Landing (index) — start bez scrolla ---------- */
 body.landing-page {
-    height: 100svh;
-    overflow: hidden;
+    min-height: 100svh;
+    overflow: auto;
 }
 
 body.landing-page.landing-scrollable {
-    height: auto;
     min-height: 100svh;
     overflow: auto;
 }
@@ -666,11 +665,28 @@ body.landing-page .choice-desc {
 }
 
 body.landing-page .landing-below {
-    display: none;
+    display: block;
+    margin-top: var(--space-6);
 }
 
 body.landing-page.landing-marketing-open .landing-below {
     display: block;
+}
+
+.nick-field-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-2);
+    align-items: stretch;
+}
+
+button.nick-reroll {
+    width: auto;
+    min-width: 5.5rem;
+    min-height: var(--tap);
+    padding: 0.65rem 0.9rem;
+    text-transform: none;
+    letter-spacing: 0;
 }
 
 body.landing-page .site-footer {
