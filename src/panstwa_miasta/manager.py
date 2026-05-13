@@ -524,6 +524,7 @@ class ConnectionManager:
                     "type": "score_update",
                     "scores": room.scores,
                     "host_name": room.host_name,
+                    "ready_players": sorted(room.ready_players),
                 }
             )
         )

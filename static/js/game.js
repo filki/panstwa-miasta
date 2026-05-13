@@ -2,7 +2,7 @@ function toggleReady() {
     const btn = document.getElementById('btn-draw');
     if (btn.classList.contains('ready')) {
         btn.classList.remove('ready');
-        btn.innerHTML = '👍 Gotowy do rundy';
+        btn.innerHTML = '👍 Gotowy';
         btn.style.backgroundColor = 'var(--primary)';
         sendJson({ type: "not_ready" });
     } else {

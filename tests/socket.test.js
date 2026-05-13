@@ -19,6 +19,8 @@ global.disableAndSubmit = jest.fn();
 global.alert = jest.fn();
 global.confetti = jest.fn();
 global.hideModals = jest.fn();
+global.setRoomPhase = jest.fn();
+global.syncRoomLobbySettings = jest.fn();
 
 // WebSocket constructor mock — exposes last instance for assertions.
 let lastWs;
@@ -52,7 +54,9 @@ const FULL_DOM = `
     </header>
 
     <div id="join-section" style="display: block;"></div>
-    <div id="chat-section" style="display: none;"></div>
+    <div id="chat-section" style="display: none;">
+        <section id="room-lobby" hidden></section>
+    </div>
     <div id="join-modal" style="display: none;"></div>
     <div id="create-modal" style="display: none;"></div>
     <div id="lottery-modal" style="display: none;">
@@ -166,6 +170,8 @@ describe('connect()', () => {
         expect(document.getElementById('nav-room-info').style.display).toBe('inline-flex');
         expect(document.getElementById('nav-home-link').style.display).toBe('none');
         expect(global.updateScoreboard).not.toHaveBeenCalled();
+        expect(global.setRoomPhase).toHaveBeenCalledWith('lobby');
+        expect(global.syncRoomLobbySettings).toHaveBeenCalledWith('1234');
     });
 
     test('ws.onopen does not wipe scoreboard; score_update from server fills it', () => {
@@ -180,7 +186,12 @@ describe('connect()', () => {
                 host_name: 'Anna',
             }),
         });
-        expect(global.updateScoreboard).toHaveBeenCalledWith({ Anna: 7, Bob: 3 }, 'Anna', 'TestUser');
+        expect(global.updateScoreboard).toHaveBeenCalledWith(
+            { Anna: 7, Bob: 3 },
+            'Anna',
+            'TestUser',
+            undefined,
+        );
     });
 });
 
@@ -285,7 +296,31 @@ describe('ws.onmessage dispatch', () => {
         lastWs.onmessage({
             data: JSON.stringify({ type: 'score_update', scores: { Filip: 5 }, host_name: 'Filip' }),
         });
-        expect(global.updateScoreboard).toHaveBeenCalledWith({ Filip: 5 }, 'Filip', 'TestUser');
+        expect(global.updateScoreboard).toHaveBeenCalledWith(
+            { Filip: 5 },
+            'Filip',
+            'TestUser',
+            undefined,
+        );
+    });
+
+    test('round_started switches to playing phase', () => {
+        globalThis.runRoundStartCountdown = (cb) => cb();
+        globalThis.runLetterLottery = (_letter, cb) => cb();
+        const { connect } = loadSocket();
+        connect();
+        lastWs.onmessage({
+            data: JSON.stringify({
+                type: 'round_started',
+                letter: 'M',
+                current_round: 1,
+                max_rounds: 5,
+                time_limit: 90,
+            }),
+        });
+        expect(global.setRoomPhase).toHaveBeenCalledWith('playing');
+        delete globalThis.runRoundStartCountdown;
+        delete globalThis.runLetterLottery;
     });
 
     test('kick_denied logs a system message', () => {

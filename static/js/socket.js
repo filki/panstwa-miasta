@@ -2,6 +2,7 @@ let ws;
 let myNick = "";
 let isLeaving = false; // flag to suppress auto-reconnect on manual leave
 let leftByUser = false; // distinguish "user navigated away" from "room dissolved"
+let pmHadRoundStarted = false;
 
 function sendJson(obj) {
     if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
@@ -75,7 +76,8 @@ function connect() {
     initAudio();
     const joinNick = document.getElementById('nickname_join')?.value.trim() || '';
     const createNick = document.getElementById('nickname')?.value.trim() || '';
-    myNick = joinNick || createNick;
+    const landingNick = document.getElementById('landing_nickname')?.value.trim() || '';
+    myNick = joinNick || createNick || landingNick;
     if (!myNick && typeof getResolvedNickname === 'function') {
         myNick = getResolvedNickname() || '';
     }
@@ -94,6 +96,9 @@ function connect() {
     } else {
         // 2. Sprawdź czy wpisano kod w modalu dołączania
         roomId = document.getElementById('room_id').value.trim();
+        if (!roomId) {
+            roomId = document.getElementById('landing_room_code')?.value.trim() || '';
+        }
     }
 
     // 3. Jeśli nadal brak ID, a kliknięto "STWÓRZ", generujemy nowe
@@ -157,6 +162,27 @@ function connect() {
         if (navRoomInfo) navRoomInfo.style.display = 'inline-flex';
         if (navHomeLink) navHomeLink.style.display = 'none';
 
+        if (typeof syncRoomLobbySettings === 'function') {
+            syncRoomLobbySettings(roomId);
+        }
+        if (!pmHadRoundStarted && typeof setRoomPhase === 'function') {
+            setRoomPhase('lobby');
+        } else if (typeof setRoomPhase === 'function') {
+            setRoomPhase('playing');
+        }
+
+        const nativeShare = document.getElementById('btn-native-room-share');
+        if (nativeShare && globalThis.navigator?.share) {
+            nativeShare.style.display = 'inline-flex';
+            nativeShare.onclick = () => {
+                const code = document.getElementById('current-room')?.textContent?.trim() || roomId;
+                const params = new URLSearchParams(globalThis.location.search);
+                const visibility = params.get('visibility') === 'private' ? 'private' : 'public';
+                const url = `${globalThis.location.origin}/room/${encodeURIComponent(code)}?visibility=${visibility}`;
+                globalThis.navigator.share({ title: 'Państwa-Miasta', url }).catch(() => {});
+            };
+        }
+
         // Nie czyść rankingu tutaj — serwer wysyła ``score_update`` w ``_send_initial_state``.
         // Wywołanie ``updateScoreboard({}, …)`` przy reconnect powodowało wyścig z wiadomościami
         // i zerowanie punktów w UI mimo poprawnego stanu na backendzie.
@@ -203,7 +229,7 @@ function onSystemMessage(m) {
 }
 
 function onScoreUpdate(m) {
-    updateScoreboard(m.scores, m.host_name, globalThis.myNick || '');
+    updateScoreboard(m.scores, m.host_name, globalThis.myNick || '', m.ready_players);
 }
 
 function onChatMessage(m) {
@@ -257,6 +283,8 @@ const MESSAGE_HANDLERS = {
 
 function onRoundStarted(msg) {
     globalThis.currentLetter = msg.letter;
+    pmHadRoundStarted = true;
+    if (typeof setRoomPhase === 'function') setRoomPhase('playing');
 
     if (msg.resume) {
         const letterEl = document.getElementById('current-letter');
@@ -553,9 +581,10 @@ function handleGameOver(hostName, roomId) {
 function resetReadyButton() {
     const btn = document.getElementById('btn-draw');
     btn.classList.remove('ready');
-    btn.innerHTML = '👍 Gotowy do rundy';
+    btn.innerHTML = '👍 Gotowy';
     btn.style.backgroundColor = 'var(--primary)';
     btn.style.display = 'block';
+    if (typeof setRoomPhase === 'function') setRoomPhase('playing');
 }
 
 function onGameRestarted(msg) {
@@ -574,7 +603,7 @@ function onGameRestarted(msg) {
     const btn = document.getElementById('btn-draw');
     btn.style.display = 'inline-block';
     btn.classList.remove('ready');
-    btn.innerHTML = '👍 Gotowy do rundy';
+    btn.innerHTML = '👍 Gotowy';
     btn.style.backgroundColor = 'var(--primary)';
     document.getElementById('current-letter').innerHTML = '?';
     updateScoreboard(msg.scores, msg.host_name, globalThis.myNick || '');
