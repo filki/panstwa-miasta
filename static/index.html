@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#0b1220">
+    <meta name="theme-color" content="#f2f6ff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="description" content="Państwa-Miasta w kilka sekund na telefonie — bez kont, gra w przeglądarce ze znajomymi. Słowniki sprawdzane na serwerze, offline, bez śledzenia odpowiedzi w sieci.">
     <link rel="manifest" href="/manifest.json">
     <title>Państwa-Miasta — gra online, szybki start</title>
@@ -16,49 +16,25 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/site-footer.css">
 </head>
-<body>
+<body class="landing-page">
     <nav class="navbar">
-        <div class="nav-container">
+        <div class="nav-container nav-container--logo-only">
             <a href="/" class="logo" style="text-decoration:none;">Państwa<span>Miasta</span></a>
-            <div class="nav-links">
-                <a href="#features" class="nav-link-extra">Zalety</a>
-                <a href="#lobby" class="nav-link-extra">Pokoje</a>
-                <button type="button" class="nav-cta" onclick="showCreateModal()">Graj teraz</button>
-            </div>
         </div>
     </nav>
 
     <main class="page-wrapper">
-        <!-- HERO -->
         <header class="hero">
             <div class="hero-content">
                 <h1 class="hero-title">Państwa-Miasta w <span>5 sekund</span>.</h1>
-                <p class="hero-subtitle">Bez kont — państwa, miasta, imiona i zawody z lokalnej bazy; zwierzęta i rośliny z rozbudowanych list na serwerze. Graj ze znajomymi w przeglądarce.</p>
-                <div class="hero-btns">
-                    <button type="button" class="btn-primary" onclick="showCreateModal()">Stwórz pokój</button>
-                    <button type="button" class="btn-secondary" onclick="showJoinModal()">Mam kod</button>
-                </div>
-                <ul class="hero-trust-pills" aria-label="Dlaczego warto">
-                    <li class="hero-trust-pill">5-sekundowy start</li>
-                    <li class="hero-trust-pill">Lokalne słowniki na serwerze</li>
-                    <li class="hero-trust-pill">Bez logowania</li>
-                </ul>
+                <p class="hero-subtitle">Bez kont — stwórz pokój albo dołącz kodem. Zostaw losowy nick albo wpisz swój.</p>
             </div>
-        </header>
 
-        <div class="container">
-
-            <!-- LOBBY -->
-            <section id="lobby" class="lobby-section">
-                <div class="section-header">
-                    <h2>Dołącz do akcji</h2>
-                    <p>Stwórz własny pokój albo wejdź do aktywnego.</p>
-                </div>
-
+            <section id="lobby" class="lobby-section start-panel">
                 <div id="join-section" class="join-card">
-                    <div class="form-group" style="max-width: 420px; margin: 0 auto var(--space-6);">
-                        <span class="header-label">Twój nickname</span>
-                        <input type="text" id="nickname" placeholder="Wpisz swoje imię..." maxlength="20" autocomplete="nickname">
+                    <div class="form-group start-nickname">
+                        <span class="header-label">Twój nick</span>
+                        <input type="text" id="nickname" placeholder="Np. Filip albo zostaw losowy nick" maxlength="20" autocomplete="nickname" inputmode="text">
                     </div>
 
                     <div id="buttons-grid" class="choice-cards">
@@ -78,8 +54,8 @@
                         </button>
                     </div>
 
-                    <div id="active-rooms-section" style="margin-top: var(--space-8); display: none;">
-                        <h3 style="text-align: center; font-size: var(--fs-h3); margin-bottom: var(--space-5); color: var(--accent);">🔥 Aktywne pokoje</h3>
+                    <div id="active-rooms-section" class="active-rooms-block" style="display: none;">
+                        <h3 class="active-rooms-title">🔥 Aktywne pokoje</h3>
                         <div class="table-container">
                             <table class="rooms-table">
                                 <thead>
@@ -99,8 +75,10 @@
                     </div>
                 </div>
             </section>
+        </header>
 
-            <!-- FEATURES -->
+        <div class="landing-below" id="marketing">
+            <div class="container">
             <section id="features" class="features-grid">
                 <div class="feature-item">
                     <div class="feature-icon">⚡</div>
@@ -118,7 +96,7 @@
                     <p>Działa wygodnie na każdym urządzeniu.</p>
                 </div>
             </section>
-
+            </div>
         </div>
     </main>
 

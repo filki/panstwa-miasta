@@ -11,12 +11,17 @@ const {
     showJoinModal,
     showCreateModal,
     hideModals,
+    focusStartPanel,
+    toggleLandingMarketing,
+    syncLandingScrollLock,
     addLog,
     updateScoreboard,
     sendChat,
     buildRoomRow,
     renderActiveRooms,
     loadActiveRooms,
+    ensureNicknameInput,
+    generatePlayerNickname,
     restoreNickname,
     applyRoomSettingsFromUrl,
     playLotterySpinHaptic,
@@ -142,6 +147,34 @@ describe('modal helpers', () => {
         expect(document.getElementById('join-modal').style.display).toBe('none');
         expect(document.getElementById('create-modal').style.display).toBe('none');
         expect(document.getElementById('lottery-modal').style.display).toBe('none');
+    });
+
+    test('focusStartPanel scrolls to lobby and focuses nickname', () => {
+        document.body.innerHTML = `
+            <section id="lobby"></section>
+            <input id="nickname" />
+        `;
+        const lobby = document.getElementById('lobby');
+        const nickname = document.getElementById('nickname');
+        lobby.scrollIntoView = jest.fn();
+        nickname.focus = jest.fn();
+        focusStartPanel();
+        expect(lobby.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'nearest' });
+        expect(nickname.focus).toHaveBeenCalledWith({ preventScroll: true });
+    });
+
+    test('toggleLandingMarketing reveals marketing and unlocks landing scroll', () => {
+        document.body.className = 'landing-page';
+        document.body.innerHTML = '<div id="marketing"></div>';
+        const marketing = document.getElementById('marketing');
+        marketing.scrollIntoView = jest.fn();
+        const event = { preventDefault: jest.fn() };
+
+        toggleLandingMarketing(event);
+        expect(event.preventDefault).toHaveBeenCalled();
+        expect(document.body.classList.contains('landing-marketing-open')).toBe(true);
+        expect(document.body.classList.contains('landing-scrollable')).toBe(true);
+        expect(marketing.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
     });
 });
 
@@ -301,11 +334,22 @@ describe('restoreNickname', () => {
         localStorage.removeItem('pm_nickname');
     });
 
-    test('returns null when no nickname is stored', () => {
+    test('assigns a generated Gracz# nick when storage is empty', () => {
         localStorage.removeItem('pm_nickname');
         const restored = restoreNickname();
-        expect(restored).toBeNull();
-        expect(document.getElementById('nickname').value).toBe('');
+        expect(restored).toMatch(/^Gracz#\d{4}$/);
+        expect(document.getElementById('nickname').value).toBe(restored);
+        expect(localStorage.getItem('pm_nickname')).toBe(restored);
+    });
+});
+
+describe('generatePlayerNickname', () => {
+    test('returns Gracz# plus a four-digit number', () => {
+        const nick = generatePlayerNickname();
+        expect(nick).toMatch(/^Gracz#\d{4}$/);
+        const number = Number(nick.slice(6));
+        expect(number).toBeGreaterThanOrEqual(1000);
+        expect(number).toBeLessThanOrEqual(9999);
     });
 });
 

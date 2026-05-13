@@ -13,6 +13,65 @@ function hideModals() {
     document.getElementById('lottery-modal').style.display = 'none';
 }
 
+function focusStartPanel() {
+    const lobby = document.getElementById('lobby');
+    const nickname = document.getElementById('nickname');
+    if (lobby) {
+        lobby.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    if (nickname) {
+        nickname.focus({ preventScroll: true });
+    }
+}
+
+function generatePlayerNickname() {
+    const array = new Uint32Array(1);
+    globalThis.crypto.getRandomValues(array);
+    const number = 1000 + (array[0] % 9000);
+    return `Gracz#${number}`;
+}
+
+function ensureNicknameInput() {
+    const input = document.getElementById('nickname');
+    if (!input) return null;
+
+    const savedNick = localStorage.getItem('pm_nickname')?.trim();
+    if (savedNick) {
+        input.value = savedNick;
+        return savedNick;
+    }
+
+    const nick = generatePlayerNickname();
+    input.value = nick;
+    localStorage.setItem('pm_nickname', nick);
+    return nick;
+}
+
+function syncLandingScrollLock() {
+    const body = document.body;
+    if (!body.classList.contains('landing-page')) return;
+
+    const roomsOpen =
+        document.getElementById('active-rooms-section')?.style.display !== 'none';
+    const marketingOpen = body.classList.contains('landing-marketing-open');
+
+    body.classList.toggle('landing-scrollable', Boolean(roomsOpen || marketingOpen));
+}
+
+function toggleLandingMarketing(event) {
+    if (event) event.preventDefault();
+
+    const body = document.body;
+    if (!body.classList.contains('landing-page')) return;
+
+    body.classList.toggle('landing-marketing-open');
+    syncLandingScrollLock();
+
+    if (body.classList.contains('landing-marketing-open')) {
+        document.getElementById('marketing')?.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
 function addLog(content, className = '') {
     const logs = document.getElementById('logs');
     if (!logs) return;
@@ -134,6 +193,7 @@ function renderActiveRooms(rooms) {
 
     const hasRooms = Array.isArray(rooms) && rooms.length > 0;
     if (section) section.style.display = hasRooms ? 'block' : 'none';
+    syncLandingScrollLock();
     if (!hasRooms || !list) return;
 
     list.innerHTML = '';
@@ -158,10 +218,7 @@ globalThis.joinRoom = (roomId) => {
 };
 
 function restoreNickname() {
-    const savedNick = localStorage.getItem('pm_nickname');
-    const input = document.getElementById('nickname');
-    if (savedNick && input) input.value = savedNick;
-    return savedNick;
+    return ensureNicknameInput();
 }
 
 function applyRoomSettingsFromUrl() {
@@ -266,6 +323,10 @@ globalThis.window.onload = () => {
         loadActiveRooms();
         setInterval(loadActiveRooms, 10000);
     }
+    if (document.body.classList.contains('landing-page') && location.hash === '#features') {
+        document.body.classList.add('landing-marketing-open');
+        syncLandingScrollLock();
+    }
     bindChatEnter();
     bindCategoryEnter();
 };
@@ -274,6 +335,10 @@ globalThis.window.onload = () => {
 globalThis.showJoinModal = showJoinModal;
 globalThis.showCreateModal = showCreateModal;
 globalThis.hideModals = hideModals;
+globalThis.focusStartPanel = focusStartPanel;
+globalThis.ensureNicknameInput = ensureNicknameInput;
+globalThis.generatePlayerNickname = generatePlayerNickname;
+globalThis.toggleLandingMarketing = toggleLandingMarketing;
 globalThis.loadActiveRooms = loadActiveRooms;
 globalThis.addLog = addLog;
 globalThis.updateScoreboard = updateScoreboard;
@@ -287,6 +352,11 @@ if (typeof module !== 'undefined') {
         showJoinModal,
         showCreateModal,
         hideModals,
+        focusStartPanel,
+        ensureNicknameInput,
+        generatePlayerNickname,
+        toggleLandingMarketing,
+        syncLandingScrollLock,
         addLog,
         updateScoreboard,
         sendChat,
