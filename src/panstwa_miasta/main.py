@@ -22,7 +22,7 @@ from .data import (
 )
 from .db import delete_room, init_db
 from .handlers import (
-    _finish_round,
+    _begin_results_phase,
     handle_answers,
     handle_chat,
     handle_dissolve_room,
@@ -31,6 +31,7 @@ from .handlers import (
     handle_ready,
     handle_restart_game,
     handle_stop,
+    handle_veto_vote,
     score_update_payload,
 )
 from .limits import (
@@ -131,14 +132,14 @@ async def global_round_timeout(room_id: str, round_num: int, wait_time: int) -> 
 
 async def force_end_round(room_id: str) -> None:
     """Forces round results after the 10-second countdown."""
-    await asyncio.sleep(12)
+    await asyncio.sleep(10)
     if room_id not in manager.rooms:
         return
     room = manager.rooms[room_id]
     if not (room.is_playing and room.stop_triggered):
         return
-    await _finish_round(room, room_id)
-    logger.info("Force-ended round for room %s via _finish_round", room_id)
+    await _begin_results_phase(room, room_id, global_round_timeout)
+    logger.info("Force-ended round for room %s via results phase", room_id)
 
 
 # ---------------------------------------------------------------------------
@@ -224,29 +225,47 @@ async def get_share_page(room_id: RoomIdPath) -> HTMLResponse:
     if snap is None:
         body = (
             '<!DOCTYPE html><html lang="pl"><head><meta charset="utf-8"/>'
-            "<title>Wynik — brak danych</title></head><body>"
+            '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
+            '<link rel="stylesheet" href="/static/css/style.css"/>'
+            '<link rel="stylesheet" href="/static/css/site-footer.css"/>'
+            "<title>Wynik — brak danych</title></head>"
+            '<body class="share-page"><main class="page-wrapper"><div class="container">'
+            '<section class="share-card room-glass-panel"><h1>Brak wyniku</h1>'
             "<p>Nie ma zapisanego wyniku dla tego kodu.</p>"
-            '<p><a href="/">Strona główna</a></p></body></html>'
+            '<p><a href="/">Strona główna</a></p></section></div></main></body></html>'
         )
         return HTMLResponse(content=body, status_code=404)
     title = f"Państwa-Miasta — wynik ({escape(snap.room_id)})"
-    score_bits = ", ".join(
-        f"{escape(n)}: {s}" for n, s in sorted(snap.scores.items(), key=lambda x: (-x[1], x[0]))
+    score_rows = "".join(
+        f'<li><span class="share-score-name">{escape(n)}</span>'
+        f'<span class="share-score-pts">{s} pkt</span></li>'
+        for n, s in sorted(snap.scores.items(), key=lambda x: (-x[1], x[0]))
     )
-    desc = f"Host: {escape(snap.host_name or '—')}. {score_bits}"[:500]
+    desc = (
+        f"Host: {escape(snap.host_name or '—')}. "
+        + ", ".join(
+            f"{escape(n)}: {s}" for n, s in sorted(snap.scores.items(), key=lambda x: (-x[1], x[0]))
+        )[:500]
+    )
     body = (
         f'<!DOCTYPE html><html lang="pl"><head><meta charset="utf-8"/>'
+        f'<meta name="viewport" content="width=device-width, initial-scale=1"/>'
+        f'<link rel="stylesheet" href="/static/css/style.css"/>'
+        f'<link rel="stylesheet" href="/static/css/site-footer.css"/>'
         f"<title>{title}</title>"
         f'<meta property="og:title" content="{escape(title)}" />'
         f'<meta property="og:description" content="{escape(desc)}" />'
         f'<meta name="description" content="{escape(desc)}" />'
-        "</head><body>"
-        f"<h1>{escape(snap.room_id)}</h1>"
-        f"<p><strong>Host:</strong> {escape(snap.host_name or '—')}</p>"
-        f"<p><strong>Wyniki:</strong> {escape(score_bits)}</p>"
-        '<p><a href="/">Strona główna</a> · '
-        f'<a href="/room/{escape(snap.room_id)}">Pokój</a></p>'
-        "</body></html>"
+        f'</head><body class="share-page"><nav class="navbar"><div class="nav-container">'
+        f'<a href="/" class="logo" style="text-decoration:none;">Państwa<span>Miasta</span></a>'
+        f'</div></nav><main class="page-wrapper"><div class="container">'
+        f'<section class="share-card room-glass-panel">'
+        f'<h1>Wynik pokoju <span class="share-room-code">{escape(snap.room_id)}</span></h1>'
+        f'<p class="share-host"><strong>Host:</strong> {escape(snap.host_name or "—")}</p>'
+        f'<ol class="share-score-list">{score_rows}</ol>'
+        f'<p class="share-actions"><a class="btn-secondary" href="/">Strona główna</a> '
+        f'<a class="btn-secondary" href="/room/{escape(snap.room_id)}">Pokój</a></p>'
+        f"</section></div></main></body></html>"
     )
     return HTMLResponse(content=body)
 
@@ -306,6 +325,23 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
                     "total_scores": room.scores,
                     "game_over": True,
                     "host_name": room.host_name,
+                    "final": True,
+                }
+            )
+        )
+    elif room.results_phase_active:
+        await websocket.send_text(
+            json.dumps(
+                {
+                    "type": "round_results",
+                    "room_id": room.room_id,
+                    "answers": room.answers_received,
+                    "round_scores": room.provisional_round_scores,
+                    "total_scores": room.scores,
+                    "game_over": False,
+                    "host_name": room.host_name,
+                    "final": False,
+                    "veto_tallies": room.veto_tallies(),
                 }
             )
         )
@@ -329,7 +365,9 @@ async def _dispatch(msg: dict, room, room_id: str, client_name: str) -> None:
     elif msg_type == "stop":
         await handle_stop(room, room_id, client_name, force_end_round)
     elif msg_type == "answers":
-        await handle_answers(room, room_id, client_name, msg)
+        await handle_answers(room, room_id, client_name, msg, global_round_timeout)
+    elif msg_type == "veto_vote":
+        await handle_veto_vote(room, client_name, msg)
     elif msg_type == "kick_player":
         await handle_kick_player(room, room_id, client_name, msg, manager)
     else:

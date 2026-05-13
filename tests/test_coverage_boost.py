@@ -127,14 +127,14 @@ async def test_main_force_end_round():
     mock_room.is_playing = True
     mock_room.stop_triggered = True  # Required for force_end_round to proceed
     mock_room.broadcast = AsyncMock()
-    mock_room.calculate_scores = AsyncMock(return_value={})
+    mock_room.compute_round_scores = AsyncMock(return_value={})
 
     manager.rooms[room_id] = mock_room
     try:
         with patch("asyncio.sleep", AsyncMock()):
-            # Test force_end_round directly
             await force_end_round(room_id)
             assert mock_room.is_playing is False
+            assert mock_room.results_phase_active is True
     finally:
         if room_id in manager.rooms:
             del manager.rooms[room_id]

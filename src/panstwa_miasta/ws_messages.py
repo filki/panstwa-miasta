@@ -79,6 +79,14 @@ class KickPlayerMessage(BaseModel):
     target: str = Field(..., min_length=1, max_length=_MAX_KICK_TARGET)
 
 
+class VetoVoteMessage(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["veto_vote"]
+    target: str = Field(..., min_length=1, max_length=_MAX_KICK_TARGET)
+    vote: Literal["tak", "nie"]
+
+
 WsInboundMessage = Annotated[
     ChatMessage
     | ReadyMessage
@@ -87,7 +95,8 @@ WsInboundMessage = Annotated[
     | DissolveRoomMessage
     | StopMessage
     | AnswersMessage
-    | KickPlayerMessage,
+    | KickPlayerMessage
+    | VetoVoteMessage,
     Field(discriminator="type"),
 ]
 

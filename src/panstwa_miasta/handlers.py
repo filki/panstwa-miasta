@@ -6,9 +6,10 @@ Each handler is a small, single-responsibility async function.
 
 import asyncio
 import json
+import time
 
 from .logger import get_logger
-from .manager import ConnectionManager, Room
+from .manager import RESULTS_PHASE_SECONDS, VETO_CATEGORY, ConnectionManager, Room
 from .share_store import record_finished_game
 
 logger = get_logger(__name__)
@@ -37,29 +38,127 @@ async def _broadcast_score_update(room: Room) -> None:
     await room.broadcast(json.dumps(score_update_payload(room)))
 
 
-async def _finish_round(room: Room, room_id: str) -> None:
-    """Calculate scores, broadcast results and mark game_over if needed."""
-    room.is_playing = False
-    room.stop_triggered = False
-    round_scores = await room.calculate_scores()
+def _round_results_payload(
+    room: Room,
+    room_id: str,
+    *,
+    final: bool,
+    round_scores: dict,
+    game_over: bool,
+    veto_ends_at: int | None = None,
+) -> dict:
+    payload: dict = {
+        "type": "round_results",
+        "room_id": room_id,
+        "answers": room.answers_received,
+        "round_scores": round_scores,
+        "total_scores": dict(room.scores),
+        "game_over": game_over,
+        "host_name": room.host_name,
+        "final": final,
+        "veto_tallies": room.veto_tallies(),
+    }
+    if not final and veto_ends_at is not None:
+        payload["veto_ends_at"] = veto_ends_at
+    return payload
+
+
+async def _start_next_round(room: Room, room_id: str, timeout_coro) -> None:
+    letter = room.start_round()
+    await room.broadcast(
+        json.dumps(
+            {
+                "type": "round_started",
+                "letter": letter,
+                "sender": "System",
+                "current_round": room.current_round,
+                "max_rounds": room.max_rounds,
+                "time_limit": room.time_limit,
+            }
+        )
+    )
+    task = asyncio.ensure_future(timeout_coro(room_id, room.current_round, room.time_limit + 2))
+    room._timeout_task = task  # type: ignore[attr-defined]
+    logger.info(
+        "Round %s started in room %s with letter '%s' after results phase",
+        room.current_round,
+        room_id,
+        letter,
+    )
+
+
+async def _finalize_results_phase(room: Room, room_id: str, timeout_coro) -> None:
+    if not room.results_phase_active:
+        return
+    room.results_phase_active = False
+    room._results_phase_task = None
+
+    rejected = room.vetoed_rzecz_players()
+    round_scores = await room.compute_round_scores(veto_rejected=rejected, persist=True)
     is_game_over = room.current_round >= room.max_rounds
     if is_game_over:
         room.game_over = True
         record_finished_game(room_id, dict(room.scores), room.host_name or "")
+
     await room.broadcast(
         json.dumps(
-            {
-                "type": "round_results",
-                "room_id": room_id,
-                "answers": room.answers_received,
-                "round_scores": round_scores,
-                "total_scores": room.scores,
-                "game_over": is_game_over,
-                "host_name": room.host_name,
-            }
+            _round_results_payload(
+                room,
+                room_id,
+                final=True,
+                round_scores=round_scores,
+                game_over=is_game_over,
+            )
         )
     )
-    logger.info(f"Round results broadcast for room {room_id}. game_over={is_game_over}")
+    room.veto_votes = {}
+    room.provisional_round_scores = {}
+    logger.info("Round results finalized for room %s. game_over=%s", room_id, is_game_over)
+
+    if is_game_over:
+        return
+    await _start_next_round(room, room_id, timeout_coro)
+
+
+async def _results_phase_countdown(room: Room, room_id: str, timeout_coro) -> None:
+    try:
+        await asyncio.sleep(RESULTS_PHASE_SECONDS)
+    except asyncio.CancelledError:
+        return
+    await _finalize_results_phase(room, room_id, timeout_coro)
+
+
+async def _begin_results_phase(room: Room, room_id: str, timeout_coro) -> None:
+    if room.results_phase_active:
+        return
+    room.cancel_results_phase()
+    room.is_playing = False
+    room.stop_triggered = False
+    room.results_phase_active = True
+    room.veto_votes = {}
+    round_scores = await room.compute_round_scores(persist=False)
+    room.provisional_round_scores = round_scores
+    veto_ends_at = int(time.time() * 1000) + RESULTS_PHASE_SECONDS * 1000
+    await room.broadcast(
+        json.dumps(
+            _round_results_payload(
+                room,
+                room_id,
+                final=False,
+                round_scores=round_scores,
+                game_over=False,
+                veto_ends_at=veto_ends_at,
+            )
+        )
+    )
+    task = asyncio.ensure_future(_results_phase_countdown(room, room_id, timeout_coro))
+    room._results_phase_task = task
+    logger.info("Results phase started for room %s", room_id)
+
+
+async def _finish_round(room: Room, room_id: str, timeout_coro) -> None:
+    """Compatibility entry: starts the 10s results phase instead of immediate finalize."""
+    await _begin_results_phase(room, room_id, timeout_coro)
 
 
 # ---------------------------------------------------------------------------
@@ -80,7 +179,7 @@ async def handle_chat(room: Room, client_name: str, msg: dict) -> None:
 
 
 async def handle_ready(room: Room, room_id: str, client_name: str, timeout_coro) -> None:
-    if room.is_playing or room.game_over:
+    if room.is_playing or room.game_over or room.results_phase_active or room.current_round != 0:
         return
     room.ready_players.add(client_name)
     await room.broadcast(
@@ -114,7 +213,7 @@ async def handle_ready(room: Room, room_id: str, client_name: str, timeout_coro)
 
 
 async def handle_not_ready(room: Room, client_name: str) -> None:
-    if room.is_playing:
+    if room.is_playing or room.results_phase_active or room.current_round != 0:
         return
     room.ready_players.discard(client_name)
     await room.broadcast(
@@ -148,6 +247,7 @@ async def handle_restart_game(room: Room, client_name: str, msg: dict) -> None:
 async def handle_dissolve_room(room: Room, room_id: str, client_name: str, delete_room_fn) -> None:
     if client_name != room.host_name:
         return
+    room.cancel_results_phase()
     await room.broadcast(
         json.dumps(
             {
@@ -185,7 +285,9 @@ async def handle_stop(room: Room, room_id: str, client_name: str, force_end_coro
     logger.info(f"Round stopped by '{client_name}' in room {room_id}")
 
 
-async def handle_answers(room: Room, room_id: str, client_name: str, msg: dict) -> None:
+async def handle_answers(
+    room: Room, room_id: str, client_name: str, msg: dict, timeout_coro
+) -> None:
     if not room.is_playing:
         return
     room.answers_received[client_name] = msg.get("answers", {})
@@ -193,7 +295,31 @@ async def handle_answers(room: Room, room_id: str, client_name: str, msg: dict) 
         f"Answers received from '{client_name}' in room {room_id} ({len(room.answers_received)}/{room.expected_answers})"
     )
     if len(room.answers_received) >= room.expected_answers:
-        await _finish_round(room, room_id)
+        await _begin_results_phase(room, room_id, timeout_coro)
+
+
+async def handle_veto_vote(room: Room, client_name: str, msg: dict) -> None:
+    if not room.results_phase_active:
+        return
+    target = (msg.get("target") or "").strip()
+    vote = (msg.get("vote") or "").strip().lower()
+    if vote not in ("tak", "nie"):
+        return
+    if not target or target == client_name or target not in room.answers_received:
+        return
+    rzecz = room.answers_received[target].get(VETO_CATEGORY, "").strip()
+    if not rzecz:
+        return
+    room.veto_votes.setdefault(target, {})[client_name] = vote
+    await room.broadcast(
+        json.dumps(
+            {
+                "type": "veto_update",
+                "target": target,
+                "veto_tallies": room.veto_tallies(),
+            }
+        )
+    )
 
 
 KICK_DENIED_MESSAGES = {
@@ -232,4 +358,5 @@ HANDLERS = {
     "dissolve_room": handle_dissolve_room,
     "stop": handle_stop,
     "answers": handle_answers,
+    "veto_vote": handle_veto_vote,
 }
