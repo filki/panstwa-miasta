@@ -593,10 +593,32 @@ function showRoundResultsOverlay(html, { gameOver = false, provisional = false, 
     }
 }
 
-function buildGameOverResultsHtml(msg) {
+function buildGameOverScoreboardHtml(msg) {
+    const totals = msg.total_scores && typeof msg.total_scores === "object" ? msg.total_scores : {};
+    const players = Object.keys(totals).sort((a, b) => {
+        const av = typeof totals[a] === "number" ? totals[a] : 0;
+        const bv = typeof totals[b] === "number" ? totals[b] : 0;
+        return bv - av || a.localeCompare(b, "pl");
+    });
+    if (!players.length) return "";
+
+    const viewer = globalThis.myNick || myNick || "";
+    let html = '<div class="game-over-scoreboard"><ol class="share-score-list" aria-label="Tabela wyników końcowych">';
+    for (const player of players) {
+        const pts = typeof totals[player] === "number" ? totals[player] : 0;
+        const meClass = player === viewer ? " game-over-score-row--me" : "";
+        html += `<li class="game-over-score-row${meClass}"><span>${escapeHtml(player)}</span><span class="share-score-pts">${pts} pkt</span></li>`;
+    }
+    return `${html}</ol></div>`;
+}
+
+function buildGameOverRoundBreakdownHtml(msg) {
     const history = Array.isArray(msg.round_history) ? msg.round_history : [];
+    const roomId = msg.room_id || "";
+    let roundsHtml = "";
+
     if (history.length > 0) {
-        return history
+        roundsHtml = history
             .map((round) => {
                 const roundNo = Number(round.round) || 0;
                 const letter = String(round.letter || "?");
@@ -612,39 +634,32 @@ function buildGameOverResultsHtml(msg) {
                         variant: "sidebar",
                         allowAppeals: true,
                         roundNumber: roundNo,
-                        roomId: msg.room_id || "",
+                        roomId,
                     },
                 )}`;
             })
             .join("");
+    } else {
+        const roundScores = msg.round_scores && typeof msg.round_scores === "object" ? msg.round_scores : {};
+        if (Object.keys(roundScores).length > 0) {
+            roundsHtml = buildRoundResultsHtml(msg, {
+                variant: "sidebar",
+                allowAppeals: true,
+                roundNumber: msg.current_round || 0,
+                roomId,
+            });
+        }
     }
 
-    const roundScores = msg.round_scores && typeof msg.round_scores === "object" ? msg.round_scores : {};
-    if (Object.keys(roundScores).length > 0) {
-        return buildRoundResultsHtml(msg, {
-            variant: "sidebar",
-            allowAppeals: true,
-            roundNumber: msg.current_round || 0,
-            roomId: msg.room_id || "",
-        });
-    }
+    if (!roundsHtml) return "";
+    return `<section class="game-over-details" aria-labelledby="game-over-details-title"><h4 id="game-over-details-title" class="game-over-details-title">Szczegóły rund i wyjaśnienia</h4>${roundsHtml}</section>`;
+}
 
-    const totals = msg.total_scores && typeof msg.total_scores === "object" ? msg.total_scores : {};
-    const players = Object.keys(totals).sort((a, b) => {
-        const av = typeof totals[a] === "number" ? totals[a] : 0;
-        const bv = typeof totals[b] === "number" ? totals[b] : 0;
-        return bv - av || a.localeCompare(b, "pl");
-    });
-    if (!players.length) return "";
-
-    const viewer = globalThis.myNick || myNick || "";
-    let html = '<div class="game-over-scoreboard"><ol class="share-score-list" aria-label="Wynik końcowy">';
-    for (const player of players) {
-        const pts = typeof totals[player] === "number" ? totals[player] : 0;
-        const meClass = player === viewer ? " game-over-score-row--me" : "";
-        html += `<li class="game-over-score-row${meClass}"><span>${escapeHtml(player)}</span><span class="share-score-pts">${pts} pkt</span></li>`;
-    }
-    return `${html}</ol></div>`;
+function buildGameOverResultsHtml(msg) {
+    const scoreboard = buildGameOverScoreboardHtml(msg);
+    const details = buildGameOverRoundBreakdownHtml(msg);
+    if (scoreboard && details) return `${scoreboard}${details}`;
+    return scoreboard || details;
 }
 
 function clearGameOverResults() {

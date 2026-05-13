@@ -2949,6 +2949,23 @@ body.room-page .room-postgame .restart-card {
     margin: 0;
 }
 
+.game-over-scoreboard {
+    margin-bottom: var(--space-4);
+}
+
+.game-over-details {
+    margin-top: var(--space-5);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--border);
+}
+
+.game-over-details-title {
+    margin: 0 0 var(--space-4);
+    font-size: var(--fs-body);
+    font-weight: 800;
+    color: var(--accent);
+}
+
 .game-over-round-title {
     margin: 0 0 var(--space-2);
     font-weight: 700;
