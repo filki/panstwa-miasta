@@ -72,6 +72,7 @@ def _http_limit_for_bucket(bucket: str) -> int:
     env_map = {
         "api_active": "PM_RATE_HTTP_API_ACTIVE",
         "api_quick_join": "PM_RATE_HTTP_API_QUICK_JOIN",
+        "api_appeals": "PM_RATE_HTTP_API_APPEALS",
         "api_share": "PM_RATE_HTTP_API_SHARE",
         "share_page": "PM_RATE_HTTP_SHARE_PAGE",
         "room_html": "PM_RATE_HTTP_ROOM",
@@ -81,6 +82,7 @@ def _http_limit_for_bucket(bucket: str) -> int:
     defaults = {
         "api_active": 40,
         "api_quick_join": 30,
+        "api_appeals": 40,
         "api_share": 80,
         "share_page": 80,
         "room_html": 120,
@@ -144,6 +146,8 @@ def http_rate_bucket_name(path: str) -> str | None:
         return "api_active"
     if path.startswith("/api/quick-join"):
         return "api_quick_join"
+    if path.startswith("/api/rooms/") and path.endswith("/appeals"):
+        return "api_appeals"
     if path.startswith("/api/share/"):
         return "api_share"
     if path.startswith("/share/"):

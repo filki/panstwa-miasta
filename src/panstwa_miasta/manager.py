@@ -122,6 +122,7 @@ class Room:
         self.results_phase_active = False
         self.veto_votes: dict[str, dict[str, str]] = {}
         self.provisional_round_scores: dict[str, dict] = {}
+        self.round_history: list[dict] = []
 
         # Deck-shuffle: talia liter – każda litera pojawi się raz zanim
         # jakakolwiek się powtórzy. Ostatnie N wylosowanych liter trzymamy
@@ -256,6 +257,7 @@ class Room:
         self.game_over = False
         self.is_playing = False
         self.ready_players = set()
+        self.round_history = []
         # NIE wywołujemy _refill_letter_queue() -- kontynuujemy istniejącą
         # talię, żeby dwie sąsiednie gry w tym samym pokoju używały kolejnych
         # unikalnych liter (do 22 zanim cokolwiek się powtórzy).

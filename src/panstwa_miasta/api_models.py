@@ -53,3 +53,24 @@ class QuickJoinOut(BaseModel):
     created: bool
     max_rounds: int = Field(5, ge=1, le=50)
     time_limit: int = Field(90, ge=10, le=600)
+
+
+class AppealIn(BaseModel):
+    """Odwołanie gracza do własnej odpowiedzi z 0 pkt po zakończeniu gry."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    player_name: str = Field(..., min_length=1, max_length=80)
+    round: int = Field(..., ge=1, le=50)
+    category: str = Field(..., min_length=1, max_length=32)
+
+
+class AppealOut(BaseModel):
+    """Wyjaśnienie regułowe (i ewentualnie propozycja wpisu do słownika)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    reason_code: str = Field(..., max_length=64)
+    message_pl: str = Field(..., max_length=2000)
+    suggested_seed: bool = False
+    suggestion_id: int | None = None
