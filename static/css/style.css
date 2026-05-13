@@ -57,6 +57,7 @@
     /* Layout */
     --nav-h: 56px;
     --container-w: 1200px;
+    --landing-shell-w: 72rem;
     --content-w: 720px;
     --safe-pad-x: clamp(1rem, 4vw, 2rem);
 
@@ -636,14 +637,14 @@ body.landing-page .hero {
 body.landing-page .landing-shell {
     container-type: inline-size;
     container-name: landing-shell;
-    width: min(100%, 28rem);
+    width: min(100%, 32rem);
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     gap: var(--space-5);
     flex: 0 1 auto;
     justify-content: center;
-    padding: var(--space-5);
+    padding: clamp(var(--space-5), 3vw, var(--space-7));
     border-radius: calc(var(--r-xl) + 2px);
     border: 1px solid rgba(255, 255, 255, 0.75);
     background: rgba(255, 255, 255, 0.88);
@@ -808,11 +809,16 @@ body.landing-page .landing-guide-carousel--gartic .landing-guide-carousel-title 
 
 body.landing-page .landing-guide-carousel-footer {
     display: flex;
-    align-items: center;
     justify-content: center;
-    gap: var(--space-2);
     margin-top: auto;
     padding-top: var(--space-2);
+}
+
+body.landing-page .landing-guide-carousel-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    max-width: 100%;
 }
 
 body.landing-page .landing-guide-carousel--gartic .landing-guide-carousel-viewport {
@@ -876,13 +882,17 @@ body.landing-page .landing-guide-carousel-controls {
 }
 
 body.landing-page .landing-guide-carousel-nav {
-    min-width: 2.5rem;
-    min-height: 2.5rem;
+    flex: 0 0 auto;
+    width: 1.5rem;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    min-height: 1.5rem;
     padding: 0;
     border-radius: 999px;
-    border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.9);
-    font-size: 1.35rem;
+    border: 1px solid rgba(14, 165, 233, 0.22);
+    background: rgba(255, 255, 255, 0.92);
+    color: rgba(15, 23, 42, 0.62);
+    font-size: 0.95rem;
     line-height: 1;
 }
 
@@ -951,14 +961,18 @@ body.landing-page .landing-guide-carousel-lede {
 }
 
 body.landing-page .landing-guide-carousel-dots {
-    display: flex;
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
-    gap: var(--space-2);
+    flex: 0 1 auto;
+    gap: 0.35rem;
+    min-width: 0;
 }
 
 body.landing-page .landing-guide-carousel-dot {
-    width: 0.55rem;
-    height: 0.55rem;
+    flex: 0 0 auto;
+    width: 0.5rem;
+    height: 0.5rem;
     padding: 0;
     border-radius: 999px;
     border: none;
@@ -1308,12 +1322,12 @@ body.landing-page .site-footer-meta {
     body.landing-page .landing-shell {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
-        width: 100%;
-        max-width: var(--container-w);
+        width: min(100%, var(--landing-shell-w));
+        max-width: var(--landing-shell-w);
         min-height: auto;
-        padding: clamp(var(--space-6), 2.5vw, var(--space-10));
+        padding: clamp(var(--space-7), 3vw, var(--space-10));
         flex: 1 1 auto;
-        gap: clamp(var(--space-5), 2vw, var(--space-8));
+        gap: clamp(var(--space-6), 2.5vw, var(--space-10));
     }
 
     body.landing-page .landing-shell-header {
@@ -1332,8 +1346,8 @@ body.landing-page .site-footer-meta {
 
     body.landing-page .landing-grid {
         display: grid;
-        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
-        gap: clamp(var(--space-5), 2vw, var(--space-7));
+        grid-template-columns: minmax(0, 1.05fr) minmax(18rem, 0.95fr);
+        gap: clamp(var(--space-6), 3vw, var(--space-10));
         align-items: stretch;
     }
 
@@ -1357,8 +1371,8 @@ body.landing-page .site-footer-meta {
     }
 
     body.landing-page .landing-guide-carousel--gartic .landing-guide-carousel-panel {
-        min-height: 20rem;
-        padding: var(--space-4);
+        min-height: 18rem;
+        padding: clamp(var(--space-4), 2vw, var(--space-6));
         border-radius: calc(var(--r-lg) + 4px);
         border: 1px solid rgba(255, 255, 255, 0.72);
         background: rgba(255, 255, 255, 0.58);
@@ -1368,24 +1382,12 @@ body.landing-page .site-footer-meta {
 
     body.landing-page .landing-guide-carousel--gartic .landing-guide-carousel-viewport,
     body.landing-page .landing-guide-carousel--gartic .landing-guide-carousel-slide {
-        min-height: 16rem;
+        min-height: 14rem;
     }
 
-    body.landing-page .landing-guide-carousel-footer .landing-guide-carousel-dots {
-        flex: 0 1 auto;
-        max-width: 12rem;
-    }
-
-    body.landing-page .landing-guide-carousel-footer .landing-guide-carousel-nav {
-        flex: 0 0 auto;
-        border-color: transparent;
-        background: transparent;
-        color: rgba(15, 23, 42, 0.45);
-        box-shadow: none;
-    }
-
-    body.landing-page .landing-guide-carousel-footer .landing-guide-carousel-nav:hover:not(:disabled) {
+    body.landing-page .landing-guide-carousel-nav:hover:not(:disabled) {
         color: var(--accent);
+        border-color: rgba(14, 165, 233, 0.35);
         background: rgba(14, 165, 233, 0.08);
     }
 
@@ -1541,8 +1543,8 @@ body.landing-page .site-footer-meta {
         display: grid;
         grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr);
         gap: var(--space-4);
-        width: min(100%, 44rem);
-        margin-inline: auto;
+        width: 100%;
+        margin-inline: 0;
     }
 
     body.landing-page button.choice-card--create {
@@ -1609,6 +1611,7 @@ body.landing-page .site-footer-meta {
     }
 
     body.landing-page .landing-shell {
+        width: min(100%, 42rem);
         padding: var(--space-6);
     }
 }
