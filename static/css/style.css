@@ -2689,6 +2689,18 @@ body.room-phase-results .room-stage {
 .lobby-roster {
     display: grid;
     gap: var(--space-2);
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+}
+
+.lobby-roster-item--empty {
+    justify-content: center;
+    border-style: dashed;
+    background: rgba(255, 255, 255, 0.55);
+}
+
+.lobby-roster-empty-slot {
+    color: var(--text-muted);
+    font-size: 0.95rem;
 }
 
 .lobby-roster-empty {

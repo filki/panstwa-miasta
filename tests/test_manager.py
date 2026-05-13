@@ -141,8 +141,9 @@ async def test_manager_connect():
     panstwa_miasta.manager.save_room = AsyncMock()
     panstwa_miasta.manager.save_player_score = AsyncMock()
 
-    success = await manager.connect(ws, "room1", "player1", 5, 90)
+    success, reason = await manager.connect(ws, "room1", "player1", 5, 90)
     assert success is True
+    assert reason is None
     assert "room1" in manager.rooms
     assert manager.rooms["room1"].host_name == "player1"
     assert "player1" in manager.rooms["room1"].connections
@@ -303,8 +304,9 @@ async def test_connect_restores_room_snapshot_from_sqlite(monkeypatch):
 
     manager = ConnectionManager()
     ws = AsyncMock(spec=WebSocket)
-    ok = await manager.connect(ws, rid, "A", 5, 90, "public")
+    ok, reason = await manager.connect(ws, rid, "A", 5, 90, "public")
     assert ok is True
+    assert reason is None
     room = manager.rooms[rid]
     assert room.max_rounds == 9
     assert room.time_limit == 120
@@ -581,3 +583,51 @@ async def test_lobby_idle_canceled_when_round_starts(monkeypatch):
     assert rid in manager.rooms
     manager.cancel_delayed_room_delete(rid)
     await dbmod.delete_room(rid)
+
+
+@pytest.mark.asyncio
+async def test_connect_rejects_ninth_player(monkeypatch):
+    import panstwa_miasta.manager as mod
+
+    monkeypatch.setattr(mod, "save_room", AsyncMock())
+    monkeypatch.setattr(mod, "save_player_score", AsyncMock())
+
+    manager = ConnectionManager()
+    rid = "room_full"
+    for i in range(8):
+        ws = AsyncMock(spec=WebSocket)
+        ok, reason = await manager.connect(ws, rid, f"p{i}", 5, 90)
+        assert ok is True
+        assert reason is None
+
+    ws9 = AsyncMock(spec=WebSocket)
+    ok9, reason9 = await manager.connect(ws9, rid, "p9", 5, 90)
+    assert ok9 is False
+    assert reason9 == "room_full"
+
+
+@pytest.mark.asyncio
+async def test_connect_reconnect_same_nick_when_room_full(monkeypatch):
+    import panstwa_miasta.manager as mod
+
+    monkeypatch.setattr(mod, "save_room", AsyncMock())
+    monkeypatch.setattr(mod, "save_player_score", AsyncMock())
+
+    manager = ConnectionManager()
+    rid = "room_rejoin_full"
+    for i in range(8):
+        ws = AsyncMock(spec=WebSocket)
+        await manager.connect(ws, rid, f"p{i}", 5, 90)
+
+    ws_rejoin = AsyncMock(spec=WebSocket)
+    ok, reason = await manager.connect(ws_rejoin, rid, "p3", 5, 90)
+    assert ok is True
+    assert reason is None
+
+
+def test_room_listed_in_active_lobby_hides_full_room():
+    from panstwa_miasta.manager import Room, room_listed_in_active_lobby
+
+    room = Room("full", 5, 90, visibility="public")
+    room.connections = {f"p{i}": AsyncMock() for i in range(8)}
+    assert room_listed_in_active_lobby(room) is False

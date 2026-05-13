@@ -400,12 +400,18 @@ async def websocket_endpoint(
         f"rounds={rounds}, limit={limit}, visibility={visibility}"
     )
     client_ip = client_ip_from_websocket(websocket)
-    success = await manager.connect(
+    success, reject_reason = await manager.connect(
         websocket, room_id, client_name, rounds, limit, visibility, client_ip=client_ip
     )
     if not success:
-        logger.warning(f"Connection rejected for {client_name} in room {room_id}")
-        await websocket.close(code=1008)
+        logger.warning(
+            "Connection rejected for %s in room %s (%s)",
+            client_name,
+            room_id,
+            reject_reason,
+        )
+        close_code = 4408 if reject_reason == "room_full" else 1008
+        await websocket.close(code=close_code)
         return
 
     room = manager.rooms.get(room_id)

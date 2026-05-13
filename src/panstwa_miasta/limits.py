@@ -56,6 +56,10 @@ def max_rooms_cap() -> int:
     return _parse_positive_int(os.environ.get("PM_MAX_ROOMS"), 512, upper=100_000)
 
 
+def max_players_per_room() -> int:
+    return _parse_positive_int(os.environ.get("PM_MAX_PLAYERS_PER_ROOM"), 8, upper=64)
+
+
 def ws_new_rooms_per_ip_per_min() -> int:
     return _parse_positive_int(os.environ.get("PM_WS_NEW_ROOMS_PER_IP_PER_MIN"), 24, upper=5000)
 

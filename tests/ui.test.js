@@ -432,14 +432,16 @@ describe('room phase helpers', () => {
         expect(document.getElementById('game-layout').hidden).toBe(true);
     });
 
-    test('renderLobbyRoster shows ready badges', () => {
+    test('renderLobbyRoster shows ready badges and eight slots', () => {
         document.body.innerHTML = '<div id="lobby-roster"></div><span id="lobby-player-count"></span>';
         renderLobbyRoster({ Anna: 0, Bob: 0 }, 'Anna', new Set(['Bob']), 'Anna');
         const roster = document.getElementById('lobby-roster');
         expect(roster.textContent).toContain('Anna');
         expect(roster.textContent).toContain('Gotowy');
         expect(roster.textContent).toContain('Czeka');
-        expect(document.getElementById('lobby-player-count').textContent).toContain('1/2');
+        expect(roster.querySelectorAll('.lobby-roster-item').length).toBe(8);
+        expect(roster.querySelectorAll('.lobby-roster-item--empty').length).toBe(6);
+        expect(document.getElementById('lobby-player-count').textContent).toContain('2/8');
     });
 });
 

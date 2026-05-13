@@ -24,8 +24,11 @@ async def test_max_rooms_rejects_new_room_when_cap_reached(monkeypatch):
     mgr = ConnectionManager()
     ws1 = AsyncMock(spec=WebSocket)
     ws2 = AsyncMock(spec=WebSocket)
-    assert await mgr.connect(ws1, "room_a", "p1", 5, 90, client_ip="10.0.0.1") is True
-    assert await mgr.connect(ws2, "room_b", "p2", 5, 90, client_ip="10.0.0.1") is False
+    ok1, _ = await mgr.connect(ws1, "room_a", "p1", 5, 90, client_ip="10.0.0.1")
+    ok2, reason2 = await mgr.connect(ws2, "room_b", "p2", 5, 90, client_ip="10.0.0.1")
+    assert ok1 is True
+    assert ok2 is False
+    assert reason2 == "max_rooms"
 
 
 @pytest.mark.asyncio
@@ -42,10 +45,12 @@ async def test_ws_new_rooms_per_ip_rate_limit(monkeypatch):
     ip = "192.0.2.50"
     for i in range(2):
         ws = AsyncMock(spec=WebSocket)
-        ok = await mgr.connect(ws, f"nr{i}", f"player{i}", 5, 90, client_ip=ip)
+        ok, _ = await mgr.connect(ws, f"nr{i}", f"player{i}", 5, 90, client_ip=ip)
         assert ok is True
     ws3 = AsyncMock(spec=WebSocket)
-    assert await mgr.connect(ws3, "nr_fail", "p3", 5, 90, client_ip=ip) is False
+    ok3, reason3 = await mgr.connect(ws3, "nr_fail", "p3", 5, 90, client_ip=ip)
+    assert ok3 is False
+    assert reason3 == "rate_limited"
 
 
 @pytest.mark.asyncio
@@ -62,8 +67,10 @@ async def test_same_ip_can_join_second_player_in_existing_room(monkeypatch):
     ip = "192.0.2.51"
     ws1 = AsyncMock(spec=WebSocket)
     ws2 = AsyncMock(spec=WebSocket)
-    assert await mgr.connect(ws1, "shared", "host", 5, 90, client_ip=ip) is True
-    assert await mgr.connect(ws2, "shared", "guest", 5, 90, client_ip=ip) is True
+    ok1, _ = await mgr.connect(ws1, "shared", "host", 5, 90, client_ip=ip)
+    ok2, _ = await mgr.connect(ws2, "shared", "guest", 5, 90, client_ip=ip)
+    assert ok1 is True
+    assert ok2 is True
 
 
 def test_http_root_returns_429_when_over_limit(monkeypatch):

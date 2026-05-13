@@ -16,7 +16,12 @@ from .db import (
     save_player_score,
     save_room,
 )
-from .limits import check_ws_before_connect, max_rooms_cap, record_ws_connect_ok
+from .limits import (
+    check_ws_before_connect,
+    max_players_per_room,
+    max_rooms_cap,
+    record_ws_connect_ok,
+)
 
 # Logger import
 from .logger import get_logger
@@ -35,6 +40,8 @@ HOST_REASSIGN_GRACE_SECONDS = 5.0
 def room_listed_in_active_lobby(room: "Room") -> bool:
     """Whether a public room should appear on the landing active-rooms list."""
     if not room.connections or room.visibility != "public" or room.game_over:
+        return False
+    if len(room.connections) >= max_players_per_room():
         return False
     return not (
         room.max_rounds > 0 and room.current_round >= room.max_rounds and not room.is_playing
@@ -537,7 +544,7 @@ class ConnectionManager:
         time_limit: int,
         visibility: str = "public",
         client_ip: str = "unknown",
-    ) -> bool:
+    ) -> tuple[bool, str | None]:
         logger.info(
             f"Attempting connection: room_id={room_id}, client_name={client_name}, "
             f"max_rounds={max_rounds}, time_limit={time_limit}, visibility={visibility}"
@@ -545,7 +552,7 @@ class ConnectionManager:
 
         if not client_name or not client_name.strip():
             logger.warning(f"Rejected connection: empty client_name in room {room_id}")
-            return False
+            return False, "empty_name"
 
         is_new_room = room_id not in self.rooms
         if is_new_room and len(self.rooms) >= max_rooms_cap():
@@ -554,7 +561,7 @@ class ConnectionManager:
                 max_rooms_cap(),
                 room_id,
             )
-            return False
+            return False, "max_rooms"
         if not await check_ws_before_connect(client_ip, is_new_room=is_new_room):
             logger.warning(
                 "Rejected connection: WS rate limit (ip=%s, new_room=%s, room=%s)",
@@ -562,7 +569,7 @@ class ConnectionManager:
                 is_new_room,
                 room_id,
             )
-            return False
+            return False, "rate_limited"
 
         self.cancel_delayed_room_delete(room_id)
 
@@ -601,6 +608,14 @@ class ConnectionManager:
                 )
 
         room = self.rooms[room_id]
+
+        if client_name not in room.connections and len(room.connections) >= max_players_per_room():
+            logger.warning(
+                "Rejected connection: room %s full (%s players)",
+                room_id,
+                len(room.connections),
+            )
+            return False, "room_full"
 
         # If a player joins with an existing nickname, close previous connection
         if client_name in room.connections:
@@ -652,7 +667,7 @@ class ConnectionManager:
 
         self.touch_lobby_idle(room, reset=False)
 
-        return True
+        return True, None
 
     async def load_from_db(self):
         """Ładuje aktywne pokoje i wyniki z bazy danych przy starcie"""

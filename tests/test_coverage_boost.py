@@ -49,13 +49,15 @@ async def test_manager_edge_cases():
     ws = AsyncMock()
 
     # Test empty name rejection
-    success = await manager.connect(ws, "room1", "  ", 5, 90)
+    success, reason = await manager.connect(ws, "room1", "  ", 5, 90)
     assert success is False
+    assert reason == "empty_name"
 
     # Test duplicate name reconnection (it should replace the old connection)
     await manager.connect(ws, "room2", "Player", 5, 90)
-    success2 = await manager.connect(ws, "room2", "Player", 5, 90)
+    success2, reason2 = await manager.connect(ws, "room2", "Player", 5, 90)
     assert success2 is True
+    assert reason2 is None
 
     # Test disconnect non-existent
     manager.disconnect("room_none", "player_none")  # Should not raise

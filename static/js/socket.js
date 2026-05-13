@@ -193,6 +193,14 @@ function connect() {
             safeNavigateHome();
             return;
         }
+        if (e.code === 4408) {
+            alert('Pokój pełny — w tym pokoju może być maksymalnie 8 graczy.');
+            const inlineJoin = document.getElementById('room-inline-join');
+            const chatSection = document.getElementById('chat-section');
+            if (inlineJoin) inlineJoin.style.display = 'block';
+            if (chatSection) chatSection.style.display = 'none';
+            return;
+        }
         if (e.code === 1008) {
             alert('Nick jest już zajęty lub nieprawidłowy!');
             const inlineJoin = document.getElementById('room-inline-join');

@@ -446,6 +446,8 @@ function createLobbyAvatar(name, viewerNick = '') {
     return img;
 }
 
+const MAX_LOBBY_SLOTS = 8;
+
 function renderLobbyRoster(scores = {}, hostName = '', readyPlayers = new Set(), viewerNick = '') {
     const roster = document.getElementById('lobby-roster');
     if (!roster) return;
@@ -455,24 +457,27 @@ function renderLobbyRoster(scores = {}, hostName = '', readyPlayers = new Set(),
     const countEl = document.getElementById('lobby-player-count');
     if (countEl) {
         if (names.length === 0) {
-            countEl.textContent = '';
+            countEl.textContent = `0/${MAX_LOBBY_SLOTS}`;
         } else {
             const readyCount = names.filter((name) => readyPlayers.has(name)).length;
-            countEl.textContent = `· ${readyCount}/${names.length} gotowych`;
+            countEl.textContent = `${names.length}/${MAX_LOBBY_SLOTS} · ${readyCount} gotowych`;
         }
     }
 
-    if (names.length === 0) {
-        const empty = document.createElement('p');
-        empty.className = 'lobby-roster-empty';
-        empty.textContent = 'Czekamy na graczy…';
-        roster.appendChild(empty);
-        return;
-    }
-
-    names.forEach((name) => {
+    const slots = Array.from({ length: MAX_LOBBY_SLOTS }, (_, index) => names[index] || null);
+    slots.forEach((name) => {
         const row = document.createElement('div');
         row.className = 'lobby-roster-item';
+        if (!name) {
+            row.classList.add('lobby-roster-item--empty');
+            const placeholder = document.createElement('span');
+            placeholder.className = 'lobby-roster-empty-slot';
+            placeholder.textContent = 'Wolne';
+            row.appendChild(placeholder);
+            roster.appendChild(row);
+            return;
+        }
+
         if (hostName && name === hostName) row.classList.add('is-host');
 
         const nameSpan = document.createElement('span');
