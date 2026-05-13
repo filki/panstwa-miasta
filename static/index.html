@@ -7,9 +7,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="description" content="Państwa-Miasta w kilka sekund na telefonie — bez kont, gra w przeglądarce ze znajomymi. Słowniki sprawdzane na serwerze, offline, bez śledzenia odpowiedzi w sieci.">
+    <meta name="description" content="Państwa-Miasta online — gra w przeglądarce ze znajomymi, bez konta.">
     <link rel="manifest" href="/manifest.json">
-    <title>Państwa-Miasta — gra online, szybki start</title>
+    <title>Państwa-Miasta</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
@@ -24,35 +24,7 @@
     </nav>
 
     <main class="page-wrapper">
-        <header class="hero hero--with-aside">
-            <div class="hero-aside-wrap">
-                <div class="hero-content">
-                    <h1 class="hero-title">Państwa-Miasta w <span>5 sekund</span>.</h1>
-                    <p class="hero-subtitle">Bez kont — wybierz pokój i graj. Pseudonim ustawisz przed startem.</p>
-                    <ul class="hero-trust-pills" aria-label="Dlaczego warto">
-                        <li class="hero-trust-pill">5-sekundowy start</li>
-                        <li class="hero-trust-pill">Lokalne słowniki</li>
-                        <li class="hero-trust-pill">Bez logowania</li>
-                    </ul>
-                </div>
-
-                <aside class="landing-discovery" aria-labelledby="landing-discovery-title">
-                    <h2 id="landing-discovery-title" class="landing-discovery-title">Jak wygląda runda?</h2>
-                    <ol class="landing-flow">
-                        <li><span class="landing-flow-step">1</span><span><strong>Gotowość</strong> — wszyscy klikają paluszka.</span></li>
-                        <li><span class="landing-flow-step">2</span><span><strong>Losowanie</strong> — jedna litera dla całej tabeli.</span></li>
-                        <li><span class="landing-flow-step">3</span><span><strong>STOP</strong> — wysyłasz odpowiedzi, gdy skończysz.</span></li>
-                        <li><span class="landing-flow-step">4</span><span><strong>Punkty</strong> — serwer porównuje odpowiedzi i sumuje wynik.</span></li>
-                    </ol>
-                    <div class="landing-score-row" aria-label="System punktacji">
-                        <span class="score-chip score-chip--15">15 unikat</span>
-                        <span class="score-chip score-chip--10">10 powtórka</span>
-                        <span class="score-chip score-chip--5">5 z listy</span>
-                        <span class="score-chip score-chip--0">0 pusto</span>
-                    </div>
-                </aside>
-            </div>
-
+        <header class="hero">
             <section id="lobby" class="lobby-section start-panel">
                 <div id="join-section" class="join-card">
                     <div id="buttons-grid" class="choice-cards">
@@ -60,7 +32,7 @@
                             <span class="choice-icon" aria-hidden="true">✨</span>
                             <span class="choice-content">
                                 <span class="choice-title">Stwórz pokój</span>
-                                <span class="choice-desc">Zostań hostem i ustaw zasady.</span>
+                                <span class="choice-desc">Ustaw zasady i zostań hostem.</span>
                             </span>
                         </button>
                         <button type="button" class="choice-card" onclick="showJoinModal()" aria-label="Dołącz do istniejącego pokoju">
@@ -73,7 +45,7 @@
                     </div>
 
                     <div id="active-rooms-section" class="active-rooms-block" style="display: none;">
-                        <h3 class="active-rooms-title">🔥 Aktywne pokoje</h3>
+                        <h3 class="active-rooms-title">Aktywne pokoje</h3>
                         <div class="table-container">
                             <table class="rooms-table">
                                 <thead>
@@ -94,46 +66,6 @@
                 </div>
             </section>
         </header>
-
-        <div class="landing-below" id="marketing">
-            <div class="container">
-            <section class="landing-categories" aria-labelledby="landing-categories-title">
-                <h2 id="landing-categories-title" class="landing-section-title">7 kategorii w każdej rundzie</h2>
-                <p class="landing-section-lead">Tyle samo pól co w klasycznej tabelce — bez rozwadniania gry o dziesiątki kolumn z encyklopedii.</p>
-                <ul class="landing-category-chips">
-                    <li>Państwo</li>
-                    <li>Miasto</li>
-                    <li>Rzecz</li>
-                    <li>Zwierzę</li>
-                    <li>Roślina</li>
-                    <li>Imię</li>
-                    <li>Zawód</li>
-                </ul>
-            </section>
-            <section id="features" class="features-grid">
-                <div class="feature-item">
-                    <div class="feature-icon">🔤</div>
-                    <h3>Talia liter</h3>
-                    <p>22 litery z polskiej talii — bez Q, V i X. W jednym cyklu każda wypada raz, zanim serwer tasuje od nowa.</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">⚡</div>
-                    <h3>Real-Time</h3>
-                    <p>Błyskawiczna synchronizacja dzięki WebSockets.</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">🛡️</div>
-                    <h3>Fair Play</h3>
-                    <p>Walidacja odpowiedzi z lokalnych list na serwerze — uczciwa punktacja bez „zgadywania z internetem” w locie.</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">📱</div>
-                    <h3>Mobile First</h3>
-                    <p>Działa wygodnie na każdym urządzeniu.</p>
-                </div>
-            </section>
-            </div>
-        </div>
     </main>
 
     <!-- MODALS -->
@@ -152,7 +84,7 @@
             </div>
             <div class="modal-btns">
                 <button class="secondary" onclick="hideModals()">Anuluj</button>
-                <button onclick="connect()">Start 🚀</button>
+                <button onclick="connect()">Start</button>
             </div>
         </div>
     </div>
@@ -196,7 +128,7 @@
             </div>
             <div class="modal-btns">
                 <button class="secondary" onclick="hideModals()">Anuluj</button>
-                <button onclick="connect()">Stwórz 🔥</button>
+                <button onclick="connect()">Stwórz</button>
             </div>
         </div>
     </div>
@@ -207,7 +139,7 @@
         </div>
     </div>
 
-    <button type="button" id="btn-leave" onclick="location.href = '/'" class="danger" style="display: none;">🚪 Wyjdź</button>
+    <button type="button" id="btn-leave" onclick="location.href = '/'" class="danger" style="display: none;">Wyjdź</button>
 
     <!-- SITE_FOOTER -->
 
@@ -217,7 +149,6 @@
     <script src="/static/js/game.js"></script>
     <script src="/static/js/socket.js"></script>
     <script>
-        // Disable service worker on local dev to avoid stale assets while iterating.
         const isLocalDev = ['localhost', '127.0.0.1'].includes(location.hostname)
             || location.hostname.endsWith('.ngrok-free.dev');
         if ('serviceWorker' in navigator) {

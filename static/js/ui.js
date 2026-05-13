@@ -127,23 +127,8 @@ function syncLandingScrollLock() {
 
     const roomsOpen =
         document.getElementById('active-rooms-section')?.style.display !== 'none';
-    const marketingOpen = body.classList.contains('landing-marketing-open');
 
-    body.classList.toggle('landing-scrollable', Boolean(roomsOpen || marketingOpen));
-}
-
-function toggleLandingMarketing(event) {
-    if (event) event.preventDefault();
-
-    const body = document.body;
-    if (!body.classList.contains('landing-page')) return;
-
-    body.classList.toggle('landing-marketing-open');
-    syncLandingScrollLock();
-
-    if (body.classList.contains('landing-marketing-open')) {
-        document.getElementById('marketing')?.scrollIntoView({ behavior: 'smooth' });
-    }
+    body.classList.toggle('landing-scrollable', Boolean(roomsOpen));
 }
 
 function addLog(content, className = '') {
@@ -400,10 +385,6 @@ globalThis.window.onload = () => {
         loadActiveRooms();
         setInterval(loadActiveRooms, 10000);
     }
-    if (document.body.classList.contains('landing-page') && location.hash === '#features') {
-        document.body.classList.add('landing-marketing-open');
-        syncLandingScrollLock();
-    }
     bindChatEnter();
     bindCategoryEnter();
 };
@@ -418,7 +399,6 @@ globalThis.generatePlayerNickname = generatePlayerNickname;
 globalThis.rerollPlayerNickname = rerollPlayerNickname;
 globalThis.getResolvedNickname = getResolvedNickname;
 globalThis.persistNickname = persistNickname;
-globalThis.toggleLandingMarketing = toggleLandingMarketing;
 globalThis.loadActiveRooms = loadActiveRooms;
 globalThis.addLog = addLog;
 globalThis.updateScoreboard = updateScoreboard;
@@ -439,7 +419,6 @@ if (typeof module !== 'undefined') {
         getResolvedNickname,
         persistNickname,
         preparePlayNickname,
-        toggleLandingMarketing,
         syncLandingScrollLock,
         addLog,
         updateScoreboard,

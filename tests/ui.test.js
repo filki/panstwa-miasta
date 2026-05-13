@@ -12,7 +12,6 @@ const {
     showCreateModal,
     hideModals,
     focusStartPanel,
-    toggleLandingMarketing,
     syncLandingScrollLock,
     addLog,
     updateScoreboard,
@@ -158,18 +157,11 @@ describe('modal helpers', () => {
         expect(lobby.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'nearest' });
     });
 
-    test('toggleLandingMarketing reveals marketing and unlocks landing scroll', () => {
+    test('syncLandingScrollLock enables scroll when active rooms are visible', () => {
         document.body.className = 'landing-page';
-        document.body.innerHTML = '<div id="marketing"></div>';
-        const marketing = document.getElementById('marketing');
-        marketing.scrollIntoView = jest.fn();
-        const event = { preventDefault: jest.fn() };
-
-        toggleLandingMarketing(event);
-        expect(event.preventDefault).toHaveBeenCalled();
-        expect(document.body.classList.contains('landing-marketing-open')).toBe(true);
+        document.body.innerHTML = '<div id="active-rooms-section" style="display: block;"></div>';
+        syncLandingScrollLock();
         expect(document.body.classList.contains('landing-scrollable')).toBe(true);
-        expect(marketing.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
     });
 });
 
