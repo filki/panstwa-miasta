@@ -31,6 +31,7 @@ from .handlers import (
     handle_ready,
     handle_restart_game,
     handle_stop,
+    score_update_payload,
 )
 from .limits import (
     check_http_rate_limit,
@@ -278,9 +279,7 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
     await room.broadcast(
         json.dumps({"type": "system", "message": f"{client_name} dołączył do gry"})
     )
-    await room.broadcast(
-        json.dumps({"type": "score_update", "scores": room.scores, "host_name": room.host_name})
-    )
+    await room.broadcast(json.dumps(score_update_payload(room)))
 
     if room.is_playing:
         await websocket.send_text(
@@ -397,7 +396,5 @@ async def websocket_endpoint(
         await room.broadcast(
             json.dumps({"type": "system", "message": f"{client_name} opuścił grę"})
         )
-        await room.broadcast(
-            json.dumps({"type": "score_update", "scores": room.scores, "host_name": room.host_name})
-        )
+        await room.broadcast(json.dumps(score_update_payload(room)))
         logger.info(f"Notified room {room_id} about departure of '{client_name}'")

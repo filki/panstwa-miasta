@@ -12,8 +12,13 @@ const {
     showCreateModal,
     hideModals,
     focusStartPanel,
-    toggleLandingMarketing,
     syncLandingScrollLock,
+    syncRoomCodeInputs,
+    initLandingGuideCarousel,
+    connectFromLandingJoin,
+    preparePlayNickname,
+    setRoomPhase,
+    renderLobbyRoster,
     addLog,
     updateScoreboard,
     sendChat,
@@ -38,12 +43,18 @@ const baseDom = () => `
     <input id="nickname" />
     <input id="nickname_join" />
     <input id="room_id" />
+    <input id="landing_room_code" />
+    <input id="landing_nickname" />
     <select id="max_rounds"><option value="3">3</option><option value="5">5</option><option value="10">10</option><option value="22">22</option></select>
     <select id="time_limit"><option value="60">60</option><option value="90">90</option><option value="120">120</option></select>
     <select id="room_visibility"><option value="public">public</option><option value="private">private</option></select>
     <input id="message-input" />
-    <div id="active-rooms-section"></div>
-    <table><tbody id="rooms-list"></tbody></table>
+    <div id="active-rooms-section">
+        <div id="active-rooms-empty"></div>
+        <div id="active-rooms-table-wrap" hidden>
+            <table><tbody id="rooms-list"></tbody></table>
+        </div>
+    </div>
 `;
 
 beforeEach(() => {
@@ -158,18 +169,12 @@ describe('modal helpers', () => {
         expect(lobby.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'nearest' });
     });
 
-    test('toggleLandingMarketing reveals marketing and unlocks landing scroll', () => {
+    test('syncLandingScrollLock enables scroll when active rooms table is visible', () => {
         document.body.className = 'landing-page';
-        document.body.innerHTML = '<div id="marketing"></div>';
-        const marketing = document.getElementById('marketing');
-        marketing.scrollIntoView = jest.fn();
-        const event = { preventDefault: jest.fn() };
-
-        toggleLandingMarketing(event);
-        expect(event.preventDefault).toHaveBeenCalled();
-        expect(document.body.classList.contains('landing-marketing-open')).toBe(true);
+        document.body.innerHTML = '<div id="active-rooms-table-wrap"></div>';
+        document.getElementById('active-rooms-table-wrap').hidden = false;
+        syncLandingScrollLock();
         expect(document.body.classList.contains('landing-scrollable')).toBe(true);
-        expect(marketing.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
     });
 });
 
@@ -234,6 +239,7 @@ describe('buildRoomRow', () => {
 
 describe('renderActiveRooms', () => {
     test('shows the section and appends a row per room', () => {
+        document.body.className = 'landing-page';
         renderActiveRooms([
             {
                 id: '1',
@@ -254,21 +260,27 @@ describe('renderActiveRooms', () => {
                 visibility_label: 'Publiczny',
             },
         ]);
-        expect(document.getElementById('active-rooms-section').style.display).toBe('block');
+        expect(document.getElementById('active-rooms-section').hidden).toBe(false);
+        expect(document.getElementById('active-rooms-table-wrap').hidden).toBe(false);
+        expect(document.getElementById('active-rooms-empty').hidden).toBe(true);
+        expect(document.body.classList.contains('landing-scrollable')).toBe(true);
         const rows = document.querySelectorAll('#rooms-list tr');
         expect(rows).toHaveLength(2);
     });
 
-    test('hides the section when there are no rooms', () => {
+    test('shows empty state when there are no rooms', () => {
         renderActiveRooms([]);
-        expect(document.getElementById('active-rooms-section').style.display).toBe('none');
+        expect(document.getElementById('active-rooms-section').hidden).toBe(false);
+        expect(document.getElementById('active-rooms-empty').hidden).toBe(false);
+        expect(document.getElementById('active-rooms-table-wrap').hidden).toBe(true);
+        expect(document.body.classList.contains('landing-scrollable')).toBe(false);
     });
 
-    test('hides the section when input is null/undefined', () => {
+    test('shows empty state when input is null/undefined', () => {
         renderActiveRooms(null);
-        expect(document.getElementById('active-rooms-section').style.display).toBe('none');
+        expect(document.getElementById('active-rooms-empty').hidden).toBe(false);
         renderActiveRooms(undefined);
-        expect(document.getElementById('active-rooms-section').style.display).toBe('none');
+        expect(document.getElementById('active-rooms-table-wrap').hidden).toBe(true);
     });
 });
 
@@ -294,13 +306,15 @@ describe('loadActiveRooms', () => {
         await loadActiveRooms();
         expect(global.fetch).toHaveBeenCalledWith('/api/active-rooms');
         expect(document.getElementById('rooms-list').innerHTML).toContain('1234');
-        expect(document.getElementById('active-rooms-section').style.display).toBe('block');
+        expect(document.getElementById('active-rooms-table-wrap').hidden).toBe(false);
+        expect(document.getElementById('active-rooms-empty').hidden).toBe(true);
     });
 
-    test('hides the section when the API returns an empty list', async () => {
+    test('shows empty state when the API returns an empty list', async () => {
         global.fetch = jest.fn(() => Promise.resolve({ json: () => Promise.resolve([]) }));
         await loadActiveRooms();
-        expect(document.getElementById('active-rooms-section').style.display).toBe('none');
+        expect(document.getElementById('active-rooms-empty').hidden).toBe(false);
+        expect(document.getElementById('active-rooms-table-wrap').hidden).toBe(true);
     });
 
     test('logs an error and does not throw on fetch failure', async () => {
@@ -312,10 +326,95 @@ describe('loadActiveRooms', () => {
     });
 });
 
+describe('landing guide carousel', () => {
+    const carouselDom = () => `
+        ${baseDom()}
+        <section class="landing-guide-carousel">
+            <div class="landing-guide-carousel-track" id="landing-guide-carousel-track">
+                <article class="landing-guide-carousel-slide">
+                    <h3 class="landing-guide-carousel-slide-title">Kroki</h3>
+                </article>
+                <article class="landing-guide-carousel-slide">
+                    <h3 class="landing-guide-carousel-slide-title">Kategorie</h3>
+                </article>
+            </div>
+            <div class="landing-guide-carousel-dots" id="landing-guide-carousel-dots"></div>
+            <p id="landing-guide-carousel-live" class="visually-hidden"></p>
+            <button type="button" data-carousel-dir="next">next</button>
+        </section>
+    `;
+
+    test('initLandingGuideCarousel activates the first slide and dots', () => {
+        document.body.innerHTML = carouselDom();
+        initLandingGuideCarousel();
+        const track = document.getElementById('landing-guide-carousel-track');
+        expect(track.style.transform).toBe('translateX(-0%)');
+        const dots = document.querySelectorAll('.landing-guide-carousel-dot');
+        expect(dots).toHaveLength(2);
+        expect(dots[0].getAttribute('aria-selected')).toBe('true');
+    });
+
+    test('carousel next button advances slides', () => {
+        document.body.innerHTML = carouselDom();
+        initLandingGuideCarousel();
+        document.querySelector('[data-carousel-dir="next"]').click();
+        expect(document.getElementById('landing-guide-carousel-track').style.transform).toBe('translateX(-100%)');
+    });
+});
+
+describe('landing quick join nickname', () => {
+    test('connectFromLandingJoin prepares nickname before connect', () => {
+        globalThis.connect = jest.fn();
+        document.getElementById('landing_nickname').value = 'Zosia';
+        document.getElementById('landing_room_code').value = '4821';
+        connectFromLandingJoin();
+        expect(document.getElementById('nickname').value).toBe('Zosia');
+        expect(globalThis.connect).toHaveBeenCalled();
+    });
+});
+
+describe('room phase helpers', () => {
+    test('setRoomPhase toggles lobby visibility', () => {
+        document.body.innerHTML = `
+            <section id="room-lobby"></section>
+            <main id="game-main-area"></main>
+            <div class="room-lobby-actions"></div>
+            <div class="game-actions"><button id="btn-draw"></button></div>
+        `;
+        setRoomPhase('lobby');
+        expect(document.body.classList.contains('room-phase-lobby')).toBe(true);
+        expect(document.getElementById('room-lobby').hidden).toBe(false);
+        expect(document.getElementById('game-main-area').hidden).toBe(true);
+    });
+
+    test('renderLobbyRoster shows ready badges', () => {
+        document.body.innerHTML = '<div id="lobby-roster"></div>';
+        renderLobbyRoster({ Anna: 0, Bob: 0 }, 'Anna', new Set(['Bob']), 'Anna');
+        const roster = document.getElementById('lobby-roster');
+        expect(roster.textContent).toContain('Anna');
+        expect(roster.textContent).toContain('Gotowy');
+        expect(roster.textContent).toContain('Czeka');
+    });
+});
+
+describe('landing room code sync', () => {
+    test('syncRoomCodeInputs mirrors landing and modal fields', () => {
+        const landing = document.getElementById('landing_room_code');
+        const modal = document.getElementById('room_id');
+        landing.value = ' 4821 ';
+        expect(syncRoomCodeInputs()).toBe('4821');
+        expect(modal.value).toBe('4821');
+        expect(syncRoomCodeInputs('9012')).toBe('9012');
+        expect(landing.value).toBe('9012');
+        expect(modal.value).toBe('9012');
+    });
+});
+
 describe('joinRoom global', () => {
     test('sets room_id input and opens the join modal', () => {
         globalThis.joinRoom('5678');
         expect(document.getElementById('room_id').value).toBe('5678');
+        expect(document.getElementById('landing_room_code').value).toBe('5678');
         expect(document.getElementById('join-modal').style.display).toBe('flex');
     });
 });

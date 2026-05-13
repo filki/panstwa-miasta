@@ -52,6 +52,29 @@
 
             <!-- GAME STEP -->
             <div id="chat-section" style="display: none;">
+                <section id="room-lobby" class="room-lobby" hidden>
+                    <header class="room-lobby-header">
+                        <h2 class="room-lobby-title">Lobby pokoju</h2>
+                        <p class="room-lobby-code">Kod: <strong id="lobby-room-code">—</strong></p>
+                    </header>
+                    <dl class="room-lobby-settings">
+                        <div><dt>Rundy</dt><dd id="lobby-room-rounds">5</dd></div>
+                        <div><dt>Czas</dt><dd id="lobby-room-limit">90s</dd></div>
+                        <div><dt>Widoczność</dt><dd id="lobby-room-visibility">Publiczny</dd></div>
+                    </dl>
+                    <div class="room-lobby-invite">
+                        <p class="room-lobby-invite-hint">Zaproś znajomych linkiem lub kodem pokoju.</p>
+                        <div class="room-lobby-invite-actions">
+                            <button type="button" class="btn-secondary" id="btn-copy-room-link" onclick="copyRoomInviteLink()">Kopiuj link</button>
+                            <button type="button" class="btn-secondary" id="btn-native-room-share" style="display: none;">Udostępnij…</button>
+                        </div>
+                    </div>
+                    <div id="lobby-roster" class="lobby-roster" aria-live="polite"></div>
+                    <div class="room-lobby-actions">
+                        <button type="button" id="btn-draw" onclick="toggleReady()">👍 Gotowy</button>
+                    </div>
+                </section>
+
                 <div class="layout-grid" id="game-layout">
 
                     <aside class="sidebar" id="scoreboard-sidebar" aria-label="Ranking graczy">
@@ -123,7 +146,6 @@
                         </div>
 
                         <div class="game-actions">
-                            <button type="button" id="btn-draw" onclick="toggleReady()">👍 Gotowy</button>
                             <button type="button" id="btn-stop" onclick="stopGame()" class="danger" disabled>🛑 STOP!</button>
                         </div>
                     </section>

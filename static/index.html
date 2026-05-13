@@ -7,9 +7,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="description" content="Państwa-Miasta w kilka sekund na telefonie — bez kont, gra w przeglądarce ze znajomymi. Słowniki sprawdzane na serwerze, offline, bez śledzenia odpowiedzi w sieci.">
+    <meta name="description" content="Państwa-Miasta online — gra w przeglądarce ze znajomymi, bez konta.">
     <link rel="manifest" href="/manifest.json">
-    <title>Państwa-Miasta — gra online, szybki start</title>
+    <title>Państwa-Miasta</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
@@ -17,123 +17,184 @@
     <link rel="stylesheet" href="/static/css/site-footer.css">
 </head>
 <body class="landing-page">
-    <nav class="navbar">
-        <div class="nav-container nav-container--logo-only">
-            <a href="/" class="logo" style="text-decoration:none;">Państwa<span>Miasta</span></a>
-        </div>
-    </nav>
-
     <main class="page-wrapper">
-        <header class="hero hero--with-aside">
-            <div class="hero-aside-wrap">
-                <div class="hero-content">
-                    <h1 class="hero-title">Państwa-Miasta w <span>5 sekund</span>.</h1>
-                    <p class="hero-subtitle">Bez kont — wybierz pokój i graj. Pseudonim ustawisz przed startem.</p>
-                    <ul class="hero-trust-pills" aria-label="Dlaczego warto">
-                        <li class="hero-trust-pill">5-sekundowy start</li>
-                        <li class="hero-trust-pill">Lokalne słowniki</li>
-                        <li class="hero-trust-pill">Bez logowania</li>
-                    </ul>
-                </div>
+        <header class="hero">
+            <div class="landing-shell">
+                <header class="landing-shell-header">
+                    <p class="landing-shell-kicker">Gra w przeglądarce</p>
+                    <h1 class="landing-shell-title">Państwa<span>Miasta</span></h1>
+                    <p class="landing-shell-lede">7 kategorii, 22 litery w losowaniu (bez Q, V i X). Bez konta — wchodzisz pseudonimem.</p>
+                </header>
 
-                <aside class="landing-discovery" aria-labelledby="landing-discovery-title">
-                    <h2 id="landing-discovery-title" class="landing-discovery-title">Jak wygląda runda?</h2>
-                    <ol class="landing-flow">
-                        <li><span class="landing-flow-step">1</span><span><strong>Gotowość</strong> — wszyscy klikają paluszka.</span></li>
-                        <li><span class="landing-flow-step">2</span><span><strong>Losowanie</strong> — jedna litera dla całej tabeli.</span></li>
-                        <li><span class="landing-flow-step">3</span><span><strong>STOP</strong> — wysyłasz odpowiedzi, gdy skończysz.</span></li>
-                        <li><span class="landing-flow-step">4</span><span><strong>Punkty</strong> — serwer porównuje odpowiedzi i sumuje wynik.</span></li>
-                    </ol>
-                    <div class="landing-score-row" aria-label="System punktacji">
-                        <span class="score-chip score-chip--15">15 unikat</span>
-                        <span class="score-chip score-chip--10">10 powtórka</span>
-                        <span class="score-chip score-chip--5">5 z listy</span>
-                        <span class="score-chip score-chip--0">0 pusto</span>
-                    </div>
-                </aside>
-            </div>
-
-            <section id="lobby" class="lobby-section start-panel">
-                <div id="join-section" class="join-card">
-                    <div id="buttons-grid" class="choice-cards">
-                        <button type="button" class="choice-card" onclick="showCreateModal()" aria-label="Stwórz nowy pokój">
-                            <span class="choice-icon" aria-hidden="true">✨</span>
-                            <span class="choice-content">
-                                <span class="choice-title">Stwórz pokój</span>
-                                <span class="choice-desc">Zostań hostem i ustaw zasady.</span>
-                            </span>
-                        </button>
-                        <button type="button" class="choice-card" onclick="showJoinModal()" aria-label="Dołącz do istniejącego pokoju">
-                            <span class="choice-icon" aria-hidden="true">🔗</span>
-                            <span class="choice-content">
-                                <span class="choice-title">Dołącz do gry</span>
-                                <span class="choice-desc">Wpisz kod od znajomego.</span>
-                            </span>
-                        </button>
-                    </div>
-
-                    <div id="active-rooms-section" class="active-rooms-block" style="display: none;">
-                        <h3 class="active-rooms-title">🔥 Aktywne pokoje</h3>
-                        <div class="table-container">
-                            <table class="rooms-table">
-                                <thead>
-                                    <tr>
-                                        <th>Kod</th>
-                                        <th>Host</th>
-                                        <th>Gracze</th>
-                                        <th>Rundy</th>
-                                        <th>Czas</th>
-                                        <th>Typ</th>
-                                        <th>Akcja</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="rooms-list"></tbody>
-                            </table>
+                <section class="landing-guide-carousel" aria-labelledby="landing-guide-carousel-title" aria-roledescription="karuzela">
+                    <div class="landing-guide-carousel-head">
+                        <h2 id="landing-guide-carousel-title" class="landing-guide-carousel-title">Jak grać</h2>
+                        <div class="landing-guide-carousel-controls">
+                            <button type="button" class="landing-guide-carousel-nav" data-carousel-dir="prev" aria-label="Poprzedni slajd">‹</button>
+                            <button type="button" class="landing-guide-carousel-nav" data-carousel-dir="next" aria-label="Następny slajd">›</button>
                         </div>
                     </div>
-                </div>
-            </section>
-        </header>
+                    <div class="landing-guide-carousel-viewport">
+                        <div class="landing-guide-carousel-track" id="landing-guide-carousel-track">
+                            <article class="landing-guide-carousel-slide" aria-labelledby="landing-carousel-steps-title">
+                                <h3 id="landing-carousel-steps-title" class="landing-guide-carousel-slide-title">Kroki</h3>
+                                <ol class="landing-guide-steps landing-guide-steps--carousel">
+                                    <li class="landing-guide-step-item">
+                                        <span class="landing-guide-step" aria-hidden="true">1</span>
+                                        <p class="landing-guide-step-text">Wszyscy oznaczają gotowość.</p>
+                                    </li>
+                                    <li class="landing-guide-step-item">
+                                        <span class="landing-guide-step" aria-hidden="true">2</span>
+                                        <p class="landing-guide-step-text">Serwer losuje literę rundy.</p>
+                                    </li>
+                                    <li class="landing-guide-step-item">
+                                        <span class="landing-guide-step" aria-hidden="true">3</span>
+                                        <p class="landing-guide-step-text">Wypełniasz kategorie i wciskasz STOP.</p>
+                                    </li>
+                                    <li class="landing-guide-step-item">
+                                        <span class="landing-guide-step" aria-hidden="true">4</span>
+                                        <p class="landing-guide-step-text">Punkty liczy serwer z lokalnych list.</p>
+                                    </li>
+                                </ol>
+                            </article>
+                            <article class="landing-guide-carousel-slide" aria-labelledby="landing-carousel-categories-title">
+                                <h3 id="landing-carousel-categories-title" class="landing-guide-carousel-slide-title">Kategorie</h3>
+                                <ul class="landing-guide-category-list landing-guide-category-list--carousel">
+                                    <li>Państwo</li>
+                                    <li>Miasto</li>
+                                    <li>Rzecz</li>
+                                    <li>Zwierzę</li>
+                                    <li>Roślina</li>
+                                    <li>Imię</li>
+                                    <li>Zawód</li>
+                                </ul>
+                            </article>
+                            <article class="landing-guide-carousel-slide" aria-labelledby="landing-carousel-scores-title">
+                                <h3 id="landing-carousel-scores-title" class="landing-guide-carousel-slide-title">Punktacja</h3>
+                                <dl class="landing-guide-scores landing-guide-scores--carousel" aria-label="Punktacja">
+                                    <div><dt>15</dt><dd><span class="landing-guide-score-label">unikat</span> — tylko ty masz hasło</dd></div>
+                                    <div><dt>10</dt><dd><span class="landing-guide-score-label">powtórka</span> — inni mają hasło, ale masz inne od nich</dd></div>
+                                    <div><dt>5</dt><dd><span class="landing-guide-score-label">z listy</span> — masz to samo co ktoś</dd></div>
+                                    <div><dt>0</dt><dd><span class="landing-guide-score-label">pusto</span> — nie masz nic / błąd</dd></div>
+                                </dl>
+                            </article>
+                            <article class="landing-guide-carousel-slide" aria-labelledby="landing-carousel-letters-title">
+                                <h3 id="landing-carousel-letters-title" class="landing-guide-carousel-slide-title">Litery</h3>
+                                <p class="landing-guide-carousel-lede">22 litery w losowaniu — bez Q, V i X. Kolejność losowa, bez powtórek w kolejnych grach w tym samym pokoju.</p>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="landing-guide-carousel-dots" id="landing-guide-carousel-dots" role="tablist" aria-label="Slajdy Jak grać"></div>
+                    <p class="landing-guide-carousel-live visually-hidden" id="landing-guide-carousel-live" aria-live="polite"></p>
+                </section>
 
-        <div class="landing-below" id="marketing">
-            <div class="container">
-            <section class="landing-categories" aria-labelledby="landing-categories-title">
-                <h2 id="landing-categories-title" class="landing-section-title">7 kategorii w każdej rundzie</h2>
-                <p class="landing-section-lead">Tyle samo pól co w klasycznej tabelce — bez rozwadniania gry o dziesiątki kolumn z encyklopedii.</p>
-                <ul class="landing-category-chips">
-                    <li>Państwo</li>
-                    <li>Miasto</li>
-                    <li>Rzecz</li>
-                    <li>Zwierzę</li>
-                    <li>Roślina</li>
-                    <li>Imię</li>
-                    <li>Zawód</li>
-                </ul>
-            </section>
-            <section id="features" class="features-grid">
-                <div class="feature-item">
-                    <div class="feature-icon">🔤</div>
-                    <h3>Talia liter</h3>
-                    <p>22 litery z polskiej talii — bez Q, V i X. W jednym cyklu każda wypada raz, zanim serwer tasuje od nowa.</p>
+                <div class="landing-grid">
+                    <aside class="landing-guide" aria-labelledby="landing-guide-title">
+                        <h2 id="landing-guide-title" class="landing-guide-title">Jak grać</h2>
+                        <ol class="landing-guide-steps">
+                            <li class="landing-guide-step-item">
+                                <span class="landing-guide-step" aria-hidden="true">1</span>
+                                <p class="landing-guide-step-text">Wszyscy oznaczają gotowość.</p>
+                            </li>
+                            <li class="landing-guide-step-item">
+                                <span class="landing-guide-step" aria-hidden="true">2</span>
+                                <p class="landing-guide-step-text">Serwer losuje literę rundy.</p>
+                            </li>
+                            <li class="landing-guide-step-item">
+                                <span class="landing-guide-step" aria-hidden="true">3</span>
+                                <p class="landing-guide-step-text">Wypełniasz kategorie i wciskasz STOP.</p>
+                            </li>
+                            <li class="landing-guide-step-item">
+                                <span class="landing-guide-step" aria-hidden="true">4</span>
+                                <p class="landing-guide-step-text">Punkty liczy serwer z lokalnych list.</p>
+                            </li>
+                        </ol>
+                        <div class="landing-guide-categories" aria-label="Kategorie w rundzie">
+                            <p class="landing-guide-categories-title">Kategorie</p>
+                            <ul class="landing-guide-category-list">
+                                <li>Państwo</li>
+                                <li>Miasto</li>
+                                <li>Rzecz</li>
+                                <li>Zwierzę</li>
+                                <li>Roślina</li>
+                                <li>Imię</li>
+                                <li>Zawód</li>
+                            </ul>
+                        </div>
+                        <dl class="landing-guide-scores" aria-label="Punktacja">
+                            <div><dt>15</dt><dd><span class="landing-guide-score-label">unikat</span> — tylko ty masz hasło</dd></div>
+                            <div><dt>10</dt><dd><span class="landing-guide-score-label">powtórka</span> — inni mają hasło, ale masz inne od nich</dd></div>
+                            <div><dt>5</dt><dd><span class="landing-guide-score-label">z listy</span> — masz to samo co ktoś</dd></div>
+                            <div><dt>0</dt><dd><span class="landing-guide-score-label">pusto</span> — nie masz nic / błąd</dd></div>
+                        </dl>
+                    </aside>
+
+                    <section id="lobby" class="lobby-section start-panel landing-actions">
+                        <div id="join-section" class="join-card">
+                            <div id="buttons-grid" class="choice-cards">
+                                <button type="button" class="choice-card choice-card--create" onclick="showCreateModal()" aria-label="Stwórz nowy pokój">
+                                    <span class="choice-icon" aria-hidden="true">✨</span>
+                                    <span class="choice-content">
+                                        <span class="choice-title">Stwórz pokój</span>
+                                        <span class="choice-desc">Ustaw rundy, czas i widoczność w lobby.</span>
+                                    </span>
+                                </button>
+                                <button type="button" class="choice-card choice-card--join" onclick="showJoinModal()" aria-label="Dołącz do istniejącego pokoju">
+                                    <span class="choice-icon" aria-hidden="true">🔗</span>
+                                    <span class="choice-content">
+                                        <span class="choice-title">Dołącz do gry</span>
+                                        <span class="choice-desc">Wpisz kod od znajomego.</span>
+                                    </span>
+                                </button>
+                            </div>
+
+                            <div class="landing-quick-join" aria-label="Szybkie dołączenie">
+                                <div class="form-group play-nickname landing-quick-nick">
+                                    <label class="header-label" for="landing_nickname">Pseudonim</label>
+                                    <div class="nick-field-row">
+                                        <input type="text" id="landing_nickname" maxlength="20" autocomplete="nickname" inputmode="text">
+                                        <button type="button" class="nick-reroll secondary" onclick="rerollPlayerNickname()" aria-label="Losuj inny pseudonim">Inny</button>
+                                    </div>
+                                </div>
+                                <label class="header-label" for="landing_room_code">Kod pokoju</label>
+                                <div class="landing-quick-join-row">
+                                    <input type="text" id="landing_room_code" maxlength="12" autocomplete="off" inputmode="text" placeholder="np. 4821" aria-describedby="landing-quick-join-hint">
+                                    <button type="button" class="landing-quick-join-btn" onclick="connectFromLandingJoin()">Dołącz</button>
+                                </div>
+                                <p id="landing-quick-join-hint" class="landing-quick-join-hint">Pseudonim losujemy automatycznie — możesz go zmienić przed startem.</p>
+                            </div>
+
+                            <p class="landing-mobile-hint">Pseudonim ustawisz w kolejnym kroku.</p>
+                        </div>
+                    </section>
+
                 </div>
-                <div class="feature-item">
-                    <div class="feature-icon">⚡</div>
-                    <h3>Real-Time</h3>
-                    <p>Błyskawiczna synchronizacja dzięki WebSockets.</p>
+
+                <div id="active-rooms-section" class="active-rooms-block">
+                    <h3 class="active-rooms-title">Aktywne pokoje</h3>
+                    <div id="active-rooms-empty" class="active-rooms-empty">
+                        <p class="active-rooms-empty-text">Nie ma żadnych aktywnych pokoi. Rozruszaj towarzystwo — stwórz pokój i zaproś znajomych.</p>
+                        <button type="button" class="active-rooms-empty-cta" onclick="showCreateModal()">Stwórz pokój</button>
+                    </div>
+                    <div id="active-rooms-table-wrap" class="table-container" hidden>
+                        <table class="rooms-table">
+                            <thead>
+                                <tr>
+                                    <th>Kod</th>
+                                    <th>Host</th>
+                                    <th>Gracze</th>
+                                    <th>Rundy</th>
+                                    <th>Czas</th>
+                                    <th>Typ</th>
+                                    <th>Akcja</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rooms-list"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="feature-item">
-                    <div class="feature-icon">🛡️</div>
-                    <h3>Fair Play</h3>
-                    <p>Walidacja odpowiedzi z lokalnych list na serwerze — uczciwa punktacja bez „zgadywania z internetem” w locie.</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">📱</div>
-                    <h3>Mobile First</h3>
-                    <p>Działa wygodnie na każdym urządzeniu.</p>
-                </div>
-            </section>
             </div>
-        </div>
+        </header>
     </main>
 
     <!-- MODALS -->
@@ -152,7 +213,7 @@
             </div>
             <div class="modal-btns">
                 <button class="secondary" onclick="hideModals()">Anuluj</button>
-                <button onclick="connect()">Start 🚀</button>
+                <button onclick="connect()">Start</button>
             </div>
         </div>
     </div>
@@ -196,7 +257,7 @@
             </div>
             <div class="modal-btns">
                 <button class="secondary" onclick="hideModals()">Anuluj</button>
-                <button onclick="connect()">Stwórz 🔥</button>
+                <button onclick="connect()">Stwórz i wejdź</button>
             </div>
         </div>
     </div>
@@ -207,7 +268,7 @@
         </div>
     </div>
 
-    <button type="button" id="btn-leave" onclick="location.href = '/'" class="danger" style="display: none;">🚪 Wyjdź</button>
+    <button type="button" id="btn-leave" onclick="location.href = '/'" class="danger" style="display: none;">Wyjdź</button>
 
     <!-- SITE_FOOTER -->
 
@@ -217,7 +278,6 @@
     <script src="/static/js/game.js"></script>
     <script src="/static/js/socket.js"></script>
     <script>
-        // Disable service worker on local dev to avoid stale assets while iterating.
         const isLocalDev = ['localhost', '127.0.0.1'].includes(location.hostname)
             || location.hostname.endsWith('.ngrok-free.dev');
         if ('serviceWorker' in navigator) {

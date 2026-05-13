@@ -24,6 +24,19 @@ def _broadcast_json(room: Room, payload: dict) -> asyncio.Task:
     return asyncio.ensure_future(room.broadcast(json.dumps(payload)))
 
 
+def score_update_payload(room: Room) -> dict:
+    return {
+        "type": "score_update",
+        "scores": room.scores,
+        "host_name": room.host_name,
+        "ready_players": sorted(room.ready_players),
+    }
+
+
+async def _broadcast_score_update(room: Room) -> None:
+    await room.broadcast(json.dumps(score_update_payload(room)))
+
+
 async def _finish_round(room: Room, room_id: str) -> None:
     """Calculate scores, broadcast results and mark game_over if needed."""
     room.is_playing = False
@@ -78,6 +91,7 @@ async def handle_ready(room: Room, room_id: str, client_name: str, timeout_coro)
             }
         )
     )
+    await _broadcast_score_update(room)
     all_ready = len(room.ready_players) >= len(room.connections) and len(room.connections) > 0
     if all_ready:
         letter = room.start_round()
@@ -111,6 +125,7 @@ async def handle_not_ready(room: Room, client_name: str) -> None:
             }
         )
     )
+    await _broadcast_score_update(room)
 
 
 async def handle_restart_game(room: Room, client_name: str, msg: dict) -> None:

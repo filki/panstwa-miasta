@@ -13,6 +13,7 @@ from panstwa_miasta.handlers import (
     handle_ready,
     handle_restart_game,
     handle_stop,
+    score_update_payload,
 )
 from panstwa_miasta.manager import Room
 
@@ -188,3 +189,11 @@ async def test_handle_kick_player_success_no_denied_message():
     manager.kick_player = AsyncMock(return_value=(True, ""))
     await handle_kick_player(room, "room1", "Host1", {"target": "Guest"}, manager)
     manager.kick_player.assert_called_once_with("room1", "Host1", "Guest")
+
+
+def test_score_update_payload_includes_ready_players():
+    room = Room("room1")
+    room.ready_players.add("Ada")
+    payload = score_update_payload(room)
+    assert payload["ready_players"] == ["Ada"]
+    assert payload["type"] == "score_update"
