@@ -41,7 +41,12 @@ from .limits import (
     http_rate_bucket_name,
 )
 from .logger import get_logger
-from .manager import RESULTS_PHASE_SECONDS, STOP_SUBMIT_GRACE_SECONDS, ConnectionManager
+from .manager import (
+    RESULTS_PHASE_SECONDS,
+    STOP_SUBMIT_GRACE_SECONDS,
+    ConnectionManager,
+    room_listed_in_active_lobby,
+)
 from .ws_messages import ws_inbound_adapter
 
 logger = get_logger(__name__)
@@ -284,7 +289,7 @@ async def get_active_rooms() -> list[ActiveRoomRow]:
             visibility_label=("Publiczny" if room.visibility == "public" else "Prywatny"),
         )
         for r_id, room in manager.rooms.items()
-        if room.connections and not room.game_over and room.visibility == "public"
+        if room_listed_in_active_lobby(room)
     ]
 
 
