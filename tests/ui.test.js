@@ -38,8 +38,8 @@ const baseDom = () => `
     <input id="nickname" />
     <input id="nickname_join" />
     <input id="room_id" />
-    <select id="max_rounds"><option value="3">3</option><option value="5">5</option><option value="10">10</option></select>
-    <select id="time_limit"><option value="60">60</option><option value="90">90</option></select>
+    <select id="max_rounds"><option value="3">3</option><option value="5">5</option><option value="10">10</option><option value="22">22</option></select>
+    <select id="time_limit"><option value="60">60</option><option value="90">90</option><option value="120">120</option></select>
     <select id="room_visibility"><option value="public">public</option><option value="private">private</option></select>
     <input id="message-input" />
     <div id="active-rooms-section"></div>
