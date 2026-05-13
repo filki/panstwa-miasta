@@ -229,11 +229,18 @@ async def test_handle_veto_vote_broadcasts_tally():
     assert payload["veto_tallies"]["Ada"]["tak"] == 1
 
 
-def test_vetoed_rzecz_players_majority_tak_rejects():
+def test_vetoed_rzecz_players_majority_nie_rejects():
     room = Room("room1")
     room.answers_received = {"Ada": {"Rzecz": "Aparat"}}
-    room.veto_votes = {"Ada": {"Bob": "tak", "Cal": "nie", "Dan": "tak"}}
+    room.veto_votes = {"Ada": {"Bob": "nie", "Cal": "tak", "Dan": "nie"}}
     assert room.vetoed_rzecz_players() == {"Ada"}
+
+
+def test_vetoed_rzecz_players_majority_tak_keeps_answer():
+    room = Room("room1")
+    room.answers_received = {"Ada": {"Rzecz": "Aparat"}}
+    room.veto_votes = {"Ada": {"Bob": "tak"}}
+    assert room.vetoed_rzecz_players() == set()
 
 
 def test_vetoed_rzecz_players_no_votes_keeps_answer():
