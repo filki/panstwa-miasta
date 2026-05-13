@@ -33,6 +33,9 @@ else
   sudo -n systemctl restart panstwa-miasta
 fi
 
+echo "Czekam 5 sekund, aż Uvicorn się uruchomi i załaduje bazę..."
+sleep 5
+
 code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/ || true)"
 if [[ "$code" != "200" ]]; then
   echo "Smoke test GET / zwrócił HTTP $code (oczekiwano 200)." >&2
