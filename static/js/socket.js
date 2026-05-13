@@ -73,9 +73,12 @@ function generateRoomId() {
 function connect() {
     leftByUser = false;
     initAudio();
-    myNick = document.getElementById('nickname').value.trim();
+    myNick = document.getElementById('nickname')?.value.trim() || '';
+    if (!myNick && typeof ensureNicknameInput === 'function') {
+        myNick = ensureNicknameInput() || '';
+    }
     globalThis.myNick = myNick;
-    if (!myNick) return alert('Proszę najpierw podać swój nickname!');
+    if (!myNick) return alert('Nie udało się nadać nicku — odśwież stronę.');
 
     const pathParts = globalThis.location.pathname.split('/');
     let roomId = "";

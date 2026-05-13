@@ -146,12 +146,14 @@ describe('connect()', () => {
         expect(lastWs.url).toContain('visibility=private');
     });
 
-    test('alerts when nickname is empty', () => {
+    test('assigns a generated nickname when the input is empty', () => {
+        global.ensureNicknameInput = jest.fn(() => 'Gracz#2137');
         document.getElementById('nickname').value = '';
         const { connect } = loadSocket();
         connect();
-        expect(global.alert).toHaveBeenCalledWith(expect.stringContaining('nickname'));
-        expect(global.WebSocket).not.toHaveBeenCalled();
+        expect(global.ensureNicknameInput).toHaveBeenCalled();
+        expect(global.WebSocket).toHaveBeenCalledTimes(1);
+        expect(lastWs.url).toContain('Gracz%232137');
     });
 
     test('ws.onopen reveals chat and navbar room badge', () => {

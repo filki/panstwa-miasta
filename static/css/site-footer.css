@@ -14,7 +14,7 @@ main.page-wrapper {
     margin-top: var(--space-10);
     padding: var(--space-6) var(--safe-pad-x) var(--space-8);
     border-top: 1px solid var(--border);
-    background: rgba(15, 23, 42, 0.65);
+    background: rgba(255, 255, 255, 0.72);
     backdrop-filter: blur(8px);
 }
 
