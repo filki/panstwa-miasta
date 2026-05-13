@@ -27,6 +27,16 @@ function fireConfetti(opts) {
     try { confetti(opts); } catch (e) { console.warn('confetti failed', e); }
 }
 
+function stopCelebrationEffects() {
+    if (typeof confetti === 'function' && typeof confetti.reset === 'function') {
+        try {
+            confetti.reset();
+        } catch (e) {
+            console.warn('confetti reset failed', e);
+        }
+    }
+}
+
 function leaveRoom() {
     leftByUser = true;
     isLeaving = true;
@@ -171,18 +181,6 @@ function connect() {
             setRoomPhase('playing');
         }
 
-        const nativeShare = document.getElementById('btn-native-room-share');
-        if (nativeShare && globalThis.navigator?.share) {
-            nativeShare.style.display = 'inline-flex';
-            nativeShare.onclick = () => {
-                const code = document.getElementById('current-room')?.textContent?.trim() || roomId;
-                const params = new URLSearchParams(globalThis.location.search);
-                const visibility = params.get('visibility') === 'private' ? 'private' : 'public';
-                const url = `${globalThis.location.origin}/room/${encodeURIComponent(code)}?visibility=${visibility}`;
-                globalThis.navigator.share({ title: 'Państwa-Miasta', url }).catch(() => {});
-            };
-        }
-
         // Nie czyść rankingu tutaj — serwer wysyła ``score_update`` w ``_send_initial_state``.
         // Wywołanie ``updateScoreboard({}, …)`` przy reconnect powodowało wyścig z wiadomościami
         // i zerowanie punktów w UI mimo poprawnego stanu na backendzie.
@@ -197,6 +195,10 @@ function connect() {
         }
         if (e.code === 1008) {
             alert('Nick jest już zajęty lub nieprawidłowy!');
+            const inlineJoin = document.getElementById('room-inline-join');
+            const chatSection = document.getElementById('chat-section');
+            if (inlineJoin) inlineJoin.style.display = 'block';
+            if (chatSection) chatSection.style.display = 'none';
             return;
         }
         // If we initiated a manual leave, do not auto-reconnect
@@ -275,6 +277,7 @@ const MESSAGE_HANDLERS = {
     round_started: onRoundStarted,
     stop_round: onStopRound,
     round_results: onRoundResults,
+    veto_update: onVetoUpdate,
     game_restarted: onGameRestarted,
     room_dissolved: onRoomDissolved,
     kicked: onKicked,
@@ -282,6 +285,8 @@ const MESSAGE_HANDLERS = {
 };
 
 function onRoundStarted(msg) {
+    hideRoundResultsOverlay();
+    provisionalRoundResultsMsg = null;
     globalThis.currentLetter = msg.letter;
     pmHadRoundStarted = true;
     if (typeof setRoomPhase === 'function') setRoomPhase('playing');
@@ -388,11 +393,7 @@ function escapeHtml(text) {
 }
 
 function isWideRoundResultsLayout() {
-    try {
-        return Boolean(globalThis.matchMedia && globalThis.matchMedia("(min-width: 768px)").matches);
-    } catch {
-        return false;
-    }
+    return false;
 }
 
 function roundResultsPtsClass(pts) {
@@ -402,60 +403,189 @@ function roundResultsPtsClass(pts) {
     return "round-results-pts round-results-pts--0";
 }
 
-/**
- * Jedna osoba w podsumowaniu: na mobile zwijalne ``details`` (oprócz widza na szerokim ekranie
- * wszystkie startują otwarte), w środku siatka kategoria → odpowiedź → pkt.
- */
-function buildPlayerResultHtml(player, rScore, pAnswers, viewerNick, wideLayout) {
-    const answers = pAnswers && typeof pAnswers === "object" ? pAnswers : {};
-    const details = rScore && rScore.details && typeof rScore.details === "object" ? rScore.details : {};
-    const isViewer = Boolean(viewerNick && player === viewerNick);
-    const startOpen = Boolean(wideLayout || isViewer);
-    const total = typeof rScore.total === "number" ? rScore.total : 0;
-    let innerRows = "";
-    for (const cat of ROUND_RESULT_CATEGORIES) {
-        const raw = answers[cat];
-        const hasAns = raw != null && String(raw).trim() !== "";
-        const ansDisp = hasAns ? String(raw).trim() : "—";
-        const ptsRaw = details[cat];
-        const pts = typeof ptsRaw === "number" ? ptsRaw : 0;
-        const escapedAns = hasAns ? escapeHtml(ansDisp) : "—";
-        innerRows += `<div class="round-results-row">
-<span class="round-results-cat">${escapeHtml(cat)}</span>
-<span class="round-results-val">${escapedAns}</span>
-<span class="${roundResultsPtsClass(pts)}">${pts}</span>
-</div>`;
-    }
-    const meClass = isViewer ? " round-results-player--me" : "";
-    const openAttr = startOpen ? " open" : "";
-    return `<details class="round-results-player${meClass}"${openAttr}>
-<summary class="round-results-player-summary" aria-label="Wyniki ${escapeHtml(player)}, suma ${total} punktów">
-<span class="round-results-player-name">${escapeHtml(player)}</span>
-<span class="round-results-player-total">+${total} pkt</span>
-</summary>
-<div class="round-results-rows">${innerRows}</div>
-</details>`;
+function sortRoundResultPlayers(scores, viewer) {
+    return Object.keys(scores).sort((a, b) => {
+        const aw = a === viewer ? 1 : 0;
+        const bw = b === viewer ? 1 : 0;
+        if (aw !== bw) return bw - aw;
+        const at = scores[a] && typeof scores[a].total === "number" ? scores[a].total : 0;
+        const bt = scores[b] && typeof scores[b].total === "number" ? scores[b].total : 0;
+        return bt - at || a.localeCompare(b, "pl");
+    });
 }
 
-function buildRoundResultsHtml(msg) {
+function buildPlayerResultHtml(player, rScore, pAnswers, viewerNick) {
+    return buildRoundResultsHtml(
+        {
+            round_scores: { [player]: rScore },
+            answers: { [player]: pAnswers },
+            final: true,
+        },
+        { variant: "sidebar" },
+    );
+}
+
+function buildRoundResultsHtml(msg, options = {}) {
+    const variant = options.variant === "overlay" ? "overlay" : "sidebar";
     const answersRoot = msg.answers && typeof msg.answers === "object" ? msg.answers : {};
     const viewer = globalThis.myNick || myNick || "";
-    const wide = isWideRoundResultsLayout();
     const scores = msg.round_scores && typeof msg.round_scores === "object" ? msg.round_scores : {};
-    const rows = Object.entries(scores).sort((a, b) => {
-        const aw = a[0] === viewer ? 1 : 0;
-        const bw = b[0] === viewer ? 1 : 0;
-        if (aw !== bw) return bw - aw;
-        return (b[1].total || 0) - (a[1].total || 0);
-    });
-    let html = `<div class="round-results-block"><div class="round-results-head">Podsumowanie rundy</div>`;
-    for (const [player, rScore] of rows) {
-        if (!rScore || typeof rScore !== "object") continue;
-        html += buildPlayerResultHtml(player, rScore, answersRoot[player], viewer, wide);
-        if (player === viewer) highlightMyInputs(rScore);
+    const tallies = msg.veto_tallies && typeof msg.veto_tallies === "object" ? msg.veto_tallies : {};
+    const isFinal = msg.final !== false;
+    const players = sortRoundResultPlayers(scores, viewer);
+
+    let html = `<div class="round-results-block round-results-block--${variant}"><div class="round-results-table-wrap"><table class="round-results-table round-results-table--players"><thead><tr><th scope="col">Gracz</th>`;
+    for (const cat of ROUND_RESULT_CATEGORIES) {
+        html += `<th scope="col">${escapeHtml(cat)}</th>`;
     }
-    html += "</div>";
+    html += `<th scope="col">Suma</th></tr></thead><tbody>`;
+
+    for (const player of players) {
+        const rScore = scores[player] || { total: 0, details: {} };
+        const answers = answersRoot[player] && typeof answersRoot[player] === "object" ? answersRoot[player] : {};
+        const meClass = player === viewer ? " round-results-player-row--me" : "";
+        html += `<tr class="round-results-player-row${meClass}"><th scope="row" class="round-results-player">${escapeHtml(player)}</th>`;
+        for (const cat of ROUND_RESULT_CATEGORIES) {
+            const raw = answers[cat];
+            const hasAns = raw != null && String(raw).trim() !== "";
+            const ptsRaw = rScore.details && rScore.details[cat];
+            const pts = typeof ptsRaw === "number" ? ptsRaw : 0;
+            let cell = `<div class="round-results-cell"><span class="round-results-val">${hasAns ? escapeHtml(String(raw).trim()) : "—"}</span><span class="${roundResultsPtsClass(pts)}">${pts}</span>`;
+            if (cat === "Rzecz" && !isFinal && player !== viewer && hasAns) {
+                const tally = tallies[player] || {};
+                const tak = typeof tally.tak === "number" ? tally.tak : 0;
+                const nie = typeof tally.nie === "number" ? tally.nie : 0;
+                cell += `<span class="round-results-veto-tally" aria-hidden="true">${tak}·${nie}</span><div class="round-results-veto-actions" data-veto-target="${escapeHtml(player)}"><button type="button" class="round-results-veto-btn round-results-veto-btn--up" data-target="${escapeHtml(player)}" data-vote="tak" aria-label="Zatwierdź odpowiedź">👍</button><button type="button" class="round-results-veto-btn round-results-veto-btn--down" data-target="${escapeHtml(player)}" data-vote="nie" aria-label="Odrzuć odpowiedź">👎</button></div>`;
+            }
+            cell += "</div>";
+            html += `<td class="round-results-td">${cell}</td>`;
+        }
+        const total = typeof rScore.total === "number" ? rScore.total : 0;
+        html += `<td class="round-results-td round-results-td--total"><span class="round-results-player-total">+${total} pkt</span></td></tr>`;
+    }
+
+    html += "</tbody></table></div></div>";
     return html;
+}
+
+let roundResultsOverlayBound = false;
+let provisionalRoundResultsMsg = null;
+let roundResultsCountdownTimer = null;
+
+function clearRoundResultsCountdown() {
+    if (roundResultsCountdownTimer) {
+        clearInterval(roundResultsCountdownTimer);
+        roundResultsCountdownTimer = null;
+    }
+}
+
+function updateRoundResultsCountdownLabel(secondsLeft) {
+    const label = document.getElementById("round-results-countdown");
+    if (!label) return;
+    label.textContent = secondsLeft > 0 ? `Następna runda za ${secondsLeft}s` : "Następna runda…";
+    label.hidden = false;
+}
+
+function startRoundResultsCountdown(vetoEndsAt) {
+    clearRoundResultsCountdown();
+    if (!vetoEndsAt) return;
+    const tick = () => {
+        const left = Math.max(0, Math.ceil((vetoEndsAt - Date.now()) / 1000));
+        updateRoundResultsCountdownLabel(left);
+        if (left <= 0) clearRoundResultsCountdown();
+    };
+    tick();
+    roundResultsCountdownTimer = setInterval(tick, 250);
+}
+
+function bindRoundResultsVeto(root) {
+    if (!root) return;
+    root.querySelectorAll(".round-results-veto-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const target = btn.getAttribute("data-target");
+            const vote = btn.getAttribute("data-vote");
+            if (!target || !vote) return;
+            sendJson({ type: "veto_vote", target, vote });
+            btn.closest(".round-results-veto-actions")
+                ?.querySelectorAll(".round-results-veto-btn")
+                .forEach((peer) => {
+                    peer.classList.toggle("is-active", peer === btn);
+                    peer.disabled = peer === btn;
+                });
+        });
+    });
+}
+
+function refreshProvisionalRoundResultsOverlay() {
+    if (!provisionalRoundResultsMsg) return;
+    showRoundResultsOverlay(buildRoundResultsHtml(provisionalRoundResultsMsg, { variant: "overlay" }), {
+        gameOver: false,
+        provisional: true,
+        vetoEndsAt: provisionalRoundResultsMsg.veto_ends_at,
+    });
+}
+
+function hideRoundResultsOverlay() {
+    const overlay = document.getElementById("round-results-overlay");
+    if (!overlay) return;
+    overlay.hidden = true;
+    overlay.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("room-results-open");
+    provisionalRoundResultsMsg = null;
+    clearRoundResultsCountdown();
+    const countdown = document.getElementById("round-results-countdown");
+    if (countdown) countdown.hidden = true;
+    const chatSection = document.getElementById("chat-section");
+    if (chatSection) chatSection.hidden = false;
+}
+
+function showRoundResultsOverlay(html, { gameOver = false, provisional = false, vetoEndsAt = null } = {}) {
+    const overlay = document.getElementById("round-results-overlay");
+    const body = document.getElementById("round-results-modal-body");
+    if (!overlay || !body) return;
+
+    if (!gameOver) {
+        stopCelebrationEffects();
+        if (typeof setRoomPhase === "function") setRoomPhase("round_results");
+    }
+
+    body.innerHTML = html;
+    bindRoundResultsVeto(body);
+    overlay.hidden = false;
+    overlay.setAttribute("aria-hidden", "false");
+    document.body.classList.add("room-results-open");
+
+    const dismissBtn = document.getElementById("btn-round-results-dismiss");
+    const backdrop = overlay.querySelector(".round-results-overlay-backdrop");
+    const countdown = document.getElementById("round-results-countdown");
+    const vetoHint = overlay.querySelector(".round-results-veto-hint");
+    if (dismissBtn) {
+        dismissBtn.hidden = provisional;
+        dismissBtn.style.display = provisional ? "none" : "";
+        dismissBtn.textContent = gameOver ? "Zobacz koniec gry" : "Dalej";
+        if (!provisional) dismissBtn.focus();
+    }
+    if (backdrop) backdrop.style.pointerEvents = provisional ? "none" : "";
+    if (countdown) countdown.hidden = !provisional;
+    if (vetoHint) vetoHint.hidden = !provisional;
+
+    if (provisional) startRoundResultsCountdown(vetoEndsAt);
+    else clearRoundResultsCountdown();
+
+    if (!roundResultsOverlayBound) {
+        roundResultsOverlayBound = true;
+        dismissBtn?.addEventListener("click", hideRoundResultsOverlay);
+        backdrop?.addEventListener("click", hideRoundResultsOverlay);
+    }
+}
+
+function onVetoUpdate(msg) {
+    if (!provisionalRoundResultsMsg || msg.final) return;
+    provisionalRoundResultsMsg = {
+        ...provisionalRoundResultsMsg,
+        veto_tallies: msg.veto_tallies || provisionalRoundResultsMsg.veto_tallies,
+    };
+    refreshProvisionalRoundResultsOverlay();
 }
 
 function onRoundResults(msg) {
@@ -469,12 +599,31 @@ function onRoundResults(msg) {
     btnStop.innerHTML = '🛑 STOP!';
     btnStop.disabled = true;
 
-    const html = buildRoundResultsHtml(msg);
-    addLog(html, "results-msg");
-    updateScoreboard(msg.total_scores, msg.host_name, globalThis.myNick || '');
+    const isFinal = msg.final !== false;
 
-    if (msg.game_over) handleGameOver(msg.host_name, msg.room_id);
-    else resetReadyButton();
+    showRoundResultsOverlay(buildRoundResultsHtml(msg, { variant: "overlay" }), {
+        gameOver: Boolean(msg.game_over),
+        provisional: !isFinal,
+        vetoEndsAt: msg.veto_ends_at,
+    });
+
+    if (!isFinal) {
+        provisionalRoundResultsMsg = { ...msg, final: false };
+        updateScoreboard(msg.total_scores, msg.host_name, globalThis.myNick || "");
+        return;
+    }
+
+    provisionalRoundResultsMsg = null;
+    clearRoundResultsCountdown();
+    updateScoreboard(msg.total_scores, msg.host_name, globalThis.myNick || "");
+    const viewer = globalThis.myNick || myNick || "";
+    const scores = msg.round_scores && typeof msg.round_scores === "object" ? msg.round_scores : {};
+    if (scores[viewer]) highlightMyInputs(scores[viewer]);
+
+    if (msg.game_over) {
+        hideRoundResultsOverlay();
+        handleGameOver(msg.host_name, msg.room_id);
+    }
 }
 
 function hideGameOverShare() {
@@ -554,24 +703,31 @@ function highlightMyInputs(rScore) {
 }
 
 function handleGameOver(hostName, roomId) {
+    stopCelebrationEffects();
     addLog(`<div style="margin-top:1rem; font-weight:800; color:var(--pts-15); text-align:center;">🏁 KONIEC GRY!</div>`, "system-msg");
-    
-    // Pokaż ranking jako główny element
-    document.getElementById('game-layout').classList.add('game-over');
-    document.getElementById('scoreboard-sidebar').classList.remove('hidden');
-    document.getElementById('game-main-area').style.display = 'none';
-    document.getElementById('chat-sidebar').classList.add('hidden');
-    
-    // Przenieś przyciski restartu do sidebar'a rankingu lub wyświetl pod rankingiem
+
+    if (typeof setRoomPhase === 'function') setRoomPhase('results');
+
+    const chatSection = document.getElementById('chat-section');
+    if (chatSection) chatSection.hidden = false;
+
+    const gameLayout = document.getElementById('game-layout');
+    if (gameLayout) gameLayout.classList.add('game-over');
+
+    const gameMain = document.getElementById('game-main-area');
+    if (gameMain) gameMain.style.display = 'none';
+
+    const postgame = document.getElementById('room-postgame');
+    if (postgame) postgame.hidden = false;
+
     const restartArea = document.getElementById('restart-settings');
-    restartArea.style.display = 'block';
-    document.getElementById('scoreboard-sidebar').appendChild(restartArea);
-    
+    if (restartArea) restartArea.style.display = 'block';
+
     if (myNick === hostName) {
         document.getElementById('btn-restart-game').style.display = 'block';
         document.getElementById('btn-dissolve').style.display = 'block';
     }
-    
+
     fireConfetti({ particleCount: 200, spread: 100, origin: { y: 0.3 } });
     setTimeout(() => fireConfetti({ particleCount: 200, spread: 120, origin: { y: 0.4 } }), 1000);
 
@@ -588,17 +744,16 @@ function resetReadyButton() {
 }
 
 function onGameRestarted(msg) {
+    hideRoundResultsOverlay();
     hideGameOverShare();
-    // Przywracamy obszary gry
-    document.getElementById('game-layout').classList.remove('game-over');
+    document.getElementById('game-layout')?.classList.remove('game-over');
     document.getElementById('game-main-area').style.display = 'block';
-    document.getElementById('chat-sidebar').classList.remove('hidden');
-    document.getElementById('scoreboard-sidebar').classList.remove('hidden');
-    
-    // Przywracamy panel restartu na jego miejsce w main-area (jeśli był przeniesiony)
+    document.getElementById('chat-sidebar')?.classList.remove('hidden');
+    const postgame = document.getElementById('room-postgame');
+    if (postgame) postgame.hidden = true;
     const restartArea = document.getElementById('restart-settings');
-    restartArea.style.display = 'none';
-    document.getElementById('game-main-area').appendChild(restartArea);
+    if (restartArea) restartArea.style.display = 'none';
+    if (typeof setRoomPhase === 'function') setRoomPhase('lobby');
 
     const btn = document.getElementById('btn-draw');
     btn.style.display = 'inline-block';
@@ -700,6 +855,8 @@ function runLetterLottery(targetLetter, onComplete) {
     }, intervalTime);
 }
 
+globalThis.stopCelebrationEffects = stopCelebrationEffects;
+
 if (typeof module !== 'undefined') {
     module.exports = {
         leaveRoom,
@@ -711,6 +868,8 @@ if (typeof module !== 'undefined') {
         isWideRoundResultsLayout,
         buildPlayerResultHtml,
         buildRoundResultsHtml,
+        showRoundResultsOverlay,
+        hideRoundResultsOverlay,
         onRoundResults,
         highlightMyInputs,
         handleGameOver,

@@ -63,6 +63,18 @@ const FULL_DOM = `
         <div id="lottery-letter"></div>
     </div>
     <div id="round-countdown-overlay" hidden><div id="round-countdown-num"></div></div>
+    <div id="round-results-overlay" hidden aria-hidden="true">
+        <button type="button" class="round-results-overlay-backdrop" aria-label="Zamknij podsumowanie rundy"></button>
+        <section class="round-results-modal" role="dialog" aria-modal="true" aria-labelledby="round-results-title">
+            <header class="round-results-modal-head">
+                <h2 id="round-results-title" class="round-results-modal-title">Podsumowanie rundy</h2>
+            </header>
+            <div id="round-results-modal-body" class="round-results-modal-body"></div>
+            <footer class="round-results-modal-foot">
+                <button type="button" id="btn-round-results-dismiss" class="round-results-dismiss-btn">Dalej</button>
+            </footer>
+        </section>
+    </div>
 
     <input id="nickname" value="TestUser" />
     <input id="room_id" value="1234" />
@@ -431,7 +443,17 @@ describe('round event handlers', () => {
         jest.useRealTimers();
     });
 
-    test('onRoundResults pushes summary to addLog and updates scoreboard', () => {
+    test('onRoundResults opens overlay on every layout', () => {
+        const prevMatchMedia = globalThis.matchMedia;
+        globalThis.matchMedia = jest.fn(() => ({
+            matches: true,
+            media: '(min-width: 768px)',
+            addListener: jest.fn(),
+            removeListener: jest.fn(),
+            addEventListener: jest.fn(),
+            removeEventListener: jest.fn(),
+            dispatchEvent: jest.fn(),
+        }));
         const { onRoundResults } = loadSocket();
         onRoundResults({
             round_scores: { TestUser: { total: 10, details: {} } },
@@ -440,9 +462,39 @@ describe('round event handlers', () => {
             host_name: 'TestUser',
             game_over: false,
             room_id: '1234',
+            final: true,
         });
-        expect(global.addLog).toHaveBeenCalled();
+        expect(global.addLog).not.toHaveBeenCalled();
+        expect(document.getElementById('round-results-overlay').hidden).toBe(false);
+        expect(global.setRoomPhase).toHaveBeenCalledWith('round_results');
         expect(global.updateScoreboard).toHaveBeenCalledWith({ TestUser: 10 }, 'TestUser', '');
+        globalThis.matchMedia = prevMatchMedia;
+    });
+
+    test('onRoundResults opens mobile overlay on narrow layout', () => {
+        const prevMatchMedia = globalThis.matchMedia;
+        globalThis.matchMedia = jest.fn(() => ({
+            matches: false,
+            media: '(min-width: 768px)',
+            addListener: jest.fn(),
+            removeListener: jest.fn(),
+            addEventListener: jest.fn(),
+            removeEventListener: jest.fn(),
+            dispatchEvent: jest.fn(),
+        }));
+        const { onRoundResults } = loadSocket();
+        onRoundResults({
+            round_scores: { TestUser: { total: 10, details: { Państwo: 10 } } },
+            answers: { TestUser: { Państwo: 'Polska' } },
+            total_scores: { TestUser: 10 },
+            host_name: 'TestUser',
+            game_over: false,
+            room_id: '1234',
+        });
+        expect(global.addLog).not.toHaveBeenCalled();
+        expect(document.getElementById('round-results-overlay').hidden).toBe(false);
+        expect(document.getElementById('round-results-modal-body').textContent).toContain('Polska');
+        globalThis.matchMedia = prevMatchMedia;
     });
 
     test('onGameRestarted resets game layout and inputs', () => {
@@ -478,32 +530,31 @@ describe('pure helpers', () => {
         expect(getScoreColor(0)).toBe('var(--danger)');
     });
 
-    test('buildPlayerResultHtml builds accordion with category rows', () => {
+    test('buildPlayerResultHtml builds player card with category rows', () => {
         const { buildPlayerResultHtml } = loadSocket();
         const html = buildPlayerResultHtml(
             'Anna',
             { total: 10, details: { Państwo: 10, Miasto: 0 } },
             { Państwo: 'Polska', Miasto: '' },
             '',
-            false,
         );
-        expect(html).toContain('round-results-player');
-        expect(html).not.toContain(' open');
+        expect(html).toContain('round-results-table');
+        expect(html).not.toContain('<details');
         expect(html).toContain('Polska');
         expect(html).toContain('Państwo');
     });
 
-    test('buildPlayerResultHtml opens for the viewer on narrow layout', () => {
+    test('buildPlayerResultHtml marks the viewer card', () => {
         const { buildPlayerResultHtml } = loadSocket();
+        globalThis.myNick = 'Filip';
         const html = buildPlayerResultHtml(
             'Filip',
             { total: 15, details: { Państwo: 15 } },
             { Państwo: 'Polska' },
             'Filip',
-            false,
         );
-        expect(html).toContain(' open');
-        expect(html).toContain('round-results-player--me');
+        expect(html).toContain('round-results-player-row--me');
+        delete globalThis.myNick;
     });
 
     test('escapeHtml escapes angle brackets', () => {
@@ -524,7 +575,7 @@ describe('pure helpers', () => {
                 B: { Państwo: 'OK' },
             },
         });
-        expect(html).toContain('round-results-block');
+        expect(html).toContain('round-results-table');
         expect(html).toContain('&lt;b&gt;');
         expect(html).not.toContain('<b>x</b>');
         delete globalThis.myNick;

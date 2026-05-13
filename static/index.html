@@ -21,7 +21,19 @@
         <header class="hero">
             <div class="landing-shell">
                 <header class="landing-shell-header">
-                    <h1 class="landing-shell-title">Państwa<span>Miasta</span></h1>
+                    <div class="landing-shell-title-row">
+                        <h1 class="landing-shell-title">Państwa<span>Miasta</span></h1>
+                        <button
+                            type="button"
+                            class="landing-guide-open"
+                            id="landing-guide-open"
+                            aria-label="Jak grać?"
+                            aria-expanded="false"
+                            aria-controls="landing-guide-carousel"
+                        >
+                            <span class="landing-guide-open-icon" aria-hidden="true">I</span>
+                        </button>
+                    </div>
                 </header>
 
                 <div class="landing-grid">
@@ -40,11 +52,19 @@
 
                             <div class="landing-access-panel" role="tabpanel" aria-labelledby="landing-access-tab-anon">
                                 <div class="landing-anon-stage" id="landing-anon-start">
-                                    <div class="landing-anon-identity">
-                                        <p class="landing-anon-identity-label" id="landing-anon-identity-label">Wybierz pseudonim</p>
-                                        <div class="landing-anon-nick-row">
-                                            <input type="text" class="landing-anon-nickname" id="landing_nickname" maxlength="20" autocomplete="nickname" inputmode="text" aria-labelledby="landing-anon-identity-label">
-                                            <button type="button" class="landing-anon-nick-reroll" onclick="rerollPlayerNickname()" aria-label="Losuj inny pseudonim"><span aria-hidden="true">↻</span></button>
+                                    <div class="landing-anon-profile">
+                                        <div class="landing-anon-avatar-block">
+                                            <div class="landing-anon-avatar-frame">
+                                                <img class="landing-anon-avatar" id="landing-anon-avatar" src="/static/img/avatars/avatar-01.png" width="108" height="108" alt="Awatar gracza">
+                                            </div>
+                                            <button type="button" class="landing-anon-avatar-reroll" onclick="rerollPlayerAvatar()" aria-label="Losuj inny awatar"><span aria-hidden="true">↻</span></button>
+                                        </div>
+                                        <div class="landing-anon-identity">
+                                            <p class="landing-anon-identity-label" id="landing-anon-identity-label">Wybierz pseudonim</p>
+                                            <div class="landing-anon-nick-row">
+                                                <input type="text" class="landing-anon-nickname" id="landing_nickname" maxlength="20" autocomplete="nickname" inputmode="text" aria-labelledby="landing-anon-identity-label">
+                                                <button type="button" class="landing-anon-nick-reroll" onclick="rerollPlayerNickname()" aria-label="Losuj inny pseudonim"><span aria-hidden="true">↻</span></button>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -74,9 +94,17 @@
                         </div>
                     </section>
 
-                    <section class="landing-guide-carousel landing-guide-carousel--gartic" aria-labelledby="landing-guide-carousel-title" aria-roledescription="karuzela">
-                        <h2 id="landing-guide-carousel-title" class="landing-guide-carousel-title">Jak grać</h2>
+                    <section
+                        id="landing-guide-carousel"
+                        class="landing-guide-carousel landing-guide-carousel--gartic"
+                        aria-labelledby="landing-guide-carousel-title"
+                        aria-roledescription="karuzela"
+                    >
                         <div class="landing-guide-carousel-panel">
+                            <div class="landing-guide-carousel-toolbar">
+                                <h2 id="landing-guide-carousel-title" class="landing-guide-carousel-title">Jak grać?</h2>
+                                <button type="button" class="landing-guide-close" aria-label="Zamknij instrukcję">×</button>
+                            </div>
                             <div class="landing-guide-carousel-viewport">
                                 <div class="landing-guide-carousel-track" id="landing-guide-carousel-track">
                                     <article class="landing-guide-carousel-slide" aria-labelledby="landing-carousel-step-1">
@@ -193,14 +221,13 @@
     <div id="create-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <h3>Nowy pokój</h3>
-            <div class="form-group play-nickname">
-                <label class="header-label" for="nickname">Pseudonim</label>
-                <div class="nick-field-row">
-                    <input type="text" id="nickname" maxlength="20" autocomplete="nickname" inputmode="text">
-                    <button type="button" class="nick-reroll nick-reroll--dice secondary" onclick="rerollPlayerNickname()" aria-label="Losuj inny pseudonim"><span aria-hidden="true">🎲</span></button>
-                </div>
-            </div>
             <div class="settings-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="room_game_mode">Tryb gry</label>
+                    <select id="room_game_mode">
+                        <option value="standard" selected>Standard</option>
+                    </select>
+                </div>
                 <div class="form-group">
                     <label for="max_rounds">Rundy</label>
                     <select id="max_rounds">
@@ -246,6 +273,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" integrity="sha384-HAH79XdRvHr6axVGh4xQWVCp14kcd32bNk4Xu0sHDHtFQ42n6BAM8ykvB47dGz6D" crossorigin="anonymous"></script>
     <script src="/static/js/audio.js"></script>
+    <script src="/static/js/avatar.js"></script>
     <script src="/static/js/ui.js"></script>
     <script src="/static/js/game.js"></script>
     <script src="/static/js/socket.js"></script>
