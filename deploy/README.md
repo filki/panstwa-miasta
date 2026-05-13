@@ -46,6 +46,7 @@ Caddy sam wystawi Let’s Encrypt po poprawnym DNS.
 
 - Strona główna `https://twoja-domena/`
 - Utworzenie pokoju, WebSocket (gra), odświeżenie w trakcie rundy
+- Z maszyny z dostępem do domeny: `PROD_BASE_URL=https://twoja-domena ./deploy/prod-smoke-check.sh` — HTTP(S) + checklista ręczna (WS, reconnect, grace). Wyniki zapisz w issue/PR.
 
 ## 5. CD z GitHub Actions (opcjonalnie)
 
@@ -97,7 +98,25 @@ W **Settings → Secrets and variables → Actions → Secrets**:
 ## 6. Uwagi ogólne
 
 - Jeden proces `uvicorn` = jedna kopia limitów w RAM (`limits.py`); przy skalowaniu — osobna dyskusja.
-- Backup: kopiuj `panstwa_miasta.db` (np. cron + `sqlite3 .backup`).
+- **Limity za Caddy:** w działającym unit systemd musi być `Environment=PM_TRUST_X_FORWARDED_FOR=1` (jak w [`panstwa-miasta.service.example`](panstwa-miasta.service.example)), inaczej rate limit widzi IP proxy zamiast klienta. Po zmianie: `sudo systemctl daemon-reload && sudo systemctl restart panstwa-miasta`.
+
+### Backup SQLite
+
+Skrypt [`backup-db.sh`](backup-db.sh) — `sqlite3 .backup`, rotacja domyślnie 14 dni (`PM_DB_BACKUP_KEEP_DAYS`), katalog `backups/` w `APP_DIR` (lub `PM_DB_BACKUP_DIR`).
+
+Przykład cron (codziennie 03:15 UTC, użytkownik aplikacji):
+
+```cron
+15 3 * * * DEPLOY_APP_DIR=/srv/panstwa-miasta /srv/panstwa-miasta/deploy/backup-db.sh >>/var/log/panstwa-miasta-backup.log 2>&1
+```
+
+Po pierwszym uruchomieniu sprawdź `PRAGMA integrity_check` na kopii (skrypt wypisuje wynik).
+
+### Obserwacja deployu i rollback
+
+- Po merge na `main`: job **Deploy** w Actions + smoke `GET http://127.0.0.1:8000/` w [`vps-pull-and-restart.sh`](vps-pull-and-restart.sh). Przy błędzie: `journalctl -u panstwa-miasta -e` na VPS.
+- **Zewnętrzny ping** (Uptime Kuma, Healthchecks.io itd.) na publiczny URL co 5–15 min — poza samym workflow.
+- **Rollback:** na VPS `git log --oneline -5` → `DEPLOY_APP_DIR=… ./deploy/vps-rollback.sh <rev>` (checkout rewizji, `uv sync --frozen`, restart, smoke lokalny). Alternatywnie ręcznie: `git checkout <rev>` w `APP_DIR`, potem `uv sync --frozen` i `systemctl restart panstwa-miasta`.
 
 ## 7. Wiele workerów / Redis (opcjonalnie)
 

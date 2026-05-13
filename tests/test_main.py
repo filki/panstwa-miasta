@@ -134,6 +134,24 @@ def test_websocket_join_and_message():
         assert found_chat
 
 
+def _receive_json_until(websocket, msg_type: str, limit: int = 12):
+    for _ in range(limit):
+        data = websocket.receive_json()
+        if data.get("type") == msg_type:
+            return data
+    return None
+
+
+def test_websocket_two_players_share_score_update():
+    """Drugi gracz w tym samym pokoju — obaj dostają score_update z serwera."""
+    room_id = "room_two_ws"
+    with client.websocket_connect(f"/ws/{room_id}/Alice") as ws_a:
+        assert _receive_json_until(ws_a, "system") is not None
+        with client.websocket_connect(f"/ws/{room_id}/Bob") as ws_b:
+            assert _receive_json_until(ws_b, "score_update") is not None
+            assert _receive_json_until(ws_a, "score_update") is not None
+
+
 def test_websocket_rejection():
     """Whitespace-only nick is rejected at path validation (close 1008)."""
     from starlette.websockets import WebSocketDisconnect
