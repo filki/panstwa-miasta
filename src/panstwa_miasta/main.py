@@ -361,11 +361,18 @@ async def _dispatch(msg: dict, room, room_id: str, client_name: str) -> None:
         await handle_chat(room, client_name, msg)
     elif msg_type == "ready":
         await handle_ready(room, room_id, client_name, global_round_timeout)
+        if room.is_playing:
+            manager.cancel_lobby_idle(room)
+        else:
+            manager.touch_lobby_idle(room, reset=True)
     elif msg_type == "not_ready":
         await handle_not_ready(room, client_name)
+        manager.touch_lobby_idle(room, reset=True)
     elif msg_type == "restart_game":
         await handle_restart_game(room, client_name, msg)
+        manager.touch_lobby_idle(room, reset=True)
     elif msg_type == "dissolve_room":
+        manager.cancel_lobby_idle(room)
         await handle_dissolve_room(room, room_id, client_name, delete_room_immediate)
     elif msg_type == "stop":
         await handle_stop(room, room_id, client_name, force_end_round)

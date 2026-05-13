@@ -648,6 +648,7 @@ function onRoundResults(msg) {
     const isGameOver = Boolean(msg.game_over);
 
     if (isGameOver && isFinal) {
+        hideRoundResultsOverlay();
         provisionalRoundResultsMsg = null;
         clearRoundResultsCountdown();
         updateScoreboard(msg.total_scores, msg.host_name, globalThis.myNick || "");
@@ -756,6 +757,7 @@ function highlightMyInputs(rScore) {
 
 function handleGameOver(hostName, roomId, resultsMsg = null) {
     stopCelebrationEffects();
+    hideRoundResultsOverlay();
     addLog(`<div style="margin-top:1rem; font-weight:800; color:var(--pts-15); text-align:center;">🏁 KONIEC GRY!</div>`, "system-msg");
 
     if (typeof setRoomPhase === 'function') setRoomPhase('results');
