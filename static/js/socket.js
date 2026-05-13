@@ -579,6 +579,51 @@ function showRoundResultsOverlay(html, { gameOver = false, provisional = false, 
     }
 }
 
+function buildGameOverResultsHtml(msg) {
+    const roundScores = msg.round_scores && typeof msg.round_scores === "object" ? msg.round_scores : {};
+    if (Object.keys(roundScores).length > 0) {
+        return buildRoundResultsHtml(msg, { variant: "sidebar" });
+    }
+
+    const totals = msg.total_scores && typeof msg.total_scores === "object" ? msg.total_scores : {};
+    const players = Object.keys(totals).sort((a, b) => {
+        const av = typeof totals[a] === "number" ? totals[a] : 0;
+        const bv = typeof totals[b] === "number" ? totals[b] : 0;
+        return bv - av || a.localeCompare(b, "pl");
+    });
+    if (!players.length) return "";
+
+    const viewer = globalThis.myNick || myNick || "";
+    let html = '<div class="game-over-scoreboard"><ol class="share-score-list" aria-label="Wynik końcowy">';
+    for (const player of players) {
+        const pts = typeof totals[player] === "number" ? totals[player] : 0;
+        const meClass = player === viewer ? " game-over-score-row--me" : "";
+        html += `<li class="game-over-score-row${meClass}"><span>${escapeHtml(player)}</span><span class="share-score-pts">${pts} pkt</span></li>`;
+    }
+    return `${html}</ol></div>`;
+}
+
+function clearGameOverResults() {
+    const panel = document.getElementById("game-over-results");
+    const body = document.getElementById("game-over-results-body");
+    if (body) body.innerHTML = "";
+    if (panel) panel.hidden = true;
+}
+
+function renderGameOverResults(msg) {
+    if (!msg) return;
+    const panel = document.getElementById("game-over-results");
+    const body = document.getElementById("game-over-results-body");
+    if (!panel || !body) return;
+    const html = buildGameOverResultsHtml(msg);
+    if (!html) {
+        clearGameOverResults();
+        return;
+    }
+    body.innerHTML = html;
+    panel.hidden = false;
+}
+
 function onVetoUpdate(msg) {
     if (!provisionalRoundResultsMsg || msg.final) return;
     provisionalRoundResultsMsg = {
@@ -600,9 +645,21 @@ function onRoundResults(msg) {
     btnStop.disabled = true;
 
     const isFinal = msg.final !== false;
+    const isGameOver = Boolean(msg.game_over);
+
+    if (isGameOver && isFinal) {
+        provisionalRoundResultsMsg = null;
+        clearRoundResultsCountdown();
+        updateScoreboard(msg.total_scores, msg.host_name, globalThis.myNick || "");
+        const viewer = globalThis.myNick || myNick || "";
+        const scores = msg.round_scores && typeof msg.round_scores === "object" ? msg.round_scores : {};
+        if (scores[viewer]) highlightMyInputs(scores[viewer]);
+        handleGameOver(msg.host_name, msg.room_id, msg);
+        return;
+    }
 
     showRoundResultsOverlay(buildRoundResultsHtml(msg, { variant: "overlay" }), {
-        gameOver: Boolean(msg.game_over),
+        gameOver: false,
         provisional: !isFinal,
         vetoEndsAt: msg.veto_ends_at,
     });
@@ -619,11 +676,6 @@ function onRoundResults(msg) {
     const viewer = globalThis.myNick || myNick || "";
     const scores = msg.round_scores && typeof msg.round_scores === "object" ? msg.round_scores : {};
     if (scores[viewer]) highlightMyInputs(scores[viewer]);
-
-    if (msg.game_over) {
-        hideRoundResultsOverlay();
-        handleGameOver(msg.host_name, msg.room_id);
-    }
 }
 
 function hideGameOverShare() {
@@ -702,7 +754,7 @@ function highlightMyInputs(rScore) {
     });
 }
 
-function handleGameOver(hostName, roomId) {
+function handleGameOver(hostName, roomId, resultsMsg = null) {
     stopCelebrationEffects();
     addLog(`<div style="margin-top:1rem; font-weight:800; color:var(--pts-15); text-align:center;">🏁 KONIEC GRY!</div>`, "system-msg");
 
@@ -731,6 +783,7 @@ function handleGameOver(hostName, roomId) {
     fireConfetti({ particleCount: 200, spread: 100, origin: { y: 0.3 } });
     setTimeout(() => fireConfetti({ particleCount: 200, spread: 120, origin: { y: 0.4 } }), 1000);
 
+    renderGameOverResults(resultsMsg);
     wireGameOverShare(roomId);
 }
 
@@ -746,6 +799,7 @@ function resetReadyButton() {
 function onGameRestarted(msg) {
     hideRoundResultsOverlay();
     hideGameOverShare();
+    clearGameOverResults();
     document.getElementById('game-layout')?.classList.remove('game-over');
     document.getElementById('game-main-area').style.display = 'block';
     document.getElementById('chat-sidebar')?.classList.remove('hidden');
@@ -868,6 +922,9 @@ if (typeof module !== 'undefined') {
         isWideRoundResultsLayout,
         buildPlayerResultHtml,
         buildRoundResultsHtml,
+        buildGameOverResultsHtml,
+        renderGameOverResults,
+        clearGameOverResults,
         showRoundResultsOverlay,
         hideRoundResultsOverlay,
         onRoundResults,

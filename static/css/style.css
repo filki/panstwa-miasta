@@ -2824,6 +2824,25 @@ body.room-page .room-postgame .restart-card {
 }
 
 /* ---------- Faza 4: udostępnianie wyniku ---------- */
+.game-over-results {
+    margin-bottom: var(--space-5);
+    padding-bottom: var(--space-5);
+    border-bottom: 1px solid var(--border);
+}
+
+.game-over-results-title {
+    margin: 0 0 var(--space-4);
+    font-size: var(--fs-h3);
+}
+
+.game-over-results-body .round-results-block {
+    margin: 0;
+}
+
+.game-over-score-row--me {
+    outline: 2px solid rgba(6, 182, 212, 0.35);
+}
+
 .game-over-share {
     margin-top: var(--space-5);
     padding-top: var(--space-5);

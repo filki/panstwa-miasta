@@ -111,6 +111,10 @@ const FULL_DOM = `
                 <span id="sticky-time">10</span>
             </div>
             <div id="restart-settings" style="display: none;">
+                <div id="game-over-results" hidden>
+                    <h3 class="game-over-results-title">Wynik końcowy</h3>
+                    <div id="game-over-results-body"></div>
+                </div>
                 <button id="btn-restart-game" style="display: none;"></button>
                 <button id="btn-dissolve" style="display: none;"></button>
                 <div id="game-over-share" style="display: none;">
@@ -122,6 +126,8 @@ const FULL_DOM = `
         </main>
         <aside id="chat-sidebar"></aside>
     </div>
+
+    <section id="room-postgame" hidden></section>
 
     <div id="logs"></div>
 `;
@@ -497,6 +503,25 @@ describe('round event handlers', () => {
         globalThis.matchMedia = prevMatchMedia;
     });
 
+    test('onRoundResults with game_over renders final table without overlay', () => {
+        globalThis.myNick = 'TestUser';
+        const { onRoundResults } = loadSocket();
+        onRoundResults({
+            round_scores: { TestUser: { total: 10, details: { Państwo: 10 } } },
+            answers: { TestUser: { Państwo: 'Polska' } },
+            total_scores: { TestUser: 10 },
+            host_name: 'TestUser',
+            game_over: true,
+            room_id: '1234',
+            final: true,
+        });
+        expect(document.getElementById('round-results-overlay').hidden).toBe(true);
+        expect(document.getElementById('game-over-results').hidden).toBe(false);
+        expect(document.getElementById('game-over-results-body').textContent).toContain('Polska');
+        expect(global.setRoomPhase).toHaveBeenCalledWith('results');
+        delete globalThis.myNick;
+    });
+
     test('onGameRestarted resets game layout and inputs', () => {
         const { onGameRestarted } = loadSocket();
         document.getElementById('game-layout').classList.add('game-over');
@@ -589,10 +614,16 @@ describe('handleGameOver()', () => {
             clipboard: { writeText: jest.fn().mockResolvedValue(undefined) },
         });
         const { handleGameOver } = loadSocket();
-        handleGameOver('TestUser', '1234');
+        handleGameOver('TestUser', '1234', {
+            round_scores: { TestUser: { total: 10, details: { Państwo: 10 } } },
+            answers: { TestUser: { Państwo: 'Polska' } },
+            total_scores: { TestUser: 10 },
+        });
         expect(document.getElementById('game-layout').classList.contains('game-over')).toBe(true);
         expect(document.getElementById('game-main-area').style.display).toBe('none');
         expect(document.getElementById('restart-settings').style.display).toBe('block');
+        expect(document.getElementById('game-over-results').hidden).toBe(false);
+        expect(document.getElementById('game-over-results-body').textContent).toContain('Polska');
         expect(document.getElementById('game-over-share').style.display).toBe('block');
         expect(document.getElementById('share-link-anchor').getAttribute('href')).toContain('1234');
         expect(global.confetti).toHaveBeenCalled();
