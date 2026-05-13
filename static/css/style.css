@@ -584,8 +584,36 @@ button.active-rooms-empty-cta {
     width: 100%;
 }
 
+.landing-quick-game {
+    display: none;
+    margin-top: var(--space-5);
+    padding: var(--space-5);
+    border-radius: var(--r-lg);
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.landing-quick-game-title {
+    margin: 0 0 var(--space-2);
+    font-size: var(--fs-h3);
+}
+
+.landing-quick-game-copy {
+    margin: 0 0 var(--space-4);
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.landing-anon-cta--quick {
+    width: 100%;
+}
+
 @media (min-width: 1024px) {
     .active-rooms-cards {
+        display: none;
+    }
+
+    .landing-quick-game {
         display: none;
     }
 }
@@ -593,6 +621,19 @@ button.active-rooms-empty-cta {
 @media (max-width: 1023px) {
     .active-rooms-table-wrap {
         display: none !important;
+    }
+
+    .active-rooms-cards,
+    #active-rooms-cards-wrap {
+        display: none !important;
+    }
+
+    #active-rooms-section {
+        display: none !important;
+    }
+
+    .landing-quick-game {
+        display: block;
     }
 }
 
@@ -2689,6 +2730,18 @@ body.room-phase-results .room-stage {
 .lobby-roster {
     display: grid;
     gap: var(--space-2);
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+}
+
+.lobby-roster-item--empty {
+    justify-content: center;
+    border-style: dashed;
+    background: rgba(255, 255, 255, 0.55);
+}
+
+.lobby-roster-empty-slot {
+    color: var(--text-muted);
+    font-size: 0.95rem;
 }
 
 .lobby-roster-empty {
@@ -2894,6 +2947,30 @@ body.room-page .room-postgame .restart-card {
 
 .game-over-results-body .round-results-block {
     margin: 0;
+}
+
+.game-over-round-title {
+    margin: 0 0 var(--space-2);
+    font-weight: 700;
+}
+
+.postgame-appeal-btn {
+    margin-top: var(--space-2);
+    width: 100%;
+    min-height: var(--tap);
+    border-radius: var(--r-md);
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.92);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.postgame-appeal-result {
+    margin-top: var(--space-2);
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+    line-height: 1.45;
 }
 
 .game-over-score-row--me {

@@ -11,7 +11,16 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
-from .api_models import ActiveRoomRow, ClientNamePath, RoomIdPath, ShareSnapshotOut
+from .api_models import (
+    ActiveRoomRow,
+    AppealIn,
+    AppealOut,
+    ClientNamePath,
+    QuickJoinOut,
+    RoomIdPath,
+    ShareSnapshotOut,
+)
+from .appeals_service import submit_appeal
 from .data import (
     reload_countries,
     reload_jobs,
@@ -20,7 +29,7 @@ from .data import (
     reload_rosliny,
     reload_zwierzeta,
 )
-from .db import delete_room, init_db
+from .db import delete_room, fetch_game_transcript, init_db
 from .handlers import (
     _begin_results_phase,
     handle_answers,
@@ -80,15 +89,16 @@ async def delete_room_immediate(room_id: str) -> None:
 
 @app.middleware("http")
 async def rate_limit_http_middleware(request: Request, call_next):
-    if request.method not in ("GET", "HEAD"):
-        return await call_next(request)
     bucket = http_rate_bucket_name(request.url.path)
-    if bucket is None:
-        return await call_next(request)
-    ip = client_ip_from_request(request)
-    blocked = await check_http_rate_limit(ip, bucket)
-    if blocked is not None:
-        return blocked
+    if bucket is not None and (
+        request.method in ("GET", "HEAD")
+        or request.url.path.startswith("/api/quick-join")
+        or request.url.path.endswith("/appeals")
+    ):
+        ip = client_ip_from_request(request)
+        blocked = await check_http_rate_limit(ip, bucket)
+        if blocked is not None:
+            return blocked
     return await call_next(request)
 
 
@@ -293,6 +303,29 @@ async def get_active_rooms() -> list[ActiveRoomRow]:
     ]
 
 
+@app.post("/api/quick-join", response_model=QuickJoinOut)
+async def post_quick_join() -> QuickJoinOut:
+    room_id, created, max_rounds, time_limit = manager.pick_quick_join_room()
+    return QuickJoinOut(
+        room_id=room_id,
+        created=created,
+        max_rounds=max_rounds,
+        time_limit=time_limit,
+    )
+
+
+@app.post("/api/rooms/{room_id}/appeals", response_model=AppealOut)
+async def post_room_appeal(room_id: RoomIdPath, body: AppealIn) -> AppealOut:
+    result = await submit_appeal(
+        manager,
+        room_id,
+        body.player_name,
+        body.round,
+        body.category,
+    )
+    return AppealOut.model_validate(result)
+
+
 # ---------------------------------------------------------------------------
 # WebSocket endpoint
 # ---------------------------------------------------------------------------
@@ -320,6 +353,11 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
             )
         )
     elif room.game_over:
+        round_history = list(room.round_history)
+        if not round_history:
+            stored = await fetch_game_transcript(room.room_id)
+            if isinstance(stored, dict) and isinstance(stored.get("rounds"), list):
+                round_history = stored["rounds"]
         await websocket.send_text(
             json.dumps(
                 {
@@ -331,6 +369,7 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
                     "game_over": True,
                     "host_name": room.host_name,
                     "final": True,
+                    "round_history": round_history,
                 }
             )
         )
@@ -400,12 +439,18 @@ async def websocket_endpoint(
         f"rounds={rounds}, limit={limit}, visibility={visibility}"
     )
     client_ip = client_ip_from_websocket(websocket)
-    success = await manager.connect(
+    success, reject_reason = await manager.connect(
         websocket, room_id, client_name, rounds, limit, visibility, client_ip=client_ip
     )
     if not success:
-        logger.warning(f"Connection rejected for {client_name} in room {room_id}")
-        await websocket.close(code=1008)
+        logger.warning(
+            "Connection rejected for %s in room %s (%s)",
+            client_name,
+            room_id,
+            reject_reason,
+        )
+        close_code = 4408 if reject_reason == "room_full" else 1008
+        await websocket.close(code=close_code)
         return
 
     room = manager.rooms.get(room_id)

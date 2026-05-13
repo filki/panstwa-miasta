@@ -1,4 +1,6 @@
+import json
 import pathlib
+import time
 
 import aiosqlite
 
@@ -15,6 +17,8 @@ ROOM_EMPTY_GRACE_SECONDS = 90
 
 # Publiczne lobby przed startem gry (runda 0, brak postępu w gotowości).
 LOBBY_IDLE_TIMEOUT_SECONDS = 300
+
+GAME_TRANSCRIPT_TTL_DAYS = 14
 
 
 async def _ensure_rooms_visibility_column(db) -> None:
@@ -57,6 +61,37 @@ async def init_db():
                 FOREIGN KEY (room_id) REFERENCES rooms (room_id) ON DELETE CASCADE
             )
         """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS game_transcripts (
+                room_id TEXT PRIMARY KEY,
+                finished_at INTEGER NOT NULL,
+                payload TEXT NOT NULL
+            )
+        """)
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_game_transcripts_finished ON game_transcripts(finished_at)"
+        )
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS dictionary_suggestions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                status TEXT NOT NULL DEFAULT 'pending',
+                category TEXT NOT NULL,
+                proposed_norm TEXT NOT NULL,
+                proposed_display TEXT NOT NULL,
+                target_seed TEXT NOT NULL,
+                room_id TEXT NOT NULL,
+                player_name TEXT NOT NULL,
+                letter TEXT NOT NULL DEFAULT '',
+                round INTEGER NOT NULL DEFAULT 0,
+                ai_explanation TEXT NOT NULL DEFAULT '',
+                created_at INTEGER NOT NULL,
+                reviewed_at INTEGER,
+                review_note TEXT
+            )
+        """)
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_dictionary_suggestions_status ON dictionary_suggestions(status)"
+        )
         await db.execute("""
             CREATE TABLE IF NOT EXISTS countries (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -291,3 +326,136 @@ async def load_city_norms() -> set[str]:
     ):
         rows = await cursor.fetchall()
         return {row[0] for row in rows}
+
+
+async def purge_stale_game_transcripts(max_age_days: int = GAME_TRANSCRIPT_TTL_DAYS) -> None:
+    cutoff = int(time.time()) - max_age_days * 86_400
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("DELETE FROM game_transcripts WHERE finished_at < ?", (cutoff,))
+        await db.commit()
+
+
+async def save_game_transcript(room_id: str, payload: dict) -> None:
+    await purge_stale_game_transcripts()
+    finished_at = int(time.time())
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            INSERT INTO game_transcripts (room_id, finished_at, payload)
+            VALUES (?, ?, ?)
+            ON CONFLICT(room_id) DO UPDATE SET
+                finished_at = excluded.finished_at,
+                payload = excluded.payload
+            """,
+            (room_id, finished_at, json.dumps(payload, ensure_ascii=False)),
+        )
+        await db.commit()
+
+
+async def fetch_game_transcript(room_id: str) -> dict | None:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT payload FROM game_transcripts WHERE room_id = ?",
+            (room_id,),
+        ) as cursor:
+            row = await cursor.fetchone()
+            if row is None:
+                return None
+            return json.loads(row["payload"])
+
+
+async def insert_dictionary_suggestion(
+    *,
+    category: str,
+    proposed_norm: str,
+    proposed_display: str,
+    target_seed: str,
+    room_id: str,
+    player_name: str,
+    letter: str,
+    round_no: int,
+    ai_explanation: str,
+) -> int:
+    created_at = int(time.time())
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            """
+            INSERT INTO dictionary_suggestions (
+                status, category, proposed_norm, proposed_display, target_seed,
+                room_id, player_name, letter, round, ai_explanation, created_at
+            ) VALUES ('pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                category,
+                proposed_norm,
+                proposed_display,
+                target_seed,
+                room_id,
+                player_name,
+                letter,
+                round_no,
+                ai_explanation,
+                created_at,
+            ),
+        )
+        await db.commit()
+        row_id = cursor.lastrowid
+        if row_id is None:
+            raise RuntimeError("insert_dictionary_suggestion: missing row id")
+        return int(row_id)
+
+
+async def list_dictionary_suggestions(status: str = "pending") -> list[dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            """
+            SELECT id, status, category, proposed_norm, proposed_display, target_seed,
+                   room_id, player_name, letter, round, ai_explanation, created_at,
+                   reviewed_at, review_note
+            FROM dictionary_suggestions
+            WHERE status = ?
+            ORDER BY created_at ASC, id ASC
+            """,
+            (status,),
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [dict(row) for row in rows]
+
+
+async def fetch_dictionary_suggestion(suggestion_id: int) -> dict | None:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            """
+            SELECT id, status, category, proposed_norm, proposed_display, target_seed,
+                   room_id, player_name, letter, round, ai_explanation, created_at,
+                   reviewed_at, review_note
+            FROM dictionary_suggestions
+            WHERE id = ?
+            """,
+            (suggestion_id,),
+        ) as cursor:
+            row = await cursor.fetchone()
+            return dict(row) if row is not None else None
+
+
+async def set_dictionary_suggestion_status(
+    suggestion_id: int,
+    status: str,
+    *,
+    review_note: str | None = None,
+) -> bool:
+    reviewed_at = int(time.time())
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            """
+            UPDATE dictionary_suggestions
+            SET status = ?, reviewed_at = ?, review_note = ?
+            WHERE id = ?
+            """,
+            (status, reviewed_at, review_note, suggestion_id),
+        )
+        await db.commit()
+        return cursor.rowcount > 0

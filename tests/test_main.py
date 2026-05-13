@@ -133,6 +133,40 @@ def test_api_active_rooms_hides_last_round_results_phase():
             del manager.rooms[room_id]
 
 
+def test_api_quick_join_creates_room_when_no_lobby():
+    manager.rooms.clear()
+    response = client.post("/api/quick-join")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["created"] is True
+    assert 1000 <= int(data["room_id"]) <= 9999
+    assert data["max_rounds"] == 5
+    assert data["time_limit"] == 90
+
+
+def test_api_quick_join_picks_busiest_public_lobby():
+    from panstwa_miasta.manager import Room
+
+    manager.rooms.clear()
+    quiet = Room("quiet", 5, 90, visibility="public")
+    quiet.connections = {"a": None}
+    busy = Room("busy", 7, 120, visibility="public")
+    busy.connections = {"a": None, "b": None, "c": None}
+    manager.rooms["quiet"] = quiet
+    manager.rooms["busy"] = busy
+    try:
+        response = client.post("/api/quick-join")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["room_id"] == "busy"
+        assert data["created"] is False
+        assert data["max_rounds"] == 7
+        assert data["time_limit"] == 120
+    finally:
+        manager.rooms.pop("quiet", None)
+        manager.rooms.pop("busy", None)
+
+
 def test_websocket_join_and_message():
     with client.websocket_connect("/ws/room_ws/Player1") as websocket:
         # Initial messages (score_update, system)

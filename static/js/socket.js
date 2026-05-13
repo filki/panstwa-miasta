@@ -193,6 +193,14 @@ function connect() {
             safeNavigateHome();
             return;
         }
+        if (e.code === 4408) {
+            alert('Pokój pełny — w tym pokoju może być maksymalnie 8 graczy.');
+            const inlineJoin = document.getElementById('room-inline-join');
+            const chatSection = document.getElementById('chat-section');
+            if (inlineJoin) inlineJoin.style.display = 'block';
+            if (chatSection) chatSection.style.display = 'none';
+            return;
+        }
         if (e.code === 1008) {
             alert('Nick jest już zajęty lub nieprawidłowy!');
             const inlineJoin = document.getElementById('room-inline-join');
@@ -432,6 +440,9 @@ function buildRoundResultsHtml(msg, options = {}) {
     const scores = msg.round_scores && typeof msg.round_scores === "object" ? msg.round_scores : {};
     const tallies = msg.veto_tallies && typeof msg.veto_tallies === "object" ? msg.veto_tallies : {};
     const isFinal = msg.final !== false;
+    const allowAppeals = Boolean(options.allowAppeals);
+    const roundNumber = Number(options.roundNumber) || 0;
+    const roomId = String(options.roomId || "");
     const players = sortRoundResultPlayers(scores, viewer);
 
     let html = `<div class="round-results-block round-results-block--${variant}"><div class="round-results-table-wrap"><table class="round-results-table round-results-table--players"><thead><tr><th scope="col">Gracz</th>`;
@@ -456,6 +467,9 @@ function buildRoundResultsHtml(msg, options = {}) {
                 const tak = typeof tally.tak === "number" ? tally.tak : 0;
                 const nie = typeof tally.nie === "number" ? tally.nie : 0;
                 cell += `<span class="round-results-veto-tally" aria-hidden="true">${tak}·${nie}</span><div class="round-results-veto-actions" data-veto-target="${escapeHtml(player)}"><button type="button" class="round-results-veto-btn round-results-veto-btn--up" data-target="${escapeHtml(player)}" data-vote="tak" aria-label="Zatwierdź odpowiedź">👍</button><button type="button" class="round-results-veto-btn round-results-veto-btn--down" data-target="${escapeHtml(player)}" data-vote="nie" aria-label="Odrzuć odpowiedź">👎</button></div>`;
+            }
+            if (allowAppeals && player === viewer && pts === 0 && roundNumber > 0 && roomId) {
+                cell += `<button type="button" class="postgame-appeal-btn" data-room-id="${escapeHtml(roomId)}" data-round="${roundNumber}" data-category="${escapeHtml(cat)}">Wyjaśnij</button><div class="postgame-appeal-result" hidden></div>`;
             }
             cell += "</div>";
             html += `<td class="round-results-td">${cell}</td>`;
@@ -580,9 +594,39 @@ function showRoundResultsOverlay(html, { gameOver = false, provisional = false, 
 }
 
 function buildGameOverResultsHtml(msg) {
+    const history = Array.isArray(msg.round_history) ? msg.round_history : [];
+    if (history.length > 0) {
+        return history
+            .map((round) => {
+                const roundNo = Number(round.round) || 0;
+                const letter = String(round.letter || "?");
+                const head = `<p class="game-over-round-title">Runda ${roundNo} · ${escapeHtml(letter)}</p>`;
+                return `${head}${buildRoundResultsHtml(
+                    {
+                        answers: round.answers,
+                        round_scores: round.round_scores,
+                        veto_tallies: round.veto_tallies,
+                        final: true,
+                    },
+                    {
+                        variant: "sidebar",
+                        allowAppeals: true,
+                        roundNumber: roundNo,
+                        roomId: msg.room_id || "",
+                    },
+                )}`;
+            })
+            .join("");
+    }
+
     const roundScores = msg.round_scores && typeof msg.round_scores === "object" ? msg.round_scores : {};
     if (Object.keys(roundScores).length > 0) {
-        return buildRoundResultsHtml(msg, { variant: "sidebar" });
+        return buildRoundResultsHtml(msg, {
+            variant: "sidebar",
+            allowAppeals: true,
+            roundNumber: msg.current_round || 0,
+            roomId: msg.room_id || "",
+        });
     }
 
     const totals = msg.total_scores && typeof msg.total_scores === "object" ? msg.total_scores : {};
@@ -610,6 +654,50 @@ function clearGameOverResults() {
     if (panel) panel.hidden = true;
 }
 
+async function requestPostgameAppeal(button) {
+    const roomId = button.getAttribute("data-room-id") || "";
+    const roundNo = Number(button.getAttribute("data-round") || "0");
+    const category = button.getAttribute("data-category") || "";
+    const playerName = globalThis.myNick || myNick || "";
+    const resultBox = button.parentElement?.querySelector(".postgame-appeal-result");
+    if (!roomId || !roundNo || !category || !playerName) return;
+    button.disabled = true;
+    if (resultBox) {
+        resultBox.hidden = false;
+        resultBox.textContent = "Ładowanie wyjaśnienia…";
+    }
+    try {
+        const resp = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/appeals`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ player_name: playerName, round: roundNo, category }),
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+            const detail = data && data.detail ? String(data.detail) : "Nie udało się pobrać wyjaśnienia.";
+            if (resultBox) resultBox.textContent = detail;
+            return;
+        }
+        if (resultBox) resultBox.textContent = data.message_pl || "Brak wyjaśnienia.";
+    } catch (err) {
+        if (resultBox) resultBox.textContent = "Błąd połączenia z serwerem.";
+        console.error("requestPostgameAppeal failed:", err);
+    } finally {
+        button.disabled = false;
+    }
+}
+
+function wirePostgameAppealButtons(root) {
+    if (!root) return;
+    root.querySelectorAll(".postgame-appeal-btn").forEach((button) => {
+        if (button.dataset.appealBound === "1") return;
+        button.dataset.appealBound = "1";
+        button.addEventListener("click", () => {
+            requestPostgameAppeal(button);
+        });
+    });
+}
+
 function renderGameOverResults(msg) {
     if (!msg) return;
     const panel = document.getElementById("game-over-results");
@@ -621,6 +709,7 @@ function renderGameOverResults(msg) {
         return;
     }
     body.innerHTML = html;
+    wirePostgameAppealButtons(body);
     panel.hidden = false;
 }
 

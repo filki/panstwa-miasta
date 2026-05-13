@@ -75,6 +75,41 @@ function connectFromLandingJoin() {
     if (typeof globalThis.connect === 'function') globalThis.connect();
 }
 
+async function quickJoinFromLanding() {
+    const landingNick = document.getElementById('landing_nickname')?.value.trim();
+    if (landingNick) syncNicknameInputs(landingNick);
+    preparePlayNickname();
+    const nick = getResolvedNickname();
+    if (!nick) {
+        alert('Podaj pseudonim przed szybką grą.');
+        return;
+    }
+    persistNickname(nick);
+
+    const requestQuickJoin = async () => {
+        const resp = await fetch('/api/quick-join', { method: 'POST' });
+        if (!resp.ok) {
+            throw new Error(`quick-join failed: ${resp.status}`);
+        }
+        return resp.json();
+    };
+
+    try {
+        let data = await requestQuickJoin();
+        const roomId = String(data.room_id || '').trim();
+        if (!roomId) throw new Error('quick-join missing room_id');
+        const maxRounds = data.max_rounds || 5;
+        const timeLimit = data.time_limit || 90;
+        syncRoomCodeInputs(roomId);
+        const landingCode = document.getElementById('landing_room_code');
+        if (landingCode) landingCode.value = roomId;
+        globalThis.location.href = `/room/${encodeURIComponent(roomId)}?rounds=${encodeURIComponent(String(maxRounds))}&limit=${encodeURIComponent(String(timeLimit))}&visibility=public`;
+    } catch (err) {
+        console.error('quickJoinFromLanding failed:', err);
+        alert('Nie udało się znaleźć pokoju. Spróbuj ponownie.');
+    }
+}
+
 function hideModals() {
     document.getElementById('join-modal').style.display = 'none';
     document.getElementById('create-modal').style.display = 'none';
@@ -446,6 +481,8 @@ function createLobbyAvatar(name, viewerNick = '') {
     return img;
 }
 
+const MAX_LOBBY_SLOTS = 8;
+
 function renderLobbyRoster(scores = {}, hostName = '', readyPlayers = new Set(), viewerNick = '') {
     const roster = document.getElementById('lobby-roster');
     if (!roster) return;
@@ -455,24 +492,27 @@ function renderLobbyRoster(scores = {}, hostName = '', readyPlayers = new Set(),
     const countEl = document.getElementById('lobby-player-count');
     if (countEl) {
         if (names.length === 0) {
-            countEl.textContent = '';
+            countEl.textContent = `0/${MAX_LOBBY_SLOTS}`;
         } else {
             const readyCount = names.filter((name) => readyPlayers.has(name)).length;
-            countEl.textContent = `· ${readyCount}/${names.length} gotowych`;
+            countEl.textContent = `${names.length}/${MAX_LOBBY_SLOTS} · ${readyCount} gotowych`;
         }
     }
 
-    if (names.length === 0) {
-        const empty = document.createElement('p');
-        empty.className = 'lobby-roster-empty';
-        empty.textContent = 'Czekamy na graczy…';
-        roster.appendChild(empty);
-        return;
-    }
-
-    names.forEach((name) => {
+    const slots = Array.from({ length: MAX_LOBBY_SLOTS }, (_, index) => names[index] || null);
+    slots.forEach((name) => {
         const row = document.createElement('div');
         row.className = 'lobby-roster-item';
+        if (!name) {
+            row.classList.add('lobby-roster-item--empty');
+            const placeholder = document.createElement('span');
+            placeholder.className = 'lobby-roster-empty-slot';
+            placeholder.textContent = 'Wolne';
+            row.appendChild(placeholder);
+            roster.appendChild(row);
+            return;
+        }
+
         if (hostName && name === hostName) row.classList.add('is-host');
 
         const nameSpan = document.createElement('span');
@@ -852,6 +892,7 @@ globalThis.playCountdownHaptic = playCountdownHaptic;
 globalThis.showLandingJoinCode = showLandingJoinCode;
 globalThis.showLandingStartMode = showLandingStartMode;
 globalThis.connectFromLandingJoin = connectFromLandingJoin;
+globalThis.quickJoinFromLanding = quickJoinFromLanding;
 globalThis.syncRoomCodeInputs = syncRoomCodeInputs;
 globalThis.initLandingGuideCarousel = initLandingGuideCarousel;
 globalThis.initLandingGuideMobileSheet = initLandingGuideMobileSheet;
@@ -877,6 +918,7 @@ if (typeof module !== 'undefined') {
         syncRoomCodeInputs,
         bindRoomCodeInputs,
         connectFromLandingJoin,
+        quickJoinFromLanding,
         syncLandingScrollLock,
         initLandingGuideCarousel,
         initLandingGuideMobileSheet,

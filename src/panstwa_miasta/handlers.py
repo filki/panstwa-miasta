@@ -5,10 +5,11 @@ Each handler is a small, single-responsibility async function.
 """
 
 import asyncio
+import copy
 import json
 import time
 
-from .db import deactivate_room
+from .db import deactivate_room, save_game_transcript
 from .logger import get_logger
 from .manager import RESULTS_PHASE_SECONDS, VETO_CATEGORY, ConnectionManager, Room
 from .share_store import record_finished_game
@@ -61,6 +62,8 @@ def _round_results_payload(
     }
     if not final and veto_ends_at is not None:
         payload["veto_ends_at"] = veto_ends_at
+    if game_over:
+        payload["round_history"] = copy.deepcopy(room.round_history)
     return payload
 
 
@@ -96,11 +99,22 @@ async def _finalize_results_phase(room: Room, room_id: str, timeout_coro) -> Non
 
     rejected = room.vetoed_rzecz_players()
     round_scores = await room.compute_round_scores(veto_rejected=rejected, persist=True)
+    room.round_history.append(
+        {
+            "round": room.current_round,
+            "letter": room.current_letter,
+            "answers": copy.deepcopy(room.answers_received),
+            "round_scores": copy.deepcopy(round_scores),
+            "veto_tallies": room.veto_tallies(),
+            "veto_rejected": sorted(rejected),
+        }
+    )
     is_game_over = room.current_round >= room.max_rounds
     if is_game_over:
         room.game_over = True
         record_finished_game(room_id, dict(room.scores), room.host_name or "")
         await deactivate_room(room_id)
+        await save_game_transcript(room_id, {"rounds": copy.deepcopy(room.round_history)})
 
     await room.broadcast(
         json.dumps(

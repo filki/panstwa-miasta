@@ -16,6 +16,7 @@ const {
     syncRoomCodeInputs,
     initLandingGuideCarousel,
     connectFromLandingJoin,
+    quickJoinFromLanding,
     preparePlayNickname,
     setRoomPhase,
     renderLobbyRoster,
@@ -402,6 +403,26 @@ describe('landing quick join nickname', () => {
         expect(globalThis.connect).toHaveBeenCalled();
     });
 
+    test('quickJoinFromLanding calls quick-join API and stores room code', async () => {
+        global.fetch = jest.fn(() =>
+            Promise.resolve({
+                ok: true,
+                json: () =>
+                    Promise.resolve({
+                        room_id: '4821',
+                        created: false,
+                        max_rounds: 5,
+                        time_limit: 90,
+                    }),
+            }),
+        );
+        document.getElementById('landing_nickname').value = 'Zosia';
+        await quickJoinFromLanding();
+        expect(global.fetch).toHaveBeenCalledWith('/api/quick-join', { method: 'POST' });
+        expect(document.getElementById('landing_room_code').value).toBe('4821');
+        expect(document.getElementById('room_id').value).toBe('4821');
+    });
+
     test('showLandingJoinCode reveals room code step', () => {
         document.body.innerHTML = `
             <div id="landing-anon-start"></motion>
@@ -432,14 +453,16 @@ describe('room phase helpers', () => {
         expect(document.getElementById('game-layout').hidden).toBe(true);
     });
 
-    test('renderLobbyRoster shows ready badges', () => {
+    test('renderLobbyRoster shows ready badges and eight slots', () => {
         document.body.innerHTML = '<div id="lobby-roster"></div><span id="lobby-player-count"></span>';
         renderLobbyRoster({ Anna: 0, Bob: 0 }, 'Anna', new Set(['Bob']), 'Anna');
         const roster = document.getElementById('lobby-roster');
         expect(roster.textContent).toContain('Anna');
         expect(roster.textContent).toContain('Gotowy');
         expect(roster.textContent).toContain('Czeka');
-        expect(document.getElementById('lobby-player-count').textContent).toContain('1/2');
+        expect(roster.querySelectorAll('.lobby-roster-item').length).toBe(8);
+        expect(roster.querySelectorAll('.lobby-roster-item--empty').length).toBe(6);
+        expect(document.getElementById('lobby-player-count').textContent).toContain('2/8');
     });
 });
 
