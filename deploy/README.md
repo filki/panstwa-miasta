@@ -60,7 +60,7 @@ W **Settings → Secrets and variables → Actions → Variables**:
 
 | Nazwa | Wartość |
 |--------|---------|
-| `DEPLOY_ENABLED` | `true` — włącza auto-deploy po zakończeniu CI na `main` (push). Bez tego tylko ręczny **Run workflow**. |
+| `DEPLOY_ENABLED` | `true` — włącza auto-deploy po zakończeniu CI na `main` (push). Ustaw w **Variables** (nie Secrets). Bez tego tylko ręczny **Run workflow**. |
 | `DEPLOY_APP_DIR` | Opcjonalnie: katalog z klone repozytorium na VPS (np. `/srv/panstwa-miasta`). **Musi być zgodny** z `WorkingDirectory` w unit systemd. Puste = domyślna ścieżka ze skryptu (`/srv/panstwa-miasta`). |
 
 ### Sekrety

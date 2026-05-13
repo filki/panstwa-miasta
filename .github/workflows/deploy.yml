@@ -28,7 +28,10 @@ jobs:
         github.event.workflow_run.conclusion == 'success' &&
         github.event.workflow_run.head_branch == 'main' &&
         github.event.workflow_run.event == 'push' &&
-        vars.DEPLOY_ENABLED == 'true'
+        (
+          vars.DEPLOY_ENABLED == 'true' ||
+          vars.DEPLOY_ENABLED == 'True'
+        )
       )
     steps:
       - name: Preflight (wymagane sekrety)
