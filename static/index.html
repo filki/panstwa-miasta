@@ -48,11 +48,15 @@
                                             </button>
                                         </div>
                                         <div class="landing-anon-identity">
-                                            <p class="landing-anon-identity-label" id="landing-anon-identity-label">Wybierz awatar i pseudonim</p>
+                                            <p class="landing-anon-identity-label" id="landing-anon-identity-label">Wybierz pseudonim</p>
                                             <input type="text" class="landing-anon-nickname" id="landing_nickname" maxlength="20" autocomplete="nickname" inputmode="text" aria-labelledby="landing-anon-identity-label">
                                         </div>
                                     </div>
 
+                                    <div class="landing-anon-actions" id="landing-anon-actions">
+                                        <button type="button" class="landing-anon-cta landing-anon-cta--create" onclick="showCreateModal()">Stwórz pokój</button>
+                                        <button type="button" class="landing-anon-cta landing-anon-cta--join" onclick="showLandingJoinCode()">Dołącz do pokoju</button>
+                                    </div>
                                 </div>
 
 
@@ -136,11 +140,6 @@
                         <p class="landing-guide-carousel-live visually-hidden" id="landing-guide-carousel-live" aria-live="polite"></p>
                     </section>
 
-                </div>
-
-                <div class="landing-action-strip" id="landing-action-strip">
-                    <button type="button" class="landing-anon-cta landing-anon-cta--create" onclick="showCreateModal()">Stwórz pokój</button>
-                    <button type="button" class="landing-anon-cta landing-anon-cta--join" onclick="showLandingJoinCode()">Dołącz do pokoju</button>
                 </div>
 
                 <div id="active-rooms-section" class="active-rooms-block">

@@ -18,7 +18,7 @@ function showCreateModal() {
 function showLandingJoinCode() {
     const start = document.getElementById('landing-anon-start');
     const join = document.getElementById('landing-anon-join');
-    const actions = document.getElementById('landing-action-strip');
+    const actions = document.getElementById('landing-anon-actions');
     if (!start || !join) return;
     const landingNick = document.getElementById('landing_nickname')?.value.trim();
     if (landingNick) syncNicknameInputs(landingNick);
@@ -32,7 +32,7 @@ function showLandingJoinCode() {
 function showLandingStartMode() {
     const start = document.getElementById('landing-anon-start');
     const join = document.getElementById('landing-anon-join');
-    const actions = document.getElementById('landing-action-strip');
+    const actions = document.getElementById('landing-anon-actions');
     if (!start || !join) return;
     join.hidden = true;
     start.hidden = false;
