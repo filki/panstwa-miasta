@@ -2897,6 +2897,35 @@ body.room-page .game-chat-compose {
     margin: 0 auto;
 }
 
+@media (min-width: 1024px) {
+    .layout-grid.game-over {
+        max-width: min(100%, var(--container-w));
+    }
+
+    .room-postgame {
+        width: min(100%, var(--container-w));
+    }
+
+    .game-over-results-body .round-results-table {
+        min-width: 56rem;
+    }
+
+    .game-over-results-body .round-results-val {
+        overflow-wrap: normal;
+        word-break: normal;
+    }
+
+    .game-over-results-body .round-results-cell {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+
+    .game-over-results-body .postgame-appeal-btn {
+        width: auto;
+        min-width: 7rem;
+    }
+}
+
 body.room-page .room-postgame .restart-card {
     padding: clamp(var(--space-5), 2.5vw, var(--space-6));
     border-radius: var(--room-radius);
