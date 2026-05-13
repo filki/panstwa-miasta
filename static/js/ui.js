@@ -13,6 +13,42 @@ function showCreateModal() {
     preparePlayNickname();
 }
 
+function syncRoomCodeInputs(value) {
+    const landing = document.getElementById('landing_room_code');
+    const modal = document.getElementById('room_id');
+    const next = String(value ?? landing?.value ?? modal?.value ?? '').trim();
+    if (landing) landing.value = next;
+    if (modal) modal.value = next;
+    return next;
+}
+
+function bindRoomCodeInputs() {
+    const bind = (input, onEnter) => {
+        if (!input || input.dataset.pmRoomBound) return;
+        input.dataset.pmRoomBound = '1';
+        input.addEventListener('input', () => {
+            syncRoomCodeInputs(input.value);
+        });
+        if (onEnter) {
+            input.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter') return;
+                event.preventDefault();
+                onEnter();
+            });
+        }
+    };
+    bind(document.getElementById('landing_room_code'), connectFromLandingJoin);
+    bind(document.getElementById('room_id'));
+}
+
+function connectFromLandingJoin() {
+    syncRoomCodeInputs();
+    const landingNick = document.getElementById('landing_nickname')?.value.trim();
+    if (landingNick) syncNicknameInputs(landingNick);
+    preparePlayNickname();
+    if (typeof globalThis.connect === 'function') globalThis.connect();
+}
+
 function hideModals() {
     document.getElementById('join-modal').style.display = 'none';
     document.getElementById('create-modal').style.display = 'none';
@@ -58,12 +94,17 @@ function persistNickname(nick) {
 function syncNicknameInputs(value) {
     const createInput = document.getElementById('nickname');
     const joinInput = document.getElementById('nickname_join');
+    const landingInput = document.getElementById('landing_nickname');
     if (createInput) createInput.value = value;
     if (joinInput) joinInput.value = value;
+    if (landingInput) landingInput.value = value;
 }
 
 function ensureNicknameInput() {
-    const input = document.getElementById('nickname') || document.getElementById('nickname_join');
+    const input =
+        document.getElementById('nickname') ||
+        document.getElementById('nickname_join') ||
+        document.getElementById('landing_nickname');
     if (!input) return null;
 
     const current = input.value.trim();
@@ -104,6 +145,7 @@ function bindNicknameInputs() {
     };
     bind(document.getElementById('nickname'));
     bind(document.getElementById('nickname_join'));
+    bind(document.getElementById('landing_nickname'));
 }
 
 function preparePlayNickname() {
@@ -115,20 +157,95 @@ function getResolvedNickname() {
     preparePlayNickname();
     const joinInput = document.getElementById('nickname_join');
     const createInput = document.getElementById('nickname');
+    const landingInput = document.getElementById('landing_nickname');
     const joinModalOpen = document.getElementById('join-modal')?.style.display === 'flex';
     const fromJoin = joinInput?.value.trim() || '';
     const fromCreate = createInput?.value.trim() || '';
-    return joinModalOpen ? fromJoin || fromCreate : fromCreate || fromJoin;
+    const fromLanding = landingInput?.value.trim() || '';
+    if (joinModalOpen) return fromJoin || fromCreate || fromLanding;
+    return fromCreate || fromJoin || fromLanding;
 }
 
 function syncLandingScrollLock() {
     const body = document.body;
     if (!body.classList.contains('landing-page')) return;
 
-    const roomsOpen =
-        document.getElementById('active-rooms-section')?.style.display !== 'none';
+    const tableWrap = document.getElementById('active-rooms-table-wrap');
+    const roomsOpen = Boolean(tableWrap && !tableWrap.hidden);
 
-    body.classList.toggle('landing-scrollable', Boolean(roomsOpen));
+    body.classList.toggle('landing-scrollable', roomsOpen);
+}
+
+function prefersReducedMotion() {
+    return Boolean(globalThis.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+}
+
+function initLandingGuideCarousel() {
+    const root = document.querySelector('.landing-guide-carousel');
+    const track = document.getElementById('landing-guide-carousel-track');
+    const dotsRoot = document.getElementById('landing-guide-carousel-dots');
+    const live = document.getElementById('landing-guide-carousel-live');
+    if (!root || !track || !dotsRoot) return;
+
+    const slides = Array.from(track.querySelectorAll('.landing-guide-carousel-slide'));
+    if (slides.length === 0) return;
+
+    let activeIndex = 0;
+
+    const announce = (index) => {
+        const slide = slides[index];
+        if (!slide || !live) return;
+        const title = slide.querySelector('.landing-guide-carousel-slide-title')?.textContent?.trim();
+        if (title) live.textContent = `Slajd: ${title}`;
+    };
+
+    const setActive = (index) => {
+        activeIndex = (index + slides.length) % slides.length;
+        track.style.transform = `translateX(-${activeIndex * 100}%)`;
+        slides.forEach((slide, i) => {
+            slide.setAttribute('aria-hidden', i === activeIndex ? 'false' : 'true');
+        });
+        dotsRoot.querySelectorAll('[role="tab"]').forEach((dot, i) => {
+            dot.setAttribute('aria-selected', i === activeIndex ? 'true' : 'false');
+            dot.tabIndex = i === activeIndex ? 0 : -1;
+        });
+        announce(activeIndex);
+    };
+
+    dotsRoot.innerHTML = '';
+    slides.forEach((slide, index) => {
+        const title = slide.querySelector('.landing-guide-carousel-slide-title')?.textContent?.trim() || `Slajd ${index + 1}`;
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.className = 'landing-guide-carousel-dot';
+        dot.setAttribute('role', 'tab');
+        dot.setAttribute('aria-label', title);
+        dot.addEventListener('click', () => setActive(index));
+        dotsRoot.appendChild(dot);
+    });
+
+    root.querySelectorAll('[data-carousel-dir]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const dir = btn.getAttribute('data-carousel-dir');
+            setActive(activeIndex + (dir === 'prev' ? -1 : 1));
+        });
+    });
+
+    root.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            setActive(activeIndex - 1);
+        } else if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            setActive(activeIndex + 1);
+        }
+    });
+
+    if (!prefersReducedMotion()) {
+        track.style.transition = 'transform 0.35s ease';
+    }
+
+    setActive(0);
 }
 
 function addLog(content, className = '') {
@@ -148,8 +265,16 @@ function addLog(content, className = '') {
     logs.scrollTop = logs.scrollHeight;
 }
 
-function updateScoreboard(scores = {}, hostName = '', viewerNick = '') {
+function updateScoreboard(scores = {}, hostName = '', viewerNick = '', readyPlayers = null) {
     const scoreboard = document.getElementById('scoreboard');
+    const lobbyRoster = document.getElementById('lobby-roster');
+    const inLobby = document.body.classList.contains('room-phase-lobby');
+    const readySet = Array.isArray(readyPlayers) ? new Set(readyPlayers) : null;
+
+    if (inLobby && lobbyRoster) {
+        renderLobbyRoster(scores, hostName, readySet || new Set(), viewerNick || globalThis.myNick || '');
+    }
+
     if (!scoreboard) return;
 
     const viewer = viewerNick || globalThis.myNick || '';
@@ -214,6 +339,105 @@ function updateScoreboard(scores = {}, hostName = '', viewerNick = '') {
     });
 }
 
+function renderLobbyRoster(scores = {}, hostName = '', readyPlayers = new Set(), viewerNick = '') {
+    const roster = document.getElementById('lobby-roster');
+    if (!roster) return;
+
+    roster.innerHTML = '';
+    const names = Object.keys(scores);
+    if (names.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'lobby-roster-empty';
+        empty.textContent = 'Czekamy na graczy…';
+        roster.appendChild(empty);
+        return;
+    }
+
+    names.forEach((name) => {
+        const row = document.createElement('div');
+        row.className = 'lobby-roster-item';
+        if (hostName && name === hostName) row.classList.add('is-host');
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'lobby-roster-name';
+        if (name === hostName) {
+            const crown = document.createElement('span');
+            crown.className = 'crown';
+            crown.textContent = '👑';
+            nameSpan.appendChild(crown);
+        }
+        nameSpan.appendChild(document.createTextNode(name));
+
+        const status = document.createElement('span');
+        status.className = 'lobby-roster-status';
+        status.textContent = readyPlayers.has(name) ? 'Gotowy' : 'Czeka';
+
+        row.appendChild(nameSpan);
+        row.appendChild(status);
+        roster.appendChild(row);
+    });
+}
+
+function setRoomPhase(phase) {
+    const allowed = new Set(['lobby', 'playing', 'results']);
+    const next = allowed.has(phase) ? phase : 'playing';
+    document.body.classList.remove('room-phase-lobby', 'room-phase-playing', 'room-phase-results');
+    document.body.classList.add(`room-phase-${next}`);
+
+    const lobby = document.getElementById('room-lobby');
+    const gameMain = document.getElementById('game-main-area');
+    const readyBtn = document.getElementById('btn-draw');
+    const lobbyActions = document.querySelector('.room-lobby-actions');
+    const gameActions = document.querySelector('.game-actions');
+
+    if (lobby) lobby.hidden = next !== 'lobby';
+    if (gameMain) gameMain.hidden = next === 'lobby';
+
+    if (readyBtn && lobbyActions && gameActions) {
+        if (next === 'lobby') {
+            lobbyActions.appendChild(readyBtn);
+            readyBtn.style.display = 'inline-flex';
+        } else if (!gameActions.contains(readyBtn)) {
+            gameActions.insertBefore(readyBtn, gameActions.firstChild);
+        }
+    }
+}
+
+function readRoomSettingsFromUrl() {
+    const params = new URLSearchParams(globalThis.location.search);
+    const rounds = params.get('rounds') || '5';
+    const limit = params.get('limit') || '90';
+    const visibility = params.get('visibility') === 'private' ? 'Prywatny' : 'Publiczny';
+    return { rounds, limit, visibility };
+}
+
+function syncRoomLobbySettings(roomId = '') {
+    const settings = readRoomSettingsFromUrl();
+    const codeEl = document.getElementById('lobby-room-code');
+    const roundsEl = document.getElementById('lobby-room-rounds');
+    const limitEl = document.getElementById('lobby-room-limit');
+    const visEl = document.getElementById('lobby-room-visibility');
+    if (codeEl) codeEl.textContent = roomId || '—';
+    if (roundsEl) roundsEl.textContent = settings.rounds;
+    if (limitEl) limitEl.textContent = `${settings.limit}s`;
+    if (visEl) visEl.textContent = settings.visibility;
+}
+
+async function copyRoomInviteLink() {
+    const roomId = document.getElementById('current-room')?.textContent?.trim() || '';
+    if (!roomId) return;
+    const params = new URLSearchParams(globalThis.location.search);
+    const visibility = params.get('visibility') === 'private' ? 'private' : 'public';
+    const url = `${globalThis.location.origin}/room/${encodeURIComponent(roomId)}?visibility=${visibility}`;
+    try {
+        await globalThis.navigator.clipboard.writeText(url);
+        addLog('<em>Skopiowano link do pokoju.</em>', 'system-msg');
+    } catch (e) {
+        console.warn('clipboard', e);
+        addLog('<em>Nie udało się skopiować linku.</em>', 'system-msg');
+    }
+}
+
 function sendChat() {
     const input = document.getElementById('message-input');
     if (!input) return;
@@ -246,13 +470,21 @@ function buildRoomRow(room) {
     return tr;
 }
 
+function setActiveRoomsView(hasRooms) {
+    const empty = document.getElementById('active-rooms-empty');
+    const tableWrap = document.getElementById('active-rooms-table-wrap');
+    if (empty) empty.hidden = hasRooms;
+    if (tableWrap) tableWrap.hidden = !hasRooms;
+    syncLandingScrollLock();
+}
+
 function renderActiveRooms(rooms) {
     const list = document.getElementById('rooms-list');
     const section = document.getElementById('active-rooms-section');
 
     const hasRooms = Array.isArray(rooms) && rooms.length > 0;
-    if (section) section.style.display = hasRooms ? 'block' : 'none';
-    syncLandingScrollLock();
+    if (section) section.hidden = false;
+    setActiveRoomsView(hasRooms);
     if (!hasRooms || !list) return;
 
     list.innerHTML = '';
@@ -271,8 +503,7 @@ async function loadActiveRooms() {
 
 // Globalna funkcja dołączania z tabeli
 globalThis.joinRoom = (roomId) => {
-    const roomIdInput = document.getElementById('room_id');
-    if (roomIdInput) roomIdInput.value = roomId;
+    syncRoomCodeInputs(roomId);
     showJoinModal();
 };
 
@@ -377,6 +608,7 @@ function playCountdownHaptic() {
 
 globalThis.window.onload = () => {
     bindNicknameInputs();
+    bindRoomCodeInputs();
     const isRoomRoute = globalThis.location.pathname.startsWith('/room/');
     const savedNick = isRoomRoute ? restoreNickname() : null;
     if (isRoomRoute) {
@@ -384,6 +616,8 @@ globalThis.window.onload = () => {
     } else {
         loadActiveRooms();
         setInterval(loadActiveRooms, 10000);
+        initLandingGuideCarousel();
+        preparePlayNickname();
     }
     bindChatEnter();
     bindCategoryEnter();
@@ -406,6 +640,13 @@ globalThis.sendChat = sendChat;
 globalThis.playLotterySpinHaptic = playLotterySpinHaptic;
 globalThis.playLotteryRevealHaptic = playLotteryRevealHaptic;
 globalThis.playCountdownHaptic = playCountdownHaptic;
+globalThis.connectFromLandingJoin = connectFromLandingJoin;
+globalThis.syncRoomCodeInputs = syncRoomCodeInputs;
+globalThis.initLandingGuideCarousel = initLandingGuideCarousel;
+globalThis.setRoomPhase = setRoomPhase;
+globalThis.renderLobbyRoster = renderLobbyRoster;
+globalThis.syncRoomLobbySettings = syncRoomLobbySettings;
+globalThis.copyRoomInviteLink = copyRoomInviteLink;
 
 if (typeof module !== 'undefined') {
     module.exports = {
@@ -419,7 +660,15 @@ if (typeof module !== 'undefined') {
         getResolvedNickname,
         persistNickname,
         preparePlayNickname,
+        syncRoomCodeInputs,
+        bindRoomCodeInputs,
+        connectFromLandingJoin,
         syncLandingScrollLock,
+        initLandingGuideCarousel,
+        setRoomPhase,
+        renderLobbyRoster,
+        syncRoomLobbySettings,
+        copyRoomInviteLink,
         addLog,
         updateScoreboard,
         sendChat,
