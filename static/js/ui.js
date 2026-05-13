@@ -193,7 +193,10 @@ function syncLandingScrollLock() {
     if (!body.classList.contains('landing-page')) return;
 
     const tableWrap = document.getElementById('active-rooms-table-wrap');
-    const roomsOpen = Boolean(tableWrap && !tableWrap.hidden);
+    const cardsWrap = document.getElementById('active-rooms-cards-wrap');
+    const roomsOpen = Boolean(
+        (tableWrap && !tableWrap.hidden) || (cardsWrap && !cardsWrap.hidden),
+    );
 
     body.classList.toggle('landing-scrollable', roomsOpen);
 }
@@ -590,44 +593,92 @@ function sendChat() {
     }
 }
 
+function escapeLandingText(text) {
+    if (text == null || text === '') return '';
+    const node = document.createElement('div');
+    node.textContent = String(text);
+    return node.innerHTML;
+}
+
+function roomVisibilityLabel(room) {
+    return room.visibility_label || (room.visibility === 'private' ? 'Prywatny' : 'Publiczny');
+}
+
 function buildRoomRow(room) {
-    const visLabel =
-        room.visibility_label ||
-        (room.visibility === 'private' ? 'Prywatny' : 'Publiczny');
+    const visLabel = roomVisibilityLabel(room);
     const tr = document.createElement('tr');
     tr.innerHTML = `
-        <td style="font-weight:800; color:var(--accent);">${room.id}</td>
-        <td>${room.host || 'Anonim'}</td>
-        <td><span class="badge badge-rules">${room.players} graczy</span></td>
-        <td>${room.current_round}/${room.max_rounds}</td>
-        <td><span class="badge badge-rules">${room.time_limit}s</span></td>
-        <td><span class="badge badge-mode">${visLabel}</span></td>
+        <td style="font-weight:800; color:var(--accent);">${escapeLandingText(room.id)}</td>
+        <td>${escapeLandingText(room.host || 'Anonim')}</td>
+        <td><span class="badge badge-rules">${escapeLandingText(room.players)} graczy</span></td>
+        <td>${escapeLandingText(room.current_round)}/${escapeLandingText(room.max_rounds)}</td>
+        <td><span class="badge badge-rules">${escapeLandingText(room.time_limit)}s</span></td>
+        <td><span class="badge badge-mode">${escapeLandingText(visLabel)}</span></td>
         <td>
-            <button class="btn-join-small" onclick="joinRoom('${room.id}')">DOŁĄCZ</button>
+            <button type="button" class="btn-join-small" data-room-id="${escapeLandingText(room.id)}">DOŁĄCZ</button>
         </td>
     `;
+    tr.querySelector('.btn-join-small')?.addEventListener('click', () => {
+        globalThis.joinRoom(room.id);
+    });
     return tr;
+}
+
+function buildRoomCard(room) {
+    const visLabel = roomVisibilityLabel(room);
+    const li = document.createElement('li');
+    li.className = 'active-rooms-card';
+    li.innerHTML = `
+        <div class="active-rooms-card-head">
+            <span class="active-rooms-card-code">${escapeLandingText(room.id)}</span>
+            <span class="active-rooms-card-host">${escapeLandingText(room.host || 'Anonim')}</span>
+        </div>
+        <div class="active-rooms-card-meta">
+            <span class="badge badge-rules">${escapeLandingText(room.players)} graczy</span>
+            <span class="badge badge-rules">${escapeLandingText(room.current_round)}/${escapeLandingText(room.max_rounds)} rund</span>
+            <span class="badge badge-rules">${escapeLandingText(room.time_limit)}s</span>
+            <span class="badge badge-mode">${escapeLandingText(visLabel)}</span>
+        </div>
+        <button type="button" class="btn-join-small active-rooms-card-join" data-room-id="${escapeLandingText(room.id)}">Dołącz</button>
+    `;
+    li.querySelector('.active-rooms-card-join')?.addEventListener('click', () => {
+        globalThis.joinRoom(room.id);
+    });
+    return li;
 }
 
 function setActiveRoomsView(hasRooms) {
     const empty = document.getElementById('active-rooms-empty');
     const tableWrap = document.getElementById('active-rooms-table-wrap');
+    const cardsWrap = document.getElementById('active-rooms-cards-wrap');
     if (empty) empty.hidden = hasRooms;
     if (tableWrap) tableWrap.hidden = !hasRooms;
+    if (cardsWrap) cardsWrap.hidden = !hasRooms;
     syncLandingScrollLock();
 }
 
 function renderActiveRooms(rooms) {
     const list = document.getElementById('rooms-list');
+    const cards = document.getElementById('active-rooms-cards-wrap');
     const section = document.getElementById('active-rooms-section');
 
     const hasRooms = Array.isArray(rooms) && rooms.length > 0;
     if (section) section.hidden = false;
     setActiveRoomsView(hasRooms);
-    if (!hasRooms || !list) return;
+    if (!hasRooms) {
+        if (list) list.innerHTML = '';
+        if (cards) cards.innerHTML = '';
+        return;
+    }
 
-    list.innerHTML = '';
-    rooms.forEach((room) => list.appendChild(buildRoomRow(room)));
+    if (list) {
+        list.innerHTML = '';
+        rooms.forEach((room) => list.appendChild(buildRoomRow(room)));
+    }
+    if (cards) {
+        cards.innerHTML = '';
+        rooms.forEach((room) => cards.appendChild(buildRoomCard(room)));
+    }
 }
 
 async function loadActiveRooms() {
@@ -837,6 +888,7 @@ if (typeof module !== 'undefined') {
         updateScoreboard,
         sendChat,
         buildRoomRow,
+        buildRoomCard,
         renderActiveRooms,
         loadActiveRooms,
         restoreNickname,

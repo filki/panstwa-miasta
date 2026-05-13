@@ -539,6 +539,63 @@ button.active-rooms-empty-cta {
     letter-spacing: 0;
 }
 
+.active-rooms-cards {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-3);
+}
+
+.active-rooms-card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--r-lg);
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.active-rooms-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.active-rooms-card-code {
+    font-weight: 800;
+    color: var(--accent);
+    font-size: var(--fs-h3);
+}
+
+.active-rooms-card-host {
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+}
+
+.active-rooms-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.active-rooms-card-join {
+    width: 100%;
+}
+
+@media (min-width: 1024px) {
+    .active-rooms-cards {
+        display: none;
+    }
+}
+
+@media (max-width: 1023px) {
+    .active-rooms-table-wrap {
+        display: none !important;
+    }
+}
+
 @media (min-width: 768px) {
     .join-card { padding: var(--space-8); }
 }
@@ -2167,7 +2224,7 @@ body.landing-page .site-footer-meta {
     }
 
     body.landing-page .landing-access-tabs,
-    body.landing-page #active-rooms-section {
+    body.landing-page .landing-mobile-hint {
         display: none !important;
     }
 
