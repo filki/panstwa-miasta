@@ -38,24 +38,24 @@
                         <div class="landing-guide-carousel-track" id="landing-guide-carousel-track">
                             <article class="landing-guide-carousel-slide" aria-labelledby="landing-carousel-steps-title">
                                 <h3 id="landing-carousel-steps-title" class="landing-guide-carousel-slide-title">Kroki</h3>
-                                <ol class="landing-guide-steps landing-guide-steps--carousel">
-                                    <li class="landing-guide-step-item">
-                                        <span class="landing-guide-step" aria-hidden="true">1</span>
-                                        <p class="landing-guide-step-text">Wszyscy oznaczają gotowość.</p>
+                                <ul class="landing-bento-steps landing-bento-steps--carousel" aria-label="Kroki gry">
+                                    <li class="landing-bento-step">
+                                        <span class="landing-bento-icon" aria-hidden="true">👍</span>
+                                        <p class="landing-bento-step-text">Gotowość</p>
                                     </li>
-                                    <li class="landing-guide-step-item">
-                                        <span class="landing-guide-step" aria-hidden="true">2</span>
-                                        <p class="landing-guide-step-text">Serwer losuje literę rundy.</p>
+                                    <li class="landing-bento-step">
+                                        <span class="landing-bento-icon" aria-hidden="true">🎲</span>
+                                        <p class="landing-bento-step-text">Litera</p>
                                     </li>
-                                    <li class="landing-guide-step-item">
-                                        <span class="landing-guide-step" aria-hidden="true">3</span>
-                                        <p class="landing-guide-step-text">Wypełniasz kategorie i wciskasz STOP.</p>
+                                    <li class="landing-bento-step">
+                                        <span class="landing-bento-icon" aria-hidden="true">✍️</span>
+                                        <p class="landing-bento-step-text">Kategorie</p>
                                     </li>
-                                    <li class="landing-guide-step-item">
-                                        <span class="landing-guide-step" aria-hidden="true">4</span>
-                                        <p class="landing-guide-step-text">Punkty liczy serwer z lokalnych list.</p>
+                                    <li class="landing-bento-step">
+                                        <span class="landing-bento-icon" aria-hidden="true">🏆</span>
+                                        <p class="landing-bento-step-text">Punkty</p>
                                     </li>
-                                </ol>
+                                </ul>
                             </article>
                             <article class="landing-guide-carousel-slide" aria-labelledby="landing-carousel-categories-title">
                                 <h3 id="landing-carousel-categories-title" class="landing-guide-carousel-slide-title">Kategorie</h3>
@@ -71,12 +71,12 @@
                             </article>
                             <article class="landing-guide-carousel-slide" aria-labelledby="landing-carousel-scores-title">
                                 <h3 id="landing-carousel-scores-title" class="landing-guide-carousel-slide-title">Punktacja</h3>
-                                <dl class="landing-guide-scores landing-guide-scores--carousel" aria-label="Punktacja">
-                                    <div><dt>15</dt><dd><span class="landing-guide-score-label">unikat</span> — tylko ty masz hasło</dd></div>
-                                    <div><dt>10</dt><dd><span class="landing-guide-score-label">powtórka</span> — inni mają hasło, ale masz inne od nich</dd></div>
-                                    <div><dt>5</dt><dd><span class="landing-guide-score-label">z listy</span> — masz to samo co ktoś</dd></div>
-                                    <div><dt>0</dt><dd><span class="landing-guide-score-label">pusto</span> — nie masz nic / błąd</dd></div>
-                                </dl>
+                                <div class="landing-score-legend landing-score-legend--carousel" aria-label="Punktacja">
+                                    <span class="landing-score-chip landing-score-chip--15"><strong>15</strong> unikat</span>
+                                    <span class="landing-score-chip landing-score-chip--10"><strong>10</strong> powtórka</span>
+                                    <span class="landing-score-chip landing-score-chip--5"><strong>5</strong> z listy</span>
+                                    <span class="landing-score-chip landing-score-chip--0"><strong>0</strong> pusto</span>
+                                </div>
                             </article>
                             <article class="landing-guide-carousel-slide" aria-labelledby="landing-carousel-letters-title">
                                 <h3 id="landing-carousel-letters-title" class="landing-guide-carousel-slide-title">Litery</h3>
@@ -89,48 +89,62 @@
                 </section>
 
                 <div class="landing-grid">
-                    <aside class="landing-guide" aria-labelledby="landing-guide-title">
+                    <aside class="landing-guide landing-guide--bento" aria-labelledby="landing-guide-title">
                         <h2 id="landing-guide-title" class="landing-guide-title">Jak grać</h2>
-                        <ol class="landing-guide-steps">
-                            <li class="landing-guide-step-item">
-                                <span class="landing-guide-step" aria-hidden="true">1</span>
-                                <p class="landing-guide-step-text">Wszyscy oznaczają gotowość.</p>
-                            </li>
-                            <li class="landing-guide-step-item">
-                                <span class="landing-guide-step" aria-hidden="true">2</span>
-                                <p class="landing-guide-step-text">Serwer losuje literę rundy.</p>
-                            </li>
-                            <li class="landing-guide-step-item">
-                                <span class="landing-guide-step" aria-hidden="true">3</span>
-                                <p class="landing-guide-step-text">Wypełniasz kategorie i wciskasz STOP.</p>
-                            </li>
-                            <li class="landing-guide-step-item">
-                                <span class="landing-guide-step" aria-hidden="true">4</span>
-                                <p class="landing-guide-step-text">Punkty liczy serwer z lokalnych list.</p>
-                            </li>
-                        </ol>
-                        <div class="landing-guide-categories" aria-label="Kategorie w rundzie">
-                            <p class="landing-guide-categories-title">Kategorie</p>
-                            <ul class="landing-guide-category-list">
-                                <li>Państwo</li>
-                                <li>Miasto</li>
-                                <li>Rzecz</li>
-                                <li>Zwierzę</li>
-                                <li>Roślina</li>
-                                <li>Imię</li>
-                                <li>Zawód</li>
+                        <div class="landing-bento">
+                            <ul class="landing-bento-steps" aria-label="Kroki gry">
+                                <li class="landing-bento-step">
+                                    <span class="landing-bento-icon" aria-hidden="true">👍</span>
+                                    <p class="landing-bento-step-text">Gotowość</p>
+                                    <p class="landing-bento-step-hint">Wszyscy oznaczają gotowość.</p>
+                                </li>
+                                <li class="landing-bento-step">
+                                    <span class="landing-bento-icon" aria-hidden="true">🎲</span>
+                                    <p class="landing-bento-step-text">Litera</p>
+                                    <p class="landing-bento-step-hint">Serwer losuje literę rundy.</p>
+                                </li>
+                                <li class="landing-bento-step">
+                                    <span class="landing-bento-icon" aria-hidden="true">✍️</span>
+                                    <p class="landing-bento-step-text">Kategorie</p>
+                                    <p class="landing-bento-step-hint">Wypełniasz pola i wciskasz STOP.</p>
+                                </li>
+                                <li class="landing-bento-step">
+                                    <span class="landing-bento-icon" aria-hidden="true">🏆</span>
+                                    <p class="landing-bento-step-text">Punkty</p>
+                                    <p class="landing-bento-step-hint">Serwer liczy wyniki z lokalnych list.</p>
+                                </li>
                             </ul>
+                            <div class="landing-bento-tile landing-bento-tile--categories" aria-label="Kategorie w rundzie">
+                                <p class="landing-guide-categories-title">Kategorie</p>
+                                <ul class="landing-guide-category-list">
+                                    <li>Państwo</li>
+                                    <li>Miasto</li>
+                                    <li>Rzecz</li>
+                                    <li>Zwierzę</li>
+                                    <li>Roślina</li>
+                                    <li>Imię</li>
+                                    <li>Zawód</li>
+                                </ul>
+                            </div>
+                            <details class="landing-bento-tile landing-bento-tile--scores">
+                                <summary class="landing-score-legend">
+                                    <span class="landing-score-chip landing-score-chip--15"><strong>15</strong> unikat</span>
+                                    <span class="landing-score-chip landing-score-chip--10"><strong>10</strong> powtórka</span>
+                                    <span class="landing-score-chip landing-score-chip--5"><strong>5</strong> z listy</span>
+                                    <span class="landing-score-chip landing-score-chip--0"><strong>0</strong> pusto</span>
+                                </summary>
+                                <dl class="landing-guide-scores landing-guide-scores--details" aria-label="Szczegóły punktacji">
+                                    <div><dt>15</dt><dd><span class="landing-guide-score-label">unikat</span> — tylko ty masz hasło</dd></div>
+                                    <div><dt>10</dt><dd><span class="landing-guide-score-label">powtórka</span> — inni mają hasło, ale masz inne od nich</dd></div>
+                                    <div><dt>5</dt><dd><span class="landing-guide-score-label">z listy</span> — masz to samo co ktoś</dd></div>
+                                    <div><dt>0</dt><dd><span class="landing-guide-score-label">pusto</span> — nie masz nic / błąd</dd></div>
+                                </dl>
+                            </details>
                         </div>
-                        <dl class="landing-guide-scores" aria-label="Punktacja">
-                            <div><dt>15</dt><dd><span class="landing-guide-score-label">unikat</span> — tylko ty masz hasło</dd></div>
-                            <div><dt>10</dt><dd><span class="landing-guide-score-label">powtórka</span> — inni mają hasło, ale masz inne od nich</dd></div>
-                            <div><dt>5</dt><dd><span class="landing-guide-score-label">z listy</span> — masz to samo co ktoś</dd></div>
-                            <div><dt>0</dt><dd><span class="landing-guide-score-label">pusto</span> — nie masz nic / błąd</dd></div>
-                        </dl>
                     </aside>
 
                     <section id="lobby" class="lobby-section start-panel landing-actions">
-                        <div id="join-section" class="join-card">
+                        <div id="join-section" class="join-card landing-join-card">
                             <div id="buttons-grid" class="choice-cards">
                                 <button type="button" class="choice-card choice-card--create" onclick="showCreateModal()" aria-label="Stwórz nowy pokój">
                                     <span class="choice-icon" aria-hidden="true">✨</span>
@@ -153,7 +167,7 @@
                                     <label class="header-label" for="landing_nickname">Pseudonim</label>
                                     <div class="nick-field-row">
                                         <input type="text" id="landing_nickname" maxlength="20" autocomplete="nickname" inputmode="text">
-                                        <button type="button" class="nick-reroll secondary" onclick="rerollPlayerNickname()" aria-label="Losuj inny pseudonim">Inny</button>
+                                        <button type="button" class="nick-reroll nick-reroll--dice secondary" onclick="rerollPlayerNickname()" aria-label="Losuj inny pseudonim"><span aria-hidden="true">🎲</span></button>
                                     </div>
                                 </div>
                                 <label class="header-label" for="landing_room_code">Kod pokoju</label>
@@ -173,6 +187,11 @@
                 <div id="active-rooms-section" class="active-rooms-block">
                     <h3 class="active-rooms-title">Aktywne pokoje</h3>
                     <div id="active-rooms-empty" class="active-rooms-empty">
+                        <div class="active-rooms-empty-visual" aria-hidden="true">
+                            <span class="active-rooms-empty-ring"></span>
+                            <span class="active-rooms-empty-ring active-rooms-empty-ring--delay"></span>
+                            <span class="active-rooms-empty-icon">✨</span>
+                        </div>
                         <p class="active-rooms-empty-text">Nie ma żadnych aktywnych pokoi. Rozruszaj towarzystwo — stwórz pokój i zaproś znajomych.</p>
                         <button type="button" class="active-rooms-empty-cta" onclick="showCreateModal()">Stwórz pokój</button>
                     </div>
@@ -205,7 +224,7 @@
                 <label class="header-label" for="nickname_join">Pseudonim</label>
                 <div class="nick-field-row">
                     <input type="text" id="nickname_join" maxlength="20" autocomplete="nickname" inputmode="text">
-                    <button type="button" class="nick-reroll secondary" onclick="rerollPlayerNickname()" aria-label="Losuj inny pseudonim">Inny</button>
+                    <button type="button" class="nick-reroll nick-reroll--dice secondary" onclick="rerollPlayerNickname()" aria-label="Losuj inny pseudonim"><span aria-hidden="true">🎲</span></button>
                 </div>
             </div>
             <div class="form-group">
@@ -225,7 +244,7 @@
                 <label class="header-label" for="nickname">Pseudonim</label>
                 <div class="nick-field-row">
                     <input type="text" id="nickname" maxlength="20" autocomplete="nickname" inputmode="text">
-                    <button type="button" class="nick-reroll secondary" onclick="rerollPlayerNickname()" aria-label="Losuj inny pseudonim">Inny</button>
+                    <button type="button" class="nick-reroll nick-reroll--dice secondary" onclick="rerollPlayerNickname()" aria-label="Losuj inny pseudonim"><span aria-hidden="true">🎲</span></button>
                 </div>
             </div>
             <div class="settings-grid">
