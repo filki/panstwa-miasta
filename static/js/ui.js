@@ -9,8 +9,34 @@ function showJoinModal() {
 }
 
 function showCreateModal() {
+    const landingNick = document.getElementById('landing_nickname')?.value.trim();
+    if (landingNick) syncNicknameInputs(landingNick);
     document.getElementById('create-modal').style.display = 'flex';
     preparePlayNickname();
+}
+
+function showLandingJoinCode() {
+    const start = document.getElementById('landing-anon-start');
+    const join = document.getElementById('landing-anon-join');
+    const actions = document.getElementById('landing-anon-actions');
+    if (!start || !join) return;
+    const landingNick = document.getElementById('landing_nickname')?.value.trim();
+    if (landingNick) syncNicknameInputs(landingNick);
+    preparePlayNickname();
+    start.hidden = true;
+    join.hidden = false;
+    if (actions) actions.hidden = true;
+    document.getElementById('landing_room_code')?.focus();
+}
+
+function showLandingStartMode() {
+    const start = document.getElementById('landing-anon-start');
+    const join = document.getElementById('landing-anon-join');
+    const actions = document.getElementById('landing-anon-actions');
+    if (!start || !join) return;
+    join.hidden = true;
+    start.hidden = false;
+    if (actions) actions.hidden = false;
 }
 
 function syncRoomCodeInputs(value) {
@@ -105,22 +131,18 @@ function ensureNicknameInput() {
         document.getElementById('nickname') ||
         document.getElementById('nickname_join') ||
         document.getElementById('landing_nickname');
-    if (!input) return null;
+    if (!input) return readStoredNickname() || null;
 
     const current = input.value.trim();
     if (current) return current;
 
-    let nick;
-    if (isCustomNickStored()) {
-        nick = readStoredNickname();
-        if (!nick) {
-            nick = generatePlayerNickname();
-            clearNicknameCustom();
-        }
-    } else {
-        nick = generatePlayerNickname();
+    const stored = readStoredNickname();
+    if (stored) {
+        syncNicknameInputs(stored);
+        return stored;
     }
 
+    const nick = generatePlayerNickname();
     syncNicknameInputs(nick);
     return nick;
 }
@@ -248,6 +270,69 @@ function initLandingGuideCarousel() {
     setActive(0);
 }
 
+const LANDING_GUIDE_MOBILE_QUERY = globalThis.matchMedia?.('(max-width: 1023px)');
+
+function landingGuideSheetEnabled() {
+    return Boolean(LANDING_GUIDE_MOBILE_QUERY?.matches);
+}
+
+function syncLandingGuideSheetState(root, openBtn, expanded) {
+    document.body.classList.toggle('landing-guide-open', expanded);
+    openBtn?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    if (landingGuideSheetEnabled()) {
+        root?.setAttribute('aria-hidden', expanded ? 'false' : 'true');
+    } else {
+        root?.removeAttribute('aria-hidden');
+    }
+}
+
+function initLandingGuideMobileSheet() {
+    const openBtn = document.getElementById('landing-guide-open');
+    const closeBtn = document.querySelector('.landing-guide-close');
+    const root = document.getElementById('landing-guide-carousel');
+    if (!openBtn || !root) return;
+
+    const applyLayoutMode = () => {
+        if (landingGuideSheetEnabled()) {
+            const expanded = document.body.classList.contains('landing-guide-open');
+            syncLandingGuideSheetState(root, openBtn, expanded);
+        } else {
+            syncLandingGuideSheetState(root, openBtn, false);
+        }
+    };
+
+    const openGuide = () => {
+        if (!landingGuideSheetEnabled()) return;
+        syncLandingGuideSheetState(root, openBtn, true);
+        closeBtn?.focus();
+    };
+
+    const closeGuide = () => {
+        if (!landingGuideSheetEnabled()) return;
+        syncLandingGuideSheetState(root, openBtn, false);
+        openBtn.focus();
+    };
+
+    openBtn.addEventListener('click', openGuide);
+    closeBtn?.addEventListener('click', closeGuide);
+
+    root.addEventListener('click', (event) => {
+        if (!landingGuideSheetEnabled() || event.target !== root) return;
+        closeGuide();
+    });
+
+    root.addEventListener('keydown', (event) => {
+        if (!landingGuideSheetEnabled() || !document.body.classList.contains('landing-guide-open')) return;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closeGuide();
+        }
+    });
+
+    LANDING_GUIDE_MOBILE_QUERY?.addEventListener?.('change', applyLayoutMode);
+    applyLayoutMode();
+}
+
 function addLog(content, className = '') {
     const logs = document.getElementById('logs');
     if (!logs) return;
@@ -339,12 +424,41 @@ function updateScoreboard(scores = {}, hostName = '', viewerNick = '', readyPlay
     });
 }
 
+function createLobbyAvatar(name, viewerNick = '') {
+    const img = document.createElement('img');
+    img.className = 'lobby-roster-avatar';
+    const resolveId =
+        typeof globalThis.avatarIdForPlayer === 'function'
+            ? globalThis.avatarIdForPlayer(name, viewerNick)
+            : 0;
+    const src =
+        typeof globalThis.getAvatarSrc === 'function'
+            ? globalThis.getAvatarSrc(resolveId)
+            : '/static/img/avatars/avatar-01.png';
+    img.src = src;
+    img.alt = '';
+    img.width = 40;
+    img.height = 40;
+    img.decoding = 'async';
+    return img;
+}
+
 function renderLobbyRoster(scores = {}, hostName = '', readyPlayers = new Set(), viewerNick = '') {
     const roster = document.getElementById('lobby-roster');
     if (!roster) return;
 
     roster.innerHTML = '';
     const names = Object.keys(scores);
+    const countEl = document.getElementById('lobby-player-count');
+    if (countEl) {
+        if (names.length === 0) {
+            countEl.textContent = '';
+        } else {
+            const readyCount = names.filter((name) => readyPlayers.has(name)).length;
+            countEl.textContent = `· ${readyCount}/${names.length} gotowych`;
+        }
+    }
+
     if (names.length === 0) {
         const empty = document.createElement('p');
         empty.className = 'lobby-roster-empty';
@@ -368,20 +482,31 @@ function renderLobbyRoster(scores = {}, hostName = '', readyPlayers = new Set(),
         }
         nameSpan.appendChild(document.createTextNode(name));
 
+        const identity = document.createElement('div');
+        identity.className = 'lobby-roster-identity';
+        identity.appendChild(createLobbyAvatar(name, viewerNick));
+        identity.appendChild(nameSpan);
+
         const status = document.createElement('span');
         status.className = 'lobby-roster-status';
+        if (readyPlayers.has(name)) status.classList.add('is-ready');
         status.textContent = readyPlayers.has(name) ? 'Gotowy' : 'Czeka';
 
-        row.appendChild(nameSpan);
+        row.appendChild(identity);
         row.appendChild(status);
         roster.appendChild(row);
     });
 }
 
 function setRoomPhase(phase) {
-    const allowed = new Set(['lobby', 'playing', 'results']);
+    const allowed = new Set(['lobby', 'playing', 'results', 'round_results']);
     const next = allowed.has(phase) ? phase : 'playing';
-    document.body.classList.remove('room-phase-lobby', 'room-phase-playing', 'room-phase-results');
+    document.body.classList.remove(
+        'room-phase-lobby',
+        'room-phase-playing',
+        'room-phase-results',
+        'room-phase-round_results',
+    );
     document.body.classList.add(`room-phase-${next}`);
 
     const lobby = document.getElementById('room-lobby');
@@ -389,9 +514,16 @@ function setRoomPhase(phase) {
     const readyBtn = document.getElementById('btn-draw');
     const lobbyActions = document.querySelector('.room-lobby-actions');
     const gameActions = document.querySelector('.game-actions');
+    const chatSection = document.getElementById('chat-section');
 
     if (lobby) lobby.hidden = next !== 'lobby';
-    if (gameMain) gameMain.hidden = next === 'lobby';
+    if (gameMain) gameMain.hidden = next === 'lobby' || next === 'round_results';
+    if (chatSection) chatSection.hidden = next === 'round_results';
+
+    const gameLayout = document.getElementById('game-layout');
+    const postgame = document.getElementById('room-postgame');
+    if (gameLayout) gameLayout.hidden = next === 'lobby' || next === 'round_results';
+    if (postgame && next !== 'results') postgame.hidden = true;
 
     if (readyBtn && lobbyActions && gameActions) {
         if (next === 'lobby') {
@@ -448,6 +580,13 @@ function sendChat() {
     if (typeof sendJson === 'function') {
         sendJson({ type: 'chat', text });
         input.value = '';
+        if (
+            typeof globalThis.stopCelebrationEffects === 'function'
+            && (document.body.classList.contains('room-phase-results')
+                || document.body.classList.contains('room-phase-round_results'))
+        ) {
+            globalThis.stopCelebrationEffects();
+        }
     }
 }
 
@@ -524,23 +663,39 @@ function applyRoomSettingsFromUrl() {
     if (visSel && (vis === 'public' || vis === 'private')) visSel.value = vis;
 }
 
-function tryAutoJoin(savedNick, roomId) {
-    if (!savedNick?.trim()) return;
-    // After a host "dissolves room" we redirect players to landing,
-    // but some browsers may briefly reload the room page. Avoid auto-join
-    // back into a dissolved room in that case.
+function shouldSkipRoomAutoJoin() {
     try {
         if (globalThis.sessionStorage?.getItem('pm_skip_auto_join') === '1') {
             globalThis.sessionStorage.removeItem('pm_skip_auto_join');
-            return;
+            return true;
         }
     } catch (e) {
         console.debug('pm: sessionStorage read skipped', e);
     }
-    console.log("Auto-joining room:", roomId);
-    setTimeout(() => {
-        if (typeof connect === 'function') connect();
-    }, 500);
+    return false;
+}
+
+function setRoomJoinVisible(visible) {
+    const inlineJoin = document.getElementById('room-inline-join');
+    const chatSection = document.getElementById('chat-section');
+    if (inlineJoin) inlineJoin.style.display = visible ? 'block' : 'none';
+    if (chatSection && visible) chatSection.style.display = 'none';
+}
+
+function prepareRoomReconnectUi() {
+    setRoomJoinVisible(false);
+    const chatSection = document.getElementById('chat-section');
+    if (chatSection) chatSection.style.display = 'block';
+    if (typeof setRoomPhase === 'function') setRoomPhase('lobby');
+}
+
+function tryAutoJoin(savedNick, roomId) {
+    if (!savedNick?.trim()) return false;
+    if (shouldSkipRoomAutoJoin()) return false;
+    prepareRoomReconnectUi();
+    console.log('Auto-joining room:', roomId);
+    if (typeof connect === 'function') connect();
+    return true;
 }
 
 function handleRoomRouteOnLoad(savedNick) {
@@ -561,7 +716,8 @@ function handleRoomRouteOnLoad(savedNick) {
     }
 
     applyRoomSettingsFromUrl();
-    tryAutoJoin(savedNick, roomId);
+    const autoJoined = tryAutoJoin(savedNick, roomId);
+    if (!autoJoined) setRoomJoinVisible(true);
     return isRoomRoute;
 }
 
@@ -617,7 +773,9 @@ globalThis.window.onload = () => {
         loadActiveRooms();
         setInterval(loadActiveRooms, 10000);
         initLandingGuideCarousel();
+        initLandingGuideMobileSheet();
         preparePlayNickname();
+        if (typeof initAvatarSelection === 'function') initAvatarSelection();
     }
     bindChatEnter();
     bindCategoryEnter();
@@ -640,9 +798,12 @@ globalThis.sendChat = sendChat;
 globalThis.playLotterySpinHaptic = playLotterySpinHaptic;
 globalThis.playLotteryRevealHaptic = playLotteryRevealHaptic;
 globalThis.playCountdownHaptic = playCountdownHaptic;
+globalThis.showLandingJoinCode = showLandingJoinCode;
+globalThis.showLandingStartMode = showLandingStartMode;
 globalThis.connectFromLandingJoin = connectFromLandingJoin;
 globalThis.syncRoomCodeInputs = syncRoomCodeInputs;
 globalThis.initLandingGuideCarousel = initLandingGuideCarousel;
+globalThis.initLandingGuideMobileSheet = initLandingGuideMobileSheet;
 globalThis.setRoomPhase = setRoomPhase;
 globalThis.renderLobbyRoster = renderLobbyRoster;
 globalThis.syncRoomLobbySettings = syncRoomLobbySettings;
@@ -652,6 +813,8 @@ if (typeof module !== 'undefined') {
     module.exports = {
         showJoinModal,
         showCreateModal,
+        showLandingJoinCode,
+        showLandingStartMode,
         hideModals,
         focusStartPanel,
         ensureNicknameInput,
@@ -665,6 +828,7 @@ if (typeof module !== 'undefined') {
         connectFromLandingJoin,
         syncLandingScrollLock,
         initLandingGuideCarousel,
+        initLandingGuideMobileSheet,
         setRoomPhase,
         renderLobbyRoster,
         syncRoomLobbySettings,

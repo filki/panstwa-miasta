@@ -21,54 +21,90 @@
         <header class="hero">
             <div class="landing-shell">
                 <header class="landing-shell-header">
-                    <p class="landing-shell-kicker">Gra w przeglądarce</p>
-                    <h1 class="landing-shell-title">Państwa<span>Miasta</span></h1>
-                    <p class="landing-shell-lede">7 kategorii, 22 litery w losowaniu (bez Q, V i X). Bez konta — wchodzisz pseudonimem.</p>
+                    <div class="landing-shell-title-row">
+                        <h1 class="landing-shell-title">Państwa<span>Miasta</span></h1>
+                        <button
+                            type="button"
+                            class="landing-guide-open"
+                            id="landing-guide-open"
+                            aria-label="Jak grać?"
+                            aria-expanded="false"
+                            aria-controls="landing-guide-carousel"
+                        >
+                            <span class="landing-guide-open-icon" aria-hidden="true">I</span>
+                        </button>
+                    </div>
                 </header>
 
                 <div class="landing-grid">
                     <section id="lobby" class="lobby-section start-panel landing-actions">
                         <div id="join-section" class="join-card landing-join-card">
-                            <div id="buttons-grid" class="choice-cards">
-                                <button type="button" class="choice-card choice-card--create" onclick="showCreateModal()" aria-label="Stwórz nowy pokój">
-                                    <span class="choice-icon" aria-hidden="true">✨</span>
-                                    <span class="choice-content">
-                                        <span class="choice-title">Stwórz pokój</span>
-                                        <span class="choice-desc">Ustaw rundy, czas i widoczność w lobby.</span>
-                                    </span>
-                                </button>
-                                <button type="button" class="choice-card choice-card--join" onclick="showJoinModal()" aria-label="Dołącz do istniejącego pokoju">
-                                    <span class="choice-icon" aria-hidden="true">🔗</span>
-                                    <span class="choice-content">
-                                        <span class="choice-title">Dołącz do gry</span>
-                                        <span class="choice-desc">Wpisz kod od znajomego.</span>
-                                    </span>
-                                </button>
+                            <div class="landing-access-tabs" role="tablist" aria-label="Sposób wejścia do gry">
+                                <button type="button" class="landing-access-tab landing-access-tab--active" role="tab" aria-selected="true" id="landing-access-tab-anon">Anonim</button>
+                                <span class="landing-access-tab-shell">
+                                    <button type="button" class="landing-access-tab landing-access-tab--locked" role="tab" aria-selected="false" aria-disabled="true" disabled id="landing-access-tab-auth" tabindex="-1">
+                                        Uwierzytelnienie
+                                        <span class="landing-access-tab-lock" aria-hidden="true">🔒</span>
+                                    </button>
+                                    <span class="landing-access-tab-tooltip" role="tooltip">Już wkrótce :)</span>
+                                </span>
                             </div>
 
-                            <div class="landing-quick-join" aria-label="Szybkie dołączenie">
-                                <div class="form-group play-nickname landing-quick-nick">
-                                    <label class="header-label" for="landing_nickname">Pseudonim</label>
-                                    <div class="nick-field-row">
-                                        <input type="text" id="landing_nickname" maxlength="20" autocomplete="nickname" inputmode="text">
-                                        <button type="button" class="nick-reroll nick-reroll--dice secondary" onclick="rerollPlayerNickname()" aria-label="Losuj inny pseudonim"><span aria-hidden="true">🎲</span></button>
+                            <div class="landing-access-panel" role="tabpanel" aria-labelledby="landing-access-tab-anon">
+                                <div class="landing-anon-stage" id="landing-anon-start">
+                                    <div class="landing-anon-profile">
+                                        <div class="landing-anon-avatar-block">
+                                            <div class="landing-anon-avatar-frame">
+                                                <img class="landing-anon-avatar" id="landing-anon-avatar" src="/static/img/avatars/avatar-01.png" width="108" height="108" alt="Awatar gracza">
+                                            </div>
+                                            <button type="button" class="landing-anon-avatar-reroll" onclick="rerollPlayerAvatar()" aria-label="Losuj inny awatar"><span aria-hidden="true">↻</span></button>
+                                        </div>
+                                        <div class="landing-anon-identity">
+                                            <p class="landing-anon-identity-label" id="landing-anon-identity-label">Wybierz pseudonim</p>
+                                            <div class="landing-anon-nick-row">
+                                                <input type="text" class="landing-anon-nickname" id="landing_nickname" maxlength="20" autocomplete="nickname" inputmode="text" aria-labelledby="landing-anon-identity-label">
+                                                <button type="button" class="landing-anon-nick-reroll" onclick="rerollPlayerNickname()" aria-label="Losuj inny pseudonim"><span aria-hidden="true">↻</span></button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="landing-anon-actions" id="landing-anon-actions">
+                                        <button type="button" class="landing-anon-cta landing-anon-cta--create" onclick="showCreateModal()">Stwórz pokój</button>
+                                        <button type="button" class="landing-anon-cta landing-anon-cta--join" onclick="showLandingJoinCode()">Dołącz do pokoju</button>
                                     </div>
                                 </div>
-                                <label class="header-label" for="landing_room_code">Kod pokoju</label>
-                                <div class="landing-quick-join-row">
-                                    <input type="text" id="landing_room_code" maxlength="12" autocomplete="off" inputmode="text" placeholder="np. 4821" aria-describedby="landing-quick-join-hint">
-                                    <button type="button" class="landing-quick-join-btn" onclick="connectFromLandingJoin()">Dołącz</button>
-                                </div>
-                                <p id="landing-quick-join-hint" class="landing-quick-join-hint">Pseudonim losujemy automatycznie — możesz go zmienić przed startem.</p>
-                            </div>
 
-                            <p class="landing-mobile-hint">Pseudonim ustawisz w kolejnym kroku.</p>
+
+                                <div class="landing-anon-stage landing-anon-stage--join" id="landing-anon-join" hidden>
+                                    <div class="landing-anon-join-head">
+                                        <button type="button" class="landing-anon-back" onclick="showLandingStartMode()">‹ Wróć</button>
+                                        <p class="landing-anon-join-title">Kod pokoju</p>
+                                    </div>
+                                    <label class="landing-anon-join-label" for="landing_room_code">Wpisz kod od znajomego</label>
+                                    <div class="landing-anon-join-row">
+                                        <input type="text" class="landing-anon-room-code" id="landing_room_code" maxlength="12" autocomplete="off" inputmode="text" placeholder="np. 4821" aria-describedby="landing-quick-join-hint">
+                                        <button type="button" class="landing-anon-cta landing-anon-cta--submit" onclick="connectFromLandingJoin()">
+                                            <span class="landing-anon-cta-icon" aria-hidden="true">▶</span>
+                                            <span>Dołącz</span>
+                                        </button>
+                                    </div>
+                                    <p id="landing-quick-join-hint" class="landing-anon-join-hint">Pseudonim zapiszemy z poprzedniego kroku.</p>
+                                </div>
+                            </div>
                         </div>
                     </section>
 
-                    <section class="landing-guide-carousel landing-guide-carousel--gartic" aria-labelledby="landing-guide-carousel-title" aria-roledescription="karuzela">
-                        <h2 id="landing-guide-carousel-title" class="landing-guide-carousel-title">Jak grać</h2>
+                    <section
+                        id="landing-guide-carousel"
+                        class="landing-guide-carousel landing-guide-carousel--gartic"
+                        aria-labelledby="landing-guide-carousel-title"
+                        aria-roledescription="karuzela"
+                    >
                         <div class="landing-guide-carousel-panel">
+                            <div class="landing-guide-carousel-toolbar">
+                                <h2 id="landing-guide-carousel-title" class="landing-guide-carousel-title">Jak grać?</h2>
+                                <button type="button" class="landing-guide-close" aria-label="Zamknij instrukcję">×</button>
+                            </div>
                             <div class="landing-guide-carousel-viewport">
                                 <div class="landing-guide-carousel-track" id="landing-guide-carousel-track">
                                     <article class="landing-guide-carousel-slide" aria-labelledby="landing-carousel-step-1">
@@ -185,14 +221,13 @@
     <div id="create-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <h3>Nowy pokój</h3>
-            <div class="form-group play-nickname">
-                <label class="header-label" for="nickname">Pseudonim</label>
-                <div class="nick-field-row">
-                    <input type="text" id="nickname" maxlength="20" autocomplete="nickname" inputmode="text">
-                    <button type="button" class="nick-reroll nick-reroll--dice secondary" onclick="rerollPlayerNickname()" aria-label="Losuj inny pseudonim"><span aria-hidden="true">🎲</span></button>
-                </div>
-            </div>
             <div class="settings-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="room_game_mode">Tryb gry</label>
+                    <select id="room_game_mode">
+                        <option value="standard" selected>Standard</option>
+                    </select>
+                </div>
                 <div class="form-group">
                     <label for="max_rounds">Rundy</label>
                     <select id="max_rounds">
@@ -238,6 +273,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" integrity="sha384-HAH79XdRvHr6axVGh4xQWVCp14kcd32bNk4Xu0sHDHtFQ42n6BAM8ykvB47dGz6D" crossorigin="anonymous"></script>
     <script src="/static/js/audio.js"></script>
+    <script src="/static/js/avatar.js"></script>
     <script src="/static/js/ui.js"></script>
     <script src="/static/js/game.js"></script>
     <script src="/static/js/socket.js"></script>

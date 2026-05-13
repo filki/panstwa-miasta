@@ -28,7 +28,9 @@ const {
     ensureNicknameInput,
     generatePlayerNickname,
     restoreNickname,
+    handleRoomRouteOnLoad,
     applyRoomSettingsFromUrl,
+    tryAutoJoin,
     playLotterySpinHaptic,
     playLotteryRevealHaptic,
     playCountdownHaptic,
@@ -371,12 +373,26 @@ describe('landing quick join nickname', () => {
         expect(document.getElementById('nickname').value).toBe('Zosia');
         expect(globalThis.connect).toHaveBeenCalled();
     });
+
+    test('showLandingJoinCode reveals room code step', () => {
+        document.body.innerHTML = `
+            <div id="landing-anon-start"></motion>
+            <div id="landing-anon-join" hidden></div>
+            <input id="landing_nickname" />
+            <input id="nickname" />
+            <input id="nickname_join" />
+        `;
+        showLandingJoinCode();
+        expect(document.getElementById('landing-anon-start').hidden).toBe(true);
+        expect(document.getElementById('landing-anon-join').hidden).toBe(false);
+    });
 });
 
 describe('room phase helpers', () => {
     test('setRoomPhase toggles lobby visibility', () => {
         document.body.innerHTML = `
             <section id="room-lobby"></section>
+            <div id="game-layout"></div>
             <main id="game-main-area"></main>
             <div class="room-lobby-actions"></div>
             <div class="game-actions"><button id="btn-draw"></button></div>
@@ -385,15 +401,17 @@ describe('room phase helpers', () => {
         expect(document.body.classList.contains('room-phase-lobby')).toBe(true);
         expect(document.getElementById('room-lobby').hidden).toBe(false);
         expect(document.getElementById('game-main-area').hidden).toBe(true);
+        expect(document.getElementById('game-layout').hidden).toBe(true);
     });
 
     test('renderLobbyRoster shows ready badges', () => {
-        document.body.innerHTML = '<div id="lobby-roster"></div>';
+        document.body.innerHTML = '<div id="lobby-roster"></div><span id="lobby-player-count"></span>';
         renderLobbyRoster({ Anna: 0, Bob: 0 }, 'Anna', new Set(['Bob']), 'Anna');
         const roster = document.getElementById('lobby-roster');
         expect(roster.textContent).toContain('Anna');
         expect(roster.textContent).toContain('Gotowy');
         expect(roster.textContent).toContain('Czeka');
+        expect(document.getElementById('lobby-player-count').textContent).toContain('1/2');
     });
 });
 
@@ -430,7 +448,16 @@ describe('restoreNickname', () => {
         localStorage.removeItem('pm_nickname_custom');
     });
 
-    test('assigns a generated Gracz# nick when no custom nick saved', () => {
+    test('restores generated Gracz# nick from localStorage', () => {
+        localStorage.setItem('pm_nickname', 'Gracz#2289');
+        localStorage.removeItem('pm_nickname_custom');
+        const restored = restoreNickname();
+        expect(restored).toBe('Gracz#2289');
+        expect(document.getElementById('nickname').value).toBe('Gracz#2289');
+        localStorage.removeItem('pm_nickname');
+    });
+
+    test('assigns a generated Gracz# nick when no nick saved', () => {
         localStorage.removeItem('pm_nickname');
         localStorage.removeItem('pm_nickname_custom');
         const restored = restoreNickname();
@@ -447,6 +474,44 @@ describe('generatePlayerNickname', () => {
         const number = Number(nick.slice(6));
         expect(number).toBeGreaterThanOrEqual(1000);
         expect(number).toBeLessThanOrEqual(9999);
+    });
+});
+
+describe('tryAutoJoin', () => {
+    test('hides inline join, shows lobby shell and connects immediately', () => {
+        document.body.innerHTML = `
+            <section id="room-inline-join" style="display: block;"></section>
+            <div id="chat-section" style="display: none;">
+                <section id="room-lobby" hidden></section>
+                <main id="game-main-area" hidden></main>
+            </div>
+            <input id="nickname" value="Gracz#1234" />
+        `;
+        global.connect.mockClear();
+        expect(tryAutoJoin('Gracz#1234', '4624')).toBe(true);
+        expect(document.getElementById('room-inline-join').style.display).toBe('none');
+        expect(document.getElementById('chat-section').style.display).toBe('block');
+        expect(global.connect).toHaveBeenCalledTimes(1);
+    });
+
+    test('shows join form when auto-join is skipped after dissolve', () => {
+        sessionStorage.setItem('pm_skip_auto_join', '1');
+        window.history.replaceState({}, '', '/room/4624');
+        document.body.innerHTML = `
+            <section id="room-inline-join" style="display: none;"></section>
+            <div id="chat-section" style="display: block;"></div>
+            <input id="nickname" value="Gracz#1234" />
+            <input id="room_id" />
+            <p id="room-inline-label"></p>
+            <select id="max_rounds"><option value="5" selected>5</option></select>
+            <select id="time_limit"><option value="90" selected>90</option></select>
+            <select id="room_visibility"><option value="public" selected>public</option></select>
+        `;
+        global.connect.mockClear();
+        handleRoomRouteOnLoad('Gracz#1234');
+        expect(document.getElementById('room-inline-join').style.display).toBe('block');
+        expect(document.getElementById('chat-section').style.display).toBe('none');
+        expect(global.connect).not.toHaveBeenCalled();
     });
 });
 

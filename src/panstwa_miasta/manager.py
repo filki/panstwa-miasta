@@ -25,6 +25,8 @@ logger = get_logger(__name__)
 ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
 LETTER_CYCLE_ROUNDS = len(ALPHABET)
 GAME_CATEGORIES = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
+VETO_CATEGORY = "Rzecz"
+RESULTS_PHASE_SECONDS = 10
 
 # Ile ostatnich wylosowanych liter przesuwamy na DNO nowej talii przy
 # re-shuffle, żeby kolejny cykl nie zaczął się od litery, która właśnie
@@ -94,6 +96,11 @@ class Room:
         self.expected_answers = 0
         self.game_over = False
 
+        # Faza podsumowania rundy (Veto na Rzecz + auto-start)
+        self.results_phase_active = False
+        self.veto_votes: dict[str, dict[str, str]] = {}
+        self.provisional_round_scores: dict[str, dict] = {}
+
         # Deck-shuffle: talia liter – każda litera pojawi się raz zanim
         # jakakolwiek się powtórzy. Ostatnie N wylosowanych liter trzymamy
         # w `_recent_letters` i przy re-shuffle wpychamy je na DNO nowej
@@ -109,6 +116,40 @@ class Room:
         self._timeout_task: asyncio.Task | None = None
         self._force_end_task: asyncio.Task | None = None
         self._global_timeout_task: asyncio.Task | None = None
+        self._results_phase_task: asyncio.Task | None = None
+
+    def cancel_results_phase(self) -> None:
+        task = self._results_phase_task
+        if task is not None and not task.done():
+            task.cancel()
+        self._results_phase_task = None
+        self.results_phase_active = False
+        self.veto_votes = {}
+        self.provisional_round_scores = {}
+
+    def veto_tallies(self) -> dict[str, dict[str, int]]:
+        tallies: dict[str, dict[str, int]] = {}
+        for target, votes in self.veto_votes.items():
+            tallies[target] = {
+                "tak": sum(1 for v in votes.values() if v == "tak"),
+                "nie": sum(1 for v in votes.values() if v == "nie"),
+            }
+        return tallies
+
+    def vetoed_rzecz_players(self) -> set[str]:
+        rejected: set[str] = set()
+        for player, answers in self.answers_received.items():
+            ans_raw = answers.get(VETO_CATEGORY, "").strip()
+            if not ans_raw:
+                continue
+            votes = self.veto_votes.get(player, {})
+            if not votes:
+                continue
+            tak = sum(1 for v in votes.values() if v == "tak")
+            nie = sum(1 for v in votes.values() if v == "nie")
+            if tak > nie:
+                rejected.add(player)
+        return rejected
 
     async def broadcast(self, message: str):
         """Wysyła wiadomość do wszystkich w pokoju.
@@ -167,6 +208,7 @@ class Room:
         return self.current_letter
 
     async def restart_game(self, rounds: int, limit: int):
+        self.cancel_results_phase()
         self.max_rounds = rounds
         self.time_limit = limit
         self.current_round = 0
@@ -270,21 +312,32 @@ class Room:
         )
 
     async def calculate_scores(self) -> dict[str, dict]:
+        """Zachowane dla testów i kompatybilności — liczy i zapisuje od razu."""
+        return await self.compute_round_scores(persist=True)
+
+    async def compute_round_scores(
+        self,
+        *,
+        veto_rejected: set[str] | None = None,
+        persist: bool = True,
+    ) -> dict[str, dict]:
         """
         Zwraca: {player: {"total": int, "details": {category: points}}}
         """
+        rejected = veto_rejected or set()
         round_scores: dict[str, dict] = {
             player: {"total": 0, "details": {}} for player in self.answers_received
         }
 
-        # 1. Sprawdzanie bazowe (lokalne zbiory; bez zewnętrznego API)
         self._fill_base_scores(round_scores)
+        for player in rejected:
+            if player in round_scores:
+                round_scores[player]["details"][VETO_CATEGORY] = 0
 
-        # 2. Przyznawanie punktów
         self._assign_round_points(round_scores)
 
-        # 3. Aktualizacja punktacji globalnej i zapis
-        await self._update_global_scores_and_save(round_scores)
+        if persist:
+            await self._update_global_scores_and_save(round_scores)
         return round_scores
 
 
@@ -534,9 +587,10 @@ class ConnectionManager:
             and room.expected_answers > 0
             and len(room.answers_received) >= room.expected_answers
         ):
-            from .handlers import _finish_round
+            from .handlers import _begin_results_phase
+            from .main import global_round_timeout
 
-            await _finish_round(room, room_id)
+            await _begin_results_phase(room, room_id, global_round_timeout)
 
         logger.info("Host '%s' kicked '%s' from room %s", actor_name, target_name, room_id)
         return True, ""
