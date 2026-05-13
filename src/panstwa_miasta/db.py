@@ -160,6 +160,12 @@ async def init_db():
         await db.commit()
 
 
+async def deactivate_room(room_id: str) -> None:
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("UPDATE rooms SET is_active = 0 WHERE room_id = ?", (room_id,))
+        await db.commit()
+
+
 async def save_room(
     room_id, max_rounds, time_limit, current_round, host_name, visibility: str = "public"
 ):

@@ -8,6 +8,7 @@ import asyncio
 import json
 import time
 
+from .db import deactivate_room
 from .logger import get_logger
 from .manager import RESULTS_PHASE_SECONDS, VETO_CATEGORY, ConnectionManager, Room
 from .share_store import record_finished_game
@@ -99,6 +100,7 @@ async def _finalize_results_phase(room: Room, room_id: str, timeout_coro) -> Non
     if is_game_over:
         room.game_over = True
         record_finished_game(room_id, dict(room.scores), room.host_name or "")
+        await deactivate_room(room_id)
 
     await room.broadcast(
         json.dumps(

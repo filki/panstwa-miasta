@@ -109,6 +109,30 @@ def test_api_active_rooms_hides_finished_game():
             del manager.rooms[room_id]
 
 
+def test_api_active_rooms_hides_last_round_results_phase():
+    """After the final round stops, the room should not look joinable while results are open."""
+    from panstwa_miasta.manager import Room
+
+    room_id = "test_room_final_results"
+    mock_room = Room(room_id)
+    mock_room.host_name = "Julka"
+    mock_room.connections = {"Julka": None}
+    mock_room.max_rounds = 3
+    mock_room.current_round = 3
+    mock_room.results_phase_active = True
+    mock_room.is_playing = False
+
+    manager.rooms[room_id] = mock_room
+    try:
+        response = client.get("/api/active-rooms")
+        assert response.status_code == 200
+        rooms = response.json()
+        assert not any(r["id"] == room_id for r in rooms)
+    finally:
+        if room_id in manager.rooms:
+            del manager.rooms[room_id]
+
+
 def test_websocket_join_and_message():
     with client.websocket_connect("/ws/room_ws/Player1") as websocket:
         # Initial messages (score_update, system)

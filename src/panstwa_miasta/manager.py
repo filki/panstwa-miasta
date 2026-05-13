@@ -29,6 +29,16 @@ VETO_CATEGORY = "Rzecz"
 RESULTS_PHASE_SECONDS = 10
 STOP_SUBMIT_GRACE_SECONDS = 1.0
 
+
+def room_listed_in_active_lobby(room: "Room") -> bool:
+    """Whether a public room should appear on the landing active-rooms list."""
+    if not room.connections or room.visibility != "public" or room.game_over:
+        return False
+    return not (
+        room.max_rounds > 0 and room.current_round >= room.max_rounds and not room.is_playing
+    )
+
+
 # Ile ostatnich wylosowanych liter przesuwamy na DNO nowej talii przy
 # re-shuffle, żeby kolejny cykl nie zaczął się od litery, która właśnie
 # wypadła. Wartość mniejsza od długości alfabetu (22) -- inaczej talia
