@@ -167,7 +167,12 @@ async def test_manager_connect_visibility_only_on_first_join():
 
 
 @pytest.mark.asyncio
-async def test_manager_disconnect():
+async def test_manager_disconnect(monkeypatch):
+    import panstwa_miasta.manager as mod
+
+    monkeypatch.setattr(mod, "HOST_REASSIGN_GRACE_SECONDS", 0.05)
+    monkeypatch.setattr(mod, "save_room", AsyncMock())
+
     manager = ConnectionManager()
     room = Room("room1")
     manager.rooms["room1"] = room
@@ -177,11 +182,40 @@ async def test_manager_disconnect():
 
     manager.disconnect("room1", "p1")
     assert "p1" not in room.connections
-    assert room.host_name == "p2"  # p2 became host
+    assert room.host_name == "p1"
+    await asyncio.sleep(0.1)
+    assert room.host_name == "p2"
 
     manager.disconnect("room1", "p2")
-    assert "room1" not in manager.rooms  # room deleted
+    assert "room1" not in manager.rooms
     manager.cancel_delayed_room_delete("room1")
+
+
+@pytest.mark.asyncio
+async def test_host_reconnect_preserves_host_on_refresh(monkeypatch):
+    import panstwa_miasta.manager as mod
+
+    monkeypatch.setattr(mod, "HOST_REASSIGN_GRACE_SECONDS", 0.2)
+    monkeypatch.setattr(mod, "save_room", AsyncMock())
+    monkeypatch.setattr(mod, "save_player_score", AsyncMock())
+
+    manager = ConnectionManager()
+    ws_host = AsyncMock(spec=WebSocket)
+    ws_guest = AsyncMock(spec=WebSocket)
+    await manager.connect(ws_host, "room_host", "Filipino", 5, 90)
+    await manager.connect(ws_guest, "room_host", "Julka", 5, 90)
+    room = manager.rooms["room_host"]
+    assert room.host_name == "Filipino"
+
+    manager.disconnect("room_host", "Filipino", ws_host)
+    assert room.host_name == "Filipino"
+
+    ws_host_rejoin = AsyncMock(spec=WebSocket)
+    await manager.connect(ws_host_rejoin, "room_host", "Filipino", 5, 90)
+    assert room.host_name == "Filipino"
+
+    await asyncio.sleep(0.3)
+    assert room.host_name == "Filipino"
 
 
 @pytest.mark.asyncio
