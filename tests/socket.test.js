@@ -522,6 +522,27 @@ describe('round event handlers', () => {
         delete globalThis.myNick;
     });
 
+    test('onRoundResults with game_over closes provisional overlay', () => {
+        globalThis.myNick = 'TestUser';
+        const { showRoundResultsOverlay, onRoundResults } = loadSocket();
+        showRoundResultsOverlay('<p>pending</p>', {
+            provisional: true,
+            vetoEndsAt: Date.now() + 10000,
+        });
+        expect(document.getElementById('round-results-overlay').hidden).toBe(false);
+        onRoundResults({
+            round_scores: { TestUser: { total: 10, details: { Państwo: 10 } } },
+            answers: { TestUser: { Państwo: 'Polska' } },
+            total_scores: { TestUser: 10 },
+            host_name: 'TestUser',
+            game_over: true,
+            room_id: '1234',
+            final: true,
+        });
+        expect(document.getElementById('round-results-overlay').hidden).toBe(true);
+        delete globalThis.myNick;
+    });
+
     test('onGameRestarted resets game layout and inputs', () => {
         const { onGameRestarted } = loadSocket();
         document.getElementById('game-layout').classList.add('game-over');

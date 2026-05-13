@@ -13,6 +13,9 @@ DB_PATH = pathlib.Path(__file__).parent.parent.parent / "panstwa_miasta.db"
 # wszystkich (reconnect w krótkim oknie odzyskuje stan z DB).
 ROOM_EMPTY_GRACE_SECONDS = 90
 
+# Publiczne lobby przed startem gry (runda 0, brak postępu w gotowości).
+LOBBY_IDLE_TIMEOUT_SECONDS = 300
+
 
 async def _ensure_rooms_visibility_column(db) -> None:
     """Migracja: kolumna visibility (publiczny / prywatny lobby)."""

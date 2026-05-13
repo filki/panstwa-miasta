@@ -513,3 +513,71 @@ async def test_compute_round_scores_includes_connected_players_without_answers()
 
     assert set(scores) == {"Ada", "Bob"}
     assert scores["Bob"]["total"] == 0
+
+
+@pytest.mark.asyncio
+async def test_lobby_idle_dissolves_public_lobby(monkeypatch):
+    import panstwa_miasta.manager as mod
+    from panstwa_miasta import db as dbmod
+
+    monkeypatch.setattr(dbmod, "LOBBY_IDLE_TIMEOUT_SECONDS", 0.05)
+    monkeypatch.setattr(mod, "save_room", dbmod.save_room)
+    monkeypatch.setattr(mod, "save_player_score", dbmod.save_player_score)
+
+    manager = ConnectionManager()
+    ws_host = AsyncMock(spec=WebSocket)
+    ws_guest = AsyncMock(spec=WebSocket)
+    rid = "idle_lobby"
+    await manager.connect(ws_host, rid, "Host", 5, 90)
+    await manager.connect(ws_guest, rid, "Guest", 5, 90)
+
+    assert rid in manager.rooms
+    await asyncio.sleep(0.2)
+    assert rid not in manager.rooms
+    assert await dbmod.fetch_room_snapshot(rid) is None
+    ws_host.close.assert_called()
+    ws_guest.close.assert_called()
+    manager.cancel_delayed_room_delete(rid)
+
+
+@pytest.mark.asyncio
+async def test_lobby_idle_timer_resets_on_ready(monkeypatch):
+    import panstwa_miasta.manager as mod
+    from panstwa_miasta import db as dbmod
+
+    monkeypatch.setattr(dbmod, "LOBBY_IDLE_TIMEOUT_SECONDS", 0.12)
+    monkeypatch.setattr(mod, "save_room", dbmod.save_room)
+    monkeypatch.setattr(mod, "save_player_score", dbmod.save_player_score)
+
+    manager = ConnectionManager()
+    ws = AsyncMock(spec=WebSocket)
+    rid = "idle_ready"
+    await manager.connect(ws, rid, "solo", 5, 90)
+    await asyncio.sleep(0.06)
+    manager.touch_lobby_idle(manager.rooms[rid], reset=True)
+    await asyncio.sleep(0.08)
+    assert rid in manager.rooms
+    manager.cancel_lobby_idle(manager.rooms[rid])
+    manager.cancel_delayed_room_delete(rid)
+    await dbmod.delete_room(rid)
+
+
+@pytest.mark.asyncio
+async def test_lobby_idle_canceled_when_round_starts(monkeypatch):
+    import panstwa_miasta.manager as mod
+    from panstwa_miasta import db as dbmod
+
+    monkeypatch.setattr(dbmod, "LOBBY_IDLE_TIMEOUT_SECONDS", 0.05)
+    monkeypatch.setattr(mod, "save_room", dbmod.save_room)
+    monkeypatch.setattr(mod, "save_player_score", dbmod.save_player_score)
+
+    manager = ConnectionManager()
+    ws = AsyncMock(spec=WebSocket)
+    rid = "idle_play"
+    await manager.connect(ws, rid, "solo", 5, 90)
+    manager.rooms[rid].start_round()
+    manager.cancel_lobby_idle(manager.rooms[rid])
+    await asyncio.sleep(0.2)
+    assert rid in manager.rooms
+    manager.cancel_delayed_room_delete(rid)
+    await dbmod.delete_room(rid)

@@ -1,6 +1,7 @@
 import asyncio
 import json
 import secrets
+import time
 from collections import deque
 from typing import Any, cast
 
@@ -130,6 +131,8 @@ class Room:
         self._global_timeout_task: asyncio.Task | None = None
         self._results_phase_task: asyncio.Task | None = None
         self._host_reassign_task: asyncio.Task | None = None
+        self._lobby_idle_task: asyncio.Task | None = None
+        self.last_lobby_activity_at: float = 0.0
 
     def cancel_results_phase(self) -> None:
         task = self._results_phase_task
@@ -450,6 +453,81 @@ class ConnectionManager:
             return
         self._room_delete_tasks[room_id] = loop.create_task(_delayed())
 
+    def _is_lobby_idle_candidate(self, room: Room) -> bool:
+        return (
+            room.current_round == 0
+            and not room.is_playing
+            and not room.game_over
+            and not room.results_phase_active
+            and bool(room.connections)
+        )
+
+    def cancel_lobby_idle(self, room: Room) -> None:
+        task = room._lobby_idle_task
+        if task is not None and not task.done():
+            task.cancel()
+        room._lobby_idle_task = None
+
+    def touch_lobby_idle(self, room: Room, *, reset: bool) -> None:
+        if not self._is_lobby_idle_candidate(room):
+            self.cancel_lobby_idle(room)
+            return
+        if reset or room.last_lobby_activity_at <= 0.0:
+            room.last_lobby_activity_at = time.monotonic()
+        self._schedule_lobby_idle(room.room_id)
+
+    def _schedule_lobby_idle(self, room_id: str) -> None:
+        from . import db as dbmod
+
+        room = self.rooms.get(room_id)
+        if room is None:
+            return
+        self.cancel_lobby_idle(room)
+
+        async def _idle() -> None:
+            try:
+                await asyncio.sleep(dbmod.LOBBY_IDLE_TIMEOUT_SECONDS)
+            except asyncio.CancelledError:
+                return
+            room._lobby_idle_task = None
+            current = self.rooms.get(room_id)
+            if current is None or not self._is_lobby_idle_candidate(current):
+                return
+            if time.monotonic() - current.last_lobby_activity_at < dbmod.LOBBY_IDLE_TIMEOUT_SECONDS:
+                return
+            await self.dissolve_idle_lobby(room_id)
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            logger.warning("schedule_lobby_idle: no running loop for room %s", room_id)
+            return
+        room._lobby_idle_task = loop.create_task(_idle())
+
+    async def dissolve_idle_lobby(self, room_id: str) -> None:
+        room = self.rooms.get(room_id)
+        if room is None:
+            return
+        self.cancel_lobby_idle(room)
+        room.cancel_results_phase()
+        await room.broadcast(
+            json.dumps(
+                {
+                    "type": "room_dissolved",
+                    "message": "Pokój wygasł z braku aktywności w lobby.",
+                }
+            )
+        )
+        for conn in list(room.connections.values()):
+            try:
+                await conn.close()
+            except Exception as exc:
+                logger.warning("dissolve_idle_lobby: close socket failed: %s", exc)
+        self.rooms.pop(room_id, None)
+        self.cancel_delayed_room_delete(room_id)
+        await delete_room(room_id)
+        logger.info("Room %s dissolved after lobby idle timeout", room_id)
+
     async def connect(
         self,
         websocket: WebSocket,
@@ -571,6 +649,8 @@ class ConnectionManager:
             room.expected_answers = len(room.connections)
 
         await record_ws_connect_ok(client_ip, is_new_room=is_new_room)
+
+        self.touch_lobby_idle(room, reset=False)
 
         return True
 
@@ -715,7 +795,12 @@ class ConnectionManager:
 
         # Remove empty room
         if not room.connections:
+            self.cancel_lobby_idle(room)
             del self.rooms[room_id]
             logger.info("Room %s deleted because it became empty", room_id)
             self.schedule_delayed_room_delete(room_id)
+            return True
+
+        if self._is_lobby_idle_candidate(room):
+            self.touch_lobby_idle(room, reset=False)
         return True
