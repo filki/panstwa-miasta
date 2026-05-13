@@ -9,8 +9,34 @@ function showJoinModal() {
 }
 
 function showCreateModal() {
+    const landingNick = document.getElementById('landing_nickname')?.value.trim();
+    if (landingNick) syncNicknameInputs(landingNick);
     document.getElementById('create-modal').style.display = 'flex';
     preparePlayNickname();
+}
+
+function showLandingJoinCode() {
+    const start = document.getElementById('landing-anon-start');
+    const join = document.getElementById('landing-anon-join');
+    const actions = document.getElementById('landing-action-strip');
+    if (!start || !join) return;
+    const landingNick = document.getElementById('landing_nickname')?.value.trim();
+    if (landingNick) syncNicknameInputs(landingNick);
+    preparePlayNickname();
+    start.hidden = true;
+    join.hidden = false;
+    if (actions) actions.hidden = true;
+    document.getElementById('landing_room_code')?.focus();
+}
+
+function showLandingStartMode() {
+    const start = document.getElementById('landing-anon-start');
+    const join = document.getElementById('landing-anon-join');
+    const actions = document.getElementById('landing-action-strip');
+    if (!start || !join) return;
+    join.hidden = true;
+    start.hidden = false;
+    if (actions) actions.hidden = false;
 }
 
 function syncRoomCodeInputs(value) {
@@ -640,6 +666,8 @@ globalThis.sendChat = sendChat;
 globalThis.playLotterySpinHaptic = playLotterySpinHaptic;
 globalThis.playLotteryRevealHaptic = playLotteryRevealHaptic;
 globalThis.playCountdownHaptic = playCountdownHaptic;
+globalThis.showLandingJoinCode = showLandingJoinCode;
+globalThis.showLandingStartMode = showLandingStartMode;
 globalThis.connectFromLandingJoin = connectFromLandingJoin;
 globalThis.syncRoomCodeInputs = syncRoomCodeInputs;
 globalThis.initLandingGuideCarousel = initLandingGuideCarousel;
@@ -652,6 +680,8 @@ if (typeof module !== 'undefined') {
     module.exports = {
         showJoinModal,
         showCreateModal,
+        showLandingJoinCode,
+        showLandingStartMode,
         hideModals,
         focusStartPanel,
         ensureNicknameInput,

@@ -371,6 +371,19 @@ describe('landing quick join nickname', () => {
         expect(document.getElementById('nickname').value).toBe('Zosia');
         expect(globalThis.connect).toHaveBeenCalled();
     });
+
+    test('showLandingJoinCode reveals room code step', () => {
+        document.body.innerHTML = `
+            <div id="landing-anon-start"></motion>
+            <div id="landing-anon-join" hidden></div>
+            <input id="landing_nickname" />
+            <input id="nickname" />
+            <input id="nickname_join" />
+        `;
+        showLandingJoinCode();
+        expect(document.getElementById('landing-anon-start').hidden).toBe(true);
+        expect(document.getElementById('landing-anon-join').hidden).toBe(false);
+    });
 });
 
 describe('room phase helpers', () => {
