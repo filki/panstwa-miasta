@@ -522,6 +522,35 @@ describe('round event handlers', () => {
         delete globalThis.myNick;
     });
 
+    test('onRoundResults with game_over shows final scoreboard before round details', () => {
+        globalThis.myNick = 'TestUser';
+        const { onRoundResults } = loadSocket();
+        onRoundResults({
+            total_scores: { TestUser: 25, Guest: 10 },
+            round_history: [
+                {
+                    round: 1,
+                    letter: 'J',
+                    answers: { TestUser: { Państwo: 'Jamajka', Miasto: 'Japierniczanów' } },
+                    round_scores: {
+                        TestUser: { total: 15, details: { Państwo: 15, Miasto: 0 } },
+                    },
+                    veto_tallies: {},
+                },
+            ],
+            host_name: 'TestUser',
+            game_over: true,
+            room_id: '1234',
+            final: true,
+        });
+        const body = document.getElementById('game-over-results-body');
+        expect(body.querySelector('.game-over-scoreboard')).not.toBeNull();
+        expect(body.querySelector('.game-over-details')).not.toBeNull();
+        expect(body.textContent.indexOf('25 pkt')).toBeLessThan(body.textContent.indexOf('Runda 1'));
+        expect(body.textContent).toContain('Japierniczanów');
+        delete globalThis.myNick;
+    });
+
     test('onRoundResults with game_over closes provisional overlay', () => {
         globalThis.myNick = 'TestUser';
         const { showRoundResultsOverlay, onRoundResults } = loadSocket();
