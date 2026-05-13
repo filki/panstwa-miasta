@@ -73,7 +73,12 @@ function generateRoomId() {
 function connect() {
     leftByUser = false;
     initAudio();
-    myNick = document.getElementById('nickname')?.value.trim() || '';
+    const joinNick = document.getElementById('nickname_join')?.value.trim() || '';
+    const createNick = document.getElementById('nickname')?.value.trim() || '';
+    myNick = joinNick || createNick;
+    if (!myNick && typeof getResolvedNickname === 'function') {
+        myNick = getResolvedNickname() || '';
+    }
     if (!myNick && typeof ensureNicknameInput === 'function') {
         myNick = ensureNicknameInput() || '';
     }
@@ -111,7 +116,11 @@ function connect() {
         if (v === 'private' || v === 'public') visibility = v;
     }
 
-    localStorage.setItem('pm_nickname', myNick);
+    if (typeof persistNickname === 'function') {
+        persistNickname(myNick);
+    } else {
+        localStorage.setItem('pm_nickname', myNick);
+    }
 
     // Landing page has no game UI; redirect to the dedicated room page,
     // which auto-joins using the stored nickname + url params.

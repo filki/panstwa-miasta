@@ -1,10 +1,16 @@
 // Funkcje pomocnicze UI
+const PM_NICK_KEY = 'pm_nickname';
+const PM_NICK_CUSTOM_KEY = 'pm_nickname_custom';
+const AUTO_NICK_RE = /^Gracz#\d{4}$/;
+
 function showJoinModal() {
     document.getElementById('join-modal').style.display = 'flex';
+    preparePlayNickname();
 }
 
 function showCreateModal() {
     document.getElementById('create-modal').style.display = 'flex';
+    preparePlayNickname();
 }
 
 function hideModals() {
@@ -15,12 +21,8 @@ function hideModals() {
 
 function focusStartPanel() {
     const lobby = document.getElementById('lobby');
-    const nickname = document.getElementById('nickname');
     if (lobby) {
         lobby.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-    if (nickname) {
-        nickname.focus({ preventScroll: true });
     }
 }
 
@@ -31,20 +33,92 @@ function generatePlayerNickname() {
     return `Gracz#${number}`;
 }
 
+function isCustomNickStored() {
+    return localStorage.getItem(PM_NICK_CUSTOM_KEY) === '1';
+}
+
+function readStoredNickname() {
+    return localStorage.getItem(PM_NICK_KEY)?.trim() || '';
+}
+
+function markNicknameCustom() {
+    localStorage.setItem(PM_NICK_CUSTOM_KEY, '1');
+}
+
+function clearNicknameCustom() {
+    localStorage.removeItem(PM_NICK_CUSTOM_KEY);
+}
+
+function persistNickname(nick) {
+    localStorage.setItem(PM_NICK_KEY, nick);
+    if (AUTO_NICK_RE.test(nick)) clearNicknameCustom();
+    else markNicknameCustom();
+}
+
+function syncNicknameInputs(value) {
+    const createInput = document.getElementById('nickname');
+    const joinInput = document.getElementById('nickname_join');
+    if (createInput) createInput.value = value;
+    if (joinInput) joinInput.value = value;
+}
+
 function ensureNicknameInput() {
-    const input = document.getElementById('nickname');
+    const input = document.getElementById('nickname') || document.getElementById('nickname_join');
     if (!input) return null;
 
-    const savedNick = localStorage.getItem('pm_nickname')?.trim();
-    if (savedNick) {
-        input.value = savedNick;
-        return savedNick;
+    const current = input.value.trim();
+    if (current) return current;
+
+    let nick;
+    if (isCustomNickStored()) {
+        nick = readStoredNickname();
+        if (!nick) {
+            nick = generatePlayerNickname();
+            clearNicknameCustom();
+        }
+    } else {
+        nick = generatePlayerNickname();
     }
 
-    const nick = generatePlayerNickname();
-    input.value = nick;
-    localStorage.setItem('pm_nickname', nick);
+    syncNicknameInputs(nick);
     return nick;
+}
+
+function rerollPlayerNickname() {
+    const nick = generatePlayerNickname();
+    syncNicknameInputs(nick);
+    clearNicknameCustom();
+    return nick;
+}
+
+function bindNicknameInputs() {
+    const bind = (input) => {
+        if (!input || input.dataset.pmBound) return;
+        input.dataset.pmBound = '1';
+        input.addEventListener('input', () => {
+            const val = input.value.trim();
+            if (!val) return;
+            syncNicknameInputs(val);
+            if (!AUTO_NICK_RE.test(val)) markNicknameCustom();
+        });
+    };
+    bind(document.getElementById('nickname'));
+    bind(document.getElementById('nickname_join'));
+}
+
+function preparePlayNickname() {
+    ensureNicknameInput();
+    bindNicknameInputs();
+}
+
+function getResolvedNickname() {
+    preparePlayNickname();
+    const joinInput = document.getElementById('nickname_join');
+    const createInput = document.getElementById('nickname');
+    const joinModalOpen = document.getElementById('join-modal')?.style.display === 'flex';
+    const fromJoin = joinInput?.value.trim() || '';
+    const fromCreate = createInput?.value.trim() || '';
+    return joinModalOpen ? fromJoin || fromCreate : fromCreate || fromJoin;
 }
 
 function syncLandingScrollLock() {
@@ -317,9 +391,12 @@ function playCountdownHaptic() {
 }
 
 globalThis.window.onload = () => {
-    const savedNick = restoreNickname();
-    const isRoomRoute = handleRoomRouteOnLoad(savedNick);
-    if (!isRoomRoute) {
+    bindNicknameInputs();
+    const isRoomRoute = globalThis.location.pathname.startsWith('/room/');
+    const savedNick = isRoomRoute ? restoreNickname() : null;
+    if (isRoomRoute) {
+        handleRoomRouteOnLoad(savedNick);
+    } else {
         loadActiveRooms();
         setInterval(loadActiveRooms, 10000);
     }
@@ -338,6 +415,9 @@ globalThis.hideModals = hideModals;
 globalThis.focusStartPanel = focusStartPanel;
 globalThis.ensureNicknameInput = ensureNicknameInput;
 globalThis.generatePlayerNickname = generatePlayerNickname;
+globalThis.rerollPlayerNickname = rerollPlayerNickname;
+globalThis.getResolvedNickname = getResolvedNickname;
+globalThis.persistNickname = persistNickname;
 globalThis.toggleLandingMarketing = toggleLandingMarketing;
 globalThis.loadActiveRooms = loadActiveRooms;
 globalThis.addLog = addLog;
@@ -355,6 +435,10 @@ if (typeof module !== 'undefined') {
         focusStartPanel,
         ensureNicknameInput,
         generatePlayerNickname,
+        rerollPlayerNickname,
+        getResolvedNickname,
+        persistNickname,
+        preparePlayNickname,
         toggleLandingMarketing,
         syncLandingScrollLock,
         addLog,
