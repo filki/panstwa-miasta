@@ -1,5 +1,5 @@
 import asyncio
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import WebSocket
@@ -450,3 +450,32 @@ async def test_calculate_scores_zwierze_zrebak_letter_z():
     room2.answers_received = {"solo": {"Zwierzę": "zrebak"}}
     scores2 = await room2.calculate_scores()
     assert scores2["solo"]["details"]["Zwierzę"] == 15
+
+
+@pytest.mark.asyncio
+async def test_compute_round_scores_includes_connected_players_without_answers():
+    import panstwa_miasta.manager as mod
+
+    mod.save_room = AsyncMock()
+    mod.save_player_score = AsyncMock()
+
+    room = Room("room_roster", max_rounds=1, time_limit=30)
+    room.start_round()
+    room.current_letter = "u"
+    room.connections = {"Ada": MagicMock(), "Bob": MagicMock()}
+    room.answers_received = {
+        "Ada": {
+            "Państwo": "Ukraina",
+            "Miasto": "",
+            "Rzecz": "ukulele",
+            "Zwierzę": "",
+            "Roślina": "",
+            "Imię": "",
+            "Zawód": "",
+        }
+    }
+
+    scores = await room.compute_round_scores(persist=False)
+
+    assert set(scores) == {"Ada", "Bob"}
+    assert scores["Bob"]["total"] == 0

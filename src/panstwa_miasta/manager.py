@@ -27,6 +27,7 @@ LETTER_CYCLE_ROUNDS = len(ALPHABET)
 GAME_CATEGORIES = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
 VETO_CATEGORY = "Rzecz"
 RESULTS_PHASE_SECONDS = 10
+STOP_SUBMIT_GRACE_SECONDS = 1.0
 
 # Ile ostatnich wylosowanych liter przesuwamy na DNO nowej talii przy
 # re-shuffle, żeby kolejny cykl nie zaczął się od litery, która właśnie
@@ -126,6 +127,21 @@ class Room:
         self.results_phase_active = False
         self.veto_votes = {}
         self.provisional_round_scores = {}
+
+    def sync_results_roster(self) -> None:
+        """Align ``answers_received`` with active sockets before scoring."""
+        if not self.connections:
+            return
+        for name in self.connections:
+            self.answers_received.setdefault(name, {})
+        for name in list(self.answers_received):
+            if name not in self.connections:
+                del self.answers_received[name]
+
+    def all_players_answered(self) -> bool:
+        if not self.connections:
+            return False
+        return all(name in self.answers_received for name in self.connections)
 
     def veto_tallies(self) -> dict[str, dict[str, int]]:
         tallies: dict[str, dict[str, int]] = {}
@@ -325,6 +341,7 @@ class Room:
         Zwraca: {player: {"total": int, "details": {category: points}}}
         """
         rejected = veto_rejected or set()
+        self.sync_results_roster()
         round_scores: dict[str, dict] = {
             player: {"total": 0, "details": {}} for player in self.answers_received
         }
@@ -582,11 +599,7 @@ class ConnectionManager:
             )
         )
 
-        if (
-            room.is_playing
-            and room.expected_answers > 0
-            and len(room.answers_received) >= room.expected_answers
-        ):
+        if room.is_playing and room.all_players_answered():
             from .handlers import _begin_results_phase
             from .main import global_round_timeout
 
