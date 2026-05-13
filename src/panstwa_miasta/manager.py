@@ -188,7 +188,7 @@ class Room:
                 continue
             tak = sum(1 for v in votes.values() if v == "tak")
             nie = sum(1 for v in votes.values() if v == "nie")
-            if tak > nie:
+            if nie > tak:
                 rejected.add(player)
         return rejected
 
