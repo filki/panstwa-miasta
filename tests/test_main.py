@@ -185,6 +185,13 @@ def test_websocket_invalid_path_returns_1008():
     assert excinfo.value.code == 1008
 
 
+def test_websocket_accepts_encoded_hash_in_client_name():
+    with client.websocket_connect(
+        "/ws/room_hash/Gracz%232137?rounds=5&limit=90&visibility=public"
+    ) as websocket:
+        assert _receive_json_until(websocket, "system") is not None
+
+
 def test_websocket_extra_keys_get_error_message():
     with client.websocket_connect("/ws/room_extra/Player1") as websocket:
         for _ in range(8):
