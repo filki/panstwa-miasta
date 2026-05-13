@@ -437,6 +437,7 @@ class ConnectionManager:
         logger.debug(f"Persisted room {room_id} and player {client_name} to DB")
 
         if room.is_playing:
+            room.answers_received.pop(client_name, None)
             room.expected_answers = len(room.connections)
 
         await record_ws_connect_ok(client_ip, is_new_room=is_new_room)
@@ -572,6 +573,7 @@ class ConnectionManager:
 
         # Decrease expected answer count
         if room.is_playing:
+            room.answers_received.pop(client_name, None)
             room.expected_answers = max(0, room.expected_answers - 1)
             logger.debug(
                 "Adjusted expected_answers for room %s: %s",

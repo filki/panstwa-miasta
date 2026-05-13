@@ -228,6 +228,32 @@ async def test_connect_resyncs_expected_answers_mid_round_reconnect(monkeypatch)
 
 
 @pytest.mark.asyncio
+async def test_reconnect_mid_round_clears_stale_answers(monkeypatch):
+    """Reconnect w rundzie: stary wpis w answers_received nie blokuje zakończenia rundy."""
+    import panstwa_miasta.manager as mod
+
+    monkeypatch.setattr(mod, "save_room", AsyncMock())
+    monkeypatch.setattr(mod, "save_player_score", AsyncMock())
+
+    manager = ConnectionManager()
+    ws_a = AsyncMock(spec=WebSocket)
+    ws_b = AsyncMock(spec=WebSocket)
+    await manager.connect(ws_a, "rx_ans", "A", 3, 60)
+    await manager.connect(ws_b, "rx_ans", "B", 3, 60)
+    room = manager.rooms["rx_ans"]
+    room.start_round()
+    room.answers_received["B"] = {"Państwo": "polska"}
+
+    manager.disconnect("rx_ans", "B", ws_b)
+    assert "B" not in room.answers_received
+
+    ws_b2 = AsyncMock(spec=WebSocket)
+    await manager.connect(ws_b2, "rx_ans", "B", 3, 60)
+    assert "B" not in room.answers_received
+    assert room.expected_answers == 2
+
+
+@pytest.mark.asyncio
 async def test_connect_restores_room_snapshot_from_sqlite(monkeypatch):
     """Gdy RAM jest pusty, ale w SQLite jest pokój — `connect` odtwarza Room ze scores."""
     import panstwa_miasta.manager as mod
