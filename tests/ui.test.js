@@ -23,6 +23,7 @@ const {
     updateScoreboard,
     sendChat,
     buildRoomRow,
+    buildRoomCard,
     renderActiveRooms,
     loadActiveRooms,
     ensureNicknameInput,
@@ -56,6 +57,7 @@ const baseDom = () => `
         <div id="active-rooms-table-wrap" hidden>
             <table><tbody id="rooms-list"></tbody></table>
         </div>
+        <ul id="active-rooms-cards-wrap" class="active-rooms-cards" hidden></ul>
     </div>
 `;
 
@@ -239,6 +241,28 @@ describe('buildRoomRow', () => {
     });
 });
 
+describe('buildRoomCard', () => {
+    test('renders a card with room metadata and join button', () => {
+        const card = buildRoomCard({
+            id: '1234',
+            host: 'Filip',
+            players: 3,
+            current_round: 2,
+            max_rounds: 5,
+            time_limit: 90,
+            visibility: 'public',
+            visibility_label: 'Publiczny',
+        });
+        expect(card.tagName).toBe('LI');
+        expect(card.className).toBe('active-rooms-card');
+        expect(card.textContent).toContain('1234');
+        expect(card.textContent).toContain('Filip');
+        expect(card.textContent).toContain('3 graczy');
+        expect(card.textContent).toContain('2/5 rund');
+        expect(card.querySelector('button.active-rooms-card-join')).not.toBeNull();
+    });
+});
+
 describe('renderActiveRooms', () => {
     test('shows the section and appends a row per room', () => {
         document.body.className = 'landing-page';
@@ -264,10 +288,13 @@ describe('renderActiveRooms', () => {
         ]);
         expect(document.getElementById('active-rooms-section').hidden).toBe(false);
         expect(document.getElementById('active-rooms-table-wrap').hidden).toBe(false);
+        expect(document.getElementById('active-rooms-cards-wrap').hidden).toBe(false);
         expect(document.getElementById('active-rooms-empty').hidden).toBe(true);
         expect(document.body.classList.contains('landing-scrollable')).toBe(true);
         const rows = document.querySelectorAll('#rooms-list tr');
         expect(rows).toHaveLength(2);
+        const cards = document.querySelectorAll('#active-rooms-cards-wrap .active-rooms-card');
+        expect(cards).toHaveLength(2);
     });
 
     test('shows empty state when there are no rooms', () => {
@@ -275,6 +302,7 @@ describe('renderActiveRooms', () => {
         expect(document.getElementById('active-rooms-section').hidden).toBe(false);
         expect(document.getElementById('active-rooms-empty').hidden).toBe(false);
         expect(document.getElementById('active-rooms-table-wrap').hidden).toBe(true);
+        expect(document.getElementById('active-rooms-cards-wrap').hidden).toBe(true);
         expect(document.body.classList.contains('landing-scrollable')).toBe(false);
     });
 

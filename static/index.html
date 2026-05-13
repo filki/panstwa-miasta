@@ -176,7 +176,7 @@
                         <p class="active-rooms-empty-text">Nie ma żadnych aktywnych pokoi. Rozruszaj towarzystwo — stwórz pokój i zaproś znajomych.</p>
                         <button type="button" class="active-rooms-empty-cta" onclick="showCreateModal()">Stwórz pokój</button>
                     </div>
-                    <div id="active-rooms-table-wrap" class="table-container" hidden>
+                    <div id="active-rooms-table-wrap" class="table-container active-rooms-table-wrap" hidden>
                         <table class="rooms-table">
                             <thead>
                                 <tr>
@@ -192,6 +192,7 @@
                             <tbody id="rooms-list"></tbody>
                         </table>
                     </div>
+                    <ul id="active-rooms-cards-wrap" class="active-rooms-cards" hidden></ul>
                 </div>
             </div>
         </header>
