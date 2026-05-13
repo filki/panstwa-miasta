@@ -31,8 +31,21 @@ jobs:
         vars.DEPLOY_ENABLED == 'true'
       )
     steps:
+      - name: Preflight (wymagane sekrety)
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          : "${DEPLOY_HOST:?Ustaw sekret DEPLOY_HOST (deploy/README.md §5)}"
+          : "${DEPLOY_USER:?Ustaw sekret DEPLOY_USER}"
+          : "${DEPLOY_SSH_KEY:?Ustaw sekret DEPLOY_SSH_KEY}"
+
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: main
 
       - name: Upload deploy script
         uses: appleboy/scp-action@v0.1.7
@@ -54,5 +67,6 @@ jobs:
           script: |
             set -euo pipefail
             chmod +x /tmp/vps-pull-and-restart.sh
-            DEPLOY_APP_DIR="${{ secrets.DEPLOY_APP_DIR }}" /tmp/vps-pull-and-restart.sh
+            export DEPLOY_APP_DIR="${{ vars.DEPLOY_APP_DIR }}"
+            /tmp/vps-pull-and-restart.sh
             rm -f /tmp/vps-pull-and-restart.sh
