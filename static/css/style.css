@@ -584,8 +584,36 @@ button.active-rooms-empty-cta {
     width: 100%;
 }
 
+.landing-quick-game {
+    display: none;
+    margin-top: var(--space-5);
+    padding: var(--space-5);
+    border-radius: var(--r-lg);
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.landing-quick-game-title {
+    margin: 0 0 var(--space-2);
+    font-size: var(--fs-h3);
+}
+
+.landing-quick-game-copy {
+    margin: 0 0 var(--space-4);
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.landing-anon-cta--quick {
+    width: 100%;
+}
+
 @media (min-width: 1024px) {
     .active-rooms-cards {
+        display: none;
+    }
+
+    .landing-quick-game {
         display: none;
     }
 }
@@ -593,6 +621,19 @@ button.active-rooms-empty-cta {
 @media (max-width: 1023px) {
     .active-rooms-table-wrap {
         display: none !important;
+    }
+
+    .active-rooms-cards,
+    #active-rooms-cards-wrap {
+        display: none !important;
+    }
+
+    #active-rooms-section {
+        display: none !important;
+    }
+
+    .landing-quick-game {
+        display: block;
     }
 }
 

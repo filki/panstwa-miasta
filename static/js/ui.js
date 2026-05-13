@@ -75,6 +75,41 @@ function connectFromLandingJoin() {
     if (typeof globalThis.connect === 'function') globalThis.connect();
 }
 
+async function quickJoinFromLanding() {
+    const landingNick = document.getElementById('landing_nickname')?.value.trim();
+    if (landingNick) syncNicknameInputs(landingNick);
+    preparePlayNickname();
+    const nick = getResolvedNickname();
+    if (!nick) {
+        alert('Podaj pseudonim przed szybką grą.');
+        return;
+    }
+    persistNickname(nick);
+
+    const requestQuickJoin = async () => {
+        const resp = await fetch('/api/quick-join', { method: 'POST' });
+        if (!resp.ok) {
+            throw new Error(`quick-join failed: ${resp.status}`);
+        }
+        return resp.json();
+    };
+
+    try {
+        let data = await requestQuickJoin();
+        const roomId = String(data.room_id || '').trim();
+        if (!roomId) throw new Error('quick-join missing room_id');
+        const maxRounds = data.max_rounds || 5;
+        const timeLimit = data.time_limit || 90;
+        syncRoomCodeInputs(roomId);
+        const landingCode = document.getElementById('landing_room_code');
+        if (landingCode) landingCode.value = roomId;
+        globalThis.location.href = `/room/${encodeURIComponent(roomId)}?rounds=${encodeURIComponent(String(maxRounds))}&limit=${encodeURIComponent(String(timeLimit))}&visibility=public`;
+    } catch (err) {
+        console.error('quickJoinFromLanding failed:', err);
+        alert('Nie udało się znaleźć pokoju. Spróbuj ponownie.');
+    }
+}
+
 function hideModals() {
     document.getElementById('join-modal').style.display = 'none';
     document.getElementById('create-modal').style.display = 'none';
@@ -857,6 +892,7 @@ globalThis.playCountdownHaptic = playCountdownHaptic;
 globalThis.showLandingJoinCode = showLandingJoinCode;
 globalThis.showLandingStartMode = showLandingStartMode;
 globalThis.connectFromLandingJoin = connectFromLandingJoin;
+globalThis.quickJoinFromLanding = quickJoinFromLanding;
 globalThis.syncRoomCodeInputs = syncRoomCodeInputs;
 globalThis.initLandingGuideCarousel = initLandingGuideCarousel;
 globalThis.initLandingGuideMobileSheet = initLandingGuideMobileSheet;
@@ -882,6 +918,7 @@ if (typeof module !== 'undefined') {
         syncRoomCodeInputs,
         bindRoomCodeInputs,
         connectFromLandingJoin,
+        quickJoinFromLanding,
         syncLandingScrollLock,
         initLandingGuideCarousel,
         initLandingGuideMobileSheet,

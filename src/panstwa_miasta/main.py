@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
-from .api_models import ActiveRoomRow, ClientNamePath, RoomIdPath, ShareSnapshotOut
+from .api_models import ActiveRoomRow, ClientNamePath, QuickJoinOut, RoomIdPath, ShareSnapshotOut
 from .data import (
     reload_countries,
     reload_jobs,
@@ -80,15 +80,14 @@ async def delete_room_immediate(room_id: str) -> None:
 
 @app.middleware("http")
 async def rate_limit_http_middleware(request: Request, call_next):
-    if request.method not in ("GET", "HEAD"):
-        return await call_next(request)
     bucket = http_rate_bucket_name(request.url.path)
-    if bucket is None:
-        return await call_next(request)
-    ip = client_ip_from_request(request)
-    blocked = await check_http_rate_limit(ip, bucket)
-    if blocked is not None:
-        return blocked
+    if bucket is not None and (
+        request.method in ("GET", "HEAD") or request.url.path.startswith("/api/quick-join")
+    ):
+        ip = client_ip_from_request(request)
+        blocked = await check_http_rate_limit(ip, bucket)
+        if blocked is not None:
+            return blocked
     return await call_next(request)
 
 
@@ -291,6 +290,17 @@ async def get_active_rooms() -> list[ActiveRoomRow]:
         for r_id, room in manager.rooms.items()
         if room_listed_in_active_lobby(room)
     ]
+
+
+@app.post("/api/quick-join", response_model=QuickJoinOut)
+async def post_quick_join() -> QuickJoinOut:
+    room_id, created, max_rounds, time_limit = manager.pick_quick_join_room()
+    return QuickJoinOut(
+        room_id=room_id,
+        created=created,
+        max_rounds=max_rounds,
+        time_limit=time_limit,
+    )
 
 
 # ---------------------------------------------------------------------------

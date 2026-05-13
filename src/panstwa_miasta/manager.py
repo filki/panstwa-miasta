@@ -35,6 +35,8 @@ VETO_CATEGORY = "Rzecz"
 RESULTS_PHASE_SECONDS = 10
 STOP_SUBMIT_GRACE_SECONDS = 1.0
 HOST_REASSIGN_GRACE_SECONDS = 5.0
+QUICK_JOIN_DEFAULT_ROUNDS = 5
+QUICK_JOIN_DEFAULT_TIME_LIMIT = 90
 
 
 def room_listed_in_active_lobby(room: "Room") -> bool:
@@ -534,6 +536,30 @@ class ConnectionManager:
         self.cancel_delayed_room_delete(room_id)
         await delete_room(room_id)
         logger.info("Room %s dissolved after lobby idle timeout", room_id)
+
+    def pick_quick_join_room(self) -> tuple[str, bool, int, int]:
+        """Return room_id, created flag, rounds and time limit for quick join."""
+        cap = max_players_per_room()
+        candidates: list[tuple[int, str, int, int]] = []
+        for r_id, room in self.rooms.items():
+            if room_listed_in_active_lobby(room) and len(room.connections) < cap:
+                candidates.append((len(room.connections), r_id, room.max_rounds, room.time_limit))
+        if candidates:
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            _, room_id, max_rounds, time_limit = candidates[0]
+            return room_id, False, max_rounds, time_limit
+
+        rng = secrets.SystemRandom()
+        for _ in range(100):
+            room_id = str(1000 + rng.randrange(9000))
+            if room_id not in self.rooms:
+                return (
+                    room_id,
+                    True,
+                    QUICK_JOIN_DEFAULT_ROUNDS,
+                    QUICK_JOIN_DEFAULT_TIME_LIMIT,
+                )
+        raise RuntimeError("Could not allocate a quick-join room id")
 
     async def connect(
         self,

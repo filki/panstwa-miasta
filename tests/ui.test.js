@@ -16,6 +16,7 @@ const {
     syncRoomCodeInputs,
     initLandingGuideCarousel,
     connectFromLandingJoin,
+    quickJoinFromLanding,
     preparePlayNickname,
     setRoomPhase,
     renderLobbyRoster,
@@ -400,6 +401,26 @@ describe('landing quick join nickname', () => {
         connectFromLandingJoin();
         expect(document.getElementById('nickname').value).toBe('Zosia');
         expect(globalThis.connect).toHaveBeenCalled();
+    });
+
+    test('quickJoinFromLanding calls quick-join API and stores room code', async () => {
+        global.fetch = jest.fn(() =>
+            Promise.resolve({
+                ok: true,
+                json: () =>
+                    Promise.resolve({
+                        room_id: '4821',
+                        created: false,
+                        max_rounds: 5,
+                        time_limit: 90,
+                    }),
+            }),
+        );
+        document.getElementById('landing_nickname').value = 'Zosia';
+        await quickJoinFromLanding();
+        expect(global.fetch).toHaveBeenCalledWith('/api/quick-join', { method: 'POST' });
+        expect(document.getElementById('landing_room_code').value).toBe('4821');
+        expect(document.getElementById('room_id').value).toBe('4821');
     });
 
     test('showLandingJoinCode reveals room code step', () => {

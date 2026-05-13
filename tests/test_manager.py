@@ -631,3 +631,38 @@ def test_room_listed_in_active_lobby_hides_full_room():
     room = Room("full", 5, 90, visibility="public")
     room.connections = {f"p{i}": AsyncMock() for i in range(8)}
     assert room_listed_in_active_lobby(room) is False
+
+
+def test_pick_quick_join_prefers_busiest_public_lobby():
+    from panstwa_miasta.manager import Room
+
+    manager = ConnectionManager()
+    quiet = Room("quiet", 5, 90, visibility="public")
+    quiet.connections = {"a": AsyncMock()}
+    busy = Room("busy", 7, 120, visibility="public")
+    busy.connections = {f"p{i}": AsyncMock() for i in range(3)}
+    full = Room("full", 5, 90, visibility="public")
+    full.connections = {f"p{i}": AsyncMock() for i in range(8)}
+    private = Room("priv", 5, 90, visibility="private")
+    private.connections = {"solo": AsyncMock()}
+    manager.rooms = {
+        "quiet": quiet,
+        "busy": busy,
+        "full": full,
+        "priv": private,
+    }
+    room_id, created, max_rounds, time_limit = manager.pick_quick_join_room()
+    assert room_id == "busy"
+    assert created is False
+    assert max_rounds == 7
+    assert time_limit == 120
+
+
+def test_pick_quick_join_creates_room_when_no_candidate():
+    manager = ConnectionManager()
+    room_id, created, max_rounds, time_limit = manager.pick_quick_join_room()
+    assert created is True
+    assert room_id.isdigit()
+    assert 1000 <= int(room_id) <= 9999
+    assert max_rounds == 5
+    assert time_limit == 90

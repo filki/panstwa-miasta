@@ -42,3 +42,14 @@ class ShareSnapshotOut(BaseModel):
     room_id: str = Field(..., max_length=64)
     host_name: str = Field(default="", max_length=200)
     scores: dict[str, int] = Field(default_factory=dict)
+
+
+class QuickJoinOut(BaseModel):
+    """Wynik szybkiego dołączenia do publicznego lobby."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    room_id: str = Field(..., max_length=64)
+    created: bool
+    max_rounds: int = Field(5, ge=1, le=50)
+    time_limit: int = Field(90, ge=10, le=600)
