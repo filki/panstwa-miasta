@@ -40,16 +40,11 @@
 
                             <div class="landing-access-panel" role="tabpanel" aria-labelledby="landing-access-tab-anon">
                                 <div class="landing-anon-stage" id="landing-anon-start">
-                                    <div class="landing-anon-profile">
-                                        <div class="landing-anon-avatar-shell">
-                                            <div class="landing-anon-avatar" id="landing-anon-avatar" aria-hidden="true">🙂</div>
-                                            <button type="button" class="landing-anon-avatar-reroll" onclick="rerollPlayerNickname()" aria-label="Losuj inny pseudonim">
-                                                <span aria-hidden="true">↻</span>
-                                            </button>
-                                        </div>
-                                        <div class="landing-anon-identity">
-                                            <p class="landing-anon-identity-label" id="landing-anon-identity-label">Wybierz pseudonim</p>
+                                    <div class="landing-anon-identity">
+                                        <p class="landing-anon-identity-label" id="landing-anon-identity-label">Wybierz pseudonim</p>
+                                        <div class="landing-anon-nick-row">
                                             <input type="text" class="landing-anon-nickname" id="landing_nickname" maxlength="20" autocomplete="nickname" inputmode="text" aria-labelledby="landing-anon-identity-label">
+                                            <button type="button" class="landing-anon-nick-reroll" onclick="rerollPlayerNickname()" aria-label="Losuj inny pseudonim"><span aria-hidden="true">↻</span></button>
                                         </div>
                                     </div>
 
