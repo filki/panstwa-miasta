@@ -24,15 +24,33 @@
     </nav>
 
     <main class="page-wrapper">
-        <header class="hero">
-            <div class="hero-content">
-                <h1 class="hero-title">Państwa-Miasta w <span>5 sekund</span>.</h1>
-                <p class="hero-subtitle">Bez kont — wybierz pokój i graj. Pseudonim ustawisz przed startem.</p>
-                <ul class="hero-trust-pills" aria-label="Dlaczego warto">
-                    <li class="hero-trust-pill">5-sekundowy start</li>
-                    <li class="hero-trust-pill">Lokalne słowniki</li>
-                    <li class="hero-trust-pill">Bez logowania</li>
-                </ul>
+        <header class="hero hero--with-aside">
+            <div class="hero-aside-wrap">
+                <div class="hero-content">
+                    <h1 class="hero-title">Państwa-Miasta w <span>5 sekund</span>.</h1>
+                    <p class="hero-subtitle">Bez kont — wybierz pokój i graj. Pseudonim ustawisz przed startem.</p>
+                    <ul class="hero-trust-pills" aria-label="Dlaczego warto">
+                        <li class="hero-trust-pill">5-sekundowy start</li>
+                        <li class="hero-trust-pill">Lokalne słowniki</li>
+                        <li class="hero-trust-pill">Bez logowania</li>
+                    </ul>
+                </div>
+
+                <aside class="landing-discovery" aria-labelledby="landing-discovery-title">
+                    <h2 id="landing-discovery-title" class="landing-discovery-title">Jak wygląda runda?</h2>
+                    <ol class="landing-flow">
+                        <li><span class="landing-flow-step">1</span><span><strong>Gotowość</strong> — wszyscy klikają paluszka.</span></li>
+                        <li><span class="landing-flow-step">2</span><span><strong>Losowanie</strong> — jedna litera dla całej tabeli.</span></li>
+                        <li><span class="landing-flow-step">3</span><span><strong>STOP</strong> — wysyłasz odpowiedzi, gdy skończysz.</span></li>
+                        <li><span class="landing-flow-step">4</span><span><strong>Punkty</strong> — serwer porównuje odpowiedzi i sumuje wynik.</span></li>
+                    </ol>
+                    <div class="landing-score-row" aria-label="System punktacji">
+                        <span class="score-chip score-chip--15">15 unikat</span>
+                        <span class="score-chip score-chip--10">10 powtórka</span>
+                        <span class="score-chip score-chip--5">5 z listy</span>
+                        <span class="score-chip score-chip--0">0 pusto</span>
+                    </div>
+                </aside>
             </div>
 
             <section id="lobby" class="lobby-section start-panel">
@@ -79,7 +97,25 @@
 
         <div class="landing-below" id="marketing">
             <div class="container">
+            <section class="landing-categories" aria-labelledby="landing-categories-title">
+                <h2 id="landing-categories-title" class="landing-section-title">7 kategorii w każdej rundzie</h2>
+                <p class="landing-section-lead">Tyle samo pól co w klasycznej tabelce — bez rozwadniania gry o dziesiątki kolumn z encyklopedii.</p>
+                <ul class="landing-category-chips">
+                    <li>Państwo</li>
+                    <li>Miasto</li>
+                    <li>Rzecz</li>
+                    <li>Zwierzę</li>
+                    <li>Roślina</li>
+                    <li>Imię</li>
+                    <li>Zawód</li>
+                </ul>
+            </section>
             <section id="features" class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">🔤</div>
+                    <h3>Talia liter</h3>
+                    <p>22 litery z polskiej talii — bez Q, V i X. W jednym cyklu każda wypada raz, zanim serwer tasuje od nowa.</p>
+                </div>
                 <div class="feature-item">
                     <div class="feature-icon">⚡</div>
                     <h3>Real-Time</h3>
@@ -138,6 +174,8 @@
                         <option value="1">1</option>
                         <option value="3">3</option>
                         <option value="5" selected>5</option>
+                        <option value="10">10</option>
+                        <option value="22">22 — każda litera raz</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -145,6 +183,7 @@
                     <select id="time_limit">
                         <option value="60">60</option>
                         <option value="90" selected>90</option>
+                        <option value="120">120</option>
                     </select>
                 </div>
                 <div class="form-group" style="grid-column: 1 / -1;">

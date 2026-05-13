@@ -23,6 +23,7 @@ from .logger import get_logger
 logger = get_logger(__name__)
 
 ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
+LETTER_CYCLE_ROUNDS = len(ALPHABET)
 GAME_CATEGORIES = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
 
 # Ile ostatnich wylosowanych liter przesuwamy na DNO nowej talii przy
