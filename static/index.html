@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="/static/css/site-footer.css">
 </head>
 <body class="landing-page">
-    <nav class="navbar">
+    <nav class="navbar landing-nav">
         <div class="nav-container nav-container--logo-only">
             <a href="/" class="logo" style="text-decoration:none;">Państwa<span>Miasta</span></a>
         </div>
@@ -25,46 +25,73 @@
 
     <main class="page-wrapper">
         <header class="hero">
-            <section id="lobby" class="lobby-section start-panel">
-                <div id="join-section" class="join-card">
-                    <div id="buttons-grid" class="choice-cards">
-                        <button type="button" class="choice-card" onclick="showCreateModal()" aria-label="Stwórz nowy pokój">
-                            <span class="choice-icon" aria-hidden="true">✨</span>
-                            <span class="choice-content">
-                                <span class="choice-title">Stwórz pokój</span>
-                                <span class="choice-desc">Ustaw zasady i zostań hostem.</span>
-                            </span>
-                        </button>
-                        <button type="button" class="choice-card" onclick="showJoinModal()" aria-label="Dołącz do istniejącego pokoju">
-                            <span class="choice-icon" aria-hidden="true">🔗</span>
-                            <span class="choice-content">
-                                <span class="choice-title">Dołącz do gry</span>
-                                <span class="choice-desc">Wpisz kod od znajomego.</span>
-                            </span>
-                        </button>
-                    </div>
-
-                    <div id="active-rooms-section" class="active-rooms-block" style="display: none;">
-                        <h3 class="active-rooms-title">Aktywne pokoje</h3>
-                        <div class="table-container">
-                            <table class="rooms-table">
-                                <thead>
-                                    <tr>
-                                        <th>Kod</th>
-                                        <th>Host</th>
-                                        <th>Gracze</th>
-                                        <th>Rundy</th>
-                                        <th>Czas</th>
-                                        <th>Typ</th>
-                                        <th>Akcja</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="rooms-list"></tbody>
-                            </table>
-                        </div>
-                    </div>
+            <div class="landing-shell">
+                <div class="landing-mobile-brand">
+                    <p class="landing-mobile-kicker">Gra w przeglądarce</p>
+                    <p class="landing-mobile-title">Państwa<span>Miasta</span></p>
                 </div>
-            </section>
+
+                <div class="landing-grid">
+                    <section id="lobby" class="lobby-section start-panel landing-actions">
+                        <div id="join-section" class="join-card">
+                            <div id="buttons-grid" class="choice-cards">
+                                <button type="button" class="choice-card choice-card--create" onclick="showCreateModal()" aria-label="Stwórz nowy pokój">
+                                    <span class="choice-icon" aria-hidden="true">✨</span>
+                                    <span class="choice-content">
+                                        <span class="choice-title">Stwórz pokój</span>
+                                        <span class="choice-desc">Ustaw zasady i zostań hostem.</span>
+                                    </span>
+                                </button>
+                                <button type="button" class="choice-card choice-card--join" onclick="showJoinModal()" aria-label="Dołącz do istniejącego pokoju">
+                                    <span class="choice-icon" aria-hidden="true">🔗</span>
+                                    <span class="choice-content">
+                                        <span class="choice-title">Dołącz do gry</span>
+                                        <span class="choice-desc">Wpisz kod od znajomego.</span>
+                                    </span>
+                                </button>
+                            </div>
+
+                            <p class="landing-mobile-hint">Pseudonim ustawisz w kolejnym kroku.</p>
+
+                            <div id="active-rooms-section" class="active-rooms-block" style="display: none;">
+                                <h3 class="active-rooms-title">Aktywne pokoje</h3>
+                                <div class="table-container">
+                                    <table class="rooms-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Kod</th>
+                                                <th>Host</th>
+                                                <th>Gracze</th>
+                                                <th>Rundy</th>
+                                                <th>Czas</th>
+                                                <th>Typ</th>
+                                                <th>Akcja</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="rooms-list"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <aside class="landing-guide" aria-labelledby="landing-guide-title">
+                        <h2 id="landing-guide-title" class="landing-guide-title">Jak grać</h2>
+                        <ol class="landing-guide-steps">
+                            <li><span class="landing-guide-step">1</span><span>Wszyscy oznaczają gotowość.</span></li>
+                            <li><span class="landing-guide-step">2</span><span>Serwer losuje literę rundy.</span></li>
+                            <li><span class="landing-guide-step">3</span><span>Wypełniasz kategorie i wciskasz STOP.</span></li>
+                            <li><span class="landing-guide-step">4</span><span>Punkty liczy serwer z lokalnych list.</span></li>
+                        </ol>
+                        <dl class="landing-guide-scores" aria-label="Punktacja">
+                            <div><dt>15</dt><dd>unikat</dd></div>
+                            <div><dt>10</dt><dd>powtórka</dd></div>
+                            <div><dt>5</dt><dd>z listy</dd></div>
+                            <div><dt>0</dt><dd>pusto</dd></div>
+                        </dl>
+                    </aside>
+                </div>
+            </div>
         </header>
     </main>
 
