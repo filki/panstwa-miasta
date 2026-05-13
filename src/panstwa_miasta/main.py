@@ -41,7 +41,7 @@ from .limits import (
     http_rate_bucket_name,
 )
 from .logger import get_logger
-from .manager import ConnectionManager
+from .manager import RESULTS_PHASE_SECONDS, STOP_SUBMIT_GRACE_SECONDS, ConnectionManager
 from .ws_messages import ws_inbound_adapter
 
 logger = get_logger(__name__)
@@ -131,8 +131,8 @@ async def global_round_timeout(room_id: str, round_num: int, wait_time: int) -> 
 
 
 async def force_end_round(room_id: str) -> None:
-    """Forces round results after the 10-second countdown."""
-    await asyncio.sleep(10)
+    """Forces round results after the post-stop submit window."""
+    await asyncio.sleep(RESULTS_PHASE_SECONDS + STOP_SUBMIT_GRACE_SECONDS)
     if room_id not in manager.rooms:
         return
     room = manager.rooms[room_id]

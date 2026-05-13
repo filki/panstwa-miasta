@@ -136,6 +136,7 @@ async def _begin_results_phase(room: Room, room_id: str, timeout_coro) -> None:
     room.stop_triggered = False
     room.results_phase_active = True
     room.veto_votes = {}
+    room.sync_results_roster()
     round_scores = await room.compute_round_scores(persist=False)
     room.provisional_round_scores = round_scores
     veto_ends_at = int(time.time() * 1000) + RESULTS_PHASE_SECONDS * 1000
@@ -288,13 +289,15 @@ async def handle_stop(room: Room, room_id: str, client_name: str, force_end_coro
 async def handle_answers(
     room: Room, room_id: str, client_name: str, msg: dict, timeout_coro
 ) -> None:
-    if not room.is_playing:
+    if room.results_phase_active:
+        return
+    if not room.is_playing and not room.stop_triggered:
         return
     room.answers_received[client_name] = msg.get("answers", {})
-    logger.info(
-        f"Answers received from '{client_name}' in room {room_id} ({len(room.answers_received)}/{room.expected_answers})"
-    )
-    if len(room.answers_received) >= room.expected_answers:
+    answered = len(room.answers_received)
+    expected = len(room.connections)
+    logger.info(f"Answers received from '{client_name}' in room {room_id} ({answered}/{expected})")
+    if room.all_players_answered():
         await _begin_results_phase(room, room_id, timeout_coro)
 
 
