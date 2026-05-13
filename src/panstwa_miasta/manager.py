@@ -28,6 +28,7 @@ GAME_CATEGORIES = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię
 VETO_CATEGORY = "Rzecz"
 RESULTS_PHASE_SECONDS = 10
 STOP_SUBMIT_GRACE_SECONDS = 1.0
+HOST_REASSIGN_GRACE_SECONDS = 5.0
 
 
 def room_listed_in_active_lobby(room: "Room") -> bool:
@@ -128,6 +129,7 @@ class Room:
         self._force_end_task: asyncio.Task | None = None
         self._global_timeout_task: asyncio.Task | None = None
         self._results_phase_task: asyncio.Task | None = None
+        self._host_reassign_task: asyncio.Task | None = None
 
     def cancel_results_phase(self) -> None:
         task = self._results_phase_task
@@ -379,6 +381,52 @@ class ConnectionManager:
         if t is not None and not t.done():
             t.cancel()
 
+    def _cancel_host_reassign(self, room: Room) -> None:
+        task = room._host_reassign_task
+        if task is not None and not task.done():
+            task.cancel()
+        room._host_reassign_task = None
+
+    def _schedule_host_reassign(self, room: Room, room_id: str, departed_host: str) -> None:
+        """Defer host transfer while the current host may be reconnecting after refresh."""
+        self._cancel_host_reassign(room)
+
+        async def _reassign() -> None:
+            try:
+                await asyncio.sleep(HOST_REASSIGN_GRACE_SECONDS)
+            except asyncio.CancelledError:
+                return
+            room._host_reassign_task = None
+            current = self.rooms.get(room_id)
+            if current is None:
+                return
+            if current.host_name != departed_host:
+                return
+            if departed_host in current.connections:
+                return
+            if not current.connections:
+                return
+            current.host_name = next(iter(current.connections.keys()))
+            await save_room(
+                room_id,
+                current.max_rounds,
+                current.time_limit,
+                current.current_round,
+                current.host_name,
+                current.visibility,
+            )
+            from .handlers import score_update_payload
+
+            await current.broadcast(json.dumps(score_update_payload(current)))
+            logger.info("New host for room %s is '%s'", room_id, current.host_name)
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            logger.warning("schedule_host_reassign: no running loop for room %s", room_id)
+            return
+        room._host_reassign_task = loop.create_task(_reassign())
+
     def schedule_delayed_room_delete(self, room_id: str) -> None:
         """Po opuszczeniu pokoju przez wszystkich — usuwa wiersz z DB po grace (reconnect)."""
         self.cancel_delayed_room_delete(room_id)
@@ -495,6 +543,7 @@ class ConnectionManager:
 
         await websocket.accept()
         room.connections[client_name] = websocket
+        self._cancel_host_reassign(room)
         logger.info(f"WebSocket accepted for client '{client_name}' in room {room_id}")
 
         if not room.host_name:
@@ -660,10 +709,9 @@ class ConnectionManager:
                 room.expected_answers,
             )
 
-        # If host left, assign new host
+        # If host left, assign new host after a short grace (refresh / reconnect).
         if client_name == room.host_name and room.connections:
-            room.host_name = next(iter(room.connections.keys()))
-            logger.info("New host for room %s is '%s'", room_id, room.host_name)
+            self._schedule_host_reassign(room, room_id, client_name)
 
         # Remove empty room
         if not room.connections:
