@@ -33,6 +33,7 @@ def _isolated_test_db(tmp_path: object, monkeypatch: pytest.MonkeyPatch):
     asyncio.run(data.reload_miasta())
     asyncio.run(data.reload_names())
     asyncio.run(data.reload_jobs())
+    asyncio.run(data.reload_things())
     asyncio.run(data.reload_zwierzeta())
     asyncio.run(data.reload_rosliny())
     yield

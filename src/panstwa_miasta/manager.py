@@ -119,6 +119,9 @@ class Room:
         self.answers_received: dict[str, dict[str, str]] = {}
         self.expected_answers = 0
         self.game_over = False
+        self.round_started_at: float | None = None
+        self.stop_submit_ends_at: float | None = None
+        self.results_veto_ends_at: float | None = None
 
         # Faza podsumowania rundy (Veto na Rzecz + auto-start)
         self.results_phase_active = False
@@ -152,6 +155,7 @@ class Room:
             task.cancel()
         self._results_phase_task = None
         self.results_phase_active = False
+        self.results_veto_ends_at = None
         self.veto_votes = {}
         self.provisional_round_scores = {}
 
@@ -169,6 +173,20 @@ class Room:
         if not self.connections:
             return False
         return all(name in self.answers_received for name in self.connections)
+
+    def mark_stop_phase_started(self) -> None:
+        self.stop_triggered = True
+        self.stop_submit_ends_at = time.time() + RESULTS_PHASE_SECONDS
+
+    def round_seconds_remaining(self) -> int | None:
+        if not self.is_playing or self.round_started_at is None or self.stop_triggered:
+            return None
+        return max(0, int(self.time_limit - (time.time() - self.round_started_at)))
+
+    def stop_seconds_remaining(self) -> int | None:
+        if not self.stop_triggered or self.stop_submit_ends_at is None:
+            return None
+        return max(0, int(self.stop_submit_ends_at - time.time()))
 
     def veto_tallies(self) -> dict[str, dict[str, int]]:
         tallies: dict[str, dict[str, int]] = {}
@@ -231,6 +249,9 @@ class Room:
     def start_round(self) -> str:
         self.is_playing = True
         self.stop_triggered = False
+        self.stop_submit_ends_at = None
+        self.results_veto_ends_at = None
+        self.round_started_at = time.time()
         self.ready_players = set()
         self.current_round += 1
 

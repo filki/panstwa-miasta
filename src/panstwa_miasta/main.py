@@ -32,6 +32,7 @@ from .data import (
     reload_miasta,
     reload_names,
     reload_rosliny,
+    reload_things,
     reload_zwierzeta,
 )
 from .db import delete_room, fetch_game_transcript, init_db
@@ -78,6 +79,7 @@ async def lifespan(app: FastAPI):
     await reload_miasta()
     await reload_names()
     await reload_jobs()
+    await reload_things()
     await reload_zwierzeta()
     await reload_rosliny()
     await manager.load_from_db()
@@ -155,7 +157,7 @@ async def global_round_timeout(room_id: str, round_num: int, wait_time: int) -> 
         return
     room = manager.rooms[room_id]
     if room.is_playing and room.current_round == round_num and not room.stop_triggered:
-        room.stop_triggered = True
+        room.mark_stop_phase_started()
         await room.broadcast(
             json.dumps(
                 {
@@ -441,19 +443,24 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
     await room.broadcast(json.dumps(score_update_payload(room)))
 
     if room.is_playing:
-        await websocket.send_text(
-            json.dumps(
-                {
-                    "type": "round_started",
-                    "letter": room.current_letter,
-                    "sender": "Serwer (Wznowienie)",
-                    "current_round": room.current_round,
-                    "max_rounds": room.max_rounds,
-                    "time_limit": room.time_limit,
-                    "resume": True,
-                }
-            )
-        )
+        resume_payload: dict[str, object] = {
+            "type": "round_started",
+            "letter": room.current_letter,
+            "sender": "Serwer (Wznowienie)",
+            "current_round": room.current_round,
+            "max_rounds": room.max_rounds,
+            "time_limit": room.time_limit,
+            "resume": True,
+            "stop_triggered": room.stop_triggered,
+            "answer_submitted": client_name in room.answers_received,
+        }
+        seconds_left = room.round_seconds_remaining()
+        if seconds_left is not None:
+            resume_payload["seconds_left"] = seconds_left
+        stop_left = room.stop_seconds_remaining()
+        if stop_left is not None:
+            resume_payload["stop_seconds_left"] = stop_left
+        await websocket.send_text(json.dumps(resume_payload))
     elif room.game_over:
         round_history = list(room.round_history)
         if not round_history:
@@ -478,6 +485,9 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
         token = issue_appeal_token(room.room_id, client_name)
         await websocket.send_text(json.dumps({"type": "appeal_token", "token": token}))
     elif room.results_phase_active:
+        veto_ends_at = None
+        if room.results_veto_ends_at is not None:
+            veto_ends_at = int(room.results_veto_ends_at * 1000)
         await websocket.send_text(
             json.dumps(
                 {
@@ -490,6 +500,7 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
                     "host_name": room.host_name,
                     "final": False,
                     "veto_tallies": room.veto_tallies(),
+                    "veto_ends_at": veto_ends_at,
                 }
             )
         )
