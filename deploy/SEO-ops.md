@@ -1,29 +1,44 @@
-# SEO i operacje (backlog)
+# SEO i operacje
 
-Nie blokuje wdrożenia kolejki RAG. Wykonuj jako małe PR lub zadania operatorskie.
+## Zaimplementowane w aplikacji
 
-## Search Console
+- **Landing** (`static/index.html`): `description`, Open Graph, Twitter Card, `canonical` (apex),
+  JSON-LD `WebApplication`.
+- **`/robots.txt`** (`main.py`): `Allow: /`, `Disallow` dla `/api/`, `/ws/`, `/room/`, `/share/`,
+  wpis `Sitemap`.
+- **`/sitemap.xml`**: `/`, `/polityka-prywatnosci`, `/cookies`, `/regulamin` + `lastmod`.
+- **Pokój** (`static/room.html`): `noindex`.
+- **Udostępnianie wyniku** (`/share/{id}`): `noindex, nofollow` (OG zostaje pod podgląd linków).
+- **Strony prawne**: `canonical` na apex w szablonach HTML.
+- **Caddy** ([`Caddyfile.example`](Caddyfile.example)): stały redirect `www` → apex.
 
-- Zweryfikuj właściwość dla `https://panstwamiasta.com.pl` (apex).
-- Prześlij mapę: `https://panstwamiasta.com.pl/sitemap.xml` (generowana w aplikacji).
-- Monitoruj indeksację stron prawnych (`/polityka-prywatnosci`, `/regulamin`, `/cookies`).
+## Do zrobienia na serwerze / w panelach (operatorskie)
 
-## www → apex
+### Search Console
 
-- Upewnij się, że Caddy przekierowuje `www` na apex (lub odwrotnie — jeden kanoniczny host).
-- Canonical w [`static/index.html`](../static/index.html) wskazuje apex.
+1. Właściwość typu **URL prefix**: `https://panstwamiasta.com.pl`.
+2. Weryfikacja: rekord DNS TXT lub plik HTML (według kreatora Google).
+3. **Mapa witryn:** `https://panstwamiasta.com.pl/sitemap.xml`.
+4. Po deployu zmian SEO: „Sprawdź adres URL” dla `/` i stron prawnych; opcjonalnie „Poproś o
+   indeksację” dla `/polityka-prywatnosci`, `/regulamin`, `/cookies`.
+5. Monitoruj raport **Strony** / **Indeksowanie** — `/room/*` i `/share/*` nie powinny dominować
+   (robots + noindex).
 
-## Robots i pokoje
+### www → apex
 
-- [`/robots.txt`](../src/panstwa_miasta/main.py) — Allow `/`, Disallow `/room/`.
-- Strony pokoju: `noindex` w szablonie pokoju (jeśli jeszcze brak — osobny PR).
+1. DNS: rekordy **A/AAAA** dla apex i dla `www` (oba na IP VPS) **albo** CNAME `www` → apex.
+2. W `/etc/caddy/Caddyfile` blok `www.panstwamiasta.com.pl { redir https://panstwamiasta.com.pl{uri} permanent }`
+   oraz osobny blok dla apex (jak w przykładzie).
+3. Po zmianie: `sudo caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy`.
+4. Test: `curl -sI https://www.panstwamiasta.com.pl/` → `301` / `308`, `Location: https://panstwamiasta.com.pl/...`.
 
-## Monitoring
+### Monitoring
 
-- Uptime na `/` i `/healthz` (patrz [`deploy/README.md`](README.md) § Uptime Kuma).
-- Po włączeniu RAG: alert na 503 `/api/words/report` w godzinach szczytu.
+- Uptime na `https://panstwamiasta.com.pl/` i `/healthz` (patrz [`README.md`](README.md) § Uptime Kuma).
+- Po włączeniu RAG: alert na błędy `503` na `POST /api/words/report` w godzinach szczytu.
 
-## Opcjonalnie
+## Opcjonalnie (osobne PR / konfiguracja)
 
-- Umami (`UMAMI_*` w `env.example`).
-- Strona `/wspolprace` — osobny PR treści.
+- **Umami:** `UMAMI_SCRIPT_URL` + `UMAMI_WEBSITE_ID` w unit systemd (`env.example`).
+- **Strona `/wspolprace`** — treść marketingowa, osobny PR + wpis w sitemap.
+- **Pełne CSP** w Caddy — osobny krok z whitelistą fontów i skryptów.

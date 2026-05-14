@@ -118,6 +118,8 @@ W **Settings → Secrets and variables → Actions → Secrets**:
 
 #### Turso: import i cutover (checklista)
 
+Szczegółowy plan krok po kroku (okno serwisowe, czas `/healthz`, rollback po 502): [`TURSO-cutover.md`](TURSO-cutover.md).
+
 1. Backup na VPS: `DEPLOY_APP_DIR=/srv/panstwa-miasta deploy/backup-db.sh`.
 2. `turso auth login` (lub `--headless`) na maszynie z CLI; import: `turso db import <baza> /ścieżka/panstwa_miasta.db`.
 3. Zweryfikuj `COUNT(*)` w Turso vs kopia źródłowa (słowniki + `rooms` / `players` / `game_transcripts`).

@@ -35,20 +35,33 @@ def test_sw_js_and_manifest_served():
 
 
 @pytest.mark.parametrize(
-    "path,needle",
+    "path,needle,canonical",
     [
-        ("/polityka-prywatnosci", "Polityka prywatności"),
-        ("/cookies", "localStorage"),
-        ("/regulamin", "Regulamin"),
+        (
+            "/polityka-prywatnosci",
+            "Polityka prywatności",
+            "https://panstwamiasta.com.pl/polityka-prywatnosci",
+        ),
+        (
+            "/cookies",
+            "localStorage",
+            "https://panstwamiasta.com.pl/cookies",
+        ),
+        (
+            "/regulamin",
+            "Regulamin",
+            "https://panstwamiasta.com.pl/regulamin",
+        ),
     ],
 )
-def test_legal_pages_and_injected_footer(path: str, needle: str):
+def test_legal_pages_and_injected_footer(path: str, needle: str, canonical: str):
     response = client.get(path)
     assert response.status_code == 200
     assert needle in response.text
     assert "site-footer" in response.text
     assert "/regulamin" in response.text
     assert "buycoffee.to/filki" in response.text
+    assert f'rel="canonical" href="{canonical}"' in response.text
 
 
 def test_api_active_rooms_with_data():
@@ -291,6 +304,8 @@ def test_robots_txt_and_sitemap():
     assert robots.status_code == 200
     assert "Sitemap: https://panstwamiasta.com.pl/sitemap.xml" in robots.text
     assert "Disallow: /api/" in robots.text
+    assert "Disallow: /room/" in robots.text
+    assert "Disallow: /share/" in robots.text
 
     sitemap = client.get("/sitemap.xml")
     assert sitemap.status_code == 200
@@ -314,6 +329,12 @@ def test_room_shell_is_noindex():
     response = client.get("/room/abcd")
     assert response.status_code == 200
     assert 'name="robots" content="noindex"' in response.text
+
+
+def test_share_page_is_noindex():
+    response = client.get("/share/abcd")
+    assert response.status_code == 404
+    assert 'name="robots" content="noindex, nofollow"' in response.text
 
 
 def test_websocket_invalid_path_returns_1008():
