@@ -15,7 +15,7 @@ from panstwa_miasta import data, db
 
 
 @pytest.fixture(autouse=True)
-def _isolated_test_db(tmp_path: object):
+def _isolated_test_db(tmp_path: object, monkeypatch: pytest.MonkeyPatch):
     """Fresh, isolated SQLite database per test.
 
     Function-scoped so `test_db_lifecycle` (which creates/deletes the DB
@@ -25,6 +25,8 @@ def _isolated_test_db(tmp_path: object):
     (flora pod polem „Roślina” — moduły seed, nie SQL).
     """
     test_db = tmp_path / "test.db"  # type: ignore[operator]
+    monkeypatch.delenv("LIBSQL_URL", raising=False)
+    monkeypatch.delenv("LIBSQL_AUTH_TOKEN", raising=False)
     db.DB_PATH = test_db
     asyncio.run(db.init_db())
     asyncio.run(data.reload_countries())

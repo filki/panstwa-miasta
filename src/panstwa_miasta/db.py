@@ -6,6 +6,7 @@ import aiosqlite
 
 from .cities_seed import CITIES_SEED
 from .countries_seed import COUNTRIES_SEED
+from .db_backend import connect
 from .jobs_seed import JOBS_SEED
 from .names_seed import NAMES_SEED
 
@@ -39,7 +40,7 @@ def _name_norm(name: str) -> str:
 
 
 async def init_db():
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect() as db:
         await db.execute("""
             CREATE TABLE IF NOT EXISTS rooms (
                 room_id TEXT PRIMARY KEY,
@@ -199,7 +200,7 @@ async def init_db():
 
 
 async def deactivate_room(room_id: str) -> None:
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect() as db:
         await db.execute("UPDATE rooms SET is_active = 0 WHERE room_id = ?", (room_id,))
         await db.commit()
 
@@ -207,7 +208,7 @@ async def deactivate_room(room_id: str) -> None:
 async def save_room(
     room_id, max_rounds, time_limit, current_round, host_name, visibility: str = "public"
 ):
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect() as db:
         await db.execute(
             """
             INSERT INTO rooms (room_id, max_rounds, time_limit, current_round, host_name, visibility)
@@ -226,7 +227,7 @@ async def save_room(
 
 
 async def save_player_score(room_id, player_name, score):
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect() as db:
         await db.execute(
             """
             INSERT INTO players (room_id, player_name, score)
@@ -239,14 +240,14 @@ async def save_player_score(room_id, player_name, score):
 
 
 async def delete_room(room_id):
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect() as db:
         await db.execute("DELETE FROM rooms WHERE room_id = ?", (room_id,))
         await db.commit()
 
 
 async def fetch_room_snapshot(room_id: str) -> dict[str, object] | None:
     """Zwraca wiersz ``rooms`` + ``players`` jako słownik, albo ``None`` gdy brak pokoju."""
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect() as db:
         db.row_factory = aiosqlite.Row
         async with db.execute("SELECT * FROM rooms WHERE room_id = ?", (room_id,)) as cur:
             row = await cur.fetchone()
@@ -264,7 +265,7 @@ async def fetch_room_snapshot(room_id: str) -> dict[str, object] | None:
 
 async def room_id_exists(room_id: str) -> bool:
     """Czy ``room_id`` jest już zajęty w SQLite (aktywny pokój lub transkrypt)."""
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect() as db:
         async with db.execute(
             "SELECT 1 FROM rooms WHERE room_id = ? LIMIT 1",
             (room_id,),
@@ -279,7 +280,7 @@ async def room_id_exists(room_id: str) -> bool:
 
 
 async def remove_player(room_id: str, player_name: str) -> None:
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect() as db:
         await db.execute(
             "DELETE FROM players WHERE room_id = ? AND player_name = ?",
             (room_id, player_name),
@@ -288,7 +289,7 @@ async def remove_player(room_id: str, player_name: str) -> None:
 
 
 async def get_active_rooms():
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect() as db:
         db.row_factory = aiosqlite.Row
         async with db.execute("SELECT * FROM rooms WHERE is_active = 1") as cursor:
             rooms = await cursor.fetchall()
@@ -307,7 +308,7 @@ async def get_active_rooms():
 async def load_country_norms() -> set[str]:
     """Return the set of normalised country names for in-memory validation."""
     async with (
-        aiosqlite.connect(DB_PATH) as db,
+        connect() as db,
         db.execute("SELECT name_norm FROM countries") as cursor,
     ):
         rows = await cursor.fetchall()
@@ -317,7 +318,7 @@ async def load_country_norms() -> set[str]:
 async def load_name_norms() -> set[str]:
     """Return the set of normalised first names for in-memory validation."""
     async with (
-        aiosqlite.connect(DB_PATH) as db,
+        connect() as db,
         db.execute("SELECT imie_norm FROM names") as cursor,
     ):
         rows = await cursor.fetchall()
@@ -327,7 +328,7 @@ async def load_name_norms() -> set[str]:
 async def load_job_norms() -> list[str]:
     """Zwraca listę znormalizowanych opisów zawodów (kolejność bez znaczenia)."""
     async with (
-        aiosqlite.connect(DB_PATH) as db,
+        connect() as db,
         db.execute("SELECT opis_norm FROM jobs") as cursor,
     ):
         rows = await cursor.fetchall()
@@ -337,7 +338,7 @@ async def load_job_norms() -> list[str]:
 async def load_city_norms() -> set[str]:
     """Znormalizowane nazwy miast (walidacja kategorii „Miasto”)."""
     async with (
-        aiosqlite.connect(DB_PATH) as db,
+        connect() as db,
         db.execute("SELECT nazwa_norm FROM cities") as cursor,
     ):
         rows = await cursor.fetchall()
@@ -346,7 +347,7 @@ async def load_city_norms() -> set[str]:
 
 async def purge_stale_game_transcripts(max_age_days: int = GAME_TRANSCRIPT_TTL_DAYS) -> None:
     cutoff = int(time.time()) - max_age_days * 86_400
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect() as db:
         await db.execute("DELETE FROM game_transcripts WHERE finished_at < ?", (cutoff,))
         await db.commit()
 
@@ -354,7 +355,7 @@ async def purge_stale_game_transcripts(max_age_days: int = GAME_TRANSCRIPT_TTL_D
 async def save_game_transcript(room_id: str, payload: dict) -> None:
     await purge_stale_game_transcripts()
     finished_at = int(time.time())
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect() as db:
         await db.execute(
             """
             INSERT INTO game_transcripts (room_id, finished_at, payload)
@@ -369,7 +370,7 @@ async def save_game_transcript(room_id: str, payload: dict) -> None:
 
 
 async def fetch_game_transcript(room_id: str) -> dict | None:
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect() as db:
         db.row_factory = aiosqlite.Row
         async with db.execute(
             "SELECT payload FROM game_transcripts WHERE room_id = ?",
@@ -394,7 +395,7 @@ async def insert_dictionary_suggestion(
     ai_explanation: str,
 ) -> int:
     created_at = int(time.time())
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect() as db:
         cursor = await db.execute(
             """
             INSERT INTO dictionary_suggestions (
@@ -423,7 +424,7 @@ async def insert_dictionary_suggestion(
 
 
 async def list_dictionary_suggestions(status: str = "pending") -> list[dict]:
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect() as db:
         db.row_factory = aiosqlite.Row
         async with db.execute(
             """
@@ -441,7 +442,7 @@ async def list_dictionary_suggestions(status: str = "pending") -> list[dict]:
 
 
 async def fetch_dictionary_suggestion(suggestion_id: int) -> dict | None:
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect() as db:
         db.row_factory = aiosqlite.Row
         async with db.execute(
             """
@@ -464,7 +465,7 @@ async def set_dictionary_suggestion_status(
     review_note: str | None = None,
 ) -> bool:
     reviewed_at = int(time.time())
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with connect() as db:
         cursor = await db.execute(
             """
             UPDATE dictionary_suggestions
