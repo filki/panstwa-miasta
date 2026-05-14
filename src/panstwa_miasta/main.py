@@ -7,7 +7,6 @@ from html import escape
 from typing import Annotated, Literal, cast
 
 import aiofiles
-import aiosqlite
 from fastapi import FastAPI, Header, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -35,7 +34,8 @@ from .data import (
     reload_rosliny,
     reload_zwierzeta,
 )
-from .db import DB_PATH, delete_room, fetch_game_transcript, init_db
+from .db import delete_room, fetch_game_transcript, init_db
+from .db_backend import connect
 from .handlers import (
     _begin_results_phase,
     handle_answers,
@@ -260,7 +260,7 @@ async def get_manifest() -> FileResponse:
 @app.get("/healthz")
 async def get_healthz() -> dict[str, str]:
     try:
-        async with aiosqlite.connect(DB_PATH) as db, db.execute("SELECT 1") as cur:
+        async with connect() as db, db.execute("SELECT 1") as cur:
             await cur.fetchone()
     except Exception as exc:
         logger.warning("healthz DB check failed: %s", exc)
