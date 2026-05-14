@@ -20,6 +20,7 @@ def test_read_root():
     assert "site-footer" in response.text
     assert "/polityka-prywatnosci" in response.text
     assert "buycoffee.to/filki" in response.text
+    assert "landing-anon-support" in response.text
 
 
 def test_sw_js_and_manifest_served():
