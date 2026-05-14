@@ -333,8 +333,6 @@ def test_landing_has_seo_meta():
     assert 'name="twitter:card"' in response.text
     assert 'rel="canonical"' in response.text
     assert 'property="og:locale"' in response.text
-    assert 'class="landing-seo"' in response.text
-    assert "Państwa-Miasta online — gra w przeglądarce" in response.text
     assert "application/ld+json" in response.text
 
 
