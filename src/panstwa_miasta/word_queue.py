@@ -62,16 +62,18 @@ async def submit_dictionary_intake(*, word: str, category: str, letter: str) -> 
         "outcome": outcome,
         "suggestion_id": suggestion_id,
         "message_pl": (
-            "To słowo jest już w kolejce do ręcznej weryfikacji."
+            "Dziękujemy za poprawianie słownika! To słowo jest już w kolejce. "
+            "Kolejka weryfikacji AI jest wyłączona — przejrzymy zgłoszenie ręcznie."
             if outcome == "exists"
-            else "Zapisano — sprawdzimy to słowo ręcznie."
+            else "Dziękujemy za poprawianie słownika! Zgłoszenie zapisaliśmy. "
+            "Kolejka weryfikacji AI jest wyłączona — przejrzymy je ręcznie."
         ),
     }
 
 
 async def submit_word_report(*, word: str, category: str, letter: str) -> dict:
     if not rag_queue_enabled():
-        raise HTTPException(status_code=503, detail="Kolejka weryfikacji AI jest wyłączona.")
+        return await submit_dictionary_intake(word=word, category=category, letter=letter)
     if category not in GAME_CATEGORIES:
         raise HTTPException(status_code=422, detail="Nieznana kategoria.")
     cleaned_word = word.strip()

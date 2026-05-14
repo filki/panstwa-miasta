@@ -40,7 +40,7 @@ async function pmCheckWordReason({ word, category, starting_letter: startingLett
 function pmWordReportStatusMessage(data) {
     if (!data || typeof data !== "object") return "Brak odpowiedzi serwera.";
     if (data.message_pl) return String(data.message_pl);
-    return "Zgłoszenie zapisane.";
+    return "Dziękujemy za poprawianie słownika! Zgłoszenie zapisaliśmy do kolejki ręcznej weryfikacji.";
 }
 
 async function pmRequestPostgameWordReport(button) {

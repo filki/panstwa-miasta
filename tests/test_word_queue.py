@@ -18,7 +18,10 @@ def test_word_report_disabled_by_default():
         "/api/words/report",
         json={"word": "Wakanda", "category": "Państwo", "starting_letter": "w"},
     )
-    assert response.status_code == 503
+    assert response.status_code == 200
+    body = response.json()
+    assert body["outcome"] == "created"
+    assert "ai" in body["message_pl"].lower()
 
 
 def test_dictionary_intake_always_available():
@@ -28,7 +31,7 @@ def test_dictionary_intake_always_available():
     body = created.json()
     assert body["outcome"] == "created"
     assert body["suggestion_id"] >= 1
-    assert "ręczn" in body["message_pl"].lower()
+    assert "dziękujemy" in body["message_pl"].lower()
 
     duplicate = client.post("/api/dictionary/suggestions", json=payload)
     assert duplicate.status_code == 200
