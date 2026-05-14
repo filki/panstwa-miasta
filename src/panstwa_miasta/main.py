@@ -235,6 +235,8 @@ async def get_robots_txt() -> PlainTextResponse:
         "Allow: /\n"
         "Disallow: /api/\n"
         "Disallow: /ws/\n"
+        "Disallow: /room/\n"
+        "Disallow: /share/\n"
         f"Sitemap: {SITE_PUBLIC_ORIGIN}/sitemap.xml\n"
     )
     return PlainTextResponse(content=body)
@@ -312,6 +314,7 @@ async def get_share_page(room_id: RoomIdPath) -> HTMLResponse:
         body = (
             '<!DOCTYPE html><html lang="pl"><head><meta charset="utf-8"/>'
             '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
+            '<meta name="robots" content="noindex, nofollow">'
             '<link rel="stylesheet" href="/static/css/style.css"/>'
             '<link rel="stylesheet" href="/static/css/site-footer.css"/>'
             "<title>Wynik — brak danych</title></head>"
@@ -336,6 +339,7 @@ async def get_share_page(room_id: RoomIdPath) -> HTMLResponse:
     body = (
         f'<!DOCTYPE html><html lang="pl"><head><meta charset="utf-8"/>'
         f'<meta name="viewport" content="width=device-width, initial-scale=1"/>'
+        f'<meta name="robots" content="noindex, nofollow">'
         f'<link rel="stylesheet" href="/static/css/style.css"/>'
         f'<link rel="stylesheet" href="/static/css/site-footer.css"/>'
         f"<title>{title}</title>"
