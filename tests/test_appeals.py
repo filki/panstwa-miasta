@@ -140,7 +140,7 @@ async def test_dictionary_suggestion_status_flow():
     row = await fetch_dictionary_suggestion(suggestion_id)
     assert row is not None
     assert row["status"] == "pending"
-    assert await set_dictionary_suggestion_status(suggestion_id, "approved", review_note="ok")
+    assert await set_dictionary_suggestion_status(suggestion_id, "accepted", review_note="ok")
     row2 = await fetch_dictionary_suggestion(suggestion_id)
     assert row2 is not None
-    assert row2["status"] == "approved"
+    assert row2["status"] == "accepted"

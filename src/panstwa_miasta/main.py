@@ -63,6 +63,7 @@ from .manager import (
     ConnectionManager,
     room_listed_in_active_lobby,
 )
+from .routers.words import router as words_router
 from .ws_messages import ws_inbound_adapter
 
 logger = get_logger(__name__)
@@ -85,6 +86,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Państwa-Miasta Engine", lifespan=lifespan)
+app.include_router(words_router)
 manager = ConnectionManager()
 
 
@@ -99,7 +101,13 @@ async def rate_limit_http_middleware(request: Request, call_next):
     bucket = http_rate_bucket_name(request.url.path)
     if bucket is not None and (
         request.method in ("GET", "HEAD")
-        or request.url.path in ("/api/quick-join", "/api/rooms")
+        or request.url.path
+        in (
+            "/api/quick-join",
+            "/api/rooms",
+            "/api/words/report",
+            "/api/words/check-reason",
+        )
         or request.url.path.endswith("/appeals")
     ):
         ip = client_ip_from_request(request)
