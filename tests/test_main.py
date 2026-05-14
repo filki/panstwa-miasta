@@ -62,6 +62,7 @@ def test_legal_pages_and_injected_footer(path: str, needle: str, canonical: str)
     assert "/regulamin" in response.text
     assert "buycoffee.to/filki" in response.text
     assert f'rel="canonical" href="{canonical}"' in response.text
+    assert 'property="og:title"' in response.text
 
 
 def test_api_active_rooms_with_data():
@@ -270,6 +271,16 @@ def test_get_room_shell_includes_footer():
     assert "buycoffee.to/filki" in response.text
 
 
+def test_google_site_verification_snippet(monkeypatch):
+    monkeypatch.delenv("UMAMI_SCRIPT_URL", raising=False)
+    monkeypatch.delenv("UMAMI_WEBSITE_ID", raising=False)
+    monkeypatch.setenv("GOOGLE_SITE_VERIFICATION", "gsc-token-abc")
+    response = client.get("/")
+    assert response.status_code == 200
+    assert 'name="google-site-verification"' in response.text
+    assert 'content="gsc-token-abc"' in response.text
+
+
 def test_umami_snippet_absent_without_env(monkeypatch):
     monkeypatch.delenv("UMAMI_SCRIPT_URL", raising=False)
     monkeypatch.delenv("UMAMI_WEBSITE_ID", raising=False)
@@ -321,7 +332,9 @@ def test_landing_has_seo_meta():
     assert 'property="og:image"' in response.text
     assert 'name="twitter:card"' in response.text
     assert 'rel="canonical"' in response.text
-    assert "https://panstwamiasta.com.pl/" in response.text
+    assert 'property="og:locale"' in response.text
+    assert 'class="landing-seo"' in response.text
+    assert "Państwa-Miasta online — gra w przeglądarce" in response.text
     assert "application/ld+json" in response.text
 
 

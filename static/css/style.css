@@ -604,6 +604,36 @@ button.active-rooms-empty-cta {
     line-height: 1.5;
 }
 
+.landing-seo {
+    margin-top: var(--space-6);
+    padding: var(--space-5);
+    border-radius: var(--r-lg);
+    border: 1px solid rgba(var(--landing-tint-join), 0.14);
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--text-muted);
+    line-height: 1.55;
+}
+
+.landing-seo h2,
+.landing-seo-subtitle {
+    margin: 0 0 var(--space-3);
+    color: var(--text);
+    font-family: 'Outfit', system-ui, sans-serif;
+}
+
+.landing-seo p {
+    margin: 0 0 var(--space-4);
+}
+
+.landing-seo-steps {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.landing-seo-steps li + li {
+    margin-top: var(--space-2);
+}
+
 .landing-anon-cta--quick {
     width: 100%;
 }

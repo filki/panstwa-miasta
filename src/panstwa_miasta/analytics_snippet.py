@@ -18,6 +18,19 @@ def umami_head_snippet() -> str:
     )
 
 
+def google_site_verification_snippet() -> str:
+    """Return Google Search Console verification meta when configured."""
+    token = os.environ.get("GOOGLE_SITE_VERIFICATION", "").strip()
+    if not token:
+        return ""
+    return f'<meta name="google-site-verification" content="{escape(token, quote=True)}" />\n'
+
+
+def public_head_snippets() -> str:
+    """Optional analytics and Search Console tags for public HTML pages."""
+    return google_site_verification_snippet() + umami_head_snippet()
+
+
 def inject_before_head_close(html: str, snippet: str) -> str:
     """Insert ``snippet`` immediately before the first ``</head>``."""
     if not snippet:
