@@ -2,6 +2,7 @@ import asyncio
 import json
 import pathlib
 from contextlib import asynccontextmanager, suppress
+from datetime import date
 from html import escape
 from typing import Annotated, Literal, cast
 
@@ -124,6 +125,13 @@ FOOTER_HTML = FOOTER_PARTIAL_PATH.read_text(encoding="utf-8")
 SITE_PUBLIC_ORIGIN = "https://panstwamiasta.com.pl"
 
 
+def _sitemap_lastmod() -> str:
+    try:
+        return date.fromtimestamp(INDEX_PATH.stat().st_mtime).isoformat()
+    except OSError:
+        return date.today().isoformat()
+
+
 # ---------------------------------------------------------------------------
 # Round timeout helpers
 # ---------------------------------------------------------------------------
@@ -224,7 +232,11 @@ async def get_robots_txt() -> PlainTextResponse:
 @app.get("/sitemap.xml")
 async def get_sitemap_xml() -> Response:
     paths = ("/", "/polityka-prywatnosci", "/cookies", "/regulamin")
-    urls = "".join(f"<url><loc>{SITE_PUBLIC_ORIGIN}{path}</loc></url>\n" for path in paths)
+    lastmod = _sitemap_lastmod()
+    urls = "".join(
+        f"<url><loc>{SITE_PUBLIC_ORIGIN}{path}</loc><lastmod>{lastmod}</lastmod></url>\n"
+        for path in paths
+    )
     body = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'

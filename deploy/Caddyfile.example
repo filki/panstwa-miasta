@@ -1,6 +1,10 @@
 # Skopiuj jako /etc/caddy/Caddyfile (lub do sites-enabled wg dystrybucji).
 # Przed użyciem: podmień domenę. DNS A/AAAA → IP serwera.
 
+www.twoja-domena.pl {
+	redir https://twoja-domena.pl{uri} permanent
+}
+
 twoja-domena.pl {
 	encode gzip zstd
 
