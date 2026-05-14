@@ -84,6 +84,7 @@ def _http_limit_for_bucket(bucket: str) -> int:
         "api_appeals": "PM_RATE_HTTP_API_APPEALS",
         "api_words_report": "PM_RATE_HTTP_API_WORDS_REPORT",
         "api_words_check": "PM_RATE_HTTP_API_WORDS_CHECK",
+        "api_words_worker": "PM_RATE_HTTP_API_WORDS_WORKER",
         "api_share": "PM_RATE_HTTP_API_SHARE",
         "share_page": "PM_RATE_HTTP_SHARE_PAGE",
         "room_html": "PM_RATE_HTTP_ROOM",
@@ -97,6 +98,7 @@ def _http_limit_for_bucket(bucket: str) -> int:
         "api_appeals": 40,
         "api_words_report": 24,
         "api_words_check": 40,
+        "api_words_worker": 120,
         "api_share": 80,
         "share_page": 80,
         "room_html": 120,
@@ -168,6 +170,8 @@ def http_rate_bucket_name(path: str) -> str | None:
         return "api_words_report"
     if path == "/api/words/check-reason":
         return "api_words_check"
+    if path.startswith("/api/internal/words/"):
+        return "api_words_worker"
     if path.startswith("/api/share/"):
         return "api_share"
     if path.startswith("/share/"):

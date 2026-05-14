@@ -136,3 +136,48 @@ class WordCheckReasonOut(BaseModel):
     message_pl: str = Field(..., max_length=500)
     ai_reason: str | None = Field(default=None, max_length=2000)
     created_at: str | None = Field(default=None, max_length=40)
+
+
+class WordWorkerPendingItem(BaseModel):
+    """Wiersz kolejki pending dla workera."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: int = Field(..., ge=1)
+    category: str = Field(..., max_length=32)
+    proposed_display: str = Field(..., max_length=120)
+    proposed_norm: str = Field(..., max_length=120)
+    target_seed: str = Field(..., max_length=32)
+    letter: str = Field(..., max_length=8)
+    room_id: str = Field(..., max_length=64)
+    player_name: str = Field(..., max_length=64)
+    round: int = Field(..., ge=0)
+    created_at: int = Field(..., ge=0)
+
+
+class WordWorkerPendingOut(BaseModel):
+    """Partia pending dla workera."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[WordWorkerPendingItem]
+    next_after_id: int = Field(..., ge=0)
+
+
+class WordWorkerDecisionIn(BaseModel):
+    """Decyzja workera AI nad zgłoszeniem."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["accepted", "rejected", "error"]
+    ai_explanation: str | None = Field(default=None, max_length=2000)
+    review_note: str | None = Field(default=None, max_length=2000)
+
+
+class WordWorkerDecisionOut(BaseModel):
+    """Potwierdzenie zapisu decyzji workera."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    suggestion_id: int = Field(..., ge=1)
+    status: Literal["accepted", "rejected", "error"]
