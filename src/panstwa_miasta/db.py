@@ -1,4 +1,5 @@
 import json
+import os
 import pathlib
 import time
 from typing import Literal
@@ -11,7 +12,21 @@ from .db_backend import connect, connect_dictionary
 from .jobs_seed import JOBS_SEED
 from .names_seed import NAMES_SEED
 
-DB_PATH = pathlib.Path(__file__).parent.parent.parent / "panstwa_miasta.db"
+
+def _resolve_db_path() -> pathlib.Path:
+    """Prefer repo DB when writable; otherwise use a user-local SQLite file."""
+    repo_db = pathlib.Path(__file__).parent.parent.parent / "panstwa_miasta.db"
+    if repo_db.exists():
+        if os.access(repo_db, os.W_OK):
+            return repo_db
+    elif os.access(repo_db.parent, os.W_OK):
+        return repo_db
+    user_db = pathlib.Path.home() / ".local" / "share" / "panstwa-miasta" / "panstwa_miasta.db"
+    user_db.parent.mkdir(parents=True, exist_ok=True)
+    return user_db
+
+
+DB_PATH = _resolve_db_path()
 
 # Opóźnienie przed trwałym usunięciem pokoju z SQLite po opuszczeniu przez
 # wszystkich (reconnect w krótkim oknie odzyskuje stan z DB).
