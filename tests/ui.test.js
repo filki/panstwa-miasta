@@ -523,7 +523,7 @@ describe('room phase helpers', () => {
         expect(persistNickname('abcdefghijklmnopqrs')).toBe('abcdefghijklmnop');
     });
 
-    test('updateScoreboard renders lobby roster before room-phase-lobby is set', () => {
+    test('updateScoreboard skips lobby roster outside lobby phase', () => {
         document.body.classList.remove('room-phase-lobby');
         document.body.innerHTML = `
             <div id="lobby-roster"></div>
@@ -532,8 +532,7 @@ describe('room phase helpers', () => {
         `;
         updateScoreboard({ Anna: 0 }, 'Anna', 'Anna', ['Anna']);
         const roster = document.getElementById('lobby-roster');
-        expect(roster.textContent).toContain('Anna');
-        expect(roster.querySelectorAll('.lobby-roster-item').length).toBe(8);
+        expect(roster.textContent).toBe('');
     });
 
     test('setRoomPhase lobby repaints roster from cached score_update', () => {

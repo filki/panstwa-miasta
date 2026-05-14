@@ -1,8 +1,8 @@
 /**
- * Klient kolejki weryfikacji słów (RAG) — /api/words/report i /api/words/check-reason.
+ * Zgłoszenia słownika — zapis do bazy (ręczna weryfikacja) oraz opcjonalna kolejka AI.
  */
 async function pmReportWord({ word, category, starting_letter: startingLetter }) {
-    const resp = await fetch("/api/words/report", {
+    const resp = await fetch("/api/dictionary/suggestions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -13,7 +13,7 @@ async function pmReportWord({ word, category, starting_letter: startingLetter })
     });
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) {
-        const detail = data && data.detail ? String(data.detail) : "Nie udało się zgłosić słowa.";
+        const detail = data && data.detail ? String(data.detail) : "Nie udało się zapisać słowa.";
         throw new Error(detail);
     }
     return data;
@@ -52,7 +52,7 @@ async function pmRequestPostgameWordReport(button) {
     button.disabled = true;
     if (resultBox) {
         resultBox.hidden = false;
-        resultBox.textContent = "Wysyłanie zgłoszenia…";
+        resultBox.textContent = "Zapisywanie…";
     }
     try {
         const data = await pmReportWord({ word, category, starting_letter: letter });

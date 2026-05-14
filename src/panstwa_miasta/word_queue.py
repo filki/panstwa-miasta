@@ -44,6 +44,31 @@ def _format_created_at(epoch: int) -> str:
     return datetime.fromtimestamp(epoch, tz=UTC).isoformat()
 
 
+async def submit_dictionary_intake(*, word: str, category: str, letter: str) -> dict:
+    """Zapisuje zgłoszenie słownika bez kolejki AI — do ręcznej weryfikacji."""
+    if category not in GAME_CATEGORIES:
+        raise HTTPException(status_code=422, detail="Nieznana kategoria.")
+    cleaned_word = word.strip()
+    if not cleaned_word:
+        raise HTTPException(status_code=422, detail="Słowo nie może być puste.")
+    normalized_letter = _normalize_letter(letter)
+    outcome, suggestion_id = await report_dictionary_suggestion(
+        category=category,
+        word=cleaned_word,
+        letter=normalized_letter,
+        target_seed=_target_seed_for_category(category),
+    )
+    return {
+        "outcome": outcome,
+        "suggestion_id": suggestion_id,
+        "message_pl": (
+            "To słowo jest już w kolejce do ręcznej weryfikacji."
+            if outcome == "exists"
+            else "Zapisano — sprawdzimy to słowo ręcznie."
+        ),
+    }
+
+
 async def submit_word_report(*, word: str, category: str, letter: str) -> dict:
     if not rag_queue_enabled():
         raise HTTPException(status_code=503, detail="Kolejka weryfikacji AI jest wyłączona.")

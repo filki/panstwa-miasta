@@ -472,7 +472,7 @@ function updateScoreboard(scores = {}, hostName = '', viewerNick = '', readyPlay
         connectedPlayers: connectedSet,
     };
 
-    if (lobbyRoster) {
+    if (lobbyRoster && document.body.classList.contains('room-phase-lobby')) {
         renderLobbyRoster(scores, hostName, readySet, resolvedViewer, connectedSet);
     }
 

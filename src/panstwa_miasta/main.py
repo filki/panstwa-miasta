@@ -64,6 +64,7 @@ from .manager import (
     ConnectionManager,
     room_listed_in_active_lobby,
 )
+from .routers.dictionary import router as dictionary_router
 from .routers.words import router as words_router
 from .routers.words_worker import router as words_worker_router
 from .ws_messages import ws_inbound_adapter
@@ -90,6 +91,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Państwa-Miasta Engine", lifespan=lifespan)
 app.include_router(words_router)
+app.include_router(dictionary_router)
 app.include_router(words_worker_router)
 manager = ConnectionManager()
 
@@ -111,6 +113,7 @@ async def rate_limit_http_middleware(request: Request, call_next):
             "/api/rooms",
             "/api/words/report",
             "/api/words/check-reason",
+            "/api/dictionary/suggestions",
         )
         or request.url.path.startswith("/api/internal/words/")
         or request.url.path.endswith("/appeals")
@@ -163,7 +166,7 @@ async def global_round_timeout(room_id: str, round_num: int, wait_time: int) -> 
                 {
                     "type": "stop_round",
                     "sender": "System (Koniec czasu)",
-                    "time_left": 10,
+                    "time_left": STOP_SUBMIT_SECONDS,
                 }
             )
         )

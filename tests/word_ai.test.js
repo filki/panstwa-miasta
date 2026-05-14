@@ -21,7 +21,7 @@ describe("word-ai", () => {
         const data = await pmReportWord({ word: "Wakanda", category: "Państwo", starting_letter: "w" });
         expect(data.outcome).toBe("created");
         expect(fetch).toHaveBeenCalledWith(
-            "/api/words/report",
+            "/api/dictionary/suggestions",
             expect.objectContaining({
                 method: "POST",
                 body: JSON.stringify({
