@@ -27,6 +27,8 @@ def _isolated_test_db(tmp_path: object, monkeypatch: pytest.MonkeyPatch):
     test_db = tmp_path / "test.db"  # type: ignore[operator]
     monkeypatch.delenv("LIBSQL_URL", raising=False)
     monkeypatch.delenv("LIBSQL_AUTH_TOKEN", raising=False)
+    monkeypatch.delenv("PM_DICTIONARY_LIBSQL_URL", raising=False)
+    monkeypatch.delenv("PM_DICTIONARY_LIBSQL_AUTH_TOKEN", raising=False)
     db.DB_PATH = test_db
     asyncio.run(db.init_db())
     asyncio.run(data.reload_countries())
