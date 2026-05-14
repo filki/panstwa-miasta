@@ -2746,7 +2746,13 @@ body.room-phase-results .room-stage {
 .lobby-roster {
     display: grid;
     gap: var(--space-2);
-    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(0, 1fr));
+}
+
+@media (min-width: 40rem) {
+    .lobby-roster {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 .lobby-roster-item--empty {
@@ -2766,10 +2772,10 @@ body.room-phase-results .room-stage {
 }
 
 .lobby-roster-item {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
+    gap: var(--space-2);
     padding: var(--space-3);
     border-radius: var(--r-md);
     border: 1px solid var(--border);
@@ -2781,6 +2787,7 @@ body.room-phase-results .room-stage {
     align-items: center;
     gap: var(--space-3);
     min-width: 0;
+    overflow: hidden;
 }
 
 .lobby-roster-avatar {
@@ -2800,12 +2807,18 @@ body.room-phase-results .room-stage {
 
 .lobby-roster-name {
     font-weight: 700;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .lobby-roster-status {
     font-size: var(--fs-sm);
     font-weight: 700;
     color: var(--text-muted);
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .lobby-roster-status.is-ready {

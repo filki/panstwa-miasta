@@ -209,6 +209,7 @@ describe('connect()', () => {
             'Anna',
             'TestUser',
             undefined,
+            undefined,
         );
     });
 });
@@ -333,6 +334,7 @@ describe('ws.onmessage dispatch', () => {
             { Filip: 5 },
             'Filip',
             'TestUser',
+            undefined,
             undefined,
         );
     });

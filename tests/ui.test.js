@@ -22,6 +22,9 @@ const {
     setRoomPhase,
     renderLobbyRoster,
     resetLobbyRosterState,
+    clampNickname,
+    persistNickname,
+    PM_NICK_MAX_LENGTH,
     addLog,
     updateScoreboard,
     sendChat,
@@ -504,6 +507,20 @@ describe('room phase helpers', () => {
         expect(roster.querySelectorAll('.lobby-roster-item').length).toBe(8);
         expect(roster.querySelectorAll('.lobby-roster-item--empty').length).toBe(6);
         expect(document.getElementById('lobby-player-count').textContent).toContain('2/8');
+    });
+
+    test('renderLobbyRoster exposes full nickname in title for long names', () => {
+        document.body.innerHTML = '<div id="lobby-roster"></div><span id="lobby-player-count"></span>';
+        const longNick = 'KURWAZESLAWSKI';
+        renderLobbyRoster({ [longNick]: 0 }, longNick, new Set(), longNick);
+        const name = document.querySelector('.lobby-roster-name');
+        expect(name?.title).toBe(longNick);
+    });
+
+    test('clampNickname limits nick length', () => {
+        expect(PM_NICK_MAX_LENGTH).toBe(16);
+        expect(clampNickname('abcdefghijklmnopqrstuvwxyz')).toBe('abcdefghijklmnop');
+        expect(persistNickname('abcdefghijklmnopqrs')).toBe('abcdefghijklmnop');
     });
 
     test('updateScoreboard renders lobby roster before room-phase-lobby is set', () => {

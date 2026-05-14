@@ -117,7 +117,9 @@ function connect() {
     const joinNick = document.getElementById('nickname_join')?.value.trim() || '';
     const createNick = document.getElementById('nickname')?.value.trim() || '';
     const landingNick = document.getElementById('landing_nickname')?.value.trim() || '';
-    myNick = joinNick || createNick || landingNick;
+    myNick = (globalThis.clampNickname || ((value) => String(value ?? '').trim().slice(0, 16)))(
+        joinNick || createNick || landingNick,
+    );
     if (!myNick && typeof getResolvedNickname === 'function') {
         myNick = getResolvedNickname() || '';
     }
