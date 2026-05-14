@@ -116,6 +116,18 @@ W **Settings → Secrets and variables → Actions → Secrets**:
 - **Umami Cloud (opcjonalnie):** w unit systemd lub `EnvironmentFile` ustaw `UMAMI_SCRIPT_URL` i `UMAMI_WEBSITE_ID` (patrz [`env.example`](env.example)). Brak któregokolwiek = brak skryptu w HTML (dev, CI). Po deployu sprawdź pageview w panelu Umami dla `https://panstwamiasta.com.pl/`. Nie commituj ID do repo.
 - **Turso (libSQL):** w `EnvironmentFile` ustaw `LIBSQL_URL` i `LIBSQL_AUTH_TOKEN` (embedded replica — lokalny plik w `APP_DIR`, zapisy na primary w chmurze; patrz [`env.example`](env.example)). Przed pierwszym włączeniem na istniejącym VPS zaimportuj bieżący `panstwa_miasta.db` do Turso (`turso db import …`) albo zaakceptuj świeży seed przy pustej bazie w chmurze. Nie commituj tokenów.
 
+#### Turso: import i cutover (checklista)
+
+1. Backup na VPS: `DEPLOY_APP_DIR=/srv/panstwa-miasta deploy/backup-db.sh`.
+2. `turso auth login` (lub `--headless`) na maszynie z CLI; import: `turso db import <baza> /ścieżka/panstwa_miasta.db`.
+3. Zweryfikuj `COUNT(*)` w Turso vs kopia źródłowa (słowniki + `rooms` / `players` / `game_transcripts`).
+4. W `EnvironmentFile`: `LIBSQL_URL`, `LIBSQL_AUTH_TOKEN`, opcjonalnie `LIBSQL_SYNC_INTERVAL=60` (token tylko na serwerze; po wycieku — rotacja w panelu Turso).
+5. Cutover: `systemctl stop panstwa-miasta`; usuń lokalny plik repliki i pliki towarzyszące (`panstwa_miasta.db`, `panstwa_miasta.db-info`, `-wal`, `-shm`); nie zostawiaj samego pliku SQLite bez metadanych libSQL — przy starcie embedded replica synchronizuje się z primary. Zachowaj kopię `panstwa_miasta.db.pre-turso`.
+6. `systemctl start panstwa-miasta`; smoke: `GET http://127.0.0.1:8000/healthz`, publiczny HTTPS, krótka gra.
+7. Import i migracje: **jeden** proces zapisu naraz (bez równoległych klientów `libsql` / wielu pipeline HTTP).
+
+**Rollback:** usuń linie `LIBSQL_*` z `EnvironmentFile`, przywróć `panstwa_miasta.db` z kopii, usuń pliki metadanych repliki, `systemctl restart panstwa-miasta`.
+
 ### Backup SQLite
 
 Skrypt [`backup-db.sh`](backup-db.sh) — `sqlite3 .backup`, rotacja domyślnie 14 dni (`PM_DB_BACKUP_KEEP_DAYS`), katalog `backups/` w `APP_DIR` (lub `PM_DB_BACKUP_DIR`).

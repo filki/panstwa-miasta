@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import aiosqlite
+from aiosqlite.context import contextmanager
 
 
 def libsql_configured() -> bool:
@@ -42,6 +43,9 @@ class _LibsqlCursor:
     async def fetchall(self) -> list[_LibsqlRow]:
         return self._rows
 
+    async def close(self) -> None:
+        return None
+
     async def __aenter__(self) -> _LibsqlCursor:
         return self
 
@@ -58,22 +62,27 @@ class _LibsqlConnection:
         if cursor.description is None:
             return []
         columns = [col[0] for col in cursor.description]
-        return [_LibsqlRow(zip(columns, row, strict=True)) for row in cursor.fetchall()]
+        fetched = cursor.fetchall()
+        if not fetched:
+            return []
+        return [_LibsqlRow(zip(columns, row, strict=True)) for row in fetched]
 
+    @contextmanager
     async def execute(self, sql: str, params: Sequence[Any] = ()) -> _LibsqlCursor:
-        def run() -> tuple[list[_LibsqlRow], int | None]:
+        def run() -> _LibsqlCursor:
             cursor = self._conn.execute(sql, tuple(params))
             rows = self._rows_from_cursor(cursor)
-            return rows, cursor.lastrowid
+            return _LibsqlCursor(rows, cursor.lastrowid)
 
-        rows, lastrowid = await asyncio.to_thread(run)
-        return _LibsqlCursor(rows, lastrowid)
+        return await asyncio.to_thread(run)
 
-    async def executemany(self, sql: str, params: Iterable[Sequence[Any]]) -> None:
-        def run() -> None:
+    @contextmanager
+    async def executemany(self, sql: str, params: Iterable[Sequence[Any]]) -> _LibsqlCursor:
+        def run() -> _LibsqlCursor:
             self._conn.executemany(sql, [tuple(row) for row in params])
+            return _LibsqlCursor([], None)
 
-        await asyncio.to_thread(run)
+        return await asyncio.to_thread(run)
 
     async def commit(self) -> None:
         await asyncio.to_thread(self._conn.commit)
