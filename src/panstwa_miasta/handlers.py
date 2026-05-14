@@ -30,11 +30,14 @@ def _broadcast_json(room: Room, payload: dict) -> asyncio.Task:
 
 
 def score_update_payload(room: Room) -> dict:
+    connected = sorted(room.connections.keys())
+    ready = sorted(room.ready_players & room.connections.keys())
     return {
         "type": "score_update",
         "scores": room.scores,
         "host_name": room.host_name,
-        "ready_players": sorted(room.ready_players),
+        "ready_players": ready,
+        "connected_players": connected,
     }
 
 
@@ -190,7 +193,7 @@ async def _begin_results_phase(room: Room, room_id: str, timeout_coro) -> None:
 
 
 async def _finish_round(room: Room, room_id: str, timeout_coro) -> None:
-    """Compatibility entry: starts the 10s results phase instead of immediate finalize."""
+    """Compatibility entry: starts the results review phase instead of immediate finalize."""
     await _begin_results_phase(room, room_id, timeout_coro)
 
 

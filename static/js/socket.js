@@ -117,7 +117,9 @@ function connect() {
     const joinNick = document.getElementById('nickname_join')?.value.trim() || '';
     const createNick = document.getElementById('nickname')?.value.trim() || '';
     const landingNick = document.getElementById('landing_nickname')?.value.trim() || '';
-    myNick = joinNick || createNick || landingNick;
+    myNick = (globalThis.clampNickname || ((value) => String(value ?? '').trim().slice(0, 16)))(
+        joinNick || createNick || landingNick,
+    );
     if (!myNick && typeof getResolvedNickname === 'function') {
         myNick = getResolvedNickname() || '';
     }
@@ -289,7 +291,7 @@ function onSystemMessage(m) {
 }
 
 function onScoreUpdate(m) {
-    updateScoreboard(m.scores, m.host_name, globalThis.myNick || '', m.ready_players);
+    updateScoreboard(m.scores, m.host_name, globalThis.myNick || '', m.ready_players, m.connected_players);
 }
 
 function onChatMessage(m) {

@@ -13,9 +13,13 @@ RoomIdPath = Annotated[
 ]
 
 # Nick gracza: bez separatorów ścieżki URL (? i \); # dozwolone po dekodowaniu %23.
+NICKNAME_MAX_LENGTH = 16
 ClientNamePath = Annotated[
     str,
-    StringConstraints(pattern=r"^[^?\\]{1,80}$", strip_whitespace=True),
+    StringConstraints(
+        pattern=rf"^[^?\\]{{1,{NICKNAME_MAX_LENGTH}}}$",
+        strip_whitespace=True,
+    ),
 ]
 
 

@@ -1,7 +1,12 @@
 // Funkcje pomocnicze UI
 const PM_NICK_KEY = 'pm_nickname';
 const PM_NICK_CUSTOM_KEY = 'pm_nickname_custom';
+const PM_NICK_MAX_LENGTH = 16;
 const AUTO_NICK_RE = /^Gracz#\d{4}$/;
+
+function clampNickname(value) {
+    return String(value ?? '').trim().slice(0, PM_NICK_MAX_LENGTH);
+}
 
 function showJoinModal() {
     document.getElementById('join-modal').style.display = 'flex';
@@ -186,18 +191,22 @@ function clearNicknameCustom() {
 }
 
 function persistNickname(nick) {
-    localStorage.setItem(PM_NICK_KEY, nick);
-    if (AUTO_NICK_RE.test(nick)) clearNicknameCustom();
+    const normalized = clampNickname(nick);
+    localStorage.setItem(PM_NICK_KEY, normalized);
+    if (AUTO_NICK_RE.test(normalized)) clearNicknameCustom();
     else markNicknameCustom();
+    return normalized;
 }
 
 function syncNicknameInputs(value) {
+    const normalized = clampNickname(value);
     const createInput = document.getElementById('nickname');
     const joinInput = document.getElementById('nickname_join');
     const landingInput = document.getElementById('landing_nickname');
-    if (createInput) createInput.value = value;
-    if (joinInput) joinInput.value = value;
-    if (landingInput) landingInput.value = value;
+    if (createInput) createInput.value = normalized;
+    if (joinInput) joinInput.value = normalized;
+    if (landingInput) landingInput.value = normalized;
+    return normalized;
 }
 
 function ensureNicknameInput() {
@@ -207,10 +216,13 @@ function ensureNicknameInput() {
         document.getElementById('landing_nickname');
     if (!input) return readStoredNickname() || null;
 
-    const current = input.value.trim();
-    if (current) return current;
+    const current = clampNickname(input.value);
+    if (current) {
+        syncNicknameInputs(current);
+        return current;
+    }
 
-    const stored = readStoredNickname();
+    const stored = clampNickname(readStoredNickname());
     if (stored) {
         syncNicknameInputs(stored);
         return stored;
@@ -233,7 +245,7 @@ function bindNicknameInputs() {
         if (!input || input.dataset.pmBound) return;
         input.dataset.pmBound = '1';
         input.addEventListener('input', () => {
-            const val = input.value.trim();
+            const val = clampNickname(input.value);
             if (!val) return;
             syncNicknameInputs(val);
             if (!AUTO_NICK_RE.test(val)) markNicknameCustom();
@@ -258,8 +270,8 @@ function getResolvedNickname() {
     const fromJoin = joinInput?.value.trim() || '';
     const fromCreate = createInput?.value.trim() || '';
     const fromLanding = landingInput?.value.trim() || '';
-    if (joinModalOpen) return fromJoin || fromCreate || fromLanding;
-    return fromCreate || fromJoin || fromLanding;
+    if (joinModalOpen) return clampNickname(fromJoin || fromCreate || fromLanding);
+    return clampNickname(fromCreate || fromJoin || fromLanding);
 }
 
 function syncLandingScrollLock() {
@@ -432,6 +444,7 @@ let lastLobbyRosterState = {
     hostName: '',
     readyPlayers: new Set(),
     viewerNick: '',
+    connectedPlayers: null,
 };
 
 function resetLobbyRosterState() {
@@ -440,13 +453,15 @@ function resetLobbyRosterState() {
         hostName: '',
         readyPlayers: new Set(),
         viewerNick: '',
+        connectedPlayers: null,
     };
 }
 
-function updateScoreboard(scores = {}, hostName = '', viewerNick = '', readyPlayers = null) {
+function updateScoreboard(scores = {}, hostName = '', viewerNick = '', readyPlayers = null, connectedPlayers = null) {
     const scoreboard = document.getElementById('scoreboard');
     const lobbyRoster = document.getElementById('lobby-roster');
     const readySet = Array.isArray(readyPlayers) ? new Set(readyPlayers) : new Set();
+    const connectedSet = Array.isArray(connectedPlayers) ? new Set(connectedPlayers) : null;
     const resolvedViewer = viewerNick || globalThis.myNick || '';
 
     lastLobbyRosterState = {
@@ -454,10 +469,11 @@ function updateScoreboard(scores = {}, hostName = '', viewerNick = '', readyPlay
         hostName,
         readyPlayers: readySet,
         viewerNick: resolvedViewer,
+        connectedPlayers: connectedSet,
     };
 
     if (lobbyRoster) {
-        renderLobbyRoster(scores, hostName, readySet, resolvedViewer);
+        renderLobbyRoster(scores, hostName, readySet, resolvedViewer, connectedSet);
     }
 
     if (!scoreboard) return;
@@ -545,23 +561,25 @@ function createLobbyAvatar(name, viewerNick = '') {
 
 const MAX_LOBBY_SLOTS = 8;
 
-function renderLobbyRoster(scores = {}, hostName = '', readyPlayers = new Set(), viewerNick = '') {
+function renderLobbyRoster(scores = {}, hostName = '', readyPlayers = new Set(), viewerNick = '', connectedPlayers = null) {
     const roster = document.getElementById('lobby-roster');
     if (!roster) return;
 
     roster.innerHTML = '';
-    const names = Object.keys(scores);
+    const rosterNames = connectedPlayers
+        ? [...connectedPlayers].filter((name) => Object.hasOwn(scores, name))
+        : Object.keys(scores);
     const countEl = document.getElementById('lobby-player-count');
     if (countEl) {
-        if (names.length === 0) {
+        if (rosterNames.length === 0) {
             countEl.textContent = `0/${MAX_LOBBY_SLOTS}`;
         } else {
-            const readyCount = names.filter((name) => readyPlayers.has(name)).length;
-            countEl.textContent = `${names.length}/${MAX_LOBBY_SLOTS} · ${readyCount} gotowych`;
+            const readyCount = rosterNames.filter((name) => readyPlayers.has(name)).length;
+            countEl.textContent = `${rosterNames.length}/${MAX_LOBBY_SLOTS} · ${readyCount} gotowych`;
         }
     }
 
-    const slots = Array.from({ length: MAX_LOBBY_SLOTS }, (_, index) => names[index] || null);
+    const slots = Array.from({ length: MAX_LOBBY_SLOTS }, (_, index) => rosterNames[index] || null);
     slots.forEach((name) => {
         const row = document.createElement('div');
         row.className = 'lobby-roster-item';
@@ -586,6 +604,7 @@ function renderLobbyRoster(scores = {}, hostName = '', readyPlayers = new Set(),
             nameSpan.appendChild(crown);
         }
         nameSpan.appendChild(document.createTextNode(name));
+        nameSpan.title = name;
 
         const identity = document.createElement('div');
         identity.className = 'lobby-roster-identity';
@@ -640,8 +659,8 @@ function setRoomPhase(phase) {
     }
 
     if (next === 'lobby') {
-        const { scores, hostName, readyPlayers, viewerNick } = lastLobbyRosterState;
-        renderLobbyRoster(scores, hostName, readyPlayers, viewerNick);
+        const { scores, hostName, readyPlayers, viewerNick, connectedPlayers } = lastLobbyRosterState;
+        renderLobbyRoster(scores, hostName, readyPlayers, viewerNick, connectedPlayers);
     }
 }
 
@@ -966,6 +985,7 @@ globalThis.initLandingGuideCarousel = initLandingGuideCarousel;
 globalThis.initLandingGuideMobileSheet = initLandingGuideMobileSheet;
 globalThis.setRoomPhase = setRoomPhase;
 globalThis.renderLobbyRoster = renderLobbyRoster;
+globalThis.clampNickname = clampNickname;
 globalThis.syncRoomLobbySettings = syncRoomLobbySettings;
 globalThis.copyRoomInviteLink = copyRoomInviteLink;
 
@@ -996,6 +1016,8 @@ if (typeof module !== 'undefined') {
         resetLobbyRosterState,
         syncRoomLobbySettings,
         copyRoomInviteLink,
+        PM_NICK_MAX_LENGTH,
+        clampNickname,
         addLog,
         updateScoreboard,
         sendChat,

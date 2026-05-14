@@ -34,7 +34,8 @@ ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
 LETTER_CYCLE_ROUNDS = len(ALPHABET)
 GAME_CATEGORIES = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
 VETO_CATEGORY = "Rzecz"
-RESULTS_PHASE_SECONDS = 10
+RESULTS_PHASE_SECONDS = 30
+STOP_SUBMIT_SECONDS = 10
 STOP_SUBMIT_GRACE_SECONDS = 1.0
 HOST_REASSIGN_GRACE_SECONDS = 5.0
 QUICK_JOIN_DEFAULT_ROUNDS = 5
@@ -176,7 +177,7 @@ class Room:
 
     def mark_stop_phase_started(self) -> None:
         self.stop_triggered = True
-        self.stop_submit_ends_at = time.time() + RESULTS_PHASE_SECONDS
+        self.stop_submit_ends_at = time.time() + STOP_SUBMIT_SECONDS
 
     def round_seconds_remaining(self) -> int | None:
         if not self.is_playing or self.round_started_at is None or self.stop_triggered:
@@ -877,3 +878,19 @@ class ConnectionManager:
         if self._is_lobby_idle_candidate(room):
             self.touch_lobby_idle(room, reset=False)
         return True
+
+    async def cleanup_player_after_disconnect(self, room_id: str, client_name: str) -> None:
+        """Drop lobby-only roster rows for players who left without an active round."""
+        room = self.rooms.get(room_id)
+        if room is None:
+            return
+        room.ready_players.discard(client_name)
+        if room.is_playing or room.results_phase_active or room.game_over:
+            return
+        if client_name not in room.scores:
+            return
+        room.scores.pop(client_name, None)
+        await remove_player(room_id, client_name)
+        logger.info(
+            "Removed lobby roster for disconnected player %r in room %s", client_name, room_id
+        )

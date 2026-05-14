@@ -198,9 +198,13 @@ async def test_handle_kick_player_success_no_denied_message():
 
 def test_score_update_payload_includes_ready_players():
     room = Room("room1")
+    room.connections = {"Ada": MagicMock(), "Bob": MagicMock()}
     room.ready_players.add("Ada")
+    room.ready_players.add("Eve")
+    room.scores = {"Ada": 1, "Bob": 2, "Eve": 0}
     payload = score_update_payload(room)
     assert payload["ready_players"] == ["Ada"]
+    assert payload["connected_players"] == ["Ada", "Bob"]
     assert payload["type"] == "score_update"
 
 
