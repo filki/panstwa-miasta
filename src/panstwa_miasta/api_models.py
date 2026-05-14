@@ -95,3 +95,44 @@ class AppealOut(BaseModel):
     message_pl: str = Field(..., max_length=2000)
     suggested_seed: bool = False
     suggestion_id: int | None = None
+
+
+class WordReportIn(BaseModel):
+    """Zgłoszenie słowa spoza słownika do kolejki AI."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    word: str = Field(..., min_length=1, max_length=120)
+    category: str = Field(..., min_length=1, max_length=32)
+    starting_letter: str = Field(..., min_length=1, max_length=8)
+
+
+class WordReportOut(BaseModel):
+    """Wynik zgłoszenia słowa do kolejki AI."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    outcome: Literal["created", "exists"]
+    suggestion_id: int = Field(..., ge=1)
+    message_pl: str = Field(..., max_length=500)
+
+
+class WordCheckReasonIn(BaseModel):
+    """Zapytanie o status zgłoszenia słowa w kolejce AI."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    word: str = Field(..., min_length=1, max_length=120)
+    category: str = Field(..., min_length=1, max_length=32)
+    starting_letter: str = Field(..., min_length=1, max_length=8)
+
+
+class WordCheckReasonOut(BaseModel):
+    """Status zgłoszenia słowa w kolejce AI."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["missing", "pending", "accepted", "rejected", "error"]
+    message_pl: str = Field(..., max_length=500)
+    ai_reason: str | None = Field(default=None, max_length=2000)
+    created_at: str | None = Field(default=None, max_length=40)
