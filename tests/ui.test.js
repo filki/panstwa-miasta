@@ -21,6 +21,7 @@ const {
     preparePlayNickname,
     setRoomPhase,
     renderLobbyRoster,
+    resetLobbyRosterState,
     addLog,
     updateScoreboard,
     sendChat,
@@ -474,6 +475,10 @@ describe('landing quick join nickname', () => {
 });
 
 describe('room phase helpers', () => {
+    beforeEach(() => {
+        resetLobbyRosterState();
+    });
+
     test('setRoomPhase toggles lobby visibility', () => {
         document.body.innerHTML = `
             <section id="room-lobby"></section>
@@ -499,6 +504,56 @@ describe('room phase helpers', () => {
         expect(roster.querySelectorAll('.lobby-roster-item').length).toBe(8);
         expect(roster.querySelectorAll('.lobby-roster-item--empty').length).toBe(6);
         expect(document.getElementById('lobby-player-count').textContent).toContain('2/8');
+    });
+
+    test('updateScoreboard renders lobby roster before room-phase-lobby is set', () => {
+        document.body.classList.remove('room-phase-lobby');
+        document.body.innerHTML = `
+            <div id="lobby-roster"></div>
+            <span id="lobby-player-count"></span>
+            <div id="scoreboard"></div>
+        `;
+        updateScoreboard({ Anna: 0 }, 'Anna', 'Anna', ['Anna']);
+        const roster = document.getElementById('lobby-roster');
+        expect(roster.textContent).toContain('Anna');
+        expect(roster.querySelectorAll('.lobby-roster-item').length).toBe(8);
+    });
+
+    test('setRoomPhase lobby repaints roster from cached score_update', () => {
+        document.body.classList.remove('room-phase-lobby');
+        document.body.innerHTML = `
+            <section id="room-lobby" hidden></section>
+            <div id="game-layout"></div>
+            <main id="game-main-area"></main>
+            <div class="room-lobby-actions"></div>
+            <div class="game-actions"><button id="btn-draw"></button></div>
+            <div id="lobby-roster"></div>
+            <span id="lobby-player-count"></span>
+            <div id="scoreboard"></div>
+        `;
+        updateScoreboard({ Anna: 0, Bob: 0 }, 'Anna', 'Anna', ['Bob']);
+        setRoomPhase('lobby');
+        const roster = document.getElementById('lobby-roster');
+        expect(roster.textContent).toContain('Anna');
+        expect(roster.textContent).toContain('Bob');
+        expect(document.getElementById('lobby-player-count').textContent).toContain('2/8');
+    });
+
+    test('setRoomPhase lobby shows empty roster slots before score_update', () => {
+        document.body.innerHTML = `
+            <section id="room-lobby" hidden></section>
+            <div id="game-layout"></div>
+            <main id="game-main-area"></main>
+            <div class="room-lobby-actions"></div>
+            <div class="game-actions"><button id="btn-draw"></button></div>
+            <div id="lobby-roster"></div>
+            <span id="lobby-player-count"></span>
+        `;
+        setRoomPhase('lobby');
+        const roster = document.getElementById('lobby-roster');
+        expect(roster.querySelectorAll('.lobby-roster-item').length).toBe(8);
+        expect(roster.querySelectorAll('.lobby-roster-item--empty').length).toBe(8);
+        expect(document.getElementById('lobby-player-count').textContent).toBe('0/8');
     });
 });
 

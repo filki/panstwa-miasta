@@ -427,14 +427,37 @@ function addLog(content, className = '') {
     logs.scrollTop = logs.scrollHeight;
 }
 
+let lastLobbyRosterState = {
+    scores: {},
+    hostName: '',
+    readyPlayers: new Set(),
+    viewerNick: '',
+};
+
+function resetLobbyRosterState() {
+    lastLobbyRosterState = {
+        scores: {},
+        hostName: '',
+        readyPlayers: new Set(),
+        viewerNick: '',
+    };
+}
+
 function updateScoreboard(scores = {}, hostName = '', viewerNick = '', readyPlayers = null) {
     const scoreboard = document.getElementById('scoreboard');
     const lobbyRoster = document.getElementById('lobby-roster');
-    const inLobby = document.body.classList.contains('room-phase-lobby');
-    const readySet = Array.isArray(readyPlayers) ? new Set(readyPlayers) : null;
+    const readySet = Array.isArray(readyPlayers) ? new Set(readyPlayers) : new Set();
+    const resolvedViewer = viewerNick || globalThis.myNick || '';
 
-    if (inLobby && lobbyRoster) {
-        renderLobbyRoster(scores, hostName, readySet || new Set(), viewerNick || globalThis.myNick || '');
+    lastLobbyRosterState = {
+        scores,
+        hostName,
+        readyPlayers: readySet,
+        viewerNick: resolvedViewer,
+    };
+
+    if (lobbyRoster) {
+        renderLobbyRoster(scores, hostName, readySet, resolvedViewer);
     }
 
     if (!scoreboard) return;
@@ -614,6 +637,11 @@ function setRoomPhase(phase) {
         } else if (!gameActions.contains(readyBtn)) {
             gameActions.insertBefore(readyBtn, gameActions.firstChild);
         }
+    }
+
+    if (next === 'lobby') {
+        const { scores, hostName, readyPlayers, viewerNick } = lastLobbyRosterState;
+        renderLobbyRoster(scores, hostName, readyPlayers, viewerNick);
     }
 }
 
@@ -965,6 +993,7 @@ if (typeof module !== 'undefined') {
         initLandingGuideMobileSheet,
         setRoomPhase,
         renderLobbyRoster,
+        resetLobbyRosterState,
         syncRoomLobbySettings,
         copyRoomInviteLink,
         addLog,
