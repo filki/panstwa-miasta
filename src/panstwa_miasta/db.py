@@ -1,6 +1,7 @@
 import json
 import pathlib
 import time
+from typing import Literal
 
 import aiosqlite
 
@@ -20,6 +21,21 @@ ROOM_EMPTY_GRACE_SECONDS = 90
 LOBBY_IDLE_TIMEOUT_SECONDS = 300
 
 GAME_TRANSCRIPT_TTL_DAYS = 14
+
+DICTIONARY_SUGGESTION_STATUSES = frozenset({"pending", "accepted", "rejected", "error"})
+
+
+def normalize_dictionary_suggestion_status(status: str) -> str:
+    """Mapuje historyczne ``approved`` na ``accepted``."""
+    if status == "approved":
+        return "accepted"
+    return status
+
+
+async def _migrate_dictionary_suggestion_statuses(db) -> None:
+    await db.execute(
+        "UPDATE dictionary_suggestions SET status = 'accepted' WHERE status = 'approved'"
+    )
 
 
 async def _ensure_rooms_visibility_column(db) -> None:
@@ -93,6 +109,7 @@ async def init_db():
         await db.execute(
             "CREATE INDEX IF NOT EXISTS idx_dictionary_suggestions_status ON dictionary_suggestions(status)"
         )
+        await _migrate_dictionary_suggestion_statuses(db)
         await db.execute("""
             CREATE TABLE IF NOT EXISTS countries (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -455,7 +472,99 @@ async def fetch_dictionary_suggestion(suggestion_id: int) -> dict | None:
             (suggestion_id,),
         ) as cursor:
             row = await cursor.fetchone()
-            return dict(row) if row is not None else None
+            if row is None:
+                return None
+            data = dict(row)
+            data["status"] = normalize_dictionary_suggestion_status(str(data["status"]))
+            return data
+
+
+async def fetch_pending_dictionary_suggestion(
+    *,
+    category: str,
+    proposed_norm: str,
+    letter: str,
+) -> dict | None:
+    async with connect() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            """
+            SELECT id, status, category, proposed_norm, proposed_display, target_seed,
+                   room_id, player_name, letter, round, ai_explanation, created_at,
+                   reviewed_at, review_note
+            FROM dictionary_suggestions
+            WHERE status = 'pending' AND category = ? AND proposed_norm = ? AND letter = ?
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+            """,
+            (category, proposed_norm, letter),
+        ) as cursor:
+            row = await cursor.fetchone()
+            if row is None:
+                return None
+            data = dict(row)
+            data["status"] = normalize_dictionary_suggestion_status(str(data["status"]))
+            return data
+
+
+async def fetch_latest_dictionary_suggestion(
+    *,
+    category: str,
+    proposed_norm: str,
+    letter: str,
+) -> dict | None:
+    async with connect() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            """
+            SELECT id, status, category, proposed_norm, proposed_display, target_seed,
+                   room_id, player_name, letter, round, ai_explanation, created_at,
+                   reviewed_at, review_note
+            FROM dictionary_suggestions
+            WHERE category = ? AND proposed_norm = ? AND letter = ?
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+            """,
+            (category, proposed_norm, letter),
+        ) as cursor:
+            row = await cursor.fetchone()
+            if row is None:
+                return None
+            data = dict(row)
+            data["status"] = normalize_dictionary_suggestion_status(str(data["status"]))
+            return data
+
+
+async def report_dictionary_suggestion(
+    *,
+    category: str,
+    word: str,
+    letter: str,
+    target_seed: str,
+    room_id: str = "",
+    player_name: str = "",
+) -> tuple[Literal["created", "exists"], int]:
+    proposed_norm = _name_norm(word)
+    proposed_display = word.strip()
+    pending = await fetch_pending_dictionary_suggestion(
+        category=category,
+        proposed_norm=proposed_norm,
+        letter=letter,
+    )
+    if pending is not None:
+        return "exists", int(pending["id"])
+    suggestion_id = await insert_dictionary_suggestion(
+        category=category,
+        proposed_norm=proposed_norm,
+        proposed_display=proposed_display,
+        target_seed=target_seed,
+        room_id=room_id,
+        player_name=player_name,
+        letter=letter,
+        round_no=0,
+        ai_explanation="",
+    )
+    return "created", suggestion_id
 
 
 async def set_dictionary_suggestion_status(
@@ -464,6 +573,7 @@ async def set_dictionary_suggestion_status(
     *,
     review_note: str | None = None,
 ) -> bool:
+    status = normalize_dictionary_suggestion_status(status)
     reviewed_at = int(time.time())
     async with connect() as db:
         cursor = await db.execute(
