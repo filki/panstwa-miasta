@@ -13,6 +13,7 @@ from .db import (
     fetch_room_snapshot,
     get_active_rooms,
     remove_player,
+    room_id_exists,
     save_player_score,
     save_room,
 )
@@ -25,6 +26,7 @@ from .limits import (
 
 # Logger import
 from .logger import get_logger
+from .room_ids import _MAX_ALLOC_ATTEMPTS, generate_room_id_candidate
 
 logger = get_logger(__name__)
 
@@ -539,7 +541,18 @@ class ConnectionManager:
         await delete_room(room_id)
         logger.info("Room %s dissolved after lobby idle timeout", room_id)
 
-    def pick_quick_join_room(self) -> tuple[str, bool, int, int]:
+    async def allocate_room_id(self) -> str:
+        """Losowy identyfikator pokoju (8–10 znaków), wolny w RAM i SQLite."""
+        for _ in range(_MAX_ALLOC_ATTEMPTS):
+            room_id = generate_room_id_candidate()
+            if room_id in self.rooms:
+                continue
+            if await room_id_exists(room_id):
+                continue
+            return room_id
+        raise RuntimeError("Could not allocate room id")
+
+    async def pick_quick_join_room(self) -> tuple[str, bool, int, int]:
         """Return room_id, created flag, rounds and time limit for quick join."""
         cap = max_players_per_room()
         candidates: list[tuple[int, str, int, int]] = []
@@ -551,17 +564,13 @@ class ConnectionManager:
             _, room_id, max_rounds, time_limit = candidates[0]
             return room_id, False, max_rounds, time_limit
 
-        rng = secrets.SystemRandom()
-        for _ in range(100):
-            room_id = str(1000 + rng.randrange(9000))
-            if room_id not in self.rooms:
-                return (
-                    room_id,
-                    True,
-                    QUICK_JOIN_DEFAULT_ROUNDS,
-                    QUICK_JOIN_DEFAULT_TIME_LIMIT,
-                )
-        raise RuntimeError("Could not allocate a quick-join room id")
+        room_id = await self.allocate_room_id()
+        return (
+            room_id,
+            True,
+            QUICK_JOIN_DEFAULT_ROUNDS,
+            QUICK_JOIN_DEFAULT_TIME_LIMIT,
+        )
 
     async def connect(
         self,

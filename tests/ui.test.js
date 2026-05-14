@@ -17,6 +17,7 @@ const {
     initLandingGuideCarousel,
     connectFromLandingJoin,
     quickJoinFromLanding,
+    createRoomAndEnter,
     preparePlayNickname,
     setRoomPhase,
     renderLobbyRoster,
@@ -421,6 +422,41 @@ describe('landing quick join nickname', () => {
         expect(global.fetch).toHaveBeenCalledWith('/api/quick-join', { method: 'POST' });
         expect(document.getElementById('landing_room_code').value).toBe('4821');
         expect(document.getElementById('room_id').value).toBe('4821');
+    });
+
+    test('createRoomAndEnter calls create-room API and redirects', async () => {
+        global.fetch = jest.fn(() =>
+            Promise.resolve({
+                ok: true,
+                json: () =>
+                    Promise.resolve({
+                        room_id: 'Ab12Cd34Ef',
+                        max_rounds: 10,
+                        time_limit: 120,
+                        visibility: 'private',
+                    }),
+            }),
+        );
+        document.body.innerHTML = `
+            <div id="create-modal" style="display:flex"></div>
+            <div id="join-modal" style="display:none"></div>
+            <div id="lottery-modal" style="display:none"></div>
+            <input id="landing_nickname" value="Zosia" />
+            <input id="nickname" />
+            <input id="nickname_join" />
+            <select id="max_rounds"><option value="10" selected>10</option></select>
+            <select id="time_limit"><option value="120" selected>120</option></select>
+            <select id="room_visibility"><option value="private" selected>private</option></select>
+            <input id="landing_room_code" />
+            <input id="room_id" />
+        `;
+        await createRoomAndEnter();
+        expect(global.fetch).toHaveBeenCalledWith('/api/rooms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rounds: 10, limit: 120, visibility: 'private' }),
+        });
+        expect(document.getElementById('room_id').value).toBe('Ab12Cd34Ef');
     });
 
     test('showLandingJoinCode reveals room code step', () => {

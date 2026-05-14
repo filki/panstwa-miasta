@@ -2,6 +2,7 @@ import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
+from panstwa_miasta.appeal_tokens import issue_appeal_token
 from panstwa_miasta.appeals_explain import explain_zero_score
 from panstwa_miasta.appeals_service import submit_appeal
 from panstwa_miasta.db import (
@@ -85,18 +86,42 @@ async def test_submit_appeal_returns_rule_message():
     assert result["suggested_seed"] is False
 
 
-def test_post_appeal_http():
+def test_post_appeal_http_requires_token():
     room_id = "appeal_http"
-    client.post(
-        f"/api/rooms/{room_id}/appeals",
-        json={"player_name": "Anna", "round": 1, "category": "Państwo"},
-    )
-    # Missing transcript -> 404
     missing = client.post(
         f"/api/rooms/{room_id}/appeals",
         json={"player_name": "Anna", "round": 1, "category": "Państwo"},
     )
-    assert missing.status_code == 404
+    assert missing.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_post_appeal_http_with_token():
+    room_id = "appeal_http_ok"
+    await save_game_transcript(
+        room_id,
+        {
+            "rounds": [
+                {
+                    "round": 1,
+                    "letter": "w",
+                    "answers": {"Anna": {"Państwo": "Włochy"}},
+                    "round_scores": {
+                        "Anna": {"total": 0, "details": {"Państwo": 0}},
+                    },
+                    "veto_rejected": [],
+                }
+            ]
+        },
+    )
+    token = issue_appeal_token(room_id, "Anna")
+    response = client.post(
+        f"/api/rooms/{room_id}/appeals",
+        json={"player_name": "Anna", "round": 1, "category": "Państwo"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    assert "słowniku" in response.json()["message_pl"].lower()
 
 
 @pytest.mark.asyncio

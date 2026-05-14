@@ -133,13 +133,34 @@ def test_api_active_rooms_hides_last_round_results_phase():
             del manager.rooms[room_id]
 
 
+def test_healthz_ok():
+    response = client.get("/healthz")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "db": "ok"}
+
+
+def test_api_create_room_returns_opaque_id():
+    response = client.post(
+        "/api/rooms",
+        json={"rounds": 10, "limit": 120, "visibility": "private"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["room_id"]) == 10
+    assert data["room_id"].isalnum()
+    assert data["max_rounds"] == 10
+    assert data["time_limit"] == 120
+    assert data["visibility"] == "private"
+
+
 def test_api_quick_join_creates_room_when_no_lobby():
     manager.rooms.clear()
     response = client.post("/api/quick-join")
     assert response.status_code == 200
     data = response.json()
     assert data["created"] is True
-    assert 1000 <= int(data["room_id"]) <= 9999
+    assert len(data["room_id"]) == 10
+    assert data["room_id"].isalnum()
     assert data["max_rounds"] == 5
     assert data["time_limit"] == 90
 

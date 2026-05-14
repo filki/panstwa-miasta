@@ -55,6 +55,27 @@ class QuickJoinOut(BaseModel):
     time_limit: int = Field(90, ge=10, le=600)
 
 
+class CreateRoomIn(BaseModel):
+    """Parametry nowego pokoju (identyfikator wydaje serwer)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    rounds: int = Field(5, ge=1, le=50)
+    limit: int = Field(90, ge=10, le=600)
+    visibility: Literal["public", "private"] = "public"
+
+
+class CreateRoomOut(BaseModel):
+    """Nowy kod pokoju do pierwszego połączenia WebSocket."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    room_id: str = Field(..., max_length=64)
+    max_rounds: int = Field(..., ge=1, le=50)
+    time_limit: int = Field(..., ge=10, le=600)
+    visibility: Literal["public", "private"]
+
+
 class AppealIn(BaseModel):
     """Odwołanie gracza do własnej odpowiedzi z 0 pkt po zakończeniu gry."""
 

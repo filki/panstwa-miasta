@@ -38,7 +38,9 @@ def _isolated_test_db(tmp_path: object):
 
 @pytest.fixture(autouse=True)
 def _reset_rate_limit_counters():
+    from panstwa_miasta.appeal_tokens import clear_appeal_tokens_for_tests
     from panstwa_miasta.limits import reset_counters_for_tests
 
+    clear_appeal_tokens_for_tests()
     reset_counters_for_tests()
     yield

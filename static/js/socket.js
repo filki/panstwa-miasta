@@ -75,12 +75,6 @@ function leaveRoom() {
     safeNavigateHome();
 }
 
-function generateRoomId() {
-    const array = new Uint32Array(1);
-    globalThis.crypto.getRandomValues(array);
-    return (1000 + (array[0] % 9000)).toString();
-}
-
 function connect() {
     leftByUser = false;
     initAudio();
@@ -111,10 +105,10 @@ function connect() {
         }
     }
 
-    // 3. Jeśli nadal brak ID, a kliknięto "STWÓRZ", generujemy nowe
+    // 3. Tworzenie pokoju wymaga wcześniejszego POST /api/rooms (createRoomAndEnter).
     const isCreating = document.getElementById('create-modal').style.display !== 'none';
     if (!roomId && isCreating) {
-        roomId = generateRoomId();
+        return alert('Najpierw utwórz pokój przyciskiem „Stwórz i wejdź”.');
     }
 
     if (!roomId) return alert('Proszę podać kod pokoju lub wybrać opcję stworzenia nowego.');
@@ -278,6 +272,14 @@ function onRoomDissolved(m) {
     safeNavigateHome();
 }
 
+let pmAppealToken = "";
+
+function onAppealToken(msg) {
+    if (msg && typeof msg.token === "string" && msg.token) {
+        pmAppealToken = msg.token;
+    }
+}
+
 const MESSAGE_HANDLERS = {
     system: onSystemMessage,
     score_update: onScoreUpdate,
@@ -290,6 +292,7 @@ const MESSAGE_HANDLERS = {
     room_dissolved: onRoomDissolved,
     kicked: onKicked,
     kick_denied: onKickDenied,
+    appeal_token: onAppealToken,
 };
 
 function onRoundStarted(msg) {
@@ -682,9 +685,13 @@ async function requestPostgameAppeal(button) {
         resultBox.textContent = "Ładowanie wyjaśnienia…";
     }
     try {
+        const headers = { "Content-Type": "application/json" };
+        if (pmAppealToken) {
+            headers.Authorization = `Bearer ${pmAppealToken}`;
+        }
         const resp = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/appeals`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers,
             body: JSON.stringify({ player_name: playerName, round: roundNo, category }),
         });
         const data = await resp.json().catch(() => ({}));

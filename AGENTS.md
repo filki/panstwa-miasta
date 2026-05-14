@@ -106,6 +106,8 @@ continues the existing queue — does **not** reshuffle.
 
 **Kolejka po sprincie (P3):** integracja WS (pytest, 2 klientów) i więcej gałęzi reconnect w Jest; podbijanie `VERSION` w `static/sw.js` przy release JS; kuracja seedów według feedbacku z gry; snapshot rundy / Redis tylko przy multi-worker lub twardym wymogu wznowienia po restarcie procesu; `load_from_db` → logger zamiast `print`.
 
+**Produkcja / bezpieczeństwo:** nowe pokoje dostają **serwerowe** ID (10 znaków alfanumerycznych) przez `POST /api/rooms`; odwołania po grze wymagają tokenu z WS `appeal_token`; healthcheck `GET /healthz`; nagłówki w `deploy/Caddyfile.example`; smoke w `deploy/prod-smoke-check.sh` i opcjonalny HTTPS w `deploy/vps-pull-and-restart.sh` (`PROD_BASE_URL`).
+
 Zrobione: **Faza 3** (overlay 3–2–1 przed loterią litery, `playCountdownHaptic`,
 `prefers-reduced-motion`), **Faza 4** (panel udostępniania po `game_over`,
 `room_id` w `round_results`, `/share/{id}`).

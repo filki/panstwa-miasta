@@ -9,6 +9,7 @@ import copy
 import json
 import time
 
+from .appeal_tokens import issue_appeal_token
 from .db import deactivate_room, save_game_transcript
 from .logger import get_logger
 from .manager import RESULTS_PHASE_SECONDS, VETO_CATEGORY, ConnectionManager, Room
@@ -65,6 +66,15 @@ def _round_results_payload(
     if game_over:
         payload["round_history"] = copy.deepcopy(room.round_history)
     return payload
+
+
+async def _send_appeal_tokens(room: Room) -> None:
+    for name, ws in list(room.connections.items()):
+        token = issue_appeal_token(room.room_id, name)
+        try:
+            await ws.send_text(json.dumps({"type": "appeal_token", "token": token}))
+        except Exception as exc:
+            logger.warning("appeal_token send failed for %r: %s", name, exc)
 
 
 async def _start_next_round(room: Room, room_id: str, timeout_coro) -> None:
@@ -132,6 +142,7 @@ async def _finalize_results_phase(room: Room, room_id: str, timeout_coro) -> Non
     logger.info("Round results finalized for room %s. game_over=%s", room_id, is_game_over)
 
     if is_game_over:
+        await _send_appeal_tokens(room)
         return
     await _start_next_round(room, room_id, timeout_coro)
 
