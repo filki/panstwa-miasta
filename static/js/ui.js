@@ -110,6 +110,45 @@ async function quickJoinFromLanding() {
     }
 }
 
+async function createRoomAndEnter() {
+    const landingNick = document.getElementById('landing_nickname')?.value.trim();
+    if (landingNick) syncNicknameInputs(landingNick);
+    preparePlayNickname();
+    const nick = getResolvedNickname();
+    if (!nick) {
+        alert('Podaj pseudonim przed utworzeniem pokoju.');
+        return;
+    }
+    persistNickname(nick);
+
+    const maxRounds = Number(document.getElementById('max_rounds')?.value || 5);
+    const timeLimit = Number(document.getElementById('time_limit')?.value || 90);
+    const visibility = document.getElementById('room_visibility')?.value === 'private' ? 'private' : 'public';
+
+    try {
+        const resp = await fetch('/api/rooms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rounds: maxRounds, limit: timeLimit, visibility }),
+        });
+        if (!resp.ok) {
+            throw new Error(`create-room failed: ${resp.status}`);
+        }
+        const data = await resp.json();
+        const roomId = String(data.room_id || '').trim();
+        if (!roomId) throw new Error('create-room missing room_id');
+        const rounds = data.max_rounds || maxRounds;
+        const limit = data.time_limit || timeLimit;
+        const vis = data.visibility === 'private' ? 'private' : 'public';
+        syncRoomCodeInputs(roomId);
+        hideModals();
+        globalThis.location.href = `/room/${encodeURIComponent(roomId)}?rounds=${encodeURIComponent(String(rounds))}&limit=${encodeURIComponent(String(limit))}&visibility=${encodeURIComponent(vis)}`;
+    } catch (err) {
+        console.error('createRoomAndEnter failed:', err);
+        alert('Nie udało się utworzyć pokoju. Spróbuj ponownie.');
+    }
+}
+
 function hideModals() {
     document.getElementById('join-modal').style.display = 'none';
     document.getElementById('create-modal').style.display = 'none';
@@ -875,6 +914,7 @@ globalThis.window.onload = () => {
 // Eksport dla socket.js i innych
 globalThis.showJoinModal = showJoinModal;
 globalThis.showCreateModal = showCreateModal;
+globalThis.createRoomAndEnter = createRoomAndEnter;
 globalThis.hideModals = hideModals;
 globalThis.focusStartPanel = focusStartPanel;
 globalThis.ensureNicknameInput = ensureNicknameInput;
@@ -905,6 +945,7 @@ if (typeof module !== 'undefined') {
     module.exports = {
         showJoinModal,
         showCreateModal,
+        createRoomAndEnter,
         showLandingJoinCode,
         showLandingStartMode,
         hideModals,

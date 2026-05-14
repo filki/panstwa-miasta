@@ -4,7 +4,7 @@
 set -euo pipefail
 
 BASE="${PROD_BASE_URL:-https://panstwamiasta.com.pl}"
-PATHS=(/ /polityka-prywatnosci /cookies /regulamin /manifest.json /sw.js)
+PATHS=(/ /healthz /polityka-prywatnosci /cookies /regulamin /manifest.json /sw.js)
 
 fail=0
 for path in "${PATHS[@]}"; do

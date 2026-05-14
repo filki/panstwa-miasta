@@ -262,6 +262,22 @@ async def fetch_room_snapshot(room_id: str) -> dict[str, object] | None:
         return out
 
 
+async def room_id_exists(room_id: str) -> bool:
+    """Czy ``room_id`` jest już zajęty w SQLite (aktywny pokój lub transkrypt)."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute(
+            "SELECT 1 FROM rooms WHERE room_id = ? LIMIT 1",
+            (room_id,),
+        ) as cur:
+            if await cur.fetchone():
+                return True
+        async with db.execute(
+            "SELECT 1 FROM game_transcripts WHERE room_id = ? LIMIT 1",
+            (room_id,),
+        ) as cur:
+            return await cur.fetchone() is not None
+
+
 async def remove_player(room_id: str, player_name: str) -> None:
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(

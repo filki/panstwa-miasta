@@ -633,7 +633,8 @@ def test_room_listed_in_active_lobby_hides_full_room():
     assert room_listed_in_active_lobby(room) is False
 
 
-def test_pick_quick_join_prefers_busiest_public_lobby():
+@pytest.mark.asyncio
+async def test_pick_quick_join_prefers_busiest_public_lobby():
     from panstwa_miasta.manager import Room
 
     manager = ConnectionManager()
@@ -651,18 +652,19 @@ def test_pick_quick_join_prefers_busiest_public_lobby():
         "full": full,
         "priv": private,
     }
-    room_id, created, max_rounds, time_limit = manager.pick_quick_join_room()
+    room_id, created, max_rounds, time_limit = await manager.pick_quick_join_room()
     assert room_id == "busy"
     assert created is False
     assert max_rounds == 7
     assert time_limit == 120
 
 
-def test_pick_quick_join_creates_room_when_no_candidate():
+@pytest.mark.asyncio
+async def test_pick_quick_join_creates_room_when_no_candidate():
     manager = ConnectionManager()
-    room_id, created, max_rounds, time_limit = manager.pick_quick_join_room()
+    room_id, created, max_rounds, time_limit = await manager.pick_quick_join_room()
     assert created is True
-    assert room_id.isdigit()
-    assert 1000 <= int(room_id) <= 9999
+    assert len(room_id) == 10
+    assert room_id.isalnum()
     assert max_rounds == 5
     assert time_limit == 90

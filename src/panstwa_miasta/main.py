@@ -6,7 +6,8 @@ from html import escape
 from typing import Annotated, Literal, cast
 
 import aiofiles
-from fastapi import FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
+import aiosqlite
+from fastapi import FastAPI, Header, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
@@ -16,10 +17,13 @@ from .api_models import (
     AppealIn,
     AppealOut,
     ClientNamePath,
+    CreateRoomIn,
+    CreateRoomOut,
     QuickJoinOut,
     RoomIdPath,
     ShareSnapshotOut,
 )
+from .appeal_tokens import issue_appeal_token, verify_appeal_token
 from .appeals_service import submit_appeal
 from .data import (
     reload_countries,
@@ -29,7 +33,7 @@ from .data import (
     reload_rosliny,
     reload_zwierzeta,
 )
-from .db import delete_room, fetch_game_transcript, init_db
+from .db import DB_PATH, delete_room, fetch_game_transcript, init_db
 from .handlers import (
     _begin_results_phase,
     handle_answers,
@@ -45,6 +49,7 @@ from .handlers import (
 )
 from .limits import (
     check_http_rate_limit,
+    check_ws_message_rate,
     client_ip_from_request,
     client_ip_from_websocket,
     http_rate_bucket_name,
@@ -92,7 +97,7 @@ async def rate_limit_http_middleware(request: Request, call_next):
     bucket = http_rate_bucket_name(request.url.path)
     if bucket is not None and (
         request.method in ("GET", "HEAD")
-        or request.url.path.startswith("/api/quick-join")
+        or request.url.path in ("/api/quick-join", "/api/rooms")
         or request.url.path.endswith("/appeals")
     ):
         ip = client_ip_from_request(request)
@@ -208,6 +213,17 @@ async def get_manifest() -> FileResponse:
     return FileResponse(MANIFEST_PATH, media_type="application/manifest+json")
 
 
+@app.get("/healthz")
+async def get_healthz() -> dict[str, str]:
+    try:
+        async with aiosqlite.connect(DB_PATH) as db, db.execute("SELECT 1") as cur:
+            await cur.fetchone()
+    except Exception as exc:
+        logger.warning("healthz DB check failed: %s", exc)
+        raise HTTPException(status_code=503, detail="unhealthy") from exc
+    return {"status": "ok", "db": "ok"}
+
+
 @app.get(
     "/api/share/{room_id}",
     responses={
@@ -305,7 +321,7 @@ async def get_active_rooms() -> list[ActiveRoomRow]:
 
 @app.post("/api/quick-join", response_model=QuickJoinOut)
 async def post_quick_join() -> QuickJoinOut:
-    room_id, created, max_rounds, time_limit = manager.pick_quick_join_room()
+    room_id, created, max_rounds, time_limit = await manager.pick_quick_join_room()
     return QuickJoinOut(
         room_id=room_id,
         created=created,
@@ -314,8 +330,35 @@ async def post_quick_join() -> QuickJoinOut:
     )
 
 
+@app.post("/api/rooms", response_model=CreateRoomOut)
+async def post_create_room(body: CreateRoomIn) -> CreateRoomOut:
+    room_id = await manager.allocate_room_id()
+    return CreateRoomOut(
+        room_id=room_id,
+        max_rounds=body.rounds,
+        time_limit=body.limit,
+        visibility=body.visibility,
+    )
+
+
+def _appeal_bearer_token(authorization: str | None) -> str:
+    if not authorization:
+        return ""
+    prefix = "bearer "
+    if authorization.lower().startswith(prefix):
+        return authorization[len(prefix) :].strip()
+    return ""
+
+
 @app.post("/api/rooms/{room_id}/appeals", response_model=AppealOut)
-async def post_room_appeal(room_id: RoomIdPath, body: AppealIn) -> AppealOut:
+async def post_room_appeal(
+    room_id: RoomIdPath,
+    body: AppealIn,
+    authorization: Annotated[str | None, Header()] = None,
+) -> AppealOut:
+    token = _appeal_bearer_token(authorization)
+    if not verify_appeal_token(room_id, body.player_name, token):
+        raise HTTPException(status_code=401, detail="Brak uprawnień do odwołania.")
     result = await submit_appeal(
         manager,
         room_id,
@@ -373,6 +416,8 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
                 }
             )
         )
+        token = issue_appeal_token(room.room_id, client_name)
+        await websocket.send_text(json.dumps({"type": "appeal_token", "token": token}))
     elif room.results_phase_active:
         await websocket.send_text(
             json.dumps(
@@ -464,6 +509,18 @@ async def websocket_endpoint(
         while True:
             data = await websocket.receive_text()
             logger.debug(f"Raw data from '{client_name}': {data}")
+            if not await check_ws_message_rate(room_id, client_name):
+                logger.warning(
+                    "WS message rate limit exceeded for %r in %s",
+                    client_name,
+                    room_id,
+                )
+                with suppress(Exception):
+                    await websocket.send_json(
+                        {"type": "error", "message": "Zbyt wiele wiadomości."}
+                    )
+                await websocket.close(code=1008)
+                return
             try:
                 msg = ws_inbound_adapter.validate_json(data)
                 await _dispatch(msg.model_dump(), room, room_id, client_name)

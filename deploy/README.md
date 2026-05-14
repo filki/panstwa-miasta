@@ -46,7 +46,21 @@ Caddy sam wystawi Let’s Encrypt po poprawnym DNS.
 
 - Strona główna `https://twoja-domena/`
 - Utworzenie pokoju, WebSocket (gra), odświeżenie w trakcie rundy
-- Z maszyny z dostępem do domeny: `PROD_BASE_URL=https://twoja-domena ./deploy/prod-smoke-check.sh` — HTTP(S) + checklista ręczna (WS, reconnect, grace). Wyniki zapisz w issue/PR.
+- Z maszyny z dostępem do domeny: `PROD_BASE_URL=https://panstwamiasta.com.pl ./deploy/prod-smoke-check.sh` — HTTP(S) + checklista ręczna (WS, reconnect, grace). Wyniki zapisz w issue/PR.
+- Po każdym deployu z Actions: opcjonalnie na VPS ustaw `PROD_BASE_URL=https://twoja-domena` w unit systemd lub w jednorazowym `export` przed ręcznym uruchomieniem [`vps-pull-and-restart.sh`](vps-pull-and-restart.sh) — skrypt sprawdzi też publiczny HTTPS (patrz §6).
+
+## 4.1 Checklist produkcji (hardening)
+
+Wykonaj raz po starcie i powtórz po większych zmianach infrastruktury:
+
+- [ ] `systemctl show panstwa-miasta -p Environment` zawiera `PM_TRUST_X_FORWARDED_FOR=1` (limity IP za Caddy).
+- [ ] `WorkingDirectory` w unit = `DEPLOY_APP_DIR` / katalog z clone (domyślnie `/srv/panstwa-miasta`).
+- [ ] `ufw status` — dozwolone 22, 80, 443; logowanie SSH kluczem (hasło wyłączone dla roota, jeśli możliwe).
+- [ ] Cron backupu [`backup-db.sh`](backup-db.sh) + test odtworzenia kopii (`PRAGMA integrity_check`).
+- [ ] Zewnętrzny monitoring (Uptime Kuma, Healthchecks.io itd.) na `https://twoja-domena/` i `/healthz` co 5–15 min.
+- [ ] Caddy z nagłówkami z [`Caddyfile.example`](Caddyfile.example) (`reload` po zmianie).
+- [ ] `PM_APPEALS_LLM` **nie** ustawione na produkcji, dopóki nie ma świadomej zgody i aktualizacji polityki prywatności.
+- [ ] Ćwiczenie rollbacku: `DEPLOY_APP_DIR=… ./deploy/vps-rollback.sh <rev>`.
 
 ## 5. CD z GitHub Actions (opcjonalnie)
 
@@ -114,9 +128,19 @@ Po pierwszym uruchomieniu sprawdź `PRAGMA integrity_check` na kopii (skrypt wyp
 
 ### Obserwacja deployu i rollback
 
-- Po merge na `main`: job **Deploy** w Actions + smoke `GET http://127.0.0.1:8000/` w [`vps-pull-and-restart.sh`](vps-pull-and-restart.sh). Przy błędzie: `journalctl -u panstwa-miasta -e` na VPS.
-- **Zewnętrzny ping** (Uptime Kuma, Healthchecks.io itd.) na publiczny URL co 5–15 min — poza samym workflow.
+- Po merge na `main`: job **Deploy** w Actions + smoke `GET http://127.0.0.1:8000/` i `GET /healthz` w [`vps-pull-and-restart.sh`](vps-pull-and-restart.sh). Opcjonalnie ustaw `PROD_BASE_URL=https://twoja-domena` przed deployem — skrypt sprawdzi też publiczny HTTPS na `/` i `/healthz`.
+- **Zewnętrzny ping** (Uptime Kuma, Healthchecks.io itd.) na publiczny URL i `/healthz` co 5–15 min — poza samym workflow.
+- **Smoke po release:** `PROD_BASE_URL=https://twoja-domena ./deploy/prod-smoke-check.sh` (z maszyny z dostępem do domeny); wynik w issue/PR.
 - **Rollback:** na VPS `git log --oneline -5` → `DEPLOY_APP_DIR=… ./deploy/vps-rollback.sh <rev>` (checkout rewizji, `uv sync --frozen`, restart, smoke lokalny). Alternatywnie ręcznie: `git checkout <rev>` w `APP_DIR`, potem `uv sync --frozen` i `systemctl restart panstwa-miasta`.
+
+### Nagłówki bezpieczeństwa (Caddy)
+
+Przykład w [`Caddyfile.example`](Caddyfile.example): HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `frame-ancestors 'none'`. Po zmianie: `sudo systemctl reload caddy`. Pełne **CSP** (Google Fonts, CDN confetti, przyszła analityka) — osobny krok z whitelistą.
+
+### Odwołania i LLM
+
+- Odwołania po grze wymagają **tokenu** wydanego po `game_over` (WebSocket `appeal_token`); bez niego API zwraca `401`.
+- **`PM_APPEALS_LLM`** domyślnie wyłączone na produkcji; włącz tylko świadomie i zaktualizowaną polityką prywatności.
 
 ## 7. Wiele workerów / Redis (opcjonalnie)
 

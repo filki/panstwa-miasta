@@ -11,8 +11,10 @@ Zmienne środowiskowe (opcjonalne, sensowne domyślne):
 - ``PM_TRUST_X_FORWARDED_FOR`` — ``1`` / ``true``: pierwszy hop z ``X-Forwarded-For``
   (tylko za zaufanym proxy).
 - ``PM_RATE_HTTP_API_ACTIVE``, ``PM_RATE_HTTP_API_SHARE``, ``PM_RATE_HTTP_SHARE_PAGE``,
-  ``PM_RATE_HTTP_ROOM``, ``PM_RATE_HTTP_ROOT``, ``PM_RATE_HTTP_DEFAULT`` —
+  ``PM_RATE_HTTP_ROOM``, ``PM_RATE_HTTP_ROOT``, ``PM_RATE_HTTP_DEFAULT``,
+  ``PM_RATE_HTTP_API_CREATE_ROOM`` —
   max żądań GET+HEAD na IP w oknie ``PM_RATE_HTTP_WINDOW_SEC`` (domyślnie 60 s).
+- ``PM_WS_MESSAGES_PER_CONN_PER_MIN`` — max wiadomości WS na połączenie / min.
 """
 
 from __future__ import annotations
@@ -32,6 +34,7 @@ if _HTTP_WINDOW_SEC < 1:
 _lock = asyncio.Lock()
 _ws_new_room_events: dict[str, deque[float]] = defaultdict(deque)
 _ws_connect_events: dict[str, deque[float]] = defaultdict(deque)
+_ws_message_events: dict[tuple[str, str], deque[float]] = defaultdict(deque)
 _http_events: dict[tuple[str, str], deque[float]] = defaultdict(deque)
 
 
@@ -39,6 +42,7 @@ def reset_counters_for_tests() -> None:
     """Czyści liczniki (tylko testy — brak synchronizacji z produkcyjnym ruchem)."""
     _ws_new_room_events.clear()
     _ws_connect_events.clear()
+    _ws_message_events.clear()
     _http_events.clear()
 
 
@@ -68,10 +72,15 @@ def ws_connects_per_ip_per_min() -> int:
     return _parse_positive_int(os.environ.get("PM_WS_CONNECTS_PER_IP_PER_MIN"), 200, upper=20_000)
 
 
+def ws_messages_per_conn_per_min() -> int:
+    return _parse_positive_int(os.environ.get("PM_WS_MESSAGES_PER_CONN_PER_MIN"), 120, upper=50_000)
+
+
 def _http_limit_for_bucket(bucket: str) -> int:
     env_map = {
         "api_active": "PM_RATE_HTTP_API_ACTIVE",
         "api_quick_join": "PM_RATE_HTTP_API_QUICK_JOIN",
+        "api_create_room": "PM_RATE_HTTP_API_CREATE_ROOM",
         "api_appeals": "PM_RATE_HTTP_API_APPEALS",
         "api_share": "PM_RATE_HTTP_API_SHARE",
         "share_page": "PM_RATE_HTTP_SHARE_PAGE",
@@ -82,6 +91,7 @@ def _http_limit_for_bucket(bucket: str) -> int:
     defaults = {
         "api_active": 40,
         "api_quick_join": 30,
+        "api_create_room": 24,
         "api_appeals": 40,
         "api_share": 80,
         "share_page": 80,
@@ -140,12 +150,14 @@ def http_rate_bucket_name(path: str) -> str | None:
     """Zwraca nazwę kubełka albo ``None`` — wtedy bez limitu HTTP."""
     if path.startswith("/static"):
         return None
-    if path in ("/sw.js", "/manifest.json"):
+    if path in ("/sw.js", "/manifest.json", "/healthz"):
         return None
     if path.startswith("/api/active-rooms"):
         return "api_active"
-    if path.startswith("/api/quick-join"):
+    if path == "/api/quick-join":
         return "api_quick_join"
+    if path == "/api/rooms":
+        return "api_create_room"
     if path.startswith("/api/rooms/") and path.endswith("/appeals"):
         return "api_appeals"
     if path.startswith("/api/share/"):
@@ -182,6 +194,19 @@ async def check_http_rate_limit(client_ip: str, bucket: str):
             )
         dq.append(now)
     return None
+
+
+async def check_ws_message_rate(room_id: str, client_name: str) -> bool:
+    """``False`` gdy połączenie przekroczy limit wiadomości WS w oknie 60 s."""
+    now = _monotonic()
+    key = (room_id, client_name)
+    async with _lock:
+        dq = _ws_message_events[key]
+        _purge(dq, _WS_WINDOW_SEC, now)
+        if len(dq) >= ws_messages_per_conn_per_min():
+            return False
+        dq.append(now)
+    return True
 
 
 async def check_ws_before_connect(client_ip: str, *, is_new_room: bool) -> bool:

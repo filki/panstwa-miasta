@@ -93,3 +93,14 @@ def test_http_active_rooms_bucket_separate_from_root(monkeypatch):
         assert client.get("/").status_code == 200
         assert client.get("/").status_code == 429
         assert client.get("/api/active-rooms").status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_ws_message_rate_limit(monkeypatch):
+    monkeypatch.setenv("PM_WS_MESSAGES_PER_CONN_PER_MIN", "2")
+    reset_counters_for_tests()
+    from panstwa_miasta.limits import check_ws_message_rate
+
+    assert await check_ws_message_rate("room1", "Anna") is True
+    assert await check_ws_message_rate("room1", "Anna") is True
+    assert await check_ws_message_rate("room1", "Anna") is False

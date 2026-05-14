@@ -42,4 +42,22 @@ if [[ "$code" != "200" ]]; then
   exit 1
 fi
 
-echo "Deploy zakończony pomyślnie (HTTP $code)."
+health_code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/healthz || true)"
+if [[ "$health_code" != "200" ]]; then
+  echo "Smoke test GET /healthz zwrócił HTTP $health_code (oczekiwano 200)." >&2
+  exit 1
+fi
+
+if [[ -n "${PROD_BASE_URL:-}" ]]; then
+  public_base="${PROD_BASE_URL%/}"
+  for path in / /healthz; do
+    pub_code="$(curl -sS -o /dev/null -w '%{http_code}' --connect-timeout 15 "${public_base}${path}" || echo "000")"
+    if [[ "$pub_code" != "200" ]]; then
+      echo "Smoke HTTPS ${public_base}${path} zwrócił HTTP $pub_code (oczekiwano 200)." >&2
+      exit 1
+    fi
+    echo "OK  $pub_code  ${public_base}${path}"
+  done
+fi
+
+echo "Deploy zakończony pomyślnie (lokalny HTTP $code, /healthz $health_code)."
