@@ -604,43 +604,6 @@ button.active-rooms-empty-cta {
     line-height: 1.5;
 }
 
-.landing-how-to-play {
-    margin-top: var(--space-5);
-    padding: var(--space-5);
-    border-radius: var(--r-lg);
-    border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.72);
-    text-align: left;
-}
-
-.landing-how-to-play h2 {
-    margin: 0 0 var(--space-3);
-    font-size: var(--fs-h3);
-    text-align: left;
-}
-
-.landing-how-to-play h3 {
-    margin: var(--space-4) 0 var(--space-2);
-    font-size: var(--fs-body);
-    font-weight: 700;
-    color: var(--accent);
-    text-align: left;
-}
-
-.landing-how-to-play p,
-.landing-how-to-play li {
-    color: var(--text-muted);
-    line-height: 1.5;
-    text-align: left;
-}
-
-.landing-how-to-play ol,
-.landing-how-to-play ul {
-    margin: 0;
-    padding-left: 1.25rem;
-    list-style-position: outside;
-}
-
 .landing-anon-cta--quick {
     width: 100%;
 }
