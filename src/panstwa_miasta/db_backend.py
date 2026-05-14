@@ -85,7 +85,7 @@ class _LibsqlConnection:
 @asynccontextmanager
 async def connect() -> AsyncIterator[Any]:
     if libsql_configured():
-        import libsql
+        from libsql import connect as libsql_connect  # ty: ignore[unresolved-import]
 
         sync_url = os.environ["LIBSQL_URL"].strip()
         auth_token = os.environ["LIBSQL_AUTH_TOKEN"].strip()
@@ -93,8 +93,7 @@ async def connect() -> AsyncIterator[Any]:
         sync_interval = int(os.environ.get("LIBSQL_SYNC_INTERVAL", "60") or "60")
 
         def open_connection() -> Any:
-            connect_fn = getattr(libsql, "connect")
-            return connect_fn(
+            return libsql_connect(
                 str(local_path),
                 sync_url=sync_url,
                 auth_token=auth_token,
