@@ -5,7 +5,7 @@
  *  - Static assets (CSS/JS/icons/manifest): stale-while-revalidate
  *  - WebSocket / API: never cached
  */
-const VERSION = 'pm-v14';
+const VERSION = 'pm-v15';
 const STATIC_CACHE = `${VERSION}-static`;
 const HTML_CACHE = `${VERSION}-html`;
 
@@ -15,6 +15,7 @@ const STATIC_ASSETS = [
     '/static/js/audio.js',
     '/static/js/ui.js',
     '/static/js/game.js',
+    '/static/js/word-ai.js',
     '/static/js/socket.js',
     '/static/manifest.json',
     '/static/icons/icon.svg',

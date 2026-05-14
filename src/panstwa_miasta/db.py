@@ -458,6 +458,30 @@ async def list_dictionary_suggestions(status: str = "pending") -> list[dict]:
             return [dict(row) for row in rows]
 
 
+async def list_pending_dictionary_suggestions(
+    *,
+    limit: int = 20,
+    after_id: int = 0,
+) -> list[dict]:
+    bounded = max(1, min(limit, 100))
+    async with connect() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            """
+            SELECT id, status, category, proposed_norm, proposed_display, target_seed,
+                   room_id, player_name, letter, round, ai_explanation, created_at,
+                   reviewed_at, review_note
+            FROM dictionary_suggestions
+            WHERE status = 'pending' AND id > ?
+            ORDER BY id ASC
+            LIMIT ?
+            """,
+            (after_id, bounded),
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [dict(row) for row in rows]
+
+
 async def fetch_dictionary_suggestion(suggestion_id: int) -> dict | None:
     async with connect() as db:
         db.row_factory = aiosqlite.Row
@@ -572,6 +596,7 @@ async def set_dictionary_suggestion_status(
     status: str,
     *,
     review_note: str | None = None,
+    ai_explanation: str | None = None,
 ) -> bool:
     status = normalize_dictionary_suggestion_status(status)
     reviewed_at = int(time.time())
@@ -579,10 +604,35 @@ async def set_dictionary_suggestion_status(
         cursor = await db.execute(
             """
             UPDATE dictionary_suggestions
-            SET status = ?, reviewed_at = ?, review_note = ?
+            SET status = ?, reviewed_at = ?, review_note = ?,
+                ai_explanation = COALESCE(?, ai_explanation)
             WHERE id = ?
             """,
-            (status, reviewed_at, review_note, suggestion_id),
+            (status, reviewed_at, review_note, ai_explanation, suggestion_id),
         )
         await db.commit()
         return cursor.rowcount > 0
+
+
+async def decide_pending_dictionary_suggestion(
+    suggestion_id: int,
+    status: str,
+    *,
+    review_note: str | None = None,
+    ai_explanation: str | None = None,
+) -> Literal["updated", "not_pending", "missing"]:
+    row = await fetch_dictionary_suggestion(suggestion_id)
+    if row is None:
+        return "missing"
+    if str(row["status"]) != "pending":
+        return "not_pending"
+    status = normalize_dictionary_suggestion_status(status)
+    if status not in DICTIONARY_SUGGESTION_STATUSES or status == "pending":
+        raise ValueError(f"invalid decision status: {status}")
+    ok = await set_dictionary_suggestion_status(
+        suggestion_id,
+        status,
+        review_note=review_note,
+        ai_explanation=ai_explanation,
+    )
+    return "updated" if ok else "missing"

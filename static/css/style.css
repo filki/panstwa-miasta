@@ -2936,7 +2936,8 @@ body.room-page .game-chat-compose {
         justify-content: flex-start;
     }
 
-    .game-over-results-body .postgame-appeal-btn {
+    .game-over-results-body .postgame-appeal-btn,
+.postgame-word-report-btn {
         width: auto;
         min-width: 7rem;
     }
@@ -3016,7 +3017,8 @@ body.room-page .room-postgame .restart-card {
     font-weight: 700;
 }
 
-.postgame-appeal-btn {
+.postgame-appeal-btn,
+.postgame-word-report-btn {
     margin-top: var(--space-2);
     width: 100%;
     min-height: var(--tap);
@@ -3028,7 +3030,8 @@ body.room-page .room-postgame .restart-card {
     cursor: pointer;
 }
 
-.postgame-appeal-result {
+.postgame-appeal-result,
+.postgame-word-report-result {
     margin-top: var(--space-2);
     color: var(--text-muted);
     font-size: var(--fs-sm);

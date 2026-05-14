@@ -128,6 +128,10 @@ W **Settings → Secrets and variables → Actions → Secrets**:
 
 **Rollback:** usuń linie `LIBSQL_*` z `EnvironmentFile`, przywróć `panstwa_miasta.db` z kopii, usuń pliki metadanych repliki, `systemctl restart panstwa-miasta`.
 
+**Bramka RAG:** kolejka weryfikacji słów (`PM_RAG_QUEUE_ENABLED`, worker n8n) włączana dopiero po stabilnym cutoverze na Turso i smoke teście rollbacku. Porównanie liczności tabel: `uv run python scripts/db_table_counts.py` na kopii źródłowej i na replice po starcie.
+
+**Staging RAG:** ustaw `PM_WORDS_WORKER_TOKEN`, włącz workflow w n8n (`deploy/n8n/workflows/`), na stagingu `PM_RAG_QUEUE_ENABLED=1`, smoke: zgłoszenie słowa → pending → decyzja workera → `POST /api/words/check-reason`. Produkcja dopiero po aktualizacji polityki prywatności.
+
 ### Backup SQLite
 
 Skrypt [`backup-db.sh`](backup-db.sh) — `sqlite3 .backup`, rotacja domyślnie 14 dni (`PM_DB_BACKUP_KEEP_DAYS`), katalog `backups/` w `APP_DIR` (lub `PM_DB_BACKUP_DIR`).
