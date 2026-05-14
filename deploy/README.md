@@ -113,6 +113,7 @@ W **Settings → Secrets and variables → Actions → Secrets**:
 
 - Jeden proces `uvicorn` = jedna kopia limitów w RAM (`limits.py`); przy skalowaniu — osobna dyskusja.
 - **Limity za Caddy:** w działającym unit systemd musi być `Environment=PM_TRUST_X_FORWARDED_FOR=1` (jak w [`panstwa-miasta.service.example`](panstwa-miasta.service.example)), inaczej rate limit widzi IP proxy zamiast klienta. Po zmianie: `sudo systemctl daemon-reload && sudo systemctl restart panstwa-miasta`.
+- **Umami Cloud (opcjonalnie):** w unit systemd lub `EnvironmentFile` ustaw `UMAMI_SCRIPT_URL` i `UMAMI_WEBSITE_ID` (patrz [`env.example`](env.example)). Brak któregokolwiek = brak skryptu w HTML (dev, CI). Po deployu sprawdź pageview w panelu Umami dla `https://panstwamiasta.com.pl/`. Nie commituj ID do repo.
 
 ### Backup SQLite
 
