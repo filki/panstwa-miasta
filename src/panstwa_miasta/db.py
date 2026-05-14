@@ -7,7 +7,7 @@ import aiosqlite
 
 from .cities_seed import CITIES_SEED
 from .countries_seed import COUNTRIES_SEED
-from .db_backend import connect
+from .db_backend import connect, connect_dictionary
 from .jobs_seed import JOBS_SEED
 from .names_seed import NAMES_SEED
 
@@ -435,6 +435,11 @@ async def fetch_game_transcript(room_id: str) -> dict | None:
             return json.loads(row["payload"])
 
 
+def _configure_dictionary_rows(db) -> None:
+    if hasattr(db, "row_factory"):
+        db.row_factory = aiosqlite.Row
+
+
 async def insert_dictionary_suggestion(
     *,
     category: str,
@@ -448,7 +453,7 @@ async def insert_dictionary_suggestion(
     ai_explanation: str,
 ) -> int:
     created_at = int(time.time())
-    async with connect() as db:
+    async with connect_dictionary() as db:
         cursor = await db.execute(
             """
             INSERT INTO dictionary_suggestions (
@@ -477,8 +482,8 @@ async def insert_dictionary_suggestion(
 
 
 async def list_dictionary_suggestions(status: str = "pending") -> list[dict]:
-    async with connect() as db:
-        db.row_factory = aiosqlite.Row
+    async with connect_dictionary() as db:
+        _configure_dictionary_rows(db)
         async with db.execute(
             """
             SELECT id, status, category, proposed_norm, proposed_display, target_seed,
@@ -500,8 +505,8 @@ async def list_pending_dictionary_suggestions(
     after_id: int = 0,
 ) -> list[dict]:
     bounded = max(1, min(limit, 100))
-    async with connect() as db:
-        db.row_factory = aiosqlite.Row
+    async with connect_dictionary() as db:
+        _configure_dictionary_rows(db)
         async with db.execute(
             """
             SELECT id, status, category, proposed_norm, proposed_display, target_seed,
@@ -519,8 +524,8 @@ async def list_pending_dictionary_suggestions(
 
 
 async def fetch_dictionary_suggestion(suggestion_id: int) -> dict | None:
-    async with connect() as db:
-        db.row_factory = aiosqlite.Row
+    async with connect_dictionary() as db:
+        _configure_dictionary_rows(db)
         async with db.execute(
             """
             SELECT id, status, category, proposed_norm, proposed_display, target_seed,
@@ -545,8 +550,8 @@ async def fetch_pending_dictionary_suggestion(
     proposed_norm: str,
     letter: str,
 ) -> dict | None:
-    async with connect() as db:
-        db.row_factory = aiosqlite.Row
+    async with connect_dictionary() as db:
+        _configure_dictionary_rows(db)
         async with db.execute(
             """
             SELECT id, status, category, proposed_norm, proposed_display, target_seed,
@@ -573,8 +578,8 @@ async def fetch_latest_dictionary_suggestion(
     proposed_norm: str,
     letter: str,
 ) -> dict | None:
-    async with connect() as db:
-        db.row_factory = aiosqlite.Row
+    async with connect_dictionary() as db:
+        _configure_dictionary_rows(db)
         async with db.execute(
             """
             SELECT id, status, category, proposed_norm, proposed_display, target_seed,
@@ -636,7 +641,7 @@ async def set_dictionary_suggestion_status(
 ) -> bool:
     status = normalize_dictionary_suggestion_status(status)
     reviewed_at = int(time.time())
-    async with connect() as db:
+    async with connect_dictionary() as db:
         cursor = await db.execute(
             """
             UPDATE dictionary_suggestions

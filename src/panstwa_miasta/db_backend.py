@@ -19,6 +19,13 @@ def libsql_configured() -> bool:
     )
 
 
+def dictionary_libsql_configured() -> bool:
+    return bool(
+        os.environ.get("PM_DICTIONARY_LIBSQL_URL", "").strip()
+        and os.environ.get("PM_DICTIONARY_LIBSQL_AUTH_TOKEN", "").strip()
+    )
+
+
 def _db_path() -> Path:
     from panstwa_miasta.db import DB_PATH
 
@@ -33,9 +40,10 @@ class _LibsqlRow(dict[str, Any]):
 
 
 class _LibsqlCursor:
-    def __init__(self, rows: list[_LibsqlRow], lastrowid: int | None) -> None:
+    def __init__(self, rows: list[_LibsqlRow], lastrowid: int | None, rowcount: int = -1) -> None:
         self._rows = rows
         self.lastrowid = lastrowid
+        self.rowcount = rowcount
 
     async def fetchone(self) -> _LibsqlRow | None:
         return self._rows[0] if self._rows else None
@@ -72,7 +80,7 @@ class _LibsqlConnection:
         def run() -> _LibsqlCursor:
             cursor = self._conn.execute(sql, tuple(params))
             rows = self._rows_from_cursor(cursor)
-            return _LibsqlCursor(rows, cursor.lastrowid)
+            return _LibsqlCursor(rows, cursor.lastrowid, getattr(cursor, "rowcount", -1))
 
         return await asyncio.to_thread(run)
 
@@ -89,6 +97,29 @@ class _LibsqlConnection:
 
     async def close(self) -> None:
         await asyncio.to_thread(self._conn.close)
+
+
+@asynccontextmanager
+async def connect_dictionary() -> AsyncIterator[Any]:
+    """Dictionary inbox: optional remote Turso, otherwise same store as the game."""
+    if dictionary_libsql_configured():
+        from libsql import connect as libsql_connect  # ty: ignore[unresolved-import]
+
+        sync_url = os.environ["PM_DICTIONARY_LIBSQL_URL"].strip()
+        auth_token = os.environ["PM_DICTIONARY_LIBSQL_AUTH_TOKEN"].strip()
+
+        def open_connection() -> Any:
+            return libsql_connect(sync_url, auth_token=auth_token)
+
+        conn = await asyncio.to_thread(open_connection)
+        wrapper = _LibsqlConnection(conn)
+        try:
+            yield wrapper
+        finally:
+            await wrapper.close()
+    else:
+        async with connect() as db:
+            yield db
 
 
 @asynccontextmanager
