@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Res
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
-from .analytics_snippet import inject_before_head_close, umami_head_snippet
+from .analytics_snippet import inject_before_head_close, public_head_snippets
 from .api_models import (
     ActiveRoomRow,
     AppealIn,
@@ -199,12 +199,12 @@ async def _html_with_injected_footer(page_path: pathlib.Path) -> HTMLResponse:
         html_content = await f.read()
     if "<!-- SITE_FOOTER -->" in html_content:
         html_content = html_content.replace("<!-- SITE_FOOTER -->", FOOTER_HTML, 1)
-    html_content = inject_before_head_close(html_content, umami_head_snippet())
+    html_content = inject_before_head_close(html_content, public_head_snippets())
     return HTMLResponse(content=html_content)
 
 
 def _html_with_analytics(html: str) -> str:
-    return inject_before_head_close(html, umami_head_snippet())
+    return inject_before_head_close(html, public_head_snippets())
 
 
 @app.get("/")

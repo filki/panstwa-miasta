@@ -17,7 +17,8 @@
 ### Search Console
 
 1. Właściwość typu **URL prefix**: `https://panstwamiasta.com.pl`.
-2. Weryfikacja: rekord DNS TXT lub plik HTML (według kreatora Google).
+2. Weryfikacja: rekord DNS TXT **albo** meta `google-site-verification` — token w
+   `GOOGLE_SITE_VERIFICATION` w pliku env unitu (wstrzykiwany w `<head>` stron publicznych).
 3. **Mapa witryn:** `https://panstwamiasta.com.pl/sitemap.xml`.
 4. Po deployu zmian SEO: „Sprawdź adres URL” dla `/` i stron prawnych; opcjonalnie „Poproś o
    indeksację” dla `/polityka-prywatnosci`, `/regulamin`, `/cookies`.
@@ -40,5 +41,5 @@
 ## Opcjonalnie (osobne PR / konfiguracja)
 
 - **Umami:** `UMAMI_SCRIPT_URL` + `UMAMI_WEBSITE_ID` w unit systemd (`env.example`).
-- **Strona `/wspolprace`** — treść marketingowa, osobny PR + wpis w sitemap.
+- **Strona `/wspolprace`:** odłożona do czasu realnych partnerstw (osobny PR + sitemap).
 - **Pełne CSP** w Caddy — osobny krok z whitelistą fontów i skryptów.
