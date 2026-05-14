@@ -1,6 +1,7 @@
 // Funkcje pomocnicze UI
 const PM_NICK_KEY = 'pm_nickname';
 const PM_NICK_CUSTOM_KEY = 'pm_nickname_custom';
+const PM_AUTO_JOIN_KEY = 'pm_room_autojoin';
 const PM_NICK_MAX_LENGTH = 16;
 const AUTO_NICK_RE = /^Gracz#\d{4}$/;
 
@@ -108,6 +109,7 @@ async function quickJoinFromLanding() {
         syncRoomCodeInputs(roomId);
         const landingCode = document.getElementById('landing_room_code');
         if (landingCode) landingCode.value = roomId;
+        markRoomAutoJoinIntent();
         globalThis.location.href = `/room/${encodeURIComponent(roomId)}?rounds=${encodeURIComponent(String(maxRounds))}&limit=${encodeURIComponent(String(timeLimit))}&visibility=public`;
     } catch (err) {
         console.error('quickJoinFromLanding failed:', err);
@@ -147,6 +149,7 @@ async function createRoomAndEnter() {
         const vis = data.visibility === 'private' ? 'private' : 'public';
         syncRoomCodeInputs(roomId);
         hideModals();
+        markRoomAutoJoinIntent();
         globalThis.location.href = `/room/${encodeURIComponent(roomId)}?rounds=${encodeURIComponent(String(rounds))}&limit=${encodeURIComponent(String(limit))}&visibility=${encodeURIComponent(vis)}`;
     } catch (err) {
         console.error('createRoomAndEnter failed:', err);
@@ -852,6 +855,39 @@ function shouldSkipRoomAutoJoin() {
     return false;
 }
 
+function markRoomAutoJoinIntent() {
+    try {
+        globalThis.sessionStorage?.setItem(PM_AUTO_JOIN_KEY, '1');
+    } catch (e) {
+        console.debug('pm: sessionStorage setItem skipped', e);
+    }
+}
+
+function consumeRoomAutoJoinIntent() {
+    try {
+        if (globalThis.sessionStorage?.getItem(PM_AUTO_JOIN_KEY) === '1') {
+            globalThis.sessionStorage.removeItem(PM_AUTO_JOIN_KEY);
+            return true;
+        }
+    } catch (e) {
+        console.debug('pm: sessionStorage read skipped', e);
+    }
+    return false;
+}
+
+function prepareRoomInviteNickname(allowAutoJoin) {
+    if (allowAutoJoin) {
+        preparePlayNickname();
+        return;
+    }
+    if (isCustomNickStored()) {
+        preparePlayNickname();
+        return;
+    }
+    rerollPlayerNickname();
+    bindNicknameInputs();
+}
+
 function setRoomJoinVisible(visible) {
     const inlineJoin = document.getElementById('room-inline-join');
     const chatSection = document.getElementById('chat-section');
@@ -893,7 +929,9 @@ function handleRoomRouteOnLoad(savedNick) {
     }
 
     applyRoomSettingsFromUrl();
-    const autoJoined = tryAutoJoin(savedNick, roomId);
+    const allowAutoJoin = consumeRoomAutoJoinIntent();
+    prepareRoomInviteNickname(allowAutoJoin);
+    const autoJoined = allowAutoJoin && tryAutoJoin(savedNick, roomId);
     if (!autoJoined) setRoomJoinVisible(true);
     return isRoomRoute;
 }
@@ -988,6 +1026,7 @@ globalThis.renderLobbyRoster = renderLobbyRoster;
 globalThis.clampNickname = clampNickname;
 globalThis.syncRoomLobbySettings = syncRoomLobbySettings;
 globalThis.copyRoomInviteLink = copyRoomInviteLink;
+globalThis.markRoomAutoJoinIntent = markRoomAutoJoinIntent;
 
 if (typeof module !== 'undefined') {
     module.exports = {
@@ -1028,6 +1067,9 @@ if (typeof module !== 'undefined') {
         restoreNickname,
         applyRoomSettingsFromUrl,
         tryAutoJoin,
+        markRoomAutoJoinIntent,
+        consumeRoomAutoJoinIntent,
+        prepareRoomInviteNickname,
         handleRoomRouteOnLoad,
         bindChatEnter,
         bindCategoryEnter,

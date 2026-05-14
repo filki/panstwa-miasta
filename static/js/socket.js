@@ -172,6 +172,9 @@ function connect() {
     // Landing page has no game UI; redirect to the dedicated room page,
     // which auto-joins using the stored nickname + url params.
     if (!globalThis.location.pathname.startsWith('/room/')) {
+        if (typeof markRoomAutoJoinIntent === 'function') {
+            markRoomAutoJoinIntent();
+        }
         globalThis.location.href = `/room/${roomId}?rounds=${maxRounds}&limit=${timeLimit}&visibility=${visibility}`;
         return;
     }

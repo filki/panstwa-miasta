@@ -38,6 +38,8 @@ const {
     handleRoomRouteOnLoad,
     applyRoomSettingsFromUrl,
     tryAutoJoin,
+    markRoomAutoJoinIntent,
+    prepareRoomInviteNickname,
     playLotterySpinHaptic,
     playLotteryRevealHaptic,
     playCountdownHaptic,
@@ -670,6 +672,52 @@ describe('tryAutoJoin', () => {
         expect(document.getElementById('room-inline-join').style.display).toBe('block');
         expect(document.getElementById('chat-section').style.display).toBe('none');
         expect(global.connect).not.toHaveBeenCalled();
+    });
+
+    test('shows join form with a random nick on a cold invite link', () => {
+        sessionStorage.removeItem('pm_room_autojoin');
+        localStorage.removeItem('pm_nickname');
+        localStorage.removeItem('pm_nickname_custom');
+        window.history.replaceState({}, '', '/room/4624?visibility=public');
+        document.body.innerHTML = `
+            <section id="room-inline-join" style="display: none;"></section>
+            <div id="chat-section" style="display: block;"></div>
+            <input id="nickname" value="" />
+            <input id="room_id" />
+            <p id="room-inline-label"></p>
+            <select id="max_rounds"><option value="5" selected>5</option></select>
+            <select id="time_limit"><option value="90" selected>90</option></select>
+            <select id="room_visibility"><option value="public" selected>public</option></select>
+        `;
+        global.connect.mockClear();
+        handleRoomRouteOnLoad('');
+        expect(document.getElementById('room-inline-join').style.display).toBe('block');
+        expect(document.getElementById('nickname').value).toMatch(/^Gracz#\d{4}$/);
+        expect(global.connect).not.toHaveBeenCalled();
+    });
+
+    test('auto-joins when landing navigation marked intent', () => {
+        sessionStorage.removeItem('pm_skip_auto_join');
+        markRoomAutoJoinIntent();
+        window.history.replaceState({}, '', '/room/4624');
+        document.body.innerHTML = `
+            <section id="room-inline-join" style="display: block;"></section>
+            <div id="chat-section" style="display: none;">
+                <section id="room-lobby" hidden></section>
+                <main id="game-main-area" hidden></main>
+            </div>
+            <input id="nickname" value="Filip" />
+            <input id="room_id" />
+            <p id="room-inline-label"></p>
+            <select id="max_rounds"><option value="5" selected>5</option></select>
+            <select id="time_limit"><option value="90" selected>90</option></select>
+            <select id="room_visibility"><option value="public" selected>public</option></select>
+        `;
+        global.connect.mockClear();
+        handleRoomRouteOnLoad('Filip');
+        expect(document.getElementById('room-inline-join').style.display).toBe('none');
+        expect(document.getElementById('chat-section').style.display).toBe('block');
+        expect(global.connect).toHaveBeenCalledTimes(1);
     });
 });
 
