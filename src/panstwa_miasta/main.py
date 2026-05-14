@@ -59,8 +59,8 @@ from .limits import (
 )
 from .logger import get_logger
 from .manager import (
-    RESULTS_PHASE_SECONDS,
     STOP_SUBMIT_GRACE_SECONDS,
+    STOP_SUBMIT_SECONDS,
     ConnectionManager,
     room_listed_in_active_lobby,
 )
@@ -175,7 +175,7 @@ async def global_round_timeout(room_id: str, round_num: int, wait_time: int) -> 
 
 async def force_end_round(room_id: str) -> None:
     """Forces round results after the post-stop submit window."""
-    await asyncio.sleep(RESULTS_PHASE_SECONDS + STOP_SUBMIT_GRACE_SECONDS)
+    await asyncio.sleep(STOP_SUBMIT_SECONDS + STOP_SUBMIT_GRACE_SECONDS)
     if room_id not in manager.rooms:
         return
     room = manager.rooms[room_id]

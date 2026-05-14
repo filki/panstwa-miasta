@@ -34,7 +34,8 @@ ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
 LETTER_CYCLE_ROUNDS = len(ALPHABET)
 GAME_CATEGORIES = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
 VETO_CATEGORY = "Rzecz"
-RESULTS_PHASE_SECONDS = 10
+RESULTS_PHASE_SECONDS = 30
+STOP_SUBMIT_SECONDS = 10
 STOP_SUBMIT_GRACE_SECONDS = 1.0
 HOST_REASSIGN_GRACE_SECONDS = 5.0
 QUICK_JOIN_DEFAULT_ROUNDS = 5
@@ -176,7 +177,7 @@ class Room:
 
     def mark_stop_phase_started(self) -> None:
         self.stop_triggered = True
-        self.stop_submit_ends_at = time.time() + RESULTS_PHASE_SECONDS
+        self.stop_submit_ends_at = time.time() + STOP_SUBMIT_SECONDS
 
     def round_seconds_remaining(self) -> int | None:
         if not self.is_playing or self.round_started_at is None or self.stop_triggered:

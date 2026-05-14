@@ -193,7 +193,7 @@ async def _begin_results_phase(room: Room, room_id: str, timeout_coro) -> None:
 
 
 async def _finish_round(room: Room, room_id: str, timeout_coro) -> None:
-    """Compatibility entry: starts the 10s results phase instead of immediate finalize."""
+    """Compatibility entry: starts the results review phase instead of immediate finalize."""
     await _begin_results_phase(room, room_id, timeout_coro)
 
 
