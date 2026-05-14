@@ -20,7 +20,8 @@ def test_read_root():
     assert "site-footer" in response.text
     assert "/polityka-prywatnosci" in response.text
     assert "buycoffee.to/filki" in response.text
-    assert "landing-anon-support" in response.text
+    assert "landing-anon-cta--support" in response.text
+    assert "landing-anon-action-col" not in response.text
 
 
 def test_sw_js_and_manifest_served():
@@ -295,14 +296,25 @@ def test_robots_txt_and_sitemap():
     assert sitemap.status_code == 200
     assert "application/xml" in sitemap.headers.get("content-type", "")
     assert "https://panstwamiasta.com.pl/polityka-prywatnosci" in sitemap.text
+    assert "<lastmod>" in sitemap.text
 
 
 def test_landing_has_seo_meta():
     response = client.get("/")
     assert response.status_code == 200
     assert 'property="og:url"' in response.text
+    assert 'property="og:image"' in response.text
+    assert 'name="twitter:card"' in response.text
     assert 'rel="canonical"' in response.text
     assert "https://panstwamiasta.com.pl/" in response.text
+    assert "application/ld+json" in response.text
+    assert "landing-how-to-play" in response.text
+
+
+def test_room_shell_is_noindex():
+    response = client.get("/room/abcd")
+    assert response.status_code == 200
+    assert 'name="robots" content="noindex"' in response.text
 
 
 def test_websocket_invalid_path_returns_1008():

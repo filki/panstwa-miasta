@@ -7,14 +7,35 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="description" content="Państwa-Miasta online — gra w przeglądarce ze znajomymi, bez konta.">
-    <meta property="og:title" content="Państwa-Miasta">
-    <meta property="og:description" content="Państwa-Miasta online — gra w przeglądarce ze znajomymi, bez konta.">
+    <meta name="description" content="Państwa-Miasta online — gra w przeglądarce ze znajomymi. Stwórz pokój, dołącz kodem lub szybka gra bez konta.">
+    <meta property="og:title" content="Państwa-Miasta online — gra w przeglądarce">
+    <meta property="og:description" content="Państwa-Miasta online — gra w przeglądarce ze znajomymi. Stwórz pokój, dołącz kodem lub szybka gra bez konta.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://panstwamiasta.com.pl/">
+    <meta property="og:image" content="https://panstwamiasta.com.pl/static/img/og-image.svg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Państwa-Miasta online — gra w przeglądarce">
+    <meta name="twitter:description" content="Państwa-Miasta online — gra w przeglądarce ze znajomymi. Stwórz pokój, dołącz kodem lub szybka gra bez konta.">
+    <meta name="twitter:image" content="https://panstwamiasta.com.pl/static/img/og-image.svg">
     <link rel="canonical" href="https://panstwamiasta.com.pl/">
     <link rel="manifest" href="/manifest.json">
-    <title>Państwa-Miasta</title>
+    <title>Państwa-Miasta online — gra w przeglądarce ze znajomymi</title>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Państwa-Miasta",
+        "url": "https://panstwamiasta.com.pl/",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Web",
+        "inLanguage": "pl",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "PLN"
+        }
+    }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
@@ -74,11 +95,11 @@
                                     </div>
 
                                     <div class="landing-anon-actions" id="landing-anon-actions">
-                                        <div class="landing-anon-action-col">
-                                            <button type="button" class="landing-anon-cta landing-anon-cta--create" onclick="showCreateModal()">Stwórz pokój</button>
-                                            <a class="landing-anon-support" href="https://buycoffee.to/filki" target="_blank" rel="noopener noreferrer">Wesprzyj serwer</a>
-                                        </div>
+                                        <button type="button" class="landing-anon-cta landing-anon-cta--create" onclick="showCreateModal()">Stwórz pokój</button>
                                         <button type="button" class="landing-anon-cta landing-anon-cta--join" onclick="showLandingJoinCode()">Dołącz do pokoju</button>
+                                    </div>
+                                    <div class="landing-anon-support-row">
+                                        <a class="landing-anon-cta landing-anon-cta--support" href="https://buycoffee.to/filki" target="_blank" rel="noopener noreferrer">Wesprzyj serwer</a>
                                     </div>
                                 </div>
 
@@ -169,6 +190,29 @@
                             </footer>
                         </div>
                         <p class="landing-guide-carousel-live visually-hidden" id="landing-guide-carousel-live" aria-live="polite"></p>
+                    </section>
+
+                    <section id="landing-how-to-play" class="landing-how-to-play" aria-labelledby="landing-how-to-play-title">
+                        <h2 id="landing-how-to-play-title">Jak grać w państwa-miasta online?</h2>
+                        <p>Państwa-Miasta to gra w przeglądarce dla kilku osób w jednym pokoju. Wybierz pseudonim, stwórz pokój lub dołącz kodem, a po starcie rundy uzupełnij kategorie na wylosowaną literę.</p>
+                        <h3>Przebieg rundy</h3>
+                        <ol>
+                            <li>Wszyscy oznaczają gotowość w lobby.</li>
+                            <li>Serwer losuje literę rundy.</li>
+                            <li>Uzupełniasz kategorie i wciskasz STOP.</li>
+                        </ol>
+                        <h3>Kategorie</h3>
+                        <ul>
+                            <li>Państwo</li>
+                            <li>Miasto</li>
+                            <li>Rzecz</li>
+                            <li>Zwierzę</li>
+                            <li>Roślina</li>
+                            <li>Imię</li>
+                            <li>Zawód</li>
+                        </ul>
+                        <h3>Punktacja</h3>
+                        <p>15 pkt za unikat, 10 za powtórkę, 5 gdy masz to samo co ktoś z listy, 0 gdy brak poprawnej odpowiedzi.</p>
                     </section>
 
                 </div>
