@@ -21,6 +21,20 @@ def test_word_report_disabled_by_default():
     assert response.status_code == 503
 
 
+def test_dictionary_intake_always_available():
+    payload = {"word": "Wakanda", "category": "Państwo", "starting_letter": "w"}
+    created = client.post("/api/dictionary/suggestions", json=payload)
+    assert created.status_code == 200
+    body = created.json()
+    assert body["outcome"] == "created"
+    assert body["suggestion_id"] >= 1
+    assert "ręczn" in body["message_pl"].lower()
+
+    duplicate = client.post("/api/dictionary/suggestions", json=payload)
+    assert duplicate.status_code == 200
+    assert duplicate.json()["outcome"] == "exists"
+
+
 def test_word_report_and_check_reason(monkeypatch):
     monkeypatch.setenv("PM_RAG_QUEUE_ENABLED", "1")
     payload = {"word": "Wakanda", "category": "Państwo", "starting_letter": "w"}

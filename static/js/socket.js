@@ -435,6 +435,12 @@ function onStopRound(msg) {
     if (stickyTime) stickyTime.innerText = String(timeLeft);
     document.getElementById('current-letter').innerHTML = `<span style="color:var(--danger)">${timeLeft}s</span>`;
     btnStop.innerHTML = `⏳ ${timeLeft}s`;
+    if (timeLeft <= 0) {
+        btnStop.innerHTML = `WYSYŁANIE...`;
+        if (stickyTimer) stickyTimer.style.display = 'none';
+        disableAndSubmit();
+        return;
+    }
     globalThis.currentCountdown = setInterval(() => {
         timeLeft--;
         if(timeLeft > 0) {
@@ -551,7 +557,7 @@ function buildRoundResultsHtml(msg, options = {}) {
             }
             if (allowAppeals && player === viewer && pts === 0 && hasAns && roundLetter.length === 1) {
                 const wordText = String(raw).trim();
-                cell += `<button type="button" class="postgame-word-report-btn" data-word="${escapeHtml(wordText)}" data-category="${escapeHtml(cat)}" data-letter="${escapeHtml(roundLetter)}">Zgłoś do kolejki słów</button><div class="postgame-word-report-result" hidden></div>`;
+                cell += `<button type="button" class="postgame-word-report-btn" data-word="${escapeHtml(wordText)}" data-category="${escapeHtml(cat)}" data-letter="${escapeHtml(roundLetter)}">Zapisz do słownika</button><div class="postgame-word-report-result" hidden></div>`;
             }
             cell += "</div>";
             html += `<td class="round-results-td">${cell}</td>`;
