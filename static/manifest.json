@@ -1,7 +1,7 @@
 {
   "name": "Państwa-Miasta Online",
   "short_name": "PaństwaMiasta",
-  "description": "Klasyczna gra w państwa i miasta — online, real-time, na desktop i mobile.",
+  "description": "Gra w przeglądarce ze znajomymi — szybki start, bez konta.",
   "id": "/",
   "start_url": "/",
   "scope": "/",

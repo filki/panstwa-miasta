@@ -8,10 +8,11 @@ from typing import Annotated, Literal, cast
 import aiofiles
 import aiosqlite
 from fastapi import FastAPI, Header, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
+from .analytics_snippet import inject_before_head_close, umami_head_snippet
 from .api_models import (
     ActiveRoomRow,
     AppealIn,
@@ -120,6 +121,7 @@ COOKIES_LEGAL_PATH = static_path / "cookies.html"
 REGULAMIN_PATH = static_path / "regulamin.html"
 FOOTER_PARTIAL_PATH = static_path / "partials" / "site-footer.html"
 FOOTER_HTML = FOOTER_PARTIAL_PATH.read_text(encoding="utf-8")
+SITE_PUBLIC_ORIGIN = "https://panstwamiasta.com.pl"
 
 
 # ---------------------------------------------------------------------------
@@ -173,7 +175,12 @@ async def _html_with_injected_footer(page_path: pathlib.Path) -> HTMLResponse:
         html_content = await f.read()
     if "<!-- SITE_FOOTER -->" in html_content:
         html_content = html_content.replace("<!-- SITE_FOOTER -->", FOOTER_HTML, 1)
+    html_content = inject_before_head_close(html_content, umami_head_snippet())
     return HTMLResponse(content=html_content)
+
+
+def _html_with_analytics(html: str) -> str:
+    return inject_before_head_close(html, umami_head_snippet())
 
 
 @app.get("/")
@@ -200,6 +207,31 @@ async def get_cookies_policy() -> HTMLResponse:
 @app.get("/regulamin")
 async def get_regulamin() -> HTMLResponse:
     return await _html_with_injected_footer(REGULAMIN_PATH)
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+async def get_robots_txt() -> PlainTextResponse:
+    body = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /api/\n"
+        "Disallow: /ws/\n"
+        f"Sitemap: {SITE_PUBLIC_ORIGIN}/sitemap.xml\n"
+    )
+    return PlainTextResponse(content=body)
+
+
+@app.get("/sitemap.xml")
+async def get_sitemap_xml() -> Response:
+    paths = ("/", "/polityka-prywatnosci", "/cookies", "/regulamin")
+    urls = "".join(f"<url><loc>{SITE_PUBLIC_ORIGIN}{path}</loc></url>\n" for path in paths)
+    body = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"{urls}"
+        "</urlset>\n"
+    )
+    return Response(content=body, media_type="application/xml")
 
 
 # Service worker must be served from a top-level scope to control all routes.
@@ -265,7 +297,7 @@ async def get_share_page(room_id: RoomIdPath) -> HTMLResponse:
             "<p>Nie ma zapisanego wyniku dla tego kodu.</p>"
             '<p><a href="/">Strona główna</a></p></section></div></main></body></html>'
         )
-        return HTMLResponse(content=body, status_code=404)
+        return HTMLResponse(content=_html_with_analytics(body), status_code=404)
     title = f"Państwa-Miasta — wynik ({escape(snap.room_id)})"
     score_rows = "".join(
         f'<li><span class="share-score-name">{escape(n)}</span>'
@@ -298,7 +330,7 @@ async def get_share_page(room_id: RoomIdPath) -> HTMLResponse:
         f'<a class="btn-secondary" href="/room/{escape(snap.room_id)}">Pokój</a></p>'
         f"</section></div></main></body></html>"
     )
-    return HTMLResponse(content=body)
+    return HTMLResponse(content=_html_with_analytics(body))
 
 
 @app.get("/api/active-rooms")

@@ -19,6 +19,7 @@ def test_read_root():
     assert "Państwa-Miasta" in response.text
     assert "site-footer" in response.text
     assert "/polityka-prywatnosci" in response.text
+    assert "buycoffee.to/filki" in response.text
 
 
 def test_sw_js_and_manifest_served():
@@ -45,6 +46,7 @@ def test_legal_pages_and_injected_footer(path: str, needle: str):
     assert needle in response.text
     assert "site-footer" in response.text
     assert "/regulamin" in response.text
+    assert "buycoffee.to/filki" in response.text
 
 
 def test_api_active_rooms_with_data():
@@ -250,6 +252,56 @@ def test_get_room_shell_includes_footer():
     assert response.status_code == 200
     assert "site-footer" in response.text
     assert "/polityka-prywatnosci" in response.text
+    assert "buycoffee.to/filki" in response.text
+
+
+def test_umami_snippet_absent_without_env(monkeypatch):
+    monkeypatch.delenv("UMAMI_SCRIPT_URL", raising=False)
+    monkeypatch.delenv("UMAMI_WEBSITE_ID", raising=False)
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "data-website-id" not in response.text
+
+
+def test_umami_snippet_present_with_env(monkeypatch):
+    monkeypatch.setenv("UMAMI_SCRIPT_URL", "https://cloud.umami.is/script.js")
+    monkeypatch.setenv("UMAMI_WEBSITE_ID", "test-website-id")
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "https://cloud.umami.is/script.js" in response.text
+    assert 'data-website-id="test-website-id"' in response.text
+
+
+def test_share_page_includes_umami_when_configured(monkeypatch):
+    from panstwa_miasta.share_store import clear_share_snapshots, record_finished_game
+
+    monkeypatch.setenv("UMAMI_SCRIPT_URL", "https://cloud.umami.is/script.js")
+    monkeypatch.setenv("UMAMI_WEBSITE_ID", "share-page-id")
+    clear_share_snapshots()
+    record_finished_game("share_umami", {"Gracz1": 3}, "Gracz1")
+    response = client.get("/share/share_umami")
+    assert response.status_code == 200
+    assert 'data-website-id="share-page-id"' in response.text
+
+
+def test_robots_txt_and_sitemap():
+    robots = client.get("/robots.txt")
+    assert robots.status_code == 200
+    assert "Sitemap: https://panstwamiasta.com.pl/sitemap.xml" in robots.text
+    assert "Disallow: /api/" in robots.text
+
+    sitemap = client.get("/sitemap.xml")
+    assert sitemap.status_code == 200
+    assert "application/xml" in sitemap.headers.get("content-type", "")
+    assert "https://panstwamiasta.com.pl/polityka-prywatnosci" in sitemap.text
+
+
+def test_landing_has_seo_meta():
+    response = client.get("/")
+    assert response.status_code == 200
+    assert 'property="og:url"' in response.text
+    assert 'rel="canonical"' in response.text
+    assert "https://panstwamiasta.com.pl/" in response.text
 
 
 def test_websocket_invalid_path_returns_1008():
