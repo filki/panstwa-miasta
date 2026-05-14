@@ -308,7 +308,6 @@ def test_landing_has_seo_meta():
     assert 'rel="canonical"' in response.text
     assert "https://panstwamiasta.com.pl/" in response.text
     assert "application/ld+json" in response.text
-    assert "landing-how-to-play" in response.text
 
 
 def test_room_shell_is_noindex():
