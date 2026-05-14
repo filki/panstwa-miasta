@@ -877,3 +877,19 @@ class ConnectionManager:
         if self._is_lobby_idle_candidate(room):
             self.touch_lobby_idle(room, reset=False)
         return True
+
+    async def cleanup_player_after_disconnect(self, room_id: str, client_name: str) -> None:
+        """Drop lobby-only roster rows for players who left without an active round."""
+        room = self.rooms.get(room_id)
+        if room is None:
+            return
+        room.ready_players.discard(client_name)
+        if room.is_playing or room.results_phase_active or room.game_over:
+            return
+        if client_name not in room.scores:
+            return
+        room.scores.pop(client_name, None)
+        await remove_player(room_id, client_name)
+        logger.info(
+            "Removed lobby roster for disconnected player %r in room %s", client_name, room_id
+        )

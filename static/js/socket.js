@@ -289,7 +289,7 @@ function onSystemMessage(m) {
 }
 
 function onScoreUpdate(m) {
-    updateScoreboard(m.scores, m.host_name, globalThis.myNick || '', m.ready_players);
+    updateScoreboard(m.scores, m.host_name, globalThis.myNick || '', m.ready_players, m.connected_players);
 }
 
 function onChatMessage(m) {

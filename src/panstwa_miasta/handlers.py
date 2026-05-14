@@ -30,11 +30,14 @@ def _broadcast_json(room: Room, payload: dict) -> asyncio.Task:
 
 
 def score_update_payload(room: Room) -> dict:
+    connected = sorted(room.connections.keys())
+    ready = sorted(room.ready_players & room.connections.keys())
     return {
         "type": "score_update",
         "scores": room.scores,
         "host_name": room.host_name,
-        "ready_players": sorted(room.ready_players),
+        "ready_players": ready,
+        "connected_players": connected,
     }
 
 

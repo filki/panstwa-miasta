@@ -625,6 +625,43 @@ async def test_connect_reconnect_same_nick_when_room_full(monkeypatch):
     assert reason is None
 
 
+@pytest.mark.asyncio
+async def test_cleanup_player_after_disconnect_drops_lobby_roster(monkeypatch):
+    import panstwa_miasta.manager as mod
+
+    remove_player = AsyncMock()
+    monkeypatch.setattr(mod, "remove_player", remove_player)
+
+    manager = ConnectionManager()
+    room = Room("room_cleanup")
+    room.scores = {"Ada": 0, "Bob": 0}
+    manager.rooms["room_cleanup"] = room
+
+    await manager.cleanup_player_after_disconnect("room_cleanup", "Ada")
+
+    assert "Ada" not in room.scores
+    remove_player.assert_awaited_once_with("room_cleanup", "Ada")
+
+
+@pytest.mark.asyncio
+async def test_cleanup_player_after_disconnect_keeps_score_mid_round(monkeypatch):
+    import panstwa_miasta.manager as mod
+
+    remove_player = AsyncMock()
+    monkeypatch.setattr(mod, "remove_player", remove_player)
+
+    manager = ConnectionManager()
+    room = Room("room_mid")
+    room.is_playing = True
+    room.scores = {"Ada": 12}
+    manager.rooms["room_mid"] = room
+
+    await manager.cleanup_player_after_disconnect("room_mid", "Ada")
+
+    assert room.scores["Ada"] == 12
+    remove_player.assert_not_called()
+
+
 def test_room_listed_in_active_lobby_hides_full_room():
     from panstwa_miasta.manager import Room, room_listed_in_active_lobby
 

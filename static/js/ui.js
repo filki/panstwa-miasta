@@ -432,6 +432,7 @@ let lastLobbyRosterState = {
     hostName: '',
     readyPlayers: new Set(),
     viewerNick: '',
+    connectedPlayers: null,
 };
 
 function resetLobbyRosterState() {
@@ -440,13 +441,15 @@ function resetLobbyRosterState() {
         hostName: '',
         readyPlayers: new Set(),
         viewerNick: '',
+        connectedPlayers: null,
     };
 }
 
-function updateScoreboard(scores = {}, hostName = '', viewerNick = '', readyPlayers = null) {
+function updateScoreboard(scores = {}, hostName = '', viewerNick = '', readyPlayers = null, connectedPlayers = null) {
     const scoreboard = document.getElementById('scoreboard');
     const lobbyRoster = document.getElementById('lobby-roster');
     const readySet = Array.isArray(readyPlayers) ? new Set(readyPlayers) : new Set();
+    const connectedSet = Array.isArray(connectedPlayers) ? new Set(connectedPlayers) : null;
     const resolvedViewer = viewerNick || globalThis.myNick || '';
 
     lastLobbyRosterState = {
@@ -454,10 +457,11 @@ function updateScoreboard(scores = {}, hostName = '', viewerNick = '', readyPlay
         hostName,
         readyPlayers: readySet,
         viewerNick: resolvedViewer,
+        connectedPlayers: connectedSet,
     };
 
     if (lobbyRoster) {
-        renderLobbyRoster(scores, hostName, readySet, resolvedViewer);
+        renderLobbyRoster(scores, hostName, readySet, resolvedViewer, connectedSet);
     }
 
     if (!scoreboard) return;
@@ -545,23 +549,25 @@ function createLobbyAvatar(name, viewerNick = '') {
 
 const MAX_LOBBY_SLOTS = 8;
 
-function renderLobbyRoster(scores = {}, hostName = '', readyPlayers = new Set(), viewerNick = '') {
+function renderLobbyRoster(scores = {}, hostName = '', readyPlayers = new Set(), viewerNick = '', connectedPlayers = null) {
     const roster = document.getElementById('lobby-roster');
     if (!roster) return;
 
     roster.innerHTML = '';
-    const names = Object.keys(scores);
+    const rosterNames = connectedPlayers
+        ? [...connectedPlayers].filter((name) => Object.hasOwn(scores, name))
+        : Object.keys(scores);
     const countEl = document.getElementById('lobby-player-count');
     if (countEl) {
-        if (names.length === 0) {
+        if (rosterNames.length === 0) {
             countEl.textContent = `0/${MAX_LOBBY_SLOTS}`;
         } else {
-            const readyCount = names.filter((name) => readyPlayers.has(name)).length;
-            countEl.textContent = `${names.length}/${MAX_LOBBY_SLOTS} · ${readyCount} gotowych`;
+            const readyCount = rosterNames.filter((name) => readyPlayers.has(name)).length;
+            countEl.textContent = `${rosterNames.length}/${MAX_LOBBY_SLOTS} · ${readyCount} gotowych`;
         }
     }
 
-    const slots = Array.from({ length: MAX_LOBBY_SLOTS }, (_, index) => names[index] || null);
+    const slots = Array.from({ length: MAX_LOBBY_SLOTS }, (_, index) => rosterNames[index] || null);
     slots.forEach((name) => {
         const row = document.createElement('div');
         row.className = 'lobby-roster-item';
@@ -640,8 +646,8 @@ function setRoomPhase(phase) {
     }
 
     if (next === 'lobby') {
-        const { scores, hostName, readyPlayers, viewerNick } = lastLobbyRosterState;
-        renderLobbyRoster(scores, hostName, readyPlayers, viewerNick);
+        const { scores, hostName, readyPlayers, viewerNick, connectedPlayers } = lastLobbyRosterState;
+        renderLobbyRoster(scores, hostName, readyPlayers, viewerNick, connectedPlayers);
     }
 }
 
