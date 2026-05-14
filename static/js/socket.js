@@ -446,6 +446,7 @@ function buildRoundResultsHtml(msg, options = {}) {
     const allowAppeals = Boolean(options.allowAppeals);
     const roundNumber = Number(options.roundNumber) || 0;
     const roomId = String(options.roomId || "");
+    const roundLetter = String(options.roundLetter || globalThis.currentLetter || "").trim().toLowerCase();
     const players = sortRoundResultPlayers(scores, viewer);
 
     let html = `<div class="round-results-block round-results-block--${variant}"><div class="round-results-table-wrap"><table class="round-results-table round-results-table--players"><thead><tr><th scope="col">Gracz</th>`;
@@ -473,6 +474,10 @@ function buildRoundResultsHtml(msg, options = {}) {
             }
             if (allowAppeals && player === viewer && pts === 0 && roundNumber > 0 && roomId) {
                 cell += `<button type="button" class="postgame-appeal-btn" data-room-id="${escapeHtml(roomId)}" data-round="${roundNumber}" data-category="${escapeHtml(cat)}">Wyjaśnij</button><div class="postgame-appeal-result" hidden></div>`;
+            }
+            if (allowAppeals && player === viewer && pts === 0 && hasAns && roundLetter.length === 1) {
+                const wordText = String(raw).trim();
+                cell += `<button type="button" class="postgame-word-report-btn" data-word="${escapeHtml(wordText)}" data-category="${escapeHtml(cat)}" data-letter="${escapeHtml(roundLetter)}">Zgłoś do kolejki słów</button><div class="postgame-word-report-result" hidden></div>`;
             }
             cell += "</div>";
             html += `<td class="round-results-td">${cell}</td>`;
@@ -638,6 +643,7 @@ function buildGameOverRoundBreakdownHtml(msg) {
                         allowAppeals: true,
                         roundNumber: roundNo,
                         roomId,
+                        roundLetter: letter,
                     },
                 )}`;
             })
@@ -732,6 +738,9 @@ function renderGameOverResults(msg) {
     }
     body.innerHTML = html;
     wirePostgameAppealButtons(body);
+    if (typeof globalThis.wirePostgameWordReportButtons === "function") {
+        globalThis.wirePostgameWordReportButtons(body);
+    }
     panel.hidden = false;
 }
 
