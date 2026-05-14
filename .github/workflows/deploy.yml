@@ -71,5 +71,6 @@ jobs:
             set -euo pipefail
             chmod +x /tmp/deploy/vps-pull-and-restart.sh
             export DEPLOY_APP_DIR="${{ vars.DEPLOY_APP_DIR }}"
+            export PROD_BASE_URL="https://panstwamiasta.com.pl"
             /tmp/deploy/vps-pull-and-restart.sh
             rm -f /tmp/deploy/vps-pull-and-restart.sh

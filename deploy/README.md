@@ -57,7 +57,7 @@ Wykonaj raz po starcie i powtórz po większych zmianach infrastruktury:
 - [ ] `WorkingDirectory` w unit = `DEPLOY_APP_DIR` / katalog z clone (domyślnie `/srv/panstwa-miasta`).
 - [ ] `ufw status` — dozwolone 22, 80, 443; logowanie SSH kluczem (hasło wyłączone dla roota, jeśli możliwe).
 - [ ] Cron backupu [`backup-db.sh`](backup-db.sh) + test odtworzenia kopii (`PRAGMA integrity_check`).
-- [ ] Zewnętrzny monitoring (Uptime Kuma, Healthchecks.io itd.) na `https://twoja-domena/` i `/healthz` co 5–15 min.
+- [ ] Zewnętrzny monitoring (Uptime Kuma, Healthchecks.io itd.) na `https://twoja-domena/` i `/healthz` co 5–15 min (patrz §6 **Uptime Kuma**).
 - [ ] Caddy z nagłówkami z [`Caddyfile.example`](Caddyfile.example) (`reload` po zmianie).
 - [ ] `PM_APPEALS_LLM` **nie** ustawione na produkcji, dopóki nie ma świadomej zgody i aktualizacji polityki prywatności.
 - [ ] Ćwiczenie rollbacku: `DEPLOY_APP_DIR=… ./deploy/vps-rollback.sh <rev>`.
@@ -125,6 +125,16 @@ Przykład cron (codziennie 03:15 UTC, użytkownik aplikacji):
 ```
 
 Po pierwszym uruchomieniu sprawdź `PRAGMA integrity_check` na kopii (skrypt wypisuje wynik).
+
+### Uptime Kuma (self-host na VPS)
+
+Instalacja poza katalogiem aplikacji (np. `/opt/uptime-kuma`), Docker Compose z [`uptime-kuma/docker-compose.example.yml`](uptime-kuma/docker-compose.example.yml) — port `127.0.0.1:3001` (bez publicznego portu poza Caddy).
+
+- **Panel:** subdomena `status.twoja-domena.pl` w Caddy (`reverse_proxy 127.0.0.1:3001`); rekord DNS **A** na IP serwera przed pierwszym TLS. Bez DNS: tunel SSH `ssh -L 3001:127.0.0.1:3001 user@vps` i `http://127.0.0.1:3001`.
+- **Monitory:** `https://twoja-domena/` (HTTP 200) oraz `https://twoja-domena/healthz` (keyword `ok` lub JSON), interwał 5–10 min.
+- **Alerty:** co najmniej jeden kanał (webhook, e-mail, Telegram); test z panelu po konfiguracji.
+- **Logi:** `cd /opt/uptime-kuma && docker compose logs -f`.
+- Hasło admina: poza repo (np. `/root/.uptime-kuma-admin.pass` na VPS).
 
 ### Obserwacja deployu i rollback
 
