@@ -15,6 +15,7 @@ _TABLES = (
     "cities",
     "names",
     "jobs",
+    "things",
     "rooms",
     "players",
     "game_transcripts",

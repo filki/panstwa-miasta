@@ -40,6 +40,7 @@ NAMES: set[str] = set()
 JOBS: set[str] = set()
 ZWIERZETA: set[str] = set()
 ROSLINY: set[str] = set()
+THINGS: set[str] = set()
 
 # Alias: dla wielowyrazowych zawodów dodajemy pierwsze słowo (>3 znaki) jako
 # osobny wpis w zbiorze — tak jak wcześniej przy ``zawody.txt``.
@@ -169,6 +170,15 @@ async def reload_jobs() -> None:
             head = words[0]
             if len(head) > 3 and head not in JOB_ALIAS_PREFIX_SKIP:
                 JOBS.add(head)
+
+
+async def reload_things() -> None:
+    """Odświeża ``THINGS`` z tabeli ``things`` (zaakceptowane odpowiedzi „Rzecz”)."""
+    from .db import load_thing_norms
+
+    norms = await load_thing_norms()
+    THINGS.clear()
+    THINGS.update(norms)
 
 
 def job_answer_accepted(ans_norm: str) -> bool:

@@ -266,6 +266,21 @@ describe('ws lifecycle', () => {
         jest.useRealTimers();
     });
 
+    test('stale websocket onclose does not schedule another reconnect', () => {
+        jest.useFakeTimers();
+        const { connect } = loadSocket();
+        connect();
+        const first = lastWs;
+        first.onopen();
+        const staleClose = first.onclose;
+        connect();
+        lastWs.onopen();
+        staleClose({ code: 1000 });
+        jest.advanceTimersByTime(2500);
+        expect(global.WebSocket).toHaveBeenCalledTimes(2);
+        jest.useRealTimers();
+    });
+
     test('onclose suppresses reconnect when leaveRoom() was called', () => {
         jest.useFakeTimers();
         const { connect, leaveRoom } = loadSocket();
@@ -434,6 +449,41 @@ describe('round event handlers', () => {
         expect(document.getElementById('round-timer').textContent).toBe('—');
         delete globalThis.runLetterLottery;
         delete globalThis.runRoundStartCountdown;
+    });
+
+    test('onRoundStarted with resume restores remaining round timer', () => {
+        jest.useFakeTimers();
+        const { onRoundStarted } = loadSocket();
+        onRoundStarted({
+            letter: 'T',
+            time_limit: 90,
+            current_round: 2,
+            max_rounds: 5,
+            resume: true,
+            seconds_left: 42,
+        });
+        expect(document.getElementById('round-timer').textContent).toBe('42s');
+        jest.advanceTimersByTime(1000);
+        expect(document.getElementById('round-timer').textContent).toBe('41s');
+        jest.useRealTimers();
+    });
+
+    test('onRoundStarted with resume during stop phase starts submit countdown', () => {
+        jest.useFakeTimers();
+        const { onRoundStarted } = loadSocket();
+        onRoundStarted({
+            letter: 'T',
+            time_limit: 90,
+            current_round: 2,
+            max_rounds: 5,
+            resume: true,
+            stop_triggered: true,
+            stop_seconds_left: 6,
+        });
+        expect(document.getElementById('btn-stop').innerHTML).toContain('6s');
+        jest.advanceTimersByTime(6000);
+        expect(global.disableAndSubmit).toHaveBeenCalled();
+        jest.useRealTimers();
     });
 
     test('onStopRound starts a 10s countdown and submits when it elapses', () => {

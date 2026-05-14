@@ -14,6 +14,7 @@ from .db import deactivate_room, save_game_transcript
 from .logger import get_logger
 from .manager import RESULTS_PHASE_SECONDS, VETO_CATEGORY, ConnectionManager, Room
 from .share_store import record_finished_game
+from .things_lexicon import persist_accepted_things
 
 logger = get_logger(__name__)
 
@@ -109,6 +110,7 @@ async def _finalize_results_phase(room: Room, room_id: str, timeout_coro) -> Non
 
     rejected = room.vetoed_rzecz_players()
     round_scores = await room.compute_round_scores(veto_rejected=rejected, persist=True)
+    await persist_accepted_things(room, round_scores, rejected)
     room.round_history.append(
         {
             "round": room.current_round,
@@ -161,12 +163,15 @@ async def _begin_results_phase(room: Room, room_id: str, timeout_coro) -> None:
     room.cancel_results_phase()
     room.is_playing = False
     room.stop_triggered = False
+    room.stop_submit_ends_at = None
+    room.round_started_at = None
     room.results_phase_active = True
     room.veto_votes = {}
     room.sync_results_roster()
     round_scores = await room.compute_round_scores(persist=False)
     room.provisional_round_scores = round_scores
     veto_ends_at = int(time.time() * 1000) + RESULTS_PHASE_SECONDS * 1000
+    room.results_veto_ends_at = veto_ends_at / 1000.0
     await room.broadcast(
         json.dumps(
             _round_results_payload(
@@ -297,7 +302,7 @@ async def handle_dissolve_room(room: Room, room_id: str, client_name: str, delet
 async def handle_stop(room: Room, room_id: str, client_name: str, force_end_coro) -> None:
     if not room.is_playing or room.stop_triggered:
         return
-    room.stop_triggered = True
+    room.mark_stop_phase_started()
     await room.broadcast(
         json.dumps(
             {

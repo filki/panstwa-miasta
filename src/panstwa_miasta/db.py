@@ -213,6 +213,15 @@ async def init_db():
             """,
             [(row["kod"], row["opis"], _name_norm(row["opis"])) for row in JOBS_SEED],
         )
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS things (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                rzecz TEXT NOT NULL,
+                rzecz_norm TEXT NOT NULL UNIQUE,
+                created_at INTEGER NOT NULL
+            )
+        """)
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_things_norm ON things(rzecz_norm)")
         await db.commit()
 
 
@@ -350,6 +359,33 @@ async def load_job_norms() -> list[str]:
     ):
         rows = await cursor.fetchall()
         return [row[0] for row in rows]
+
+
+async def load_thing_norms() -> set[str]:
+    """Znormalizowane odpowiedzi z kategorii „Rzecz” zaakceptowane w grze."""
+    async with (
+        connect() as db,
+        db.execute("SELECT rzecz_norm FROM things") as cursor,
+    ):
+        rows = await cursor.fetchall()
+        return {row[0] for row in rows}
+
+
+async def upsert_thing(display: str, norm: str) -> bool:
+    """Insert a new accepted thing; returns True when a row was created."""
+    async with connect() as db:
+        async with db.execute(
+            """
+            INSERT OR IGNORE INTO things (rzecz, rzecz_norm, created_at)
+            VALUES (?, ?, ?)
+            """,
+            (display, norm, int(time.time())),
+        ):
+            pass
+        async with db.execute("SELECT changes()") as cur:
+            row = await cur.fetchone()
+        await db.commit()
+        return bool(row and int(row[0]) > 0)
 
 
 async def load_city_norms() -> set[str]:

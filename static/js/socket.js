@@ -3,9 +3,45 @@ let myNick = "";
 let isLeaving = false; // flag to suppress auto-reconnect on manual leave
 let leftByUser = false; // distinguish "user navigated away" from "room dissolved"
 let pmHadRoundStarted = false;
+let pmWsGeneration = 0;
 
 function sendJson(obj) {
     if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
+}
+
+function clearClientRoundTimers() {
+    if (globalThis.globalRoundTimer) {
+        clearInterval(globalThis.globalRoundTimer);
+        globalThis.globalRoundTimer = null;
+    }
+    if (globalThis.currentCountdown) {
+        clearInterval(globalThis.currentCountdown);
+        globalThis.currentCountdown = null;
+    }
+}
+
+function startRoundTimer(timeLeft) {
+    const rt = document.getElementById("round-timer");
+    if (!rt) return;
+    let remaining = timeLeft;
+    rt.style.display = "block";
+    rt.textContent = `${remaining}s`;
+    clearClientRoundTimers();
+    globalThis.globalRoundTimer = setInterval(() => {
+        remaining--;
+        if (remaining >= 0) rt.textContent = `${remaining}s`;
+    }, 1000);
+}
+
+function lockSubmittedAnswers() {
+    document.querySelectorAll("#categories input").forEach((inp) => {
+        inp.disabled = true;
+    });
+    const btnStop = document.getElementById("btn-stop");
+    if (!btnStop) return;
+    btnStop.disabled = true;
+    delete btnStop.dataset.stopped;
+    btnStop.innerHTML = "Oczekiwanie na resztę…";
 }
 
 /** Home redirect; Jest has no real `location` (Sonar: handle or avoid empty catch). */
@@ -147,10 +183,27 @@ function connect() {
     const protocol = globalThis.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const encNick = encodeURIComponent(myNick);
     let wsUrl = `${protocol}//${globalThis.location.host}/ws/${roomId}/${encNick}?rounds=${maxRounds}&limit=${timeLimit}&visibility=${visibility}`;
-    
-    ws = new WebSocket(wsUrl);
 
-    ws.onopen = () => {
+    pmWsGeneration += 1;
+    const socketGeneration = pmWsGeneration;
+    if (ws) {
+        ws.onclose = null;
+        ws.onerror = null;
+        ws.onmessage = null;
+        try {
+            if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+                ws.close();
+            }
+        } catch (e) {
+            console.debug('pm: prior websocket close skipped', e);
+        }
+    }
+
+    const socket = new WebSocket(wsUrl);
+    ws = socket;
+
+    socket.onopen = () => {
+        if (socketGeneration !== pmWsGeneration) return;
         if (typeof hideModals === 'function') hideModals();
         document.getElementById('join-section').style.display = 'none';
         const inlineJoin = document.getElementById('room-inline-join');
@@ -180,7 +233,8 @@ function connect() {
         // i zerowanie punktów w UI mimo poprawnego stanu na backendzie.
     };
 
-    ws.onclose = (e) => {
+    socket.onclose = (e) => {
+        if (socketGeneration !== pmWsGeneration) return;
         if (e.code === 4401) {
             isLeaving = true;
             alert('Host wyrzucił Cię z pokoju.');
@@ -217,13 +271,15 @@ function connect() {
         }, 2000);
     };
 
-    ws.onmessage = (event) => {
+    socket.onmessage = (event) => {
+        if (socketGeneration !== pmWsGeneration) return;
         const msg = JSON.parse(event.data);
         const handler = MESSAGE_HANDLERS[msg.type];
         if (handler) handler(msg);
     };
 
-    ws.onerror = (e) => {
+    socket.onerror = (e) => {
+        if (socketGeneration !== pmWsGeneration) return;
         console.error("WS Error:", e);
     };
 }
@@ -314,12 +370,29 @@ function onRoundStarted(msg) {
             `<em>Połączenie przywrócone. Runda ${msg.current_round}/${msg.max_rounds}, litera: <strong>${msg.letter}</strong>.</em>`,
             'system-msg',
         );
-        clearInputColors();
-        enableInputs();
-        const rt = document.getElementById('round-timer');
-        if (rt) {
-            rt.style.display = 'block';
-            rt.textContent = '—';
+        clearClientRoundTimers();
+        if (msg.answer_submitted) {
+            lockSubmittedAnswers();
+        } else {
+            clearInputColors();
+            enableInputs();
+        }
+        if (msg.stop_triggered) {
+            onStopRound({
+                sender: 'Serwer (Wznowienie)',
+                time_left: typeof msg.stop_seconds_left === 'number' ? msg.stop_seconds_left : 10,
+                resume: true,
+            });
+            return;
+        }
+        if (typeof msg.seconds_left === 'number') {
+            startRoundTimer(msg.seconds_left);
+        } else {
+            const rt = document.getElementById('round-timer');
+            if (rt) {
+                rt.style.display = 'block';
+                rt.textContent = '—';
+            }
         }
         return;
     }
@@ -337,11 +410,7 @@ function onRoundStarted(msg) {
             let timeLeft = msg.time_limit;
             document.getElementById("round-timer").textContent = timeLeft + "s";
             document.getElementById("round-timer").style.display = "block";
-            if (globalThis.globalRoundTimer) clearInterval(globalThis.globalRoundTimer);
-            globalThis.globalRoundTimer = setInterval(() => {
-                timeLeft--;
-                if (timeLeft >= 0) document.getElementById("round-timer").textContent = timeLeft + "s";
-            }, 1000);
+            startRoundTimer(timeLeft);
         });
     };
     const countdownFn = globalThis.runRoundStartCountdown || runRoundStartCountdown;
@@ -350,27 +419,30 @@ function onRoundStarted(msg) {
 
 function onStopRound(msg) {
     playGong();
-    if (globalThis.globalRoundTimer) clearInterval(globalThis.globalRoundTimer);
+    clearClientRoundTimers();
     document.getElementById("round-timer").style.display = "none";
-    addLog(`<em>🚨 <strong>${msg.sender} zatrzymał rundę!</strong> Oczekiwanie na przesłanie odpowiedzi... Masz 10 sekund!</em>`, "system-msg");
+    if (!msg.resume) {
+        addLog(`<em>🚨 <strong>${msg.sender} zatrzymał rundę!</strong> Oczekiwanie na przesłanie odpowiedzi... Masz 10 sekund!</em>`, "system-msg");
+    }
     const btnStop = document.getElementById('btn-stop');
     btnStop.disabled = true;
     const stickyTimer = document.getElementById('sticky-timer');
     const stickyTime = document.getElementById('sticky-time');
     if (stickyTimer) stickyTimer.style.display = 'block';
-    if (stickyTime) stickyTime.innerText = '10';
-    document.getElementById('current-letter').innerHTML = `<span style="color:var(--danger)">10s</span>`;
-    btnStop.innerHTML = `⏳ 10s`;
-    let timeLeft = 10;
+    let timeLeft = typeof msg.time_left === 'number' ? msg.time_left : 10;
+    if (stickyTime) stickyTime.innerText = String(timeLeft);
+    document.getElementById('current-letter').innerHTML = `<span style="color:var(--danger)">${timeLeft}s</span>`;
+    btnStop.innerHTML = `⏳ ${timeLeft}s`;
     globalThis.currentCountdown = setInterval(() => {
         timeLeft--;
         if(timeLeft > 0) {
             document.getElementById('current-letter').innerHTML = `<span style="color:var(--danger)">${timeLeft}s</span>`;
             btnStop.innerHTML = `⏳ ${timeLeft}s`;
-            if (stickyTime) stickyTime.innerText = timeLeft;
+            if (stickyTime) stickyTime.innerText = String(timeLeft);
             playTick();
         } else {
             clearInterval(globalThis.currentCountdown);
+            globalThis.currentCountdown = null;
             btnStop.innerHTML = `WYSYŁANIE...`;
             if (stickyTimer) stickyTimer.style.display = 'none';
             disableAndSubmit();
@@ -754,8 +826,7 @@ function onVetoUpdate(msg) {
 }
 
 function onRoundResults(msg) {
-    if(globalThis.currentCountdown) clearInterval(globalThis.currentCountdown);
-    if(globalThis.globalRoundTimer) clearInterval(globalThis.globalRoundTimer);
+    clearClientRoundTimers();
     document.getElementById("round-timer").style.display = "none";
     const stickyTimer = document.getElementById('sticky-timer');
     if (stickyTimer) stickyTimer.style.display = 'none';
