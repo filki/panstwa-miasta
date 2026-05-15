@@ -258,6 +258,52 @@ async def init_db():
             )
         """)
         await db.execute("CREATE INDEX IF NOT EXISTS idx_things_norm ON things(rzecz_norm)")
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS animal_norms (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                norm TEXT NOT NULL UNIQUE
+            )
+        """)
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_animal_norms ON animal_norms(norm)")
+        if await _table_nonempty(db, "animal_norms"):
+            logger.info("Skipping animal_norms seed (already populated)")
+        else:
+            from .seed_data_loader import load_animal_norms_from_seed_file
+
+            animal_rows = [(n,) for n in load_animal_norms_from_seed_file()]
+            if animal_rows:
+                await db.executemany(
+                    "INSERT OR IGNORE INTO animal_norms (norm) VALUES (?)",
+                    animal_rows,
+                )
+            else:
+                logger.warning(
+                    "animal_norms empty — run scripts/export_norms_seed_data.py "
+                    "or restore scripts/seed_data/animals_norms.jsonl.gz"
+                )
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS plant_norms (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                norm TEXT NOT NULL UNIQUE
+            )
+        """)
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_plant_norms ON plant_norms(norm)")
+        if await _table_nonempty(db, "plant_norms"):
+            logger.info("Skipping plant_norms seed (already populated)")
+        else:
+            from .seed_data_loader import load_plant_norms_from_seed_file
+
+            plant_rows = [(n,) for n in load_plant_norms_from_seed_file()]
+            if plant_rows:
+                await db.executemany(
+                    "INSERT OR IGNORE INTO plant_norms (norm) VALUES (?)",
+                    plant_rows,
+                )
+            else:
+                logger.warning(
+                    "plant_norms empty — run scripts/export_norms_seed_data.py "
+                    "or restore scripts/seed_data/plants_norms.jsonl.gz"
+                )
         await db.commit()
 
 
@@ -429,6 +475,24 @@ async def load_city_norms() -> set[str]:
     async with (
         connect() as db,
         db.execute("SELECT nazwa_norm FROM cities") as cursor,
+    ):
+        rows = await cursor.fetchall()
+        return {row[0] for row in rows}
+
+
+async def load_animal_norms() -> set[str]:
+    async with (
+        connect() as db,
+        db.execute("SELECT norm FROM animal_norms") as cursor,
+    ):
+        rows = await cursor.fetchall()
+        return {row[0] for row in rows}
+
+
+async def load_plant_norms() -> set[str]:
+    async with (
+        connect() as db,
+        db.execute("SELECT norm FROM plant_norms") as cursor,
     ):
         rows = await cursor.fetchall()
         return {row[0] for row in rows}
