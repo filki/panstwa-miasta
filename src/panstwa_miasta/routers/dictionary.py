@@ -10,7 +10,7 @@ from ..word_queue import submit_dictionary_intake
 router = APIRouter(prefix="/api/dictionary", tags=["dictionary"])
 
 
-@router.post("/suggestions", response_model=WordReportOut)
+@router.post("/suggestions")
 async def post_dictionary_suggestion(body: WordReportIn) -> WordReportOut:
     result = await submit_dictionary_intake(
         word=body.word,

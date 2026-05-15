@@ -292,7 +292,12 @@ async def get_manifest() -> FileResponse:
     return FileResponse(MANIFEST_PATH, media_type="application/manifest+json")
 
 
-@app.get("/healthz")
+@app.get(
+    "/healthz",
+    responses={
+        503: {"description": "Baza niedostępna."},
+    },
+)
 async def get_healthz() -> dict[str, str]:
     try:
         async with connect() as db, db.execute("SELECT 1") as cur:
@@ -400,7 +405,7 @@ async def get_active_rooms() -> list[ActiveRoomRow]:
     ]
 
 
-@app.post("/api/quick-join", response_model=QuickJoinOut)
+@app.post("/api/quick-join")
 async def post_quick_join() -> QuickJoinOut:
     room_id, created, max_rounds, time_limit = await manager.pick_quick_join_room()
     return QuickJoinOut(
@@ -411,7 +416,7 @@ async def post_quick_join() -> QuickJoinOut:
     )
 
 
-@app.post("/api/rooms", response_model=CreateRoomOut)
+@app.post("/api/rooms")
 async def post_create_room(body: CreateRoomIn) -> CreateRoomOut:
     room_id = await manager.allocate_room_id()
     return CreateRoomOut(
@@ -431,7 +436,12 @@ def _appeal_bearer_token(authorization: str | None) -> str:
     return ""
 
 
-@app.post("/api/rooms/{room_id}/appeals", response_model=AppealOut)
+@app.post(
+    "/api/rooms/{room_id}/appeals",
+    responses={
+        401: {"description": "Brak uprawnień do odwołania."},
+    },
+)
 async def post_room_appeal(
     room_id: RoomIdPath,
     body: AppealIn,

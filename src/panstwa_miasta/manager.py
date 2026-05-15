@@ -166,7 +166,7 @@ class Room:
             return
         for name in self.connections:
             self.answers_received.setdefault(name, {})
-        for name in list(self.answers_received):
+        for name in tuple(self.answers_received):
             if name not in self.connections:
                 del self.answers_received[name]
 
@@ -235,7 +235,7 @@ class Room:
         rng = secrets.SystemRandom()
         recent = set(self._recent_letters)
         fresh = [c for c in ALPHABET if c not in recent]
-        stale = list(recent)
+        stale = [*recent]
         rng.shuffle(fresh)
         rng.shuffle(stale)
         # ``letter_queue.pop()`` bierze z końca, więc fresh na końcu,
@@ -437,7 +437,8 @@ class ConnectionManager:
             try:
                 await asyncio.sleep(HOST_REASSIGN_GRACE_SECONDS)
             except asyncio.CancelledError:
-                return
+                room._host_reassign_task = None
+                raise
             room._host_reassign_task = None
             current = self.rooms.get(room_id)
             if current is None:
@@ -479,7 +480,8 @@ class ConnectionManager:
             try:
                 await asyncio.sleep(dbmod.ROOM_EMPTY_GRACE_SECONDS)
             except asyncio.CancelledError:
-                return
+                self._room_delete_tasks.pop(room_id, None)
+                raise
             self._room_delete_tasks.pop(room_id, None)
             if room_id not in self.rooms:
                 await delete_room(room_id)
@@ -527,7 +529,8 @@ class ConnectionManager:
             try:
                 await asyncio.sleep(dbmod.LOBBY_IDLE_TIMEOUT_SECONDS)
             except asyncio.CancelledError:
-                return
+                room._lobby_idle_task = None
+                raise
             room._lobby_idle_task = None
             current = self.rooms.get(room_id)
             if current is None or not self._is_lobby_idle_candidate(current):
@@ -557,7 +560,7 @@ class ConnectionManager:
                 }
             )
         )
-        for conn in list(room.connections.values()):
+        for conn in tuple(room.connections.values()):
             try:
                 await conn.close()
             except Exception as exc:

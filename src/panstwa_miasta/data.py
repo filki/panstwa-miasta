@@ -113,7 +113,7 @@ def fold_polish_diacritics(s: str) -> str:
 
 def _add_slash_synonym_fragments(bucket: set[str]) -> None:
     """Dopisuje części po ``/`` (np. ``figowiec x / fikus x`` → osobno ``fikus x``)."""
-    for n in list(bucket):
+    for n in tuple(bucket):
         if "/" not in n:
             continue
         for part in n.split("/"):
@@ -201,7 +201,7 @@ async def reload_zwierzeta() -> None:
     ZWIERZETA.update(await load_animal_norms())
     ZWIERZETA.update(ZWIERZETA_EXTRA)
     _add_slash_synonym_fragments(ZWIERZETA)
-    for n in list(ZWIERZETA):
+    for n in tuple(ZWIERZETA):
         folded = fold_polish_diacritics(n)
         if folded != n:
             ZWIERZETA.add(folded)
@@ -215,7 +215,7 @@ async def reload_rosliny() -> None:
     ROSLINY.update(await load_plant_norms())
     ROSLINY.update(ROSLINY_EXTRA)
     _add_slash_synonym_fragments(ROSLINY)
-    for n in list(ROSLINY):
+    for n in tuple(ROSLINY):
         folded = fold_polish_diacritics(n)
         if folded != n:
             ROSLINY.add(folded)

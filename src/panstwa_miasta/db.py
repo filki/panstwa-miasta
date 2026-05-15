@@ -462,8 +462,8 @@ async def upsert_thing(display: str, norm: str) -> bool:
             VALUES (?, ?, ?)
             """,
             (display, norm, int(time.time())),
-        ):
-            pass
+        ) as _insert_cur:
+            await _insert_cur.close()
         async with db.execute("SELECT changes()") as cur:
             row = await cur.fetchone()
         await db.commit()

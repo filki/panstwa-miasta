@@ -67,7 +67,7 @@ async def _call_llm(prompt: str) -> dict[str, Any] | None:
             response = await client.post(endpoint, headers=headers, json=payload)
             response.raise_for_status()
             body = response.json()
-    except (httpx.HTTPError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+    except (httpx.HTTPError, json.JSONDecodeError, KeyError, TypeError):
         return None
 
     try:

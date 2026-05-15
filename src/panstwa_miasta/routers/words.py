@@ -10,7 +10,7 @@ from ..word_queue import lookup_word_reason, submit_word_report
 router = APIRouter(prefix="/api/words", tags=["words"])
 
 
-@router.post("/report", response_model=WordReportOut)
+@router.post("/report")
 async def post_word_report(body: WordReportIn) -> WordReportOut:
     result = await submit_word_report(
         word=body.word,
@@ -20,7 +20,7 @@ async def post_word_report(body: WordReportIn) -> WordReportOut:
     return WordReportOut.model_validate(result)
 
 
-@router.post("/check-reason", response_model=WordCheckReasonOut)
+@router.post("/check-reason")
 async def post_word_check_reason(body: WordCheckReasonIn) -> WordCheckReasonOut:
     result = await lookup_word_reason(
         word=body.word,
