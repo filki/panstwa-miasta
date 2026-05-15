@@ -75,7 +75,10 @@ JOB_STANDALONE_OR_PREFIX: frozenset[str] = frozenset(
 )
 
 # Potoczne / luki w seedzie z Wikipedii (norma: małe litery jak ``normalize_text``).
-ZWIERZETA_EXTRA: frozenset[str] = frozenset({"źrebak", "żrebak", "koza"})
+ZWIERZETA_EXTRA: frozenset[str] = frozenset({"źrebak", "żrebak", "koza", "małpa"})
+
+# Potoczne / luki w seedzie roślin (Wikipedia/GBIF).
+ROSLINY_EXTRA: frozenset[str] = frozenset({"gruszka", "baobab", "iglak"})
 
 # Miasta z bazy (GeoNames itd.), które w polskiej grze brzmią jak typowa odpowiedź
 # w innej kategorii — odrzucamy przy walidacji „Miasto”, żeby uniknąć absurdalnych punktów.
@@ -192,10 +195,11 @@ def job_answer_accepted(ans_norm: str) -> bool:
 
 
 async def reload_zwierzeta() -> None:
-    """Ładuje ``ZWIERZETA`` z ``animals_seed_generated`` + ``ZWIERZETA_EXTRA`` + aliasy ASCII."""
+    """Ładuje ``ZWIERZETA`` z wiki seed + GBIF supplement + ``ZWIERZETA_EXTRA`` + aliasy ASCII."""
+    from .animals_seed_gbif_generated import ANIMALS_GBIF_NORMS
     from .animals_seed_generated import ANIMALS_NORMS
 
-    base = set(ANIMALS_NORMS) | set(ZWIERZETA_EXTRA)
+    base = set(ANIMALS_NORMS) | set(ANIMALS_GBIF_NORMS) | set(ZWIERZETA_EXTRA)
     ZWIERZETA.clear()
     ZWIERZETA.update(base)
     _add_slash_synonym_fragments(ZWIERZETA)
@@ -206,11 +210,14 @@ async def reload_zwierzeta() -> None:
 
 
 async def reload_rosliny() -> None:
-    """Ładuje ``ROSLINY`` (flora pod polem „Roślina”) z modułu ``plants_seed_generated`` + aliasy ASCII."""
+    """Ładuje ``ROSLINY`` z wiki seed + GBIF supplement + ``ROSLINY_EXTRA`` + aliasy ASCII."""
+    from .plants_seed_gbif_generated import PLANTS_GBIF_NORMS
     from .plants_seed_generated import PLANTS_NORMS
 
     ROSLINY.clear()
     ROSLINY.update(PLANTS_NORMS)
+    ROSLINY.update(PLANTS_GBIF_NORMS)
+    ROSLINY.update(ROSLINY_EXTRA)
     _add_slash_synonym_fragments(ROSLINY)
     for n in list(ROSLINY):
         folded = fold_polish_diacritics(n)

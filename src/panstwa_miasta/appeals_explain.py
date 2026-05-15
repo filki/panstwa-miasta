@@ -43,10 +43,16 @@ def explain_zero_score(
     if category == VETO_CATEGORY and veto_rejected:
         return "veto_rejected", REASON_MESSAGES["veto_rejected"]
 
-    if category == "Państwo" and ans_norm not in COUNTRIES:
-        return "not_in_dictionary", REASON_MESSAGES["not_in_dictionary"]
-    if category == "Miasto" and ans_norm not in MIASTA:
-        return "not_in_dictionary", REASON_MESSAGES["not_in_dictionary"]
+    if category == "Państwo":
+        from .geo_answer_aliases import resolve_country_answer
+
+        if resolve_country_answer(ans_norm) not in COUNTRIES:
+            return "not_in_dictionary", REASON_MESSAGES["not_in_dictionary"]
+    if category == "Miasto":
+        from .geo_answer_aliases import resolve_city_answer
+
+        if resolve_city_answer(ans_norm) not in MIASTA:
+            return "not_in_dictionary", REASON_MESSAGES["not_in_dictionary"]
     if category == "Imię" and ans_norm not in NAMES:
         return "not_in_dictionary", REASON_MESSAGES["not_in_dictionary"]
     if category == "Zawód" and not job_answer_accepted(ans_norm):

@@ -301,9 +301,13 @@ class Room:
         from .data import COUNTRIES, MIASTA, NAMES, ROSLINY, ZWIERZETA, job_answer_accepted
 
         if category == "Państwo":
-            return -1 if ans_norm in COUNTRIES else 0
+            from .geo_answer_aliases import resolve_country_answer
+
+            return -1 if resolve_country_answer(ans_norm) in COUNTRIES else 0
         if category == "Miasto":
-            return -1 if ans_norm in MIASTA else 0
+            from .geo_answer_aliases import resolve_city_answer
+
+            return -1 if resolve_city_answer(ans_norm) in MIASTA else 0
         if category == "Imię":
             return -1 if ans_norm in NAMES else 0
         if category == "Zawód":

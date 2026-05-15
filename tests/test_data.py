@@ -52,11 +52,23 @@ def test_rosliny_ascii_without_polish_diacritics():
 
 
 def test_zwierzeta_extra_and_ascii_aliases():
-    """``ZWIERZETA_EXTRA`` + alias ASCII (np. źrebak / żrebak / zrebak, koza)."""
+    """``ZWIERZETA_EXTRA`` + alias ASCII (np. źrebak / żrebak / zrebak, koza, małpa)."""
     assert "źrebak" in ZWIERZETA
     assert "żrebak" in ZWIERZETA
     assert "zrebak" in ZWIERZETA
     assert "koza" in ZWIERZETA
+    assert "małpa" in ZWIERZETA
+
+
+def test_rosliny_extra_potoczne():
+    assert "gruszka" in ROSLINY
+    assert "baobab" in ROSLINY
+    assert "iglak" in ROSLINY
+
+
+def test_job_answer_geodeta_rachmistrz():
+    assert job_answer_accepted("geodeta")
+    assert job_answer_accepted("rachmistrz")
 
 
 def test_rosliny_slash_synonyms_and_fikus_prefix():
