@@ -43,6 +43,28 @@ sudo systemctl reload caddy
 
 Caddy sam wystawi Let’s Encrypt po poprawnym DNS.
 
+### 3.1 Strona „wracamy wkrótce” (konserwacja)
+
+Gdy uvicorn jeszcze nie wstał (502) lub planujesz przerwę — użytkownik widzi
+[`deploy/maintenance/index.html`](maintenance/index.html) zamiast błędu przeglądarki.
+
+Po `git pull` zaktualizuj Caddyfile (bloki `@maintenance` i `handle_errors` w
+[`Caddyfile.example`](Caddyfile.example)), potem:
+
+```bash
+sudo cp /srv/panstwa-miasta/deploy/Caddyfile.example /etc/caddy/Caddyfile
+# podmień domenę w pliku, jeśli jeszcze nie
+sudo systemctl reload caddy
+```
+
+Ręcznie włącz konserwację (nawet gdy aplikacja działa):
+
+```bash
+./deploy/maintenance-enable.sh
+# po zakończeniu prac:
+./deploy/maintenance-disable.sh
+```
+
 ## 4. Smoke test
 
 - Strona główna `https://twoja-domena/`

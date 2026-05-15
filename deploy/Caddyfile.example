@@ -16,5 +16,23 @@ twoja-domena.pl {
 		Content-Security-Policy "frame-ancestors 'none'"
 	}
 
+	# Ścieżka = katalog clone na VPS (domyślnie /srv/panstwa-miasta).
+	@maintenance file /etc/caddy/maintenance.on
+	handle @maintenance {
+		root * /srv/panstwa-miasta/deploy/maintenance
+		rewrite * /index.html
+		file_server
+	}
+
+	# Gdy uvicorn nie odpowiada — zamiast surowego 502 w przeglądarce.
+	handle_errors {
+		@down expression `{http.error.status_code} >= 502 && {http.error.status_code} <= 504`
+		handle @down {
+			root * /srv/panstwa-miasta/deploy/maintenance
+			rewrite * /index.html
+			file_server
+		}
+	}
+
 	reverse_proxy 127.0.0.1:8000
 }

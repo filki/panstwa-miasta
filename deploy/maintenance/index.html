@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#f2f6ff">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Państwa-Miasta — wracamy wkrótce</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Outfit:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f2f6ff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --primary: #0ea5e9;
+            --card: #ffffff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            font-family: Inter, system-ui, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(14, 165, 233, 0.18), transparent),
+                radial-gradient(ellipse 60% 40% at 100% 100%, rgba(168, 85, 247, 0.08), transparent);
+        }
+        .card {
+            max-width: 26rem;
+            width: 100%;
+            padding: 2rem 1.75rem;
+            background: var(--card);
+            border-radius: 1.25rem;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+            text-align: center;
+        }
+        h1 {
+            font-family: Outfit, system-ui, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.75rem, 5vw, 2.25rem);
+            line-height: 1.15;
+            margin-bottom: 0.35rem;
+        }
+        h1 span { color: var(--primary); }
+        .lead {
+            font-size: 1.05rem;
+            line-height: 1.55;
+            margin: 1.25rem 0 0.75rem;
+        }
+        .hint {
+            font-size: 0.9rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+        .pulse {
+            display: inline-block;
+            width: 0.5rem;
+            height: 0.5rem;
+            margin-right: 0.35rem;
+            vertical-align: middle;
+            border-radius: 50%;
+            background: var(--primary);
+            animation: pulse 1.6s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.35; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <main class="card" role="main">
+        <h1>Państwa<span>Miasta</span></h1>
+        <p class="lead">Gra przechodzi gruntowne zmiany. Wracamy wkrótce — dziękujemy za cierpliwość.</p>
+        <p class="hint"><span class="pulse" aria-hidden="true"></span>Odśwież stronę za kilka minut.</p>
+    </main>
+</body>
+</html>
