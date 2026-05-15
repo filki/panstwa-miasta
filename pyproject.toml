@@ -31,6 +31,9 @@ dev = [
     "ruff>=0.6.0",
     "ty>=0.0.28",
 ]
+gbif = [
+    "pygbif>=0.6.6",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

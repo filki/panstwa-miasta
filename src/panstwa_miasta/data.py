@@ -16,10 +16,9 @@ Source of truth:
   Dodatkowo każda nazwa dostaje odpowiednik **bez polskich znaków** (np. wpis
   „kalińingrad” → można też wpisać „kaliningrad”). Wybrane homonimy są usuwane
   z walidacji (``MIASTA_NORM_BLOCKLIST``).
-* ``ZWIERZETA`` / ``ROSLINY`` — zbiory znormalizowanych napisów z modułów
-  ``animals_seed_generated`` / ``plants_seed_generated``. W grze pole nazywa
-  się „Roślina”, ale zbiór to **szeroka flora** (Zielony Ogródek + skorowidz
-  Atlas roślin Polski + en.wiki, generowane ``build_plants_bs4.py``).
+* ``ZWIERZETA`` / ``ROSLINY`` — wiki seed + opcjonalny supplement GBIF
+  (``*_seed_gbif_generated.py``; build: ``scripts/build_fauna_flora_gbif_supplement.py``).
+  Pole „Roślina” to szeroka flora (Zielony Ogródek + Atlas + en.wiki).
   Walidacja: dokładne trafienie albo prefiks pierwszego słowa
   (min. 3 znaki), np. „dzięcioł” przy wpisie „dzięcioł duży”.
   Wpisy z synonimami (``figowiec / fikus``) rozbijamy przy ładowaniu na fragmenty,
@@ -195,10 +194,11 @@ def job_answer_accepted(ans_norm: str) -> bool:
 
 
 async def reload_zwierzeta() -> None:
-    """Ładuje ``ZWIERZETA`` z wiki seed + ``ZWIERZETA_EXTRA`` + aliasy ASCII."""
+    """Ładuje ``ZWIERZETA`` z wiki seed + GBIF supplement + ``ZWIERZETA_EXTRA`` + aliasy ASCII."""
+    from .animals_seed_gbif_generated import ANIMALS_GBIF_NORMS
     from .animals_seed_generated import ANIMALS_NORMS
 
-    base = set(ANIMALS_NORMS) | set(ZWIERZETA_EXTRA)
+    base = set(ANIMALS_NORMS) | set(ANIMALS_GBIF_NORMS) | set(ZWIERZETA_EXTRA)
     ZWIERZETA.clear()
     ZWIERZETA.update(base)
     _add_slash_synonym_fragments(ZWIERZETA)
@@ -209,11 +209,13 @@ async def reload_zwierzeta() -> None:
 
 
 async def reload_rosliny() -> None:
-    """Ładuje ``ROSLINY`` z wiki seed + ``ROSLINY_EXTRA`` + aliasy ASCII."""
+    """Ładuje ``ROSLINY`` z wiki seed + GBIF supplement + ``ROSLINY_EXTRA`` + aliasy ASCII."""
+    from .plants_seed_gbif_generated import PLANTS_GBIF_NORMS
     from .plants_seed_generated import PLANTS_NORMS
 
     ROSLINY.clear()
     ROSLINY.update(PLANTS_NORMS)
+    ROSLINY.update(PLANTS_GBIF_NORMS)
     ROSLINY.update(ROSLINY_EXTRA)
     _add_slash_synonym_fragments(ROSLINY)
     for n in list(ROSLINY):
