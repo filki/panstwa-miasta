@@ -195,11 +195,10 @@ def job_answer_accepted(ans_norm: str) -> bool:
 
 
 async def reload_zwierzeta() -> None:
-    """Ładuje ``ZWIERZETA`` z wiki seed + GBIF supplement + ``ZWIERZETA_EXTRA`` + aliasy ASCII."""
-    from .animals_seed_gbif_generated import ANIMALS_GBIF_NORMS
+    """Ładuje ``ZWIERZETA`` z wiki seed + ``ZWIERZETA_EXTRA`` + aliasy ASCII."""
     from .animals_seed_generated import ANIMALS_NORMS
 
-    base = set(ANIMALS_NORMS) | set(ANIMALS_GBIF_NORMS) | set(ZWIERZETA_EXTRA)
+    base = set(ANIMALS_NORMS) | set(ZWIERZETA_EXTRA)
     ZWIERZETA.clear()
     ZWIERZETA.update(base)
     _add_slash_synonym_fragments(ZWIERZETA)
@@ -210,13 +209,11 @@ async def reload_zwierzeta() -> None:
 
 
 async def reload_rosliny() -> None:
-    """Ładuje ``ROSLINY`` z wiki seed + GBIF supplement + ``ROSLINY_EXTRA`` + aliasy ASCII."""
-    from .plants_seed_gbif_generated import PLANTS_GBIF_NORMS
+    """Ładuje ``ROSLINY`` z wiki seed + ``ROSLINY_EXTRA`` + aliasy ASCII."""
     from .plants_seed_generated import PLANTS_NORMS
 
     ROSLINY.clear()
     ROSLINY.update(PLANTS_NORMS)
-    ROSLINY.update(PLANTS_GBIF_NORMS)
     ROSLINY.update(ROSLINY_EXTRA)
     _add_slash_synonym_fragments(ROSLINY)
     for n in list(ROSLINY):
