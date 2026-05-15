@@ -71,6 +71,21 @@ def test_job_answer_geodeta_rachmistrz():
     assert job_answer_accepted("rachmistrz")
 
 
+def test_job_answer_wenerolog():
+    assert job_answer_accepted("wenerolog")
+
+
+def test_uk_constituent_countries():
+    for country in ("anglia", "walia", "szkocja", "irlandia północna"):
+        assert country in COUNTRIES
+
+
+def test_miasta_polish_geonames_renames():
+    assert "mogadiszu" in MIASTA
+    assert "waszyngton" in MIASTA
+    assert "londyn" in MIASTA
+
+
 def test_rosliny_slash_synonyms_and_fikus_prefix():
     """``figowiec / fikus`` w jednym stringu → osobne fragmenty; „fikus” zalicza prefiksem."""
     assert "figowiec benjamina / fikus benjamina" in ROSLINY
