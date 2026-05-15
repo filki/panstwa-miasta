@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Uzupełnia i poprawia ``cities_seed_geonames_generated.py`` z ``data/miasta_oficjalne_pl.csv``.
+"""Uzupełnia ``scripts/seed_data/cities_geonames.jsonl.gz`` z ``data/miasta_oficjalne_pl.csv``.
 
 Dla każdego wiersza CSV (GeoNames + ``nazwa_polska``):
 - jeśli w seedzie jest miasto o tej samej nazwie angielskiej (``name``) i kraju → zamień na ``nazwa_polska``;
@@ -18,9 +18,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import re
 import sys
-from datetime import UTC, datetime
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -30,9 +28,7 @@ if str(REPO_ROOT / "src") not in sys.path:
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-# Reuse mapping helpers from GeoNames build (same kraj labels as w grze).
 from build_cities_from_geonames import (  # noqa: E402
-    _emit_py,
     _iso_to_kraj,
     _looks_like_short_all_caps_code,
     _norm_key,
@@ -40,17 +36,11 @@ from build_cities_from_geonames import (  # noqa: E402
 
 from panstwa_miasta.city_name_rules import keep_city_name_for_geonames_seed  # noqa: E402
 from panstwa_miasta.countries_seed import COUNTRIES_SEED  # noqa: E402
-
-_TUPLE_RE = re.compile(r'\("((?:[^"\\]|\\.)*)", "((?:[^"\\]|\\.)*)"\)')
-
-
-def _unescape_py(s: str) -> str:
-    return s.replace('\\"', '"').replace("\\\\", "\\")
-
-
-def _load_geonames_seed(path: Path) -> list[tuple[str, str]]:
-    text = path.read_text(encoding="utf-8")
-    return [(_unescape_py(a), _unescape_py(b)) for a, b in _TUPLE_RE.findall(text)]
+from panstwa_miasta.seed_data_loader import (  # noqa: E402
+    load_cities_geonames_from_seed_file,
+    seed_data_path,
+    write_cities_geonames_jsonl_gz,
+)
 
 
 def _load_csv_rows(
@@ -126,7 +116,7 @@ def apply_csv_to_seed(
 
 def main() -> None:
     ap = argparse.ArgumentParser(
-        description="Apply data/miasta_oficjalne_pl.csv to geonames city seed"
+        description="Apply data/miasta_oficjalne_pl.csv to GeoNames city seed (jsonl.gz)"
     )
     ap.add_argument(
         "--csv",
@@ -141,13 +131,14 @@ def main() -> None:
     ap.add_argument(
         "--seed",
         type=Path,
-        default=REPO_ROOT / "src" / "panstwa_miasta" / "cities_seed_geonames_generated.py",
+        default=seed_data_path("cities_geonames.jsonl.gz"),
     )
     ap.add_argument("--min-pop", type=int, default=15000)
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    existing = _load_geonames_seed(args.seed)
+    existing = load_cities_geonames_from_seed_file()
+
     csv_rows = _load_csv_rows(args.csv, args.country_json, args.min_pop)
     updated, stats = apply_csv_to_seed(existing, csv_rows)
 
@@ -177,13 +168,8 @@ def main() -> None:
         print("\n(dry-run: seed file not written)")
         return
 
-    stamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
-    source_note = (
-        f"{args.csv.relative_to(REPO_ROOT)} via scripts/apply_official_pl_city_names.py "
-        f"(patch {stamp})"
-    )
-    _emit_py(updated, args.seed, source_note)
-    print(f"\nWrote {len(updated)} rows → {args.seed}")
+    n = write_cities_geonames_jsonl_gz(updated)
+    print(f"\nWrote {n} rows → {args.seed}")
 
 
 if __name__ == "__main__":

@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import re
 import sys
 import time
 from pathlib import Path
@@ -31,9 +30,8 @@ if str(REPO_ROOT / "src") not in sys.path:
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from seed_scrape_common import polite_sleep, write_frozenset_module  # noqa: E402
+from seed_scrape_common import polite_sleep  # noqa: E402
 
-from panstwa_miasta.animals_seed_generated import ANIMALS_NORMS  # noqa: E402
 from panstwa_miasta.gbif_seed import (  # noqa: E402
     DEFAULT_ACCEPTED_RANKS,
     GbifCandidate,
@@ -46,7 +44,12 @@ from panstwa_miasta.gbif_seed import (  # noqa: E402
     rank_allowed,
     split_candidates_by_bucket,
 )
-from panstwa_miasta.plants_seed_generated import PLANTS_NORMS  # noqa: E402
+from panstwa_miasta.seed_data_loader import (  # noqa: E402
+    load_animal_norms_from_seed_file,
+    load_plant_norms_from_seed_file,
+    write_animal_norms_jsonl_gz,
+    write_plant_norms_jsonl_gz,
+)
 
 GBIF_API = "https://api.gbif.org/v1"
 UA = "PanstwaMiasta/1.0 (+https://github.com/filki/panstwa-miasta; GBIF fauna/flora seed)"
@@ -54,24 +57,10 @@ SEARCH_LIMIT = 8
 VERNACULAR_LIMIT = 500
 
 
-def _load_frozenset_norms(module_path: Path, const_name: str) -> set[str]:
-    if not module_path.is_file():
-        return set()
-    text = module_path.read_text(encoding="utf-8")
-    if const_name not in text:
-        return set()
-    if f"{const_name}: Final[frozenset[str]] = frozenset()" in text:
-        return set()
-    body = text.split(const_name, 1)[1]
-    if "frozenset" not in body:
-        return set()
-    chunk = body.split("frozenset", 1)[1]
-    items = re.findall(r'"((?:[^"\\]|\\.)*)"', chunk)
-    return {norm_game(s.replace('\\"', '"').replace("\\\\", "\\")) for s in items}
-
-
 def _wiki_seed_norms() -> list[str]:
-    merged = sorted(set(ANIMALS_NORMS) | set(PLANTS_NORMS))
+    merged = sorted(
+        set(load_animal_norms_from_seed_file()) | set(load_plant_norms_from_seed_file())
+    )
     return merged
 
 
@@ -264,39 +253,19 @@ def write_candidates_csv(path: Path, candidates: list[GbifCandidate]) -> None:
             )
 
 
-def apply_supplements(
-    candidates: list[GbifCandidate],
-    *,
-    src_dir: Path,
-) -> tuple[int, int]:
-    wiki_animals = set(ANIMALS_NORMS)
-    wiki_plants = set(PLANTS_NORMS)
-    gbif_animals_path = src_dir / "animals_seed_gbif_generated.py"
-    gbif_plants_path = src_dir / "plants_seed_gbif_generated.py"
-    gbif_animals = _load_frozenset_norms(gbif_animals_path, "ANIMALS_GBIF_NORMS")
-    gbif_plants = _load_frozenset_norms(gbif_plants_path, "PLANTS_GBIF_NORMS")
+def apply_supplements(candidates: list[GbifCandidate]) -> tuple[int, int]:
+    wiki_animals = set(load_animal_norms_from_seed_file())
+    wiki_plants = set(load_plant_norms_from_seed_file())
 
     cand_animals, cand_plants = split_candidates_by_bucket(candidates)
-    new_animals = merge_supplement_norms(wiki_animals, gbif_animals, cand_animals)
-    new_plants = merge_supplement_norms(wiki_plants, gbif_plants, cand_plants)
+    new_animals = merge_supplement_norms(wiki_animals, set(), cand_animals)
+    new_plants = merge_supplement_norms(wiki_plants, set(), cand_plants)
 
-    merged_animals = gbif_animals | new_animals
-    merged_plants = gbif_plants | new_plants
+    merged_animals = wiki_animals | new_animals
+    merged_plants = wiki_plants | new_plants
 
-    write_frozenset_module(
-        out_path=gbif_animals_path,
-        const_name="ANIMALS_GBIF_NORMS",
-        items=merged_animals,
-        doc_first_line="Uzupełnienie zwierząt z GBIF (polskie nazwy zwyczajowe).",
-        generator_script="scripts/build_fauna_flora_gbif_supplement.py",
-    )
-    write_frozenset_module(
-        out_path=gbif_plants_path,
-        const_name="PLANTS_GBIF_NORMS",
-        items=merged_plants,
-        doc_first_line="Uzupełnienie flory z GBIF (Plantae, Fungi, Chromista; pole Roślina).",
-        generator_script="scripts/build_fauna_flora_gbif_supplement.py",
-    )
+    write_animal_norms_jsonl_gz(merged_animals)
+    write_plant_norms_jsonl_gz(merged_plants)
     return len(new_animals), len(new_plants)
 
 
@@ -351,10 +320,7 @@ def main() -> None:
     print(f"Zapisano {args.candidates_csv}")
 
     if args.apply:
-        added_a, added_p = apply_supplements(
-            candidates,
-            src_dir=REPO_ROOT / "src" / "panstwa_miasta",
-        )
+        added_a, added_p = apply_supplements(candidates)
         print(f"Supplement: +{added_a} zwierząt, +{added_p} roślin (nowe normy)")
 
 

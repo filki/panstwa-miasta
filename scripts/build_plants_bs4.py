@@ -24,10 +24,10 @@ from urllib.parse import urljoin
 
 import httpx
 from bs4 import BeautifulSoup, SoupStrainer
-from seed_scrape_common import norm_game, polite_sleep, write_frozenset_module
+from seed_scrape_common import norm_game, polite_sleep
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-OUT = REPO_ROOT / "src" / "panstwa_miasta" / "plants_seed_generated.py"
+OUT = REPO_ROOT / "scripts" / "seed_data" / "plants_norms.jsonl.gz"
 
 UA = {"User-Agent": "PanstwaMiasta/1.0 (+https://github.com/filki/panstwa-miasta; plants seed BS4)"}
 
@@ -315,16 +315,9 @@ def main() -> None:
     if len(bag) < 2500:
         print(f"UWAGA: tylko {len(bag)} nazw roślin — sprawdź sieć.", file=sys.stderr)
 
-    n = write_frozenset_module(
-        out_path=OUT,
-        const_name="PLANTS_NORMS",
-        items=bag,
-        doc_first_line=(
-            "Flora (pole Roślina): zielonyogrodek.pl (katalog) + atlas-roslin.pl (skorowidz) "
-            "+ en.wikipedia."
-        ),
-        generator_script="scripts/build_plants_bs4.py",
-    )
+    from panstwa_miasta.seed_data_loader import write_plant_norms_jsonl_gz
+
+    n = write_plant_norms_jsonl_gz(bag)
     print(f"Zapisano {n} wpisów → {OUT}")
 
 

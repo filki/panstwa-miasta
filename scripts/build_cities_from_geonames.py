@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Buduje ``cities_seed_geonames_generated.py`` z pliku GeoNames ``cities15000.txt``.
+"""Buduje ``scripts/seed_data/cities_geonames.jsonl.gz`` z pliku GeoNames ``cities15000.txt``.
 
 Źródło pliku: https://download.geonames.org/export/dump/cities15000.zip (format TSV,
 opis pól w ``readme.txt`` w tym samym katalogu).
@@ -209,7 +209,7 @@ CITIES_SEED_GEONAMES: Final[list[tuple[str, str]]] = [
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Build cities_seed_geonames_generated.py")
+    ap = argparse.ArgumentParser(description="Build cities_geonames.jsonl.gz from GeoNames TSV")
     ap.add_argument(
         "--input",
         type=Path,
@@ -225,7 +225,7 @@ def main() -> None:
     ap.add_argument(
         "--output",
         type=Path,
-        default=REPO_ROOT / "src" / "panstwa_miasta" / "cities_seed_geonames_generated.py",
+        default=REPO_ROOT / "scripts" / "seed_data" / "cities_geonames.jsonl.gz",
     )
     ap.add_argument(
         "--min-pop",
@@ -292,8 +292,14 @@ def main() -> None:
         src_rel = str(args.input.relative_to(REPO_ROOT))
     except ValueError:
         src_rel = str(args.input)
-    _emit_py(rows, args.output, src_rel)
-    print(f"Wrote {len(rows)} rows → {args.output}")
+    from panstwa_miasta.seed_data_loader import write_cities_geonames_jsonl_gz
+
+    if str(args.output).endswith(".jsonl.gz"):
+        n = write_cities_geonames_jsonl_gz(rows)
+        print(f"Wrote {n} rows → {args.output} (source: {src_rel})")
+    else:
+        _emit_py(rows, args.output, src_rel)
+        print(f"Wrote {len(rows)} rows → {args.output}")
     print("Skipped:", skipped)
 
 
