@@ -24,12 +24,22 @@ def iter_jsonl_gz(path: Path):
                 yield json.loads(line)
 
 
+def iter_animal_norms_from_seed_file():
+    for row in iter_jsonl_gz(seed_data_path("animals_norms.jsonl.gz")):
+        yield row["norm"]
+
+
+def iter_plant_norms_from_seed_file():
+    for row in iter_jsonl_gz(seed_data_path("plants_norms.jsonl.gz")):
+        yield row["norm"]
+
+
 def load_animal_norms_from_seed_file() -> list[str]:
-    return [row["norm"] for row in iter_jsonl_gz(seed_data_path("animals_norms.jsonl.gz"))]
+    return list(iter_animal_norms_from_seed_file())
 
 
 def load_plant_norms_from_seed_file() -> list[str]:
-    return [row["norm"] for row in iter_jsonl_gz(seed_data_path("plants_norms.jsonl.gz"))]
+    return list(iter_plant_norms_from_seed_file())
 
 
 def load_cities_geonames_from_seed_file() -> list[tuple[str, str]]:

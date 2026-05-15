@@ -79,6 +79,9 @@ async def _table_nonempty(db, table: str) -> bool:
         return await cur.fetchone() is not None
 
 
+_NORM_SEED_BATCH = 500
+
+
 async def _seed_executemany_if_empty(
     db,
     table: str,
@@ -89,42 +92,88 @@ async def _seed_executemany_if_empty(
         logger.info("Skipping %s seed (already populated)", table)
         return
     if rows:
-        await db.executemany(sql, rows)
+        await _seed_executemany_batched(db, table, sql, rows)
+
+
+async def _seed_executemany_batched(
+    db,
+    table: str,
+    sql: str,
+    rows: list[tuple],
+) -> None:
+    """Insert in chunks with commit — single executemany of ~20k rows blocks Turso for minutes."""
+    total = 0
+    for i in range(0, len(rows), _NORM_SEED_BATCH):
+        chunk = rows[i : i + _NORM_SEED_BATCH]
+        await db.executemany(sql, chunk)
+        await db.commit()
+        total += len(chunk)
+        logger.info("%s seed progress: %d rows", table, total)
+
+
+async def _seed_norms_from_iter(
+    db,
+    table: str,
+    sql: str,
+    norms,
+) -> None:
+    if await _table_nonempty(db, table):
+        logger.info("Skipping %s seed (already populated)", table)
+        return
+    batch: list[tuple[str]] = []
+    total = 0
+    for norm in norms:
+        batch.append((norm,))
+        if len(batch) >= _NORM_SEED_BATCH:
+            await db.executemany(sql, batch)
+            await db.commit()
+            total += len(batch)
+            logger.info("%s seed progress: %d rows", table, total)
+            batch.clear()
+    if batch:
+        await db.executemany(sql, batch)
+        await db.commit()
+        total += len(batch)
+        logger.info("%s seed progress: %d rows (done)", table, total)
 
 
 async def _seed_animal_norms(db) -> None:
-    from .seed_data_loader import load_animal_norms_from_seed_file
+    from .seed_data_loader import iter_animal_norms_from_seed_file, seed_data_path
 
-    rows = [(n,) for n in load_animal_norms_from_seed_file()]
-    if not rows and not await _table_nonempty(db, "animal_norms"):
+    if await _table_nonempty(db, "animal_norms"):
+        logger.info("Skipping animal_norms seed (already populated)")
+        return
+    if not seed_data_path("animals_norms.jsonl.gz").is_file():
         logger.warning(
             "animal_norms empty — run scripts/export_norms_seed_data.py "
             "or restore scripts/seed_data/animals_norms.jsonl.gz"
         )
         return
-    await _seed_executemany_if_empty(
+    await _seed_norms_from_iter(
         db,
         "animal_norms",
         "INSERT OR IGNORE INTO animal_norms (norm) VALUES (?)",
-        rows,
+        iter_animal_norms_from_seed_file(),
     )
 
 
 async def _seed_plant_norms(db) -> None:
-    from .seed_data_loader import load_plant_norms_from_seed_file
+    from .seed_data_loader import iter_plant_norms_from_seed_file, seed_data_path
 
-    rows = [(n,) for n in load_plant_norms_from_seed_file()]
-    if not rows and not await _table_nonempty(db, "plant_norms"):
+    if await _table_nonempty(db, "plant_norms"):
+        logger.info("Skipping plant_norms seed (already populated)")
+        return
+    if not seed_data_path("plants_norms.jsonl.gz").is_file():
         logger.warning(
             "plant_norms empty — run scripts/export_norms_seed_data.py "
             "or restore scripts/seed_data/plants_norms.jsonl.gz"
         )
         return
-    await _seed_executemany_if_empty(
+    await _seed_norms_from_iter(
         db,
         "plant_norms",
         "INSERT OR IGNORE INTO plant_norms (norm) VALUES (?)",
-        rows,
+        iter_plant_norms_from_seed_file(),
     )
 
 
