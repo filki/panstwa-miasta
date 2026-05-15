@@ -546,7 +546,7 @@ function buildRoundResultsHtml(msg, options = {}) {
         for (const cat of ROUND_RESULT_CATEGORIES) {
             const raw = answers[cat];
             const hasAns = raw != null && String(raw).trim() !== "";
-            const ptsRaw = rScore.details && rScore.details[cat];
+            const ptsRaw = rScore.details?.[cat];
             const pts = typeof ptsRaw === "number" ? ptsRaw : 0;
             let cell = `<div class="round-results-cell"><span class="round-results-val">${hasAns ? escapeHtml(String(raw).trim()) : "—"}</span><span class="${roundResultsPtsClass(pts)}">${pts}</span>`;
             if (cat === "Rzecz" && !isFinal && player !== viewer && hasAns) {
@@ -607,8 +607,8 @@ function bindRoundResultsVeto(root) {
     if (!root) return;
     root.querySelectorAll(".round-results-veto-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
-            const target = btn.getAttribute("data-target");
-            const vote = btn.getAttribute("data-vote");
+            const target = btn.dataset.target;
+            const vote = btn.dataset.vote;
             if (!target || !vote) return;
             sendJson({ type: "veto_vote", target, vote });
             btn.closest(".round-results-veto-actions")
@@ -762,9 +762,9 @@ function clearGameOverResults() {
 }
 
 async function requestPostgameAppeal(button) {
-    const roomId = button.getAttribute("data-room-id") || "";
-    const roundNo = Number(button.getAttribute("data-round") || "0");
-    const category = button.getAttribute("data-category") || "";
+    const roomId = button.dataset.roomId || "";
+    const roundNo = Number(button.dataset.round || "0");
+    const category = button.dataset.category || "";
     const playerName = globalThis.myNick || myNick || "";
     const resultBox = button.parentElement?.querySelector(".postgame-appeal-result");
     if (!roomId || !roundNo || !category || !playerName) return;
@@ -785,7 +785,7 @@ async function requestPostgameAppeal(button) {
         });
         const data = await resp.json().catch(() => ({}));
         if (!resp.ok) {
-            const detail = data && data.detail ? String(data.detail) : "Nie udało się pobrać wyjaśnienia.";
+            const detail = data?.detail ? String(data.detail) : "Nie udało się pobrać wyjaśnienia.";
             if (resultBox) resultBox.textContent = detail;
             return;
         }
@@ -1041,7 +1041,7 @@ function clearInputColors() {
  */
 function runRoundStartCountdown(onComplete) {
     if (typeof onComplete !== 'function') return;
-    if (globalThis.matchMedia && globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (globalThis.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
         onComplete();
         return;
     }

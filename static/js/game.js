@@ -118,10 +118,10 @@ function validateFirstLetter(inp) {
     const target = globalThis.currentLetter.toLowerCase();
     const first = val[0];
     const folded = _foldPolishAsciiChar(first);
-    if (folded !== target) {
-        inp.style.borderColor = 'var(--danger)';
-    } else {
+    if (folded === target) {
         inp.style.borderColor = '';
+    } else {
+        inp.style.borderColor = 'var(--danger)';
     }
 }
 

@@ -13,7 +13,7 @@ async function pmReportWord({ word, category, starting_letter: startingLetter })
     });
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) {
-        const detail = data && data.detail ? String(data.detail) : "Nie udało się zapisać słowa.";
+        const detail = data?.detail ? String(data.detail) : "Nie udało się zapisać słowa.";
         throw new Error(detail);
     }
     return data;
@@ -31,7 +31,7 @@ async function pmCheckWordReason({ word, category, starting_letter: startingLett
     });
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) {
-        const detail = data && data.detail ? String(data.detail) : "Nie udało się sprawdzić statusu.";
+        const detail = data?.detail ? String(data.detail) : "Nie udało się sprawdzić statusu.";
         throw new Error(detail);
     }
     return data;
@@ -44,9 +44,9 @@ function pmWordReportStatusMessage(data) {
 }
 
 async function pmRequestPostgameWordReport(button) {
-    const word = button.getAttribute("data-word") || "";
-    const category = button.getAttribute("data-category") || "";
-    const letter = button.getAttribute("data-letter") || "";
+    const word = button.dataset.word || "";
+    const category = button.dataset.category || "";
+    const letter = button.dataset.letter || "";
     const resultBox = button.parentElement?.querySelector(".postgame-word-report-result");
     if (!word || !category || !letter) return;
     button.disabled = true;
@@ -58,7 +58,7 @@ async function pmRequestPostgameWordReport(button) {
         const data = await pmReportWord({ word, category, starting_letter: letter });
         if (resultBox) resultBox.textContent = pmWordReportStatusMessage(data);
     } catch (err) {
-        if (resultBox) resultBox.textContent = err && err.message ? err.message : "Błąd połączenia.";
+        if (resultBox) resultBox.textContent = err?.message ? err.message : "Błąd połączenia.";
         console.error("pmRequestPostgameWordReport failed:", err);
     } finally {
         button.disabled = false;

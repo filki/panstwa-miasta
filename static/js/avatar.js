@@ -46,7 +46,10 @@ function avatarIdForPlayer(name, viewerNick = '') {
         return getCurrentAvatarId();
     }
     let hash = 0;
-    for (const ch of String(name)) hash = (hash + ch.charCodeAt(0)) % AVATAR_OPTIONS.length;
+    for (const ch of String(name)) {
+        const cp = ch.codePointAt(0) ?? 0;
+        hash = (hash + cp) % AVATAR_OPTIONS.length;
+    }
     return hash;
 }
 
