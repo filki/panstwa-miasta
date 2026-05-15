@@ -33,13 +33,15 @@ else
   sudo -n systemctl restart panstwa-miasta
 fi
 
-# Turso / libSQL: pierwszy start repliki + reload_* może trwać wiele minut.
+# Turso / libSQL lub pierwszy seed animal_norms+plant_norms (~20k wierszy) — startup może trwać wiele minut.
 if [[ -n "${PM_DEPLOY_HEALTH_TIMEOUT_SEC:-}" ]]; then
   health_timeout="${PM_DEPLOY_HEALTH_TIMEOUT_SEC}"
 elif [[ -f /etc/panstwa-miasta.env ]] && grep -qE '^LIBSQL_URL=' /etc/panstwa-miasta.env 2>/dev/null; then
   health_timeout=1200
+elif [[ -f scripts/seed_data/animals_norms.jsonl.gz ]]; then
+  health_timeout=1200
 else
-  health_timeout=60
+  health_timeout=120
 fi
 
 echo "Czekam na /healthz (timeout ${health_timeout}s, co 10s)..."
