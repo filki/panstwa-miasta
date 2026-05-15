@@ -33,18 +33,36 @@ else
   sudo -n systemctl restart panstwa-miasta
 fi
 
-echo "Czekam 5 sekund, aż Uvicorn się uruchomi i załaduje bazę..."
-sleep 5
+# Turso / libSQL: pierwszy start repliki + reload_* może trwać wiele minut.
+if [[ -n "${PM_DEPLOY_HEALTH_TIMEOUT_SEC:-}" ]]; then
+  health_timeout="${PM_DEPLOY_HEALTH_TIMEOUT_SEC}"
+elif [[ -f /etc/panstwa-miasta.env ]] && grep -qE '^LIBSQL_URL=' /etc/panstwa-miasta.env 2>/dev/null; then
+  health_timeout=1200
+else
+  health_timeout=60
+fi
+
+echo "Czekam na /healthz (timeout ${health_timeout}s, co 10s)..."
+deadline=$((SECONDS + health_timeout))
+health_code="000"
+while (( SECONDS < deadline )); do
+  health_code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/healthz 2>/dev/null || echo "000")"
+  if [[ "$health_code" == "200" ]]; then
+    break
+  fi
+  sleep 10
+done
+
+if [[ "$health_code" != "200" ]]; then
+  echo "Smoke test GET /healthz zwrócił HTTP $health_code po ${health_timeout}s (oczekiwano 200)." >&2
+  echo "--- journalctl -u panstwa-miasta (ostatnie 80 linii) ---" >&2
+  journalctl -u panstwa-miasta -n 80 --no-pager >&2 || true
+  exit 1
+fi
 
 code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/ || true)"
 if [[ "$code" != "200" ]]; then
   echo "Smoke test GET / zwrócił HTTP $code (oczekiwano 200)." >&2
-  exit 1
-fi
-
-health_code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/healthz || true)"
-if [[ "$health_code" != "200" ]]; then
-  echo "Smoke test GET /healthz zwrócił HTTP $health_code (oczekiwano 200)." >&2
   exit 1
 fi
 

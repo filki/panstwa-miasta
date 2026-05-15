@@ -88,11 +88,12 @@ sudo systemctl start panstwa-miasta
 
 ### Czas startu i `/healthz`
 
-Pierwszy start z pustą repliką: synchronizacja z primary + `init_db()` (DDL + `INSERT OR IGNORE`
-seedów) + `reload_*` (duże cache w RAM) + `load_from_db()` — na małym VPS **wiele minut** jest
-realne.
+Pierwszy start z pustą repliką: synchronizacja z primary + `init_db()` (DDL; seedy tylko gdy
+tabele puste — po imporcie do Turso bez ~31k redundantnych INSERT) + `reload_*` (duże cache w RAM)
++ `load_from_db()` — na małym VPS **wiele minut** jest realne.
 
-- Poll: `curl -sf http://127.0.0.1:8000/healthz` co 10 s, **do 15–20 min** pierwszego cutoveru.
+- Poll: `deploy/turso-poll-healthz.sh` lub `curl -sf http://127.0.0.1:8000/healthz` co 10 s,
+  **do 15–20 min** pierwszego cutoveru.
 - Równolegle: `journalctl -u panstwa-miasta -f` — szukaj `Application startup` / `Startup completed`.
 - Dopiero po `Startup completed` i `healthz` → test publiczny HTTPS.
 
@@ -133,7 +134,7 @@ Po rollbacku: `DEPLOY_ENABLED` z powrotem `true` gdy stan stabilny.
 | `TypeError` na `async with db.execute` | libSQL vs aiosqlite | `db_backend.py` — wrapper z `contextmanager` |
 | `fetchall()` / DDL | Puste wyniki na libSQL | `_rows_from_cursor` w `db_backend.py` |
 | Niespójna replika | Stary plik SQLite + nowe `LIBSQL_*` | Zawsze usuń db + sidecary przed pierwszym startem repliki |
-| Długi cold start | Pełny `init_db` + seed + `reload_*` przy każdym starcie | Docelowo: osobny PR — pomijanie seedów gdy tabele pełne; na cutover akceptuj długie okno |
+| Długi cold start | Sync repliki + `reload_*` przy każdym starcie | `init_db` pomija seed gdy tabela niepusta; deploy: 20 min poll `/healthz`; pierwszy cutover nadal długi |
 | Token w czacie / logu | Wyciek | Rotacja w Turso, tylko `EnvironmentFile` |
 | Dwa writery | Import + działająca app na tym samym primary | Jeden proces zapisu na cutover |
 
