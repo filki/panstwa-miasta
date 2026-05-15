@@ -73,7 +73,7 @@ def _round_results_payload(
 
 
 async def _send_appeal_tokens(room: Room) -> None:
-    for name, ws in list(room.connections.items()):
+    for name, ws in tuple(room.connections.items()):
         token = issue_appeal_token(room.room_id, name)
         try:
             await ws.send_text(json.dumps({"type": "appeal_token", "token": token}))
@@ -156,7 +156,7 @@ async def _results_phase_countdown(room: Room, room_id: str, timeout_coro) -> No
     try:
         await asyncio.sleep(RESULTS_PHASE_SECONDS)
     except asyncio.CancelledError:
-        return
+        raise
     await _finalize_results_phase(room, room_id, timeout_coro)
 
 

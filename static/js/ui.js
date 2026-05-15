@@ -340,7 +340,7 @@ function initLandingGuideCarousel() {
 
     root.querySelectorAll('[data-carousel-dir]').forEach((btn) => {
         btn.addEventListener('click', () => {
-            const dir = btn.getAttribute('data-carousel-dir');
+            const dir = btn.dataset.carouselDir;
             setActive(activeIndex + (dir === 'prev' ? -1 : 1));
         });
     });

@@ -16,6 +16,9 @@ _DE_GEO_FOLD_TRANS = str.maketrans(
     }
 )
 
+_NORM_SOUTH_AFRICA = "południowa afryka"
+_NORM_UNITED_STATES = "stany zjednoczone"
+
 # Obcy zapis (norma) → polska norma już w ``MIASTA`` / ``COUNTRIES``.
 CITY_ANSWER_ALIASES: dict[str, str] = {
     "stockholm": "sztokholm",
@@ -55,13 +58,13 @@ CITY_ANSWER_ALIASES: dict[str, str] = {
 }
 
 COUNTRY_ANSWER_ALIASES: dict[str, str] = {
-    "rpa": "południowa afryka",
-    "republika poludniowej afryki": "południowa afryka",
-    "republika południowej afryki": "południowa afryka",
-    "south africa": "południowa afryka",
-    "vereinigte staaten": "stany zjednoczone",
-    "united states": "stany zjednoczone",
-    "usa": "stany zjednoczone",
+    "rpa": _NORM_SOUTH_AFRICA,
+    "republika poludniowej afryki": _NORM_SOUTH_AFRICA,
+    "republika południowej afryki": _NORM_SOUTH_AFRICA,
+    "south africa": _NORM_SOUTH_AFRICA,
+    "vereinigte staaten": _NORM_UNITED_STATES,
+    "united states": _NORM_UNITED_STATES,
+    "usa": _NORM_UNITED_STATES,
     "united kingdom": "wielka brytania",
     "great britain": "wielka brytania",
     "czech republic": "czechy",

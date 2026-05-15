@@ -12,7 +12,7 @@ from ..word_worker import apply_worker_decision, fetch_pending_batch, verify_wor
 router = APIRouter(prefix="/api/internal/words", tags=["words-worker"])
 
 
-@router.get("/pending", response_model=WordWorkerPendingOut)
+@router.get("/pending")
 async def get_pending_words(
     authorization: Annotated[str | None, Header()] = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -23,7 +23,7 @@ async def get_pending_words(
     return WordWorkerPendingOut.model_validate(result)
 
 
-@router.post("/{suggestion_id}/decision", response_model=WordWorkerDecisionOut)
+@router.post("/{suggestion_id}/decision")
 async def post_word_decision(
     suggestion_id: int,
     body: WordWorkerDecisionIn,

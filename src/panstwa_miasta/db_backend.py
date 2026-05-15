@@ -46,13 +46,15 @@ class _LibsqlCursor:
         self.rowcount = rowcount
 
     async def fetchone(self) -> _LibsqlRow | None:
+        await asyncio.sleep(0)
         return self._rows[0] if self._rows else None
 
     async def fetchall(self) -> list[_LibsqlRow]:
+        await asyncio.sleep(0)
         return self._rows
 
     async def close(self) -> None:
-        return None
+        await asyncio.sleep(0)
 
     async def __aenter__(self) -> _LibsqlCursor:
         return self

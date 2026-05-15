@@ -292,7 +292,12 @@ async def get_manifest() -> FileResponse:
     return FileResponse(MANIFEST_PATH, media_type="application/manifest+json")
 
 
-@app.get("/healthz")
+@app.get(
+    "/healthz",
+    responses={
+        503: {"description": "Baza niedostępna."},
+    },
+)
 async def get_healthz() -> dict[str, str]:
     try:
         async with connect() as db, db.execute("SELECT 1") as cur:
@@ -400,7 +405,7 @@ async def get_active_rooms() -> list[ActiveRoomRow]:
     ]
 
 
-@app.post("/api/quick-join", response_model=QuickJoinOut)
+@app.post("/api/quick-join")
 async def post_quick_join() -> QuickJoinOut:
     room_id, created, max_rounds, time_limit = await manager.pick_quick_join_room()
     return QuickJoinOut(
@@ -411,7 +416,7 @@ async def post_quick_join() -> QuickJoinOut:
     )
 
 
-@app.post("/api/rooms", response_model=CreateRoomOut)
+@app.post("/api/rooms")
 async def post_create_room(body: CreateRoomIn) -> CreateRoomOut:
     room_id = await manager.allocate_room_id()
     return CreateRoomOut(
@@ -431,7 +436,12 @@ def _appeal_bearer_token(authorization: str | None) -> str:
     return ""
 
 
-@app.post("/api/rooms/{room_id}/appeals", response_model=AppealOut)
+@app.post(
+    "/api/rooms/{room_id}/appeals",
+    responses={
+        401: {"description": "Brak uprawnień do odwołania."},
+    },
+)
 async def post_room_appeal(
     room_id: RoomIdPath,
     body: AppealIn,
@@ -526,6 +536,13 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
         )
 
 
+async def _touch_lobby_after_ready(room) -> None:
+    if room.is_playing:
+        manager.cancel_lobby_idle(room)
+    else:
+        manager.touch_lobby_idle(room, reset=True)
+
+
 async def _dispatch(msg: dict, room, room_id: str, client_name: str) -> None:
     """Route a message to the appropriate handler."""
     msg_type = msg.get("type")
@@ -535,10 +552,7 @@ async def _dispatch(msg: dict, room, room_id: str, client_name: str) -> None:
         await handle_chat(room, client_name, msg)
     elif msg_type == "ready":
         await handle_ready(room, room_id, client_name, global_round_timeout)
-        if room.is_playing:
-            manager.cancel_lobby_idle(room)
-        else:
-            manager.touch_lobby_idle(room, reset=True)
+        await _touch_lobby_after_ready(room)
     elif msg_type == "not_ready":
         await handle_not_ready(room, client_name)
         manager.touch_lobby_idle(room, reset=True)
@@ -556,7 +570,7 @@ async def _dispatch(msg: dict, room, room_id: str, client_name: str) -> None:
         await handle_veto_vote(room, client_name, msg)
     elif msg_type == "kick_player":
         await handle_kick_player(room, room_id, client_name, msg, manager)
-    else:
+    elif msg_type is not None:
         logger.warning(f"Unknown message type '{msg_type}' from '{client_name}'")
 
 

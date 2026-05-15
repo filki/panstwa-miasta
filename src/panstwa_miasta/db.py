@@ -79,6 +79,55 @@ async def _table_nonempty(db, table: str) -> bool:
         return await cur.fetchone() is not None
 
 
+async def _seed_executemany_if_empty(
+    db,
+    table: str,
+    sql: str,
+    rows: list[tuple],
+) -> None:
+    if await _table_nonempty(db, table):
+        logger.info("Skipping %s seed (already populated)", table)
+        return
+    if rows:
+        await db.executemany(sql, rows)
+
+
+async def _seed_animal_norms(db) -> None:
+    from .seed_data_loader import load_animal_norms_from_seed_file
+
+    rows = [(n,) for n in load_animal_norms_from_seed_file()]
+    if not rows and not await _table_nonempty(db, "animal_norms"):
+        logger.warning(
+            "animal_norms empty — run scripts/export_norms_seed_data.py "
+            "or restore scripts/seed_data/animals_norms.jsonl.gz"
+        )
+        return
+    await _seed_executemany_if_empty(
+        db,
+        "animal_norms",
+        "INSERT OR IGNORE INTO animal_norms (norm) VALUES (?)",
+        rows,
+    )
+
+
+async def _seed_plant_norms(db) -> None:
+    from .seed_data_loader import load_plant_norms_from_seed_file
+
+    rows = [(n,) for n in load_plant_norms_from_seed_file()]
+    if not rows and not await _table_nonempty(db, "plant_norms"):
+        logger.warning(
+            "plant_norms empty — run scripts/export_norms_seed_data.py "
+            "or restore scripts/seed_data/plants_norms.jsonl.gz"
+        )
+        return
+    await _seed_executemany_if_empty(
+        db,
+        "plant_norms",
+        "INSERT OR IGNORE INTO plant_norms (norm) VALUES (?)",
+        rows,
+    )
+
+
 async def init_db():
     async with connect() as db:
         await db.execute("""
@@ -155,31 +204,30 @@ async def init_db():
         # CREATE TABLE rooms — wtedy WebSocket wpada w „no such table: rooms”.
         await db.commit()
 
-        if await _table_nonempty(db, "countries"):
-            logger.info("Skipping countries seed (already populated)")
-        else:
-            await db.executemany(
-                """
+        await _seed_executemany_if_empty(
+            db,
+            "countries",
+            """
                 INSERT OR IGNORE INTO countries
                     (name, name_norm, continent, capital, area_km2, population, density,
                      head_of_state, recognized)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                [
-                    (
-                        row["name"],
-                        _name_norm(row["name"]),
-                        row["continent"],
-                        row["capital"],
-                        row["area_km2"],
-                        row["population"],
-                        row["density"],
-                        row["head_of_state"],
-                        1 if row["recognized"] else 0,
-                    )
-                    for row in COUNTRIES_SEED
-                ],
-            )
+            [
+                (
+                    row["name"],
+                    _name_norm(row["name"]),
+                    row["continent"],
+                    row["capital"],
+                    row["area_km2"],
+                    row["population"],
+                    row["density"],
+                    row["head_of_state"],
+                    1 if row["recognized"] else 0,
+                )
+                for row in COUNTRIES_SEED
+            ],
+        )
         await db.execute("""
             CREATE TABLE IF NOT EXISTS cities (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -192,19 +240,18 @@ async def init_db():
         """)
         await db.execute("CREATE INDEX IF NOT EXISTS idx_cities_nazwa ON cities(nazwa_norm)")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_cities_kraj ON cities(kraj_norm)")
-        if await _table_nonempty(db, "cities"):
-            logger.info("Skipping cities seed (already populated)")
-        else:
-            await db.executemany(
-                """
+        await _seed_executemany_if_empty(
+            db,
+            "cities",
+            """
                 INSERT OR IGNORE INTO cities (nazwa, nazwa_norm, kraj, kraj_norm)
                 VALUES (?, ?, ?, ?)
                 """,
-                [
-                    (row["nazwa"], _name_norm(row["nazwa"]), row["kraj"], _name_norm(row["kraj"]))
-                    for row in CITIES_SEED
-                ],
-            )
+            [
+                (row["nazwa"], _name_norm(row["nazwa"]), row["kraj"], _name_norm(row["kraj"]))
+                for row in CITIES_SEED
+            ],
+        )
         await db.execute("""
             CREATE TABLE IF NOT EXISTS names (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -216,19 +263,18 @@ async def init_db():
             )
         """)
         await db.execute("CREATE INDEX IF NOT EXISTS idx_names_norm ON names(imie_norm)")
-        if await _table_nonempty(db, "names"):
-            logger.info("Skipping names seed (already populated)")
-        else:
-            await db.executemany(
-                """
+        await _seed_executemany_if_empty(
+            db,
+            "names",
+            """
                 INSERT OR IGNORE INTO names (imie, imie_norm, plec, liczebnosc)
                 VALUES (?, ?, ?, ?)
                 """,
-                [
-                    (row["imie"], _name_norm(row["imie"]), row["plec"], row["liczebnosc"])
-                    for row in NAMES_SEED
-                ],
-            )
+            [
+                (row["imie"], _name_norm(row["imie"]), row["plec"], row["liczebnosc"])
+                for row in NAMES_SEED
+            ],
+        )
         await db.execute("""
             CREATE TABLE IF NOT EXISTS jobs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -239,16 +285,15 @@ async def init_db():
             )
         """)
         await db.execute("CREATE INDEX IF NOT EXISTS idx_jobs_kod ON jobs(kod)")
-        if await _table_nonempty(db, "jobs"):
-            logger.info("Skipping jobs seed (already populated)")
-        else:
-            await db.executemany(
-                """
+        await _seed_executemany_if_empty(
+            db,
+            "jobs",
+            """
                 INSERT OR IGNORE INTO jobs (kod, opis, opis_norm)
                 VALUES (?, ?, ?)
                 """,
-                [(row["kod"], row["opis"], _name_norm(row["opis"])) for row in JOBS_SEED],
-            )
+            [(row["kod"], row["opis"], _name_norm(row["opis"])) for row in JOBS_SEED],
+        )
         await db.execute("""
             CREATE TABLE IF NOT EXISTS things (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -265,22 +310,7 @@ async def init_db():
             )
         """)
         await db.execute("CREATE INDEX IF NOT EXISTS idx_animal_norms ON animal_norms(norm)")
-        if await _table_nonempty(db, "animal_norms"):
-            logger.info("Skipping animal_norms seed (already populated)")
-        else:
-            from .seed_data_loader import load_animal_norms_from_seed_file
-
-            animal_rows = [(n,) for n in load_animal_norms_from_seed_file()]
-            if animal_rows:
-                await db.executemany(
-                    "INSERT OR IGNORE INTO animal_norms (norm) VALUES (?)",
-                    animal_rows,
-                )
-            else:
-                logger.warning(
-                    "animal_norms empty — run scripts/export_norms_seed_data.py "
-                    "or restore scripts/seed_data/animals_norms.jsonl.gz"
-                )
+        await _seed_animal_norms(db)
         await db.execute("""
             CREATE TABLE IF NOT EXISTS plant_norms (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -288,22 +318,7 @@ async def init_db():
             )
         """)
         await db.execute("CREATE INDEX IF NOT EXISTS idx_plant_norms ON plant_norms(norm)")
-        if await _table_nonempty(db, "plant_norms"):
-            logger.info("Skipping plant_norms seed (already populated)")
-        else:
-            from .seed_data_loader import load_plant_norms_from_seed_file
-
-            plant_rows = [(n,) for n in load_plant_norms_from_seed_file()]
-            if plant_rows:
-                await db.executemany(
-                    "INSERT OR IGNORE INTO plant_norms (norm) VALUES (?)",
-                    plant_rows,
-                )
-            else:
-                logger.warning(
-                    "plant_norms empty — run scripts/export_norms_seed_data.py "
-                    "or restore scripts/seed_data/plants_norms.jsonl.gz"
-                )
+        await _seed_plant_norms(db)
         await db.commit()
 
 
@@ -462,8 +477,8 @@ async def upsert_thing(display: str, norm: str) -> bool:
             VALUES (?, ?, ?)
             """,
             (display, norm, int(time.time())),
-        ):
-            pass
+        ) as _insert_cur:
+            await _insert_cur.close()
         async with db.execute("SELECT changes()") as cur:
             row = await cur.fetchone()
         await db.commit()

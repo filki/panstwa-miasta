@@ -356,52 +356,45 @@ const MESSAGE_HANDLERS = {
     appeal_token: onAppealToken,
 };
 
-function onRoundStarted(msg) {
-    hideRoundResultsOverlay();
-    provisionalRoundResultsMsg = null;
-    globalThis.currentLetter = msg.letter;
-    pmHadRoundStarted = true;
-    if (typeof setRoomPhase === 'function') setRoomPhase('playing');
-
-    if (msg.resume) {
-        const letterEl = document.getElementById('current-letter');
-        if (letterEl) letterEl.textContent = msg.letter;
-        const btn = document.getElementById('btn-draw');
-        if (btn) {
-            btn.classList.remove('ready');
-            btn.style.display = 'none';
-        }
-        addLog(
-            `<em>Połączenie przywrócone. Runda ${msg.current_round}/${msg.max_rounds}, litera: <strong>${msg.letter}</strong>.</em>`,
-            'system-msg',
-        );
-        clearClientRoundTimers();
-        if (msg.answer_submitted) {
-            lockSubmittedAnswers();
-        } else {
-            clearInputColors();
-            enableInputs();
-        }
-        if (msg.stop_triggered) {
-            onStopRound({
-                sender: 'Serwer (Wznowienie)',
-                time_left: typeof msg.stop_seconds_left === 'number' ? msg.stop_seconds_left : 10,
-                resume: true,
-            });
-            return;
-        }
-        if (typeof msg.seconds_left === 'number') {
-            startRoundTimer(msg.seconds_left);
-        } else {
-            const rt = document.getElementById('round-timer');
-            if (rt) {
-                rt.style.display = 'block';
-                rt.textContent = '—';
-            }
-        }
+function onRoundStartedResume(msg) {
+    const letterEl = document.getElementById('current-letter');
+    if (letterEl) letterEl.textContent = msg.letter;
+    const btn = document.getElementById('btn-draw');
+    if (btn) {
+        btn.classList.remove('ready');
+        btn.style.display = 'none';
+    }
+    addLog(
+        `<em>Połączenie przywrócone. Runda ${msg.current_round}/${msg.max_rounds}, litera: <strong>${msg.letter}</strong>.</em>`,
+        'system-msg',
+    );
+    clearClientRoundTimers();
+    if (msg.answer_submitted) {
+        lockSubmittedAnswers();
+    } else {
+        clearInputColors();
+        enableInputs();
+    }
+    if (msg.stop_triggered) {
+        onStopRound({
+            sender: 'Serwer (Wznowienie)',
+            time_left: typeof msg.stop_seconds_left === 'number' ? msg.stop_seconds_left : 10,
+            resume: true,
+        });
         return;
     }
+    if (typeof msg.seconds_left === 'number') {
+        startRoundTimer(msg.seconds_left);
+    } else {
+        const rt = document.getElementById('round-timer');
+        if (rt) {
+            rt.style.display = 'block';
+            rt.textContent = '—';
+        }
+    }
+}
 
+function onRoundStartedFresh(msg) {
     const afterReveal = () => {
         const lotteryFunc = globalThis.runLetterLottery || runLetterLottery;
         lotteryFunc(msg.letter, () => {
@@ -420,6 +413,19 @@ function onRoundStarted(msg) {
     };
     const countdownFn = globalThis.runRoundStartCountdown || runRoundStartCountdown;
     countdownFn(afterReveal);
+}
+
+function onRoundStarted(msg) {
+    hideRoundResultsOverlay();
+    provisionalRoundResultsMsg = null;
+    globalThis.currentLetter = msg.letter;
+    pmHadRoundStarted = true;
+    if (typeof setRoomPhase === 'function') setRoomPhase('playing');
+    if (msg.resume) {
+        onRoundStartedResume(msg);
+        return;
+    }
+    onRoundStartedFresh(msg);
 }
 
 function onStopRound(msg) {
@@ -546,7 +552,7 @@ function buildRoundResultsHtml(msg, options = {}) {
         for (const cat of ROUND_RESULT_CATEGORIES) {
             const raw = answers[cat];
             const hasAns = raw != null && String(raw).trim() !== "";
-            const ptsRaw = rScore.details && rScore.details[cat];
+            const ptsRaw = rScore.details?.[cat];
             const pts = typeof ptsRaw === "number" ? ptsRaw : 0;
             let cell = `<div class="round-results-cell"><span class="round-results-val">${hasAns ? escapeHtml(String(raw).trim()) : "—"}</span><span class="${roundResultsPtsClass(pts)}">${pts}</span>`;
             if (cat === "Rzecz" && !isFinal && player !== viewer && hasAns) {
@@ -607,8 +613,8 @@ function bindRoundResultsVeto(root) {
     if (!root) return;
     root.querySelectorAll(".round-results-veto-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
-            const target = btn.getAttribute("data-target");
-            const vote = btn.getAttribute("data-vote");
+            const target = btn.dataset.target;
+            const vote = btn.dataset.vote;
             if (!target || !vote) return;
             sendJson({ type: "veto_vote", target, vote });
             btn.closest(".round-results-veto-actions")
@@ -762,9 +768,9 @@ function clearGameOverResults() {
 }
 
 async function requestPostgameAppeal(button) {
-    const roomId = button.getAttribute("data-room-id") || "";
-    const roundNo = Number(button.getAttribute("data-round") || "0");
-    const category = button.getAttribute("data-category") || "";
+    const roomId = button.dataset.roomId || "";
+    const roundNo = Number(button.dataset.round || "0");
+    const category = button.dataset.category || "";
     const playerName = globalThis.myNick || myNick || "";
     const resultBox = button.parentElement?.querySelector(".postgame-appeal-result");
     if (!roomId || !roundNo || !category || !playerName) return;
@@ -785,7 +791,7 @@ async function requestPostgameAppeal(button) {
         });
         const data = await resp.json().catch(() => ({}));
         if (!resp.ok) {
-            const detail = data && data.detail ? String(data.detail) : "Nie udało się pobrać wyjaśnienia.";
+            const detail = data?.detail ? String(data.detail) : "Nie udało się pobrać wyjaśnienia.";
             if (resultBox) resultBox.textContent = detail;
             return;
         }
@@ -1041,7 +1047,7 @@ function clearInputColors() {
  */
 function runRoundStartCountdown(onComplete) {
     if (typeof onComplete !== 'function') return;
-    if (globalThis.matchMedia && globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (globalThis.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
         onComplete();
         return;
     }

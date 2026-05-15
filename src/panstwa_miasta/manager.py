@@ -3,6 +3,7 @@ import json
 import secrets
 import time
 from collections import deque
+from collections.abc import Callable
 from typing import Any, cast
 
 from fastapi import WebSocket
@@ -166,7 +167,7 @@ class Room:
             return
         for name in self.connections:
             self.answers_received.setdefault(name, {})
-        for name in list(self.answers_received):
+        for name in tuple(self.answers_received):
             if name not in self.connections:
                 del self.answers_received[name]
 
@@ -235,7 +236,7 @@ class Room:
         rng = secrets.SystemRandom()
         recent = set(self._recent_letters)
         fresh = [c for c in ALPHABET if c not in recent]
-        stale = list(recent)
+        stale = [*recent]
         rng.shuffle(fresh)
         rng.shuffle(stale)
         # ``letter_queue.pop()`` bierze z końca, więc fresh na końcu,
@@ -299,24 +300,20 @@ class Room:
     def _calculate_base_category_score(self, category: str, ans_norm: str) -> int:
         """Determines if an answer is valid based on static data. Returns -1 if valid but needs multiplier check."""
         from .data import COUNTRIES, MIASTA, NAMES, ROSLINY, ZWIERZETA, job_answer_accepted
+        from .geo_answer_aliases import resolve_city_answer, resolve_country_answer
 
-        if category == "Państwo":
-            from .geo_answer_aliases import resolve_country_answer
-
-            return -1 if resolve_country_answer(ans_norm) in COUNTRIES else 0
-        if category == "Miasto":
-            from .geo_answer_aliases import resolve_city_answer
-
-            return -1 if resolve_city_answer(ans_norm) in MIASTA else 0
-        if category == "Imię":
-            return -1 if ans_norm in NAMES else 0
-        if category == "Zawód":
-            return -1 if job_answer_accepted(ans_norm) else 0
-        if category == "Zwierzę":
-            return -1 if _fauna_flora_norm_valid(ans_norm, ZWIERZETA) else 0
-        if category == "Roślina":
-            return -1 if _fauna_flora_norm_valid(ans_norm, ROSLINY) else 0
-        return -1  # Rzecz / other
+        validators: dict[str, Callable[[str], bool]] = {
+            "Państwo": lambda n: resolve_country_answer(n) in COUNTRIES,
+            "Miasto": lambda n: resolve_city_answer(n) in MIASTA,
+            "Imię": lambda n: n in NAMES,
+            "Zawód": job_answer_accepted,
+            "Zwierzę": lambda n: _fauna_flora_norm_valid(n, ZWIERZETA),
+            "Roślina": lambda n: _fauna_flora_norm_valid(n, ROSLINY),
+        }
+        validate = validators.get(category)
+        if validate is None:
+            return -1  # Rzecz / other
+        return -1 if validate(ans_norm) else 0
 
     def _assign_round_points(self, round_scores: dict[str, dict]):
         """Applies 15/10/5 points logic based on uniqueness of answers."""
@@ -437,7 +434,8 @@ class ConnectionManager:
             try:
                 await asyncio.sleep(HOST_REASSIGN_GRACE_SECONDS)
             except asyncio.CancelledError:
-                return
+                room._host_reassign_task = None
+                raise
             room._host_reassign_task = None
             current = self.rooms.get(room_id)
             if current is None:
@@ -479,7 +477,8 @@ class ConnectionManager:
             try:
                 await asyncio.sleep(dbmod.ROOM_EMPTY_GRACE_SECONDS)
             except asyncio.CancelledError:
-                return
+                self._room_delete_tasks.pop(room_id, None)
+                raise
             self._room_delete_tasks.pop(room_id, None)
             if room_id not in self.rooms:
                 await delete_room(room_id)
@@ -527,7 +526,8 @@ class ConnectionManager:
             try:
                 await asyncio.sleep(dbmod.LOBBY_IDLE_TIMEOUT_SECONDS)
             except asyncio.CancelledError:
-                return
+                room._lobby_idle_task = None
+                raise
             room._lobby_idle_task = None
             current = self.rooms.get(room_id)
             if current is None or not self._is_lobby_idle_candidate(current):
@@ -557,7 +557,7 @@ class ConnectionManager:
                 }
             )
         )
-        for conn in list(room.connections.values()):
+        for conn in tuple(room.connections.values()):
             try:
                 await conn.close()
             except Exception as exc:

@@ -14,6 +14,9 @@ from .db import (
 )
 from .manager import GAME_CATEGORIES, normalize_text
 
+_ERR_UNKNOWN_CATEGORY = "Nieznana kategoria."
+_ERR_EMPTY_WORD = "Słowo nie może być puste."
+
 _CATEGORY_TO_SEED: dict[str, str] = {
     "Państwo": "countries",
     "Miasto": "cities",
@@ -47,10 +50,10 @@ def _format_created_at(epoch: int) -> str:
 async def submit_dictionary_intake(*, word: str, category: str, letter: str) -> dict:
     """Zapisuje zgłoszenie słownika bez kolejki AI — do ręcznej weryfikacji."""
     if category not in GAME_CATEGORIES:
-        raise HTTPException(status_code=422, detail="Nieznana kategoria.")
+        raise HTTPException(status_code=422, detail=_ERR_UNKNOWN_CATEGORY)
     cleaned_word = word.strip()
     if not cleaned_word:
-        raise HTTPException(status_code=422, detail="Słowo nie może być puste.")
+        raise HTTPException(status_code=422, detail=_ERR_EMPTY_WORD)
     normalized_letter = _normalize_letter(letter)
     outcome, suggestion_id = await report_dictionary_suggestion(
         category=category,
@@ -75,10 +78,10 @@ async def submit_word_report(*, word: str, category: str, letter: str) -> dict:
     if not rag_queue_enabled():
         return await submit_dictionary_intake(word=word, category=category, letter=letter)
     if category not in GAME_CATEGORIES:
-        raise HTTPException(status_code=422, detail="Nieznana kategoria.")
+        raise HTTPException(status_code=422, detail=_ERR_UNKNOWN_CATEGORY)
     cleaned_word = word.strip()
     if not cleaned_word:
-        raise HTTPException(status_code=422, detail="Słowo nie może być puste.")
+        raise HTTPException(status_code=422, detail=_ERR_EMPTY_WORD)
     normalized_letter = _normalize_letter(letter)
     outcome, suggestion_id = await report_dictionary_suggestion(
         category=category,
@@ -101,10 +104,10 @@ async def lookup_word_reason(*, word: str, category: str, letter: str) -> dict:
     if not rag_queue_enabled():
         raise HTTPException(status_code=503, detail="Kolejka weryfikacji AI jest wyłączona.")
     if category not in GAME_CATEGORIES:
-        raise HTTPException(status_code=422, detail="Nieznana kategoria.")
+        raise HTTPException(status_code=422, detail=_ERR_UNKNOWN_CATEGORY)
     cleaned_word = word.strip()
     if not cleaned_word:
-        raise HTTPException(status_code=422, detail="Słowo nie może być puste.")
+        raise HTTPException(status_code=422, detail=_ERR_EMPTY_WORD)
     normalized_letter = _normalize_letter(letter)
     row = await fetch_latest_dictionary_suggestion(
         category=category,

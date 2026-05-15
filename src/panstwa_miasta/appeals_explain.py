@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from panstwa_miasta.data import COUNTRIES, MIASTA, NAMES, ROSLINY, ZWIERZETA, job_answer_accepted
 from panstwa_miasta.manager import (
     GAME_CATEGORIES,
@@ -18,6 +20,26 @@ REASON_MESSAGES: dict[str, str] = {
     "not_in_dictionary": "Tego wpisu nie ma w słowniku gry dla tej kategorii.",
     "veto_rejected": "Gracze odrzucili odpowiedź w kategorii Rzecz głosowaniem „nie”.",
 }
+
+
+def _dictionary_validators() -> dict[str, Callable[[str], bool]]:
+    from .geo_answer_aliases import resolve_city_answer, resolve_country_answer
+
+    return {
+        "Państwo": lambda n: resolve_country_answer(n) in COUNTRIES,
+        "Miasto": lambda n: resolve_city_answer(n) in MIASTA,
+        "Imię": lambda n: n in NAMES,
+        "Zawód": job_answer_accepted,
+        "Zwierzę": lambda n: _fauna_flora_norm_valid(n, ZWIERZETA),
+        "Roślina": lambda n: _fauna_flora_norm_valid(n, ROSLINY),
+    }
+
+
+def _answer_in_dictionary(category: str, ans_norm: str) -> bool:
+    if category == VETO_CATEGORY:
+        return True
+    validate = _dictionary_validators().get(category)
+    return validate(ans_norm) if validate is not None else True
 
 
 def explain_zero_score(
@@ -43,23 +65,7 @@ def explain_zero_score(
     if category == VETO_CATEGORY and veto_rejected:
         return "veto_rejected", REASON_MESSAGES["veto_rejected"]
 
-    if category == "Państwo":
-        from .geo_answer_aliases import resolve_country_answer
-
-        if resolve_country_answer(ans_norm) not in COUNTRIES:
-            return "not_in_dictionary", REASON_MESSAGES["not_in_dictionary"]
-    if category == "Miasto":
-        from .geo_answer_aliases import resolve_city_answer
-
-        if resolve_city_answer(ans_norm) not in MIASTA:
-            return "not_in_dictionary", REASON_MESSAGES["not_in_dictionary"]
-    if category == "Imię" and ans_norm not in NAMES:
-        return "not_in_dictionary", REASON_MESSAGES["not_in_dictionary"]
-    if category == "Zawód" and not job_answer_accepted(ans_norm):
-        return "not_in_dictionary", REASON_MESSAGES["not_in_dictionary"]
-    if category == "Zwierzę" and not _fauna_flora_norm_valid(ans_norm, ZWIERZETA):
-        return "not_in_dictionary", REASON_MESSAGES["not_in_dictionary"]
-    if category == "Roślina" and not _fauna_flora_norm_valid(ans_norm, ROSLINY):
+    if not _answer_in_dictionary(category, ans_norm):
         return "not_in_dictionary", REASON_MESSAGES["not_in_dictionary"]
 
     if category == VETO_CATEGORY:
