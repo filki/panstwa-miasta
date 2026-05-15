@@ -106,13 +106,14 @@ W **Settings → Secrets and variables → Actions → Secrets**:
 | `Brak repozytorium git w ...` | Na VPS wykonaj clone do katalogu z §1 / `DEPLOY_APP_DIR`. |
 | `uv nie znaleziony` | Zainstaluj `uv` dla tego samego użytkownika co SSH; skrypt dodaje `~/.local/bin` do `PATH`. |
 | `sudo: a password is required` | Sudoers jak w `SUDOERS.example` albo deploy jako root (mniej zalecane). |
-| Smoke test ≠ 200 | `journalctl -u panstwa-miasta -e`; Caddy / firewall; czy usługa nasłuchuje na `127.0.0.1:8000`. |
+| Smoke test ≠ 200 | `journalctl -u panstwa-miasta -e`; Caddy / firewall; czy usługa nasłuchuje na `127.0.0.1:8000`. Przy Turso deploy czeka do 20 min na `/healthz` — 502 z Caddy = uvicorn jeszcze w `lifespan`. |
+| Deploy timeout na `/healthz` | Ustaw `PM_DEPLOY_HEALTH_TIMEOUT_SEC=1200` lub `LIBSQL_*` w `/etc/panstwa-miasta.env`; unit: `TimeoutStartSec=1200` w [`panstwa-miasta.service.example`](panstwa-miasta.service.example). |
 | SSH / host key | Domyślnie `appleboy/ssh-action` może akceptować nowy klucz; dla produkcji rozważ `known_hosts` (dokumentacja akcji). |
 
 ## 6. Uwagi ogólne
 
 - Jeden proces `uvicorn` = jedna kopia limitów w RAM (`limits.py`); przy skalowaniu — osobna dyskusja.
-- **Limity za Caddy:** w działającym unit systemd musi być `Environment=PM_TRUST_X_FORWARDED_FOR=1` (jak w [`panstwa-miasta.service.example`](panstwa-miasta.service.example)), inaczej rate limit widzi IP proxy zamiast klienta. Po zmianie: `sudo systemctl daemon-reload && sudo systemctl restart panstwa-miasta`.
+- **Limity za Caddy:** w działającym unit systemd musi być `Environment=PM_TRUST_X_FORWARDED_FOR=1` (jak w [`panstwa-miasta.service.example`](panstwa-miasta.service.example)), inaczej rate limit widzi IP proxy zamiast klienta. Unit powinien mieć `EnvironmentFile=/etc/panstwa-miasta.env` (szablon w example) oraz `TimeoutStartSec=1200` przy Turso. Po zmianie: `sudo systemctl daemon-reload && sudo systemctl restart panstwa-miasta`.
 - **Umami Cloud (opcjonalnie):** w unit systemd lub `EnvironmentFile` ustaw `UMAMI_SCRIPT_URL` i `UMAMI_WEBSITE_ID` (patrz [`env.example`](env.example)). Brak któregokolwiek = brak skryptu w HTML (dev, CI). Po deployu sprawdź pageview w panelu Umami dla `https://panstwamiasta.com.pl/`. Nie commituj ID do repo.
 - **Turso (libSQL):** w `EnvironmentFile` ustaw `LIBSQL_URL` i `LIBSQL_AUTH_TOKEN` (embedded replica — lokalny plik w `APP_DIR`, zapisy na primary w chmurze; patrz [`env.example`](env.example)). Przed pierwszym włączeniem na istniejącym VPS zaimportuj bieżący `panstwa_miasta.db` do Turso (`turso db import …`) albo zaakceptuj świeży seed przy pustej bazie w chmurze. Nie commituj tokenów.
 

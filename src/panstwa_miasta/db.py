@@ -10,7 +10,10 @@ from .cities_seed import CITIES_SEED
 from .countries_seed import COUNTRIES_SEED
 from .db_backend import connect, connect_dictionary
 from .jobs_seed import JOBS_SEED
+from .logger import get_logger
 from .names_seed import NAMES_SEED
+
+logger = get_logger(__name__)
 
 
 def _resolve_db_path() -> pathlib.Path:
@@ -68,6 +71,12 @@ async def _ensure_rooms_visibility_column(db) -> None:
 def _name_norm(name: str) -> str:
     """Normalisation kept in sync with ``manager.normalize_text``."""
     return name.strip().lower().replace("-", " ").replace("  ", " ")
+
+
+async def _table_nonempty(db, table: str) -> bool:
+    """True if ``table`` exists and has at least one row (skip redundant seed on restart)."""
+    async with db.execute(f"SELECT 1 FROM {table} LIMIT 1") as cur:
+        return await cur.fetchone() is not None
 
 
 async def init_db():
@@ -146,28 +155,31 @@ async def init_db():
         # CREATE TABLE rooms — wtedy WebSocket wpada w „no such table: rooms”.
         await db.commit()
 
-        await db.executemany(
-            """
-            INSERT OR IGNORE INTO countries
-                (name, name_norm, continent, capital, area_km2, population, density,
-                 head_of_state, recognized)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            [
-                (
-                    row["name"],
-                    _name_norm(row["name"]),
-                    row["continent"],
-                    row["capital"],
-                    row["area_km2"],
-                    row["population"],
-                    row["density"],
-                    row["head_of_state"],
-                    1 if row["recognized"] else 0,
-                )
-                for row in COUNTRIES_SEED
-            ],
-        )
+        if await _table_nonempty(db, "countries"):
+            logger.info("Skipping countries seed (already populated)")
+        else:
+            await db.executemany(
+                """
+                INSERT OR IGNORE INTO countries
+                    (name, name_norm, continent, capital, area_km2, population, density,
+                     head_of_state, recognized)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        row["name"],
+                        _name_norm(row["name"]),
+                        row["continent"],
+                        row["capital"],
+                        row["area_km2"],
+                        row["population"],
+                        row["density"],
+                        row["head_of_state"],
+                        1 if row["recognized"] else 0,
+                    )
+                    for row in COUNTRIES_SEED
+                ],
+            )
         await db.execute("""
             CREATE TABLE IF NOT EXISTS cities (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -180,16 +192,19 @@ async def init_db():
         """)
         await db.execute("CREATE INDEX IF NOT EXISTS idx_cities_nazwa ON cities(nazwa_norm)")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_cities_kraj ON cities(kraj_norm)")
-        await db.executemany(
-            """
-            INSERT OR IGNORE INTO cities (nazwa, nazwa_norm, kraj, kraj_norm)
-            VALUES (?, ?, ?, ?)
-            """,
-            [
-                (row["nazwa"], _name_norm(row["nazwa"]), row["kraj"], _name_norm(row["kraj"]))
-                for row in CITIES_SEED
-            ],
-        )
+        if await _table_nonempty(db, "cities"):
+            logger.info("Skipping cities seed (already populated)")
+        else:
+            await db.executemany(
+                """
+                INSERT OR IGNORE INTO cities (nazwa, nazwa_norm, kraj, kraj_norm)
+                VALUES (?, ?, ?, ?)
+                """,
+                [
+                    (row["nazwa"], _name_norm(row["nazwa"]), row["kraj"], _name_norm(row["kraj"]))
+                    for row in CITIES_SEED
+                ],
+            )
         await db.execute("""
             CREATE TABLE IF NOT EXISTS names (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -201,16 +216,19 @@ async def init_db():
             )
         """)
         await db.execute("CREATE INDEX IF NOT EXISTS idx_names_norm ON names(imie_norm)")
-        await db.executemany(
-            """
-            INSERT OR IGNORE INTO names (imie, imie_norm, plec, liczebnosc)
-            VALUES (?, ?, ?, ?)
-            """,
-            [
-                (row["imie"], _name_norm(row["imie"]), row["plec"], row["liczebnosc"])
-                for row in NAMES_SEED
-            ],
-        )
+        if await _table_nonempty(db, "names"):
+            logger.info("Skipping names seed (already populated)")
+        else:
+            await db.executemany(
+                """
+                INSERT OR IGNORE INTO names (imie, imie_norm, plec, liczebnosc)
+                VALUES (?, ?, ?, ?)
+                """,
+                [
+                    (row["imie"], _name_norm(row["imie"]), row["plec"], row["liczebnosc"])
+                    for row in NAMES_SEED
+                ],
+            )
         await db.execute("""
             CREATE TABLE IF NOT EXISTS jobs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -221,13 +239,16 @@ async def init_db():
             )
         """)
         await db.execute("CREATE INDEX IF NOT EXISTS idx_jobs_kod ON jobs(kod)")
-        await db.executemany(
-            """
-            INSERT OR IGNORE INTO jobs (kod, opis, opis_norm)
-            VALUES (?, ?, ?)
-            """,
-            [(row["kod"], row["opis"], _name_norm(row["opis"])) for row in JOBS_SEED],
-        )
+        if await _table_nonempty(db, "jobs"):
+            logger.info("Skipping jobs seed (already populated)")
+        else:
+            await db.executemany(
+                """
+                INSERT OR IGNORE INTO jobs (kod, opis, opis_norm)
+                VALUES (?, ?, ?)
+                """,
+                [(row["kod"], row["opis"], _name_norm(row["opis"])) for row in JOBS_SEED],
+            )
         await db.execute("""
             CREATE TABLE IF NOT EXISTS things (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
