@@ -1468,5 +1468,6 @@ JOBS_SEED: Final[list[JobSeed]] = [
     {"opis": "urolog", "kod": None},
     {"opis": "urolog dziecięcy", "kod": None},
     {"opis": "weterynarz", "kod": None},
+    {"opis": "wenerolog", "kod": None},
     {"opis": "taternik", "kod": None},
 ]
