@@ -14,6 +14,12 @@ Wersje produktu dla agentów i ludzi. Format inspirowany [Keep a Changelog](http
 
 Backlog po sprintach — bez obietnic dat. Priorytety z `AGENTS.md`: stabilność gry i deployu przed monetyzacją i pełnym RAG.
 
+### Zmiany
+
+- **Prod:** pełna baza gry na Turso (embedded replica); `PM_DICTIONARY_*` opcjonalne (inbox odwołań).
+- Słowniki fauna/flora/miasta GeoNames: `scripts/seed_data/*.jsonl.gz` + tabele `animal_norms` / `plant_norms` zamiast wielkich modułów `*_generated.py` w `src/`.
+- Usunięty martwy kod (`build_fauna_flora_mvp.py`, puste `cities_seed_a_generated.py`).
+
 ### Planowane
 
 - Testy integracyjne WebSocket (pytest, ≥2 klientów) i więcej gałęzi reconnect w Jest.

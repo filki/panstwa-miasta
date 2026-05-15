@@ -1,5 +1,8 @@
 # n8n na VPS (automatyzacja kolejki słów)
 
+> **Produkcja (2026-05):** stack n8n **nie jest** uruchomiony na VPS gry.
+> Pliki w repo służą do przyszłego stagingu RAG (`PM_RAG_QUEUE_ENABLED`).
+
 Osobny stack Docker obok gry — restart n8n nie wymaga restartu `panstwa-miasta`.
 
 ## Start

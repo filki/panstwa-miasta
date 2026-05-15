@@ -19,7 +19,8 @@ git clone https://github.com/filki/panstwa-miasta.git .
 uv sync
 ```
 
-Baza SQLite pojawi się jako `panstwa_miasta.db` w katalogu głównym repozytorium (obok `src/`).
+Baza: lokalnie `panstwa_miasta.db` (obok `src/`). Na produkcji zwykle **Turso**
+(embedded replica — plik repliki w `APP_DIR`, primary w chmurze; patrz §6).
 
 ## 2. systemd
 
