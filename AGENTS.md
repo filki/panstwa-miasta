@@ -41,7 +41,7 @@ uv run pytest -q --cov=src/panstwa_miasta --cov-report=xml
 
 # JS tests must go through Docker on WSL — local `npm test` hits a
 # Windows-path issue with WSL workspaces. Use:
-docker run --rm -v "$PWD:/work" -w /work node:20-alpine \
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work node:20-alpine \
   sh -c "npm ci --silent && npm test -- --coverage \
          --coverageReporters=lcov --coverageDirectory=coverage-js"
 ```
