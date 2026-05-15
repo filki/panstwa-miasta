@@ -536,6 +536,13 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
         )
 
 
+async def _touch_lobby_after_ready(room) -> None:
+    if room.is_playing:
+        manager.cancel_lobby_idle(room)
+    else:
+        manager.touch_lobby_idle(room, reset=True)
+
+
 async def _dispatch(msg: dict, room, room_id: str, client_name: str) -> None:
     """Route a message to the appropriate handler."""
     msg_type = msg.get("type")
@@ -545,10 +552,7 @@ async def _dispatch(msg: dict, room, room_id: str, client_name: str) -> None:
         await handle_chat(room, client_name, msg)
     elif msg_type == "ready":
         await handle_ready(room, room_id, client_name, global_round_timeout)
-        if room.is_playing:
-            manager.cancel_lobby_idle(room)
-        else:
-            manager.touch_lobby_idle(room, reset=True)
+        await _touch_lobby_after_ready(room)
     elif msg_type == "not_ready":
         await handle_not_ready(room, client_name)
         manager.touch_lobby_idle(room, reset=True)
@@ -566,7 +570,7 @@ async def _dispatch(msg: dict, room, room_id: str, client_name: str) -> None:
         await handle_veto_vote(room, client_name, msg)
     elif msg_type == "kick_player":
         await handle_kick_player(room, room_id, client_name, msg, manager)
-    else:
+    elif msg_type is not None:
         logger.warning(f"Unknown message type '{msg_type}' from '{client_name}'")
 
 

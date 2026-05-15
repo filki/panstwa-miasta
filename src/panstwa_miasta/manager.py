@@ -3,6 +3,7 @@ import json
 import secrets
 import time
 from collections import deque
+from collections.abc import Callable
 from typing import Any, cast
 
 from fastapi import WebSocket
@@ -299,24 +300,20 @@ class Room:
     def _calculate_base_category_score(self, category: str, ans_norm: str) -> int:
         """Determines if an answer is valid based on static data. Returns -1 if valid but needs multiplier check."""
         from .data import COUNTRIES, MIASTA, NAMES, ROSLINY, ZWIERZETA, job_answer_accepted
+        from .geo_answer_aliases import resolve_city_answer, resolve_country_answer
 
-        if category == "Państwo":
-            from .geo_answer_aliases import resolve_country_answer
-
-            return -1 if resolve_country_answer(ans_norm) in COUNTRIES else 0
-        if category == "Miasto":
-            from .geo_answer_aliases import resolve_city_answer
-
-            return -1 if resolve_city_answer(ans_norm) in MIASTA else 0
-        if category == "Imię":
-            return -1 if ans_norm in NAMES else 0
-        if category == "Zawód":
-            return -1 if job_answer_accepted(ans_norm) else 0
-        if category == "Zwierzę":
-            return -1 if _fauna_flora_norm_valid(ans_norm, ZWIERZETA) else 0
-        if category == "Roślina":
-            return -1 if _fauna_flora_norm_valid(ans_norm, ROSLINY) else 0
-        return -1  # Rzecz / other
+        validators: dict[str, Callable[[str], bool]] = {
+            "Państwo": lambda n: resolve_country_answer(n) in COUNTRIES,
+            "Miasto": lambda n: resolve_city_answer(n) in MIASTA,
+            "Imię": lambda n: n in NAMES,
+            "Zawód": job_answer_accepted,
+            "Zwierzę": lambda n: _fauna_flora_norm_valid(n, ZWIERZETA),
+            "Roślina": lambda n: _fauna_flora_norm_valid(n, ROSLINY),
+        }
+        validate = validators.get(category)
+        if validate is None:
+            return -1  # Rzecz / other
+        return -1 if validate(ans_norm) else 0
 
     def _assign_round_points(self, round_scores: dict[str, dict]):
         """Applies 15/10/5 points logic based on uniqueness of answers."""

@@ -356,52 +356,45 @@ const MESSAGE_HANDLERS = {
     appeal_token: onAppealToken,
 };
 
-function onRoundStarted(msg) {
-    hideRoundResultsOverlay();
-    provisionalRoundResultsMsg = null;
-    globalThis.currentLetter = msg.letter;
-    pmHadRoundStarted = true;
-    if (typeof setRoomPhase === 'function') setRoomPhase('playing');
-
-    if (msg.resume) {
-        const letterEl = document.getElementById('current-letter');
-        if (letterEl) letterEl.textContent = msg.letter;
-        const btn = document.getElementById('btn-draw');
-        if (btn) {
-            btn.classList.remove('ready');
-            btn.style.display = 'none';
-        }
-        addLog(
-            `<em>Połączenie przywrócone. Runda ${msg.current_round}/${msg.max_rounds}, litera: <strong>${msg.letter}</strong>.</em>`,
-            'system-msg',
-        );
-        clearClientRoundTimers();
-        if (msg.answer_submitted) {
-            lockSubmittedAnswers();
-        } else {
-            clearInputColors();
-            enableInputs();
-        }
-        if (msg.stop_triggered) {
-            onStopRound({
-                sender: 'Serwer (Wznowienie)',
-                time_left: typeof msg.stop_seconds_left === 'number' ? msg.stop_seconds_left : 10,
-                resume: true,
-            });
-            return;
-        }
-        if (typeof msg.seconds_left === 'number') {
-            startRoundTimer(msg.seconds_left);
-        } else {
-            const rt = document.getElementById('round-timer');
-            if (rt) {
-                rt.style.display = 'block';
-                rt.textContent = '—';
-            }
-        }
+function onRoundStartedResume(msg) {
+    const letterEl = document.getElementById('current-letter');
+    if (letterEl) letterEl.textContent = msg.letter;
+    const btn = document.getElementById('btn-draw');
+    if (btn) {
+        btn.classList.remove('ready');
+        btn.style.display = 'none';
+    }
+    addLog(
+        `<em>Połączenie przywrócone. Runda ${msg.current_round}/${msg.max_rounds}, litera: <strong>${msg.letter}</strong>.</em>`,
+        'system-msg',
+    );
+    clearClientRoundTimers();
+    if (msg.answer_submitted) {
+        lockSubmittedAnswers();
+    } else {
+        clearInputColors();
+        enableInputs();
+    }
+    if (msg.stop_triggered) {
+        onStopRound({
+            sender: 'Serwer (Wznowienie)',
+            time_left: typeof msg.stop_seconds_left === 'number' ? msg.stop_seconds_left : 10,
+            resume: true,
+        });
         return;
     }
+    if (typeof msg.seconds_left === 'number') {
+        startRoundTimer(msg.seconds_left);
+    } else {
+        const rt = document.getElementById('round-timer');
+        if (rt) {
+            rt.style.display = 'block';
+            rt.textContent = '—';
+        }
+    }
+}
 
+function onRoundStartedFresh(msg) {
     const afterReveal = () => {
         const lotteryFunc = globalThis.runLetterLottery || runLetterLottery;
         lotteryFunc(msg.letter, () => {
@@ -420,6 +413,19 @@ function onRoundStarted(msg) {
     };
     const countdownFn = globalThis.runRoundStartCountdown || runRoundStartCountdown;
     countdownFn(afterReveal);
+}
+
+function onRoundStarted(msg) {
+    hideRoundResultsOverlay();
+    provisionalRoundResultsMsg = null;
+    globalThis.currentLetter = msg.letter;
+    pmHadRoundStarted = true;
+    if (typeof setRoomPhase === 'function') setRoomPhase('playing');
+    if (msg.resume) {
+        onRoundStartedResume(msg);
+        return;
+    }
+    onRoundStartedFresh(msg);
 }
 
 function onStopRound(msg) {

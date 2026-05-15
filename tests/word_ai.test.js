@@ -43,6 +43,16 @@ describe("word-ai", () => {
         ).rejects.toThrow("wyłączona");
     });
 
+    test("pmReportWord uses optional detail from JSON body", async () => {
+        fetch.mockResolvedValue({
+            ok: false,
+            json: async () => ({ detail: "za długie" }),
+        });
+        await expect(
+            pmReportWord({ word: "x", category: "Państwo", starting_letter: "x" }),
+        ).rejects.toThrow("za długie");
+    });
+
     test("pmCheckWordReason returns status", async () => {
         fetch.mockResolvedValue({
             ok: true,
