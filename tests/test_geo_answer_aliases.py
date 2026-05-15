@@ -25,3 +25,4 @@ def test_resolve_city_german_fold_only() -> None:
 
 def test_resolve_country_rpa_long_form() -> None:
     assert resolve_country_answer("republika południowej afryki") == "południowa afryka"
+    assert resolve_country_answer("rpa") == "południowa afryka"

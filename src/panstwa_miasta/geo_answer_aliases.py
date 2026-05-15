@@ -55,7 +55,8 @@ CITY_ANSWER_ALIASES: dict[str, str] = {
 }
 
 COUNTRY_ANSWER_ALIASES: dict[str, str] = {
-    "republika poludniowej afryki": "poludniowa afryka",
+    "rpa": "południowa afryka",
+    "republika poludniowej afryki": "południowa afryka",
     "republika południowej afryki": "południowa afryka",
     "south africa": "południowa afryka",
     "vereinigte staaten": "stany zjednoczone",
