@@ -8,7 +8,9 @@ from panstwa_miasta.db_backend import connect
 
 
 @pytest.mark.asyncio
-async def test_init_db_populates_animal_and_plant_norms(tmp_path: object, monkeypatch: pytest.MonkeyPatch):
+async def test_init_db_populates_animal_and_plant_norms(
+    tmp_path: object, monkeypatch: pytest.MonkeyPatch
+):
     monkeypatch.setattr(db_module, "DB_PATH", tmp_path / "norms-seed.db")  # type: ignore[operator]
     await init_db()
     async with connect() as db:
