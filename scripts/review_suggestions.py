@@ -19,8 +19,8 @@ _SEED_HINTS: dict[str, str] = {
     "cities": "src/panstwa_miasta/cities_seed*.py / scripts regeneracji miast",
     "names": "src/panstwa_miasta/names_seed.py",
     "jobs": "src/panstwa_miasta/jobs_seed.py (ew. scripts/build_jobs_seed.py)",
-    "animals": "src/panstwa_miasta/animals_seed_generated.py",
-    "plants": "src/panstwa_miasta/plants_seed_generated.py",
+    "animals": "scripts/seed_data/animals_norms.jsonl.gz (+ ZWIERZETA_EXTRA w data.py)",
+    "plants": "scripts/seed_data/plants_norms.jsonl.gz (+ ROSLINY_EXTRA w data.py)",
 }
 
 

@@ -6,7 +6,8 @@ Solo project, prod target: smartphone-first; obecnie bez reklam w grze i bez kon
 ## Stack
 
 - **Python 3.13**, package manager `uv`
-- **Backend**: FastAPI, `aiosqlite` (single SQLite file `panstwa-miasta.db`), WebSocket per room
+- **Backend**: FastAPI, `aiosqlite` / libSQL (dev: lokalny `panstwa_miasta.db`; **prod: Turso**
+  embedded replica przez `LIBSQL_URL` + `LIBSQL_AUTH_TOKEN`), WebSocket per room
 - **Frontend**: vanilla JS / HTML / CSS, no framework, no jQuery. ES modules in `static/js/`
 - **Tests**: `pytest` (Python, 35 tests) + `jest` (JS, 59 tests)
 - **Lint/format/types**: `ruff` (lint + format), `ty` (type check)
@@ -69,10 +70,11 @@ Static game data lives in **SQLite tables**, not files:
   ``reload_jobs()`` (pełna fraza + alias pierwszego słowa). Regeneracja
   seeda: ``uv run python scripts/build_jobs_seed.py --zawody PLIK --liniowy PLIK``.
 - `cities` table — `id`, `nazwa`, `nazwa_norm`, `kraj` (jak w ``countries.name``),
-  `kraj_norm`. Walidacja **Miasto** z cache
-  ``MIASTA`` (`reload_miasta()`), bez Wikidata. **Zwierzę** / **Roślina**
-  z lokalnych zbiorów ``ZWIERZETA`` / ``ROSLINY`` (`animals_seed_generated.py`,
-  `plants_seed_generated.py`; ``reload_zwierzeta()`` / ``reload_rosliny()``) —
+  `kraj_norm`. Seed: Wikidata PL + ``scripts/seed_data/cities_geonames.jsonl.gz``.
+  Walidacja **Miasto** z cache ``MIASTA`` (`reload_miasta()`), bez Wikidata w runtime.
+- `animal_norms` / `plant_norms` — seed z ``scripts/seed_data/*.jsonl.gz``
+  (eksport: ``scripts/export_norms_seed_data.py``; skrapery wiki/GBIF w ``scripts/``).
+  Cache ``ZWIERZETA`` / ``ROSLINY`` przez ``reload_zwierzeta()`` / ``reload_rosliny()`` —
   **bez** odpytywania API w runtime.
 
 In-memory caches `COUNTRIES`, `MIASTA`, `NAMES`, `JOBS`, `ZWIERZETA`, `ROSLINY`

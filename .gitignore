@@ -29,6 +29,9 @@ jest_full_output.txt
 # Lokalne zrzuty PKD / surowe listy (gra: SQLite + *_seed.py) — tylko katalog w rootcie
 /data/
 
+# GeoNames źródło (pobierz: https://download.geonames.org/export/dump/cities15000.zip)
+scripts/cities15000.txt
+
 # Wyjście scripts/extract_jobs.py
 scripts/pkd_raw_jobs.txt
 

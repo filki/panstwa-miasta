@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Skrapuje polską Wikipedię (BS4) — kategorie ze stronami gatunków → ``animals_seed_generated.py``.
+"""Skrapuje polską Wikipedię (BS4) — kategorie ze stronami gatunków → ``animals_norms.jsonl.gz``.
 
 Wymaga sieci. Szanuj serwer: opóźnienia między stronami.
 
@@ -18,10 +18,10 @@ from urllib.parse import urljoin
 
 import httpx
 from bs4 import BeautifulSoup
-from seed_scrape_common import norm_game, polite_sleep, write_frozenset_module
+from seed_scrape_common import norm_game, polite_sleep
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-OUT = REPO_ROOT / "src" / "panstwa_miasta" / "animals_seed_generated.py"
+OUT = REPO_ROOT / "scripts" / "seed_data" / "animals_norms.jsonl.gz"
 
 UA = {
     "User-Agent": "PanstwaMiasta/1.0 (+https://github.com/filki/panstwa-miasta; animals seed BS4)"
@@ -151,14 +151,10 @@ def main() -> None:
     if len(all_titles) < 2000:
         print(f"UWAGA: tylko {len(all_titles)} nazw — sprawdź sieć lub źródła.", file=sys.stderr)
 
-    n = write_frozenset_module(
-        out_path=OUT,
-        const_name="ANIMALS_NORMS",
-        items=all_titles,
-        doc_first_line="Zwierzęta: polska Wikipedia — kategorie + Wikiprojekt Zoologia (Zwierzęta świata, BS4).",
-        generator_script="scripts/build_animals_wikipedia_bs4.py",
-    )
-    print(f"Zapisano {n} wpisów → {OUT}")
+    from panstwa_miasta.seed_data_loader import write_animal_norms_jsonl_gz
+
+    n = write_animal_norms_jsonl_gz(all_titles)
+    print(f"Zapisano {n} norm → {OUT}")
 
 
 if __name__ == "__main__":
