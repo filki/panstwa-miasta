@@ -1,6 +1,7 @@
 import asyncio
 import json
 import pathlib
+import time
 from contextlib import asynccontextmanager, suppress
 from datetime import date
 from html import escape
@@ -74,17 +75,33 @@ logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    t0 = time.monotonic()
+
+    def _step(label: str, since: float) -> float:
+        now = time.monotonic()
+        logger.info("Startup %s (%.1fs since previous)", label, now - since)
+        return now
+
     logger.info("Application startup: initializing DB and loading rooms")
     await init_db()
+    t = _step("init_db done", t0)
     await reload_countries()
+    t = _step("reload_countries done", t)
     await reload_miasta()
+    t = _step("reload_miasta done", t)
     await reload_names()
+    t = _step("reload_names done", t)
     await reload_jobs()
+    t = _step("reload_jobs done", t)
     await reload_things()
+    t = _step("reload_things done", t)
     await reload_zwierzeta()
+    t = _step("reload_zwierzeta done", t)
     await reload_rosliny()
+    t = _step("reload_rosliny done", t)
     await manager.load_from_db()
-    logger.info("Startup completed")
+    _step("load_from_db done", t)
+    logger.info("Startup completed (total %.1fs)", time.monotonic() - t0)
     yield
     logger.info("Application shutdown")
 
