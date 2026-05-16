@@ -38,6 +38,7 @@ from .data import (
 )
 from .db import delete_room, fetch_game_transcript, init_db
 from .db_backend import connect
+from .db_redis import close_redis, connect_redis, redis_configured, redis_ping
 from .handlers import (
     _begin_results_phase,
     handle_answers,
@@ -101,8 +102,13 @@ async def lifespan(app: FastAPI):
     t = _step("reload_rosliny done", t)
     await manager.load_from_db()
     _step("load_from_db done", t)
+    if redis_configured():
+        await connect_redis()
+        _step("redis connect done", t)
     logger.info("Startup completed (total %.1fs)", time.monotonic() - t0)
     yield
+    await close_redis()
+    logger.info("Redis connection closed")
     logger.info("Application shutdown")
 
 
@@ -299,13 +305,25 @@ async def get_manifest() -> FileResponse:
     },
 )
 async def get_healthz() -> dict[str, str]:
+    result: dict[str, str] = {}
     try:
         async with connect() as db, db.execute("SELECT 1") as cur:
             await cur.fetchone()
+        result["db"] = "ok"
     except Exception as exc:
         logger.warning("healthz DB check failed: %s", exc)
-        raise HTTPException(status_code=503, detail="unhealthy") from exc
-    return {"status": "ok", "db": "ok"}
+        result["db"] = "error"
+    if redis_configured():
+        try:
+            redis_ok = await redis_ping()
+            result["redis"] = "ok" if redis_ok else "error"
+        except Exception as exc:
+            logger.warning("healthz Redis check failed: %s", exc)
+            result["redis"] = "error"
+    status = "ok" if result.get("db") == "ok" and result.get("redis", "ok") == "ok" else "unhealthy"
+    if status != "ok":
+        raise HTTPException(status_code=503, detail=json.dumps(result))
+    return {"status": "ok", **result}
 
 
 @app.get(
