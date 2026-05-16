@@ -30,11 +30,12 @@ dev = [
     "beautifulsoup4>=4.12.0",  # skrypty build: scrape HTML (fauna/flora)
     "ruff>=0.6.0",
     "ty>=0.0.28",
+    "redis>=5.0",
 ]
+redis = ["redis>=5.0"]
 gbif = [
     "pygbif>=0.6.6",
 ]
-redis = ["redis>=5.0"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
