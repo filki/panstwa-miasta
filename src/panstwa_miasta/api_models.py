@@ -83,7 +83,7 @@ class CreateRoomOut(BaseModel):
 class AppealIn(BaseModel):
     """Odwołanie gracza do własnej odpowiedzi z 0 pkt po zakończeniu gry."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     player_name: str = Field(..., min_length=1, max_length=80)
     round: int = Field(..., ge=1, le=50)
@@ -104,7 +104,7 @@ class AppealOut(BaseModel):
 class WordReportIn(BaseModel):
     """Zgłoszenie słowa spoza słownika do kolejki AI."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     word: str = Field(..., min_length=1, max_length=120)
     category: str = Field(..., min_length=1, max_length=32)
@@ -124,7 +124,7 @@ class WordReportOut(BaseModel):
 class WordCheckReasonIn(BaseModel):
     """Zapytanie o status zgłoszenia słowa w kolejce AI."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     word: str = Field(..., min_length=1, max_length=120)
     category: str = Field(..., min_length=1, max_length=32)

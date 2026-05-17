@@ -18,6 +18,7 @@ from .db import (
     save_player_score,
     save_room,
 )
+from .db_redis import redis_configured
 from .limits import (
     check_ws_before_connect,
     max_players_per_room,
@@ -747,7 +748,7 @@ class ConnectionManager:
             room.host_name = r_data["host_name"]
             room.scores = r_data["players"]
             self.rooms[r_data["room_id"]] = room
-        print(f"✅ Załadowano {len(active_rooms)} pokoi z bazy danych.")
+        logger.info("Loaded %d rooms from database", len(active_rooms))
 
     async def kick_player(
         self, room_id: str, actor_name: str, target_name: str
@@ -876,7 +877,8 @@ class ConnectionManager:
             self.cancel_lobby_idle(room)
             del self.rooms[room_id]
             logger.info("Room %s deleted because it became empty", room_id)
-            self.schedule_delayed_room_delete(room_id)
+            if not redis_configured():
+                self.schedule_delayed_room_delete(room_id)
             return True
 
         if self._is_lobby_idle_candidate(room):

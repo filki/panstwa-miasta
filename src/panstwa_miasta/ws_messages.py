@@ -14,7 +14,7 @@ _MAX_KICK_TARGET = 120
 
 
 class ChatMessage(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     type: Literal["chat"]
     text: str = Field(..., min_length=1, max_length=_MAX_CHAT)
@@ -53,7 +53,7 @@ class StopMessage(BaseModel):
 
 
 class AnswersMessage(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     type: Literal["answers"]
     answers: dict[str, str] = Field(default_factory=dict)
@@ -73,14 +73,14 @@ class AnswersMessage(BaseModel):
 
 
 class KickPlayerMessage(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     type: Literal["kick_player"]
     target: str = Field(..., min_length=1, max_length=_MAX_KICK_TARGET)
 
 
 class VetoVoteMessage(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     type: Literal["veto_vote"]
     target: str = Field(..., min_length=1, max_length=_MAX_KICK_TARGET)
