@@ -9,6 +9,29 @@ function sendJson(obj) {
     if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
 }
 
+/* ---------- Powiadomienia przeglądarkowe (tylko gdy tablica nieaktywna) ---------- */
+function tryNotify(title, body) {
+    if (!document.hidden) return;
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission === "granted") {
+        new Notification(title, {
+            body,
+            icon: "/static/icons/icon.svg",
+            silent: true,
+        });
+    } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then((perm) => {
+            if (perm === "granted") {
+                new Notification(title, {
+                    body,
+                    icon: "/static/icons/icon.svg",
+                    silent: true,
+                });
+            }
+        });
+    }
+}
+
 function clearClientRoundTimers() {
     if (globalThis.globalRoundTimer) {
         clearInterval(globalThis.globalRoundTimer);
@@ -47,10 +70,11 @@ function lockSubmittedAnswers() {
 /** Home redirect; Jest has no real `location` (Sonar: handle or avoid empty catch). */
 function safeNavigateHome() {
     try {
-        const isJestEnv = typeof process !== 'undefined' && process?.env?.JEST_WORKER_ID;
-        if (!isJestEnv) globalThis.location.href = '/';
+        const isJestEnv =
+            typeof process !== "undefined" && process?.env?.JEST_WORKER_ID;
+        if (!isJestEnv) globalThis.location.href = "/";
     } catch (e) {
-        console.debug('pm: home navigation skipped', e);
+        console.debug("pm: home navigation skipped", e);
     }
 }
 
@@ -59,16 +83,23 @@ function safeNavigateHome() {
 // a missing confetti() previously crashed the letter lottery interval and
 // hung every game right after drawing the letter.
 function fireConfetti(opts) {
-    if (typeof confetti !== 'function') return;
-    try { confetti(opts); } catch (e) { console.warn('confetti failed', e); }
+    if (typeof confetti !== "function") return;
+    try {
+        confetti(opts);
+    } catch (e) {
+        console.warn("confetti failed", e);
+    }
 }
 
 function stopCelebrationEffects() {
-    if (typeof confetti === 'function' && typeof confetti.reset === 'function') {
+    if (
+        typeof confetti === "function" &&
+        typeof confetti.reset === "function"
+    ) {
         try {
             confetti.reset();
         } catch (e) {
-            console.warn('confetti reset failed', e);
+            console.warn("confetti reset failed", e);
         }
     }
 }
@@ -76,24 +107,24 @@ function stopCelebrationEffects() {
 function leaveRoom() {
     leftByUser = true;
     isLeaving = true;
-    globalThis.myNick = '';
+    globalThis.myNick = "";
     // Hide chat UI and show join UI (keeps tests stable and helps if navigation
     // is blocked by environment or user agent).
-    const chatSection = document.getElementById('chat-section');
-    const joinSection = document.getElementById('join-section');
-    if (chatSection) chatSection.style.display = 'none';
-    if (joinSection) joinSection.style.display = 'block';
+    const chatSection = document.getElementById("chat-section");
+    const joinSection = document.getElementById("join-section");
+    if (chatSection) chatSection.style.display = "none";
+    if (joinSection) joinSection.style.display = "block";
 
-    const inlineJoin = document.getElementById('room-inline-join');
-    if (inlineJoin) inlineJoin.style.display = 'block';
+    const inlineJoin = document.getElementById("room-inline-join");
+    if (inlineJoin) inlineJoin.style.display = "block";
 
-    const btnLeave = document.getElementById('btn-leave');
-    if (btnLeave) btnLeave.style.display = 'none';
+    const btnLeave = document.getElementById("btn-leave");
+    if (btnLeave) btnLeave.style.display = "none";
 
-    const navRoomInfo = document.getElementById('nav-room-info');
-    const navHomeLink = document.getElementById('nav-home-link');
-    if (navRoomInfo) navRoomInfo.style.display = 'none';
-    if (navHomeLink) navHomeLink.style.display = '';
+    const navRoomInfo = document.getElementById("nav-room-info");
+    const navHomeLink = document.getElementById("nav-home-link");
+    if (navRoomInfo) navRoomInfo.style.display = "none";
+    if (navHomeLink) navHomeLink.style.display = "";
 
     if (ws?.readyState === WebSocket.OPEN) {
         ws.close();
@@ -114,65 +145,78 @@ function leaveRoom() {
 function connect() {
     leftByUser = false;
     initAudio();
-    const joinNick = document.getElementById('nickname_join')?.value.trim() || '';
-    const createNick = document.getElementById('nickname')?.value.trim() || '';
-    const landingNick = document.getElementById('landing_nickname')?.value.trim() || '';
-    myNick = (globalThis.clampNickname || ((value) => String(value ?? '').trim().slice(0, 16)))(
-        joinNick || createNick || landingNick,
-    );
-    if (!myNick && typeof getResolvedNickname === 'function') {
-        myNick = getResolvedNickname() || '';
+    const joinNick =
+        document.getElementById("nickname_join")?.value.trim() || "";
+    const createNick = document.getElementById("nickname")?.value.trim() || "";
+    const landingNick =
+        document.getElementById("landing_nickname")?.value.trim() || "";
+    myNick = (
+        globalThis.clampNickname ||
+        ((value) =>
+            String(value ?? "")
+                .trim()
+                .slice(0, 16))
+    )(joinNick || createNick || landingNick);
+    if (!myNick && typeof getResolvedNickname === "function") {
+        myNick = getResolvedNickname() || "";
     }
-    if (!myNick && typeof ensureNicknameInput === 'function') {
-        myNick = ensureNicknameInput() || '';
+    if (!myNick && typeof ensureNicknameInput === "function") {
+        myNick = ensureNicknameInput() || "";
     }
     globalThis.myNick = myNick;
-    if (!myNick) return alert('Nie udało się nadać nicku — odśwież stronę.');
+    if (!myNick) return alert("Nie udało się nadać nicku — odśwież stronę.");
 
-    const pathParts = globalThis.location.pathname.split('/');
+    const pathParts = globalThis.location.pathname.split("/");
     let roomId = "";
-    
+
     // 1. Sprawdź czy to wejście z bezpośredniego linku
-    if (pathParts.length >= 3 && pathParts[1] === 'room') {
+    if (pathParts.length >= 3 && pathParts[1] === "room") {
         roomId = pathParts[2];
     } else {
         // 2. Sprawdź czy wpisano kod w modalu dołączania
-        roomId = document.getElementById('room_id').value.trim();
+        roomId = document.getElementById("room_id").value.trim();
         if (!roomId) {
-            roomId = document.getElementById('landing_room_code')?.value.trim() || '';
+            roomId =
+                document.getElementById("landing_room_code")?.value.trim() ||
+                "";
         }
     }
 
     // 3. Tworzenie pokoju wymaga wcześniejszego POST /api/rooms (createRoomAndEnter).
-    const isCreating = document.getElementById('create-modal').style.display !== 'none';
+    const isCreating =
+        document.getElementById("create-modal").style.display !== "none";
     if (!roomId && isCreating) {
-        return alert('Najpierw utwórz pokój przyciskiem „Stwórz i wejdź”.');
+        return alert("Najpierw utwórz pokój przyciskiem „Stwórz i wejdź”.");
     }
 
-    if (!roomId) return alert('Proszę podać kod pokoju lub wybrać opcję stworzenia nowego.');
+    if (!roomId)
+        return alert(
+            "Proszę podać kod pokoju lub wybrać opcję stworzenia nowego.",
+        );
 
     // Pobierz ustawienia (jeśli tworzymy)
-    const maxRounds = document.getElementById('max_rounds').value || 5;
-    const timeLimit = document.getElementById('time_limit').value || 90;
+    const maxRounds = document.getElementById("max_rounds").value || 5;
+    const timeLimit = document.getElementById("time_limit").value || 90;
 
     const urlParams = new URLSearchParams(globalThis.location.search);
-    let visibility = urlParams.get('visibility') === 'private' ? 'private' : 'public';
+    let visibility =
+        urlParams.get("visibility") === "private" ? "private" : "public";
     if (isCreating) {
-        const visEl = document.getElementById('room_visibility');
+        const visEl = document.getElementById("room_visibility");
         const v = visEl?.value;
-        if (v === 'private' || v === 'public') visibility = v;
+        if (v === "private" || v === "public") visibility = v;
     }
 
-    if (typeof persistNickname === 'function') {
+    if (typeof persistNickname === "function") {
         persistNickname(myNick);
     } else {
-        localStorage.setItem('pm_nickname', myNick);
+        localStorage.setItem("pm_nickname", myNick);
     }
 
     // Landing page has no game UI; redirect to the dedicated room page,
     // which auto-joins using the stored nickname + url params.
-    if (!globalThis.location.pathname.startsWith('/room/')) {
-        if (typeof markRoomAutoJoinIntent === 'function') {
+    if (!globalThis.location.pathname.startsWith("/room/")) {
+        if (typeof markRoomAutoJoinIntent === "function") {
             markRoomAutoJoinIntent();
         }
         globalThis.location.href = `/room/${roomId}?rounds=${maxRounds}&limit=${timeLimit}&visibility=${visibility}`;
@@ -181,11 +225,11 @@ function connect() {
 
     globalThis.history.replaceState(
         null,
-        '',
+        "",
         `/room/${roomId}?rounds=${encodeURIComponent(String(maxRounds))}&limit=${encodeURIComponent(String(timeLimit))}&visibility=${encodeURIComponent(visibility)}`,
     );
 
-    const protocol = globalThis.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const protocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
     const encNick = encodeURIComponent(myNick);
     let wsUrl = `${protocol}//${globalThis.location.host}/ws/${roomId}/${encNick}?rounds=${maxRounds}&limit=${timeLimit}&visibility=${visibility}`;
 
@@ -196,11 +240,14 @@ function connect() {
         ws.onerror = null;
         ws.onmessage = null;
         try {
-            if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+            if (
+                ws.readyState === WebSocket.OPEN ||
+                ws.readyState === WebSocket.CONNECTING
+            ) {
                 ws.close();
             }
         } catch (e) {
-            console.debug('pm: prior websocket close skipped', e);
+            console.debug("pm: prior websocket close skipped", e);
         }
     }
 
@@ -209,28 +256,28 @@ function connect() {
 
     socket.onopen = () => {
         if (socketGeneration !== pmWsGeneration) return;
-        if (typeof hideModals === 'function') hideModals();
-        document.getElementById('join-section').style.display = 'none';
-        const inlineJoin = document.getElementById('room-inline-join');
-        if (inlineJoin) inlineJoin.style.display = 'none';
-        document.getElementById('chat-section').style.display = 'block';
-        document.getElementById('btn-leave').style.display = 'inline-flex';
-        document.getElementById('current-room').textContent = roomId;
+        if (typeof hideModals === "function") hideModals();
+        document.getElementById("join-section").style.display = "none";
+        const inlineJoin = document.getElementById("room-inline-join");
+        if (inlineJoin) inlineJoin.style.display = "none";
+        document.getElementById("chat-section").style.display = "block";
+        document.getElementById("btn-leave").style.display = "inline-flex";
+        document.getElementById("current-room").textContent = roomId;
 
-        const navRoomInfo = document.getElementById('nav-room-info');
-        const navRoomCode = document.getElementById('nav-room-code');
-        const navHomeLink = document.getElementById('nav-home-link');
+        const navRoomInfo = document.getElementById("nav-room-info");
+        const navRoomCode = document.getElementById("nav-room-code");
+        const navHomeLink = document.getElementById("nav-home-link");
         if (navRoomCode) navRoomCode.textContent = roomId;
-        if (navRoomInfo) navRoomInfo.style.display = 'inline-flex';
-        if (navHomeLink) navHomeLink.style.display = 'none';
+        if (navRoomInfo) navRoomInfo.style.display = "inline-flex";
+        if (navHomeLink) navHomeLink.style.display = "none";
 
-        if (typeof syncRoomLobbySettings === 'function') {
+        if (typeof syncRoomLobbySettings === "function") {
             syncRoomLobbySettings(roomId);
         }
-        if (!pmHadRoundStarted && typeof setRoomPhase === 'function') {
-            setRoomPhase('lobby');
-        } else if (typeof setRoomPhase === 'function') {
-            setRoomPhase('playing');
+        if (!pmHadRoundStarted && typeof setRoomPhase === "function") {
+            setRoomPhase("lobby");
+        } else if (typeof setRoomPhase === "function") {
+            setRoomPhase("playing");
         }
 
         // Nie czyść rankingu tutaj — serwer wysyła ``score_update`` w ``_send_initial_state``.
@@ -242,24 +289,24 @@ function connect() {
         if (socketGeneration !== pmWsGeneration) return;
         if (e.code === 4401) {
             isLeaving = true;
-            alert('Host wyrzucił Cię z pokoju.');
+            alert("Host wyrzucił Cię z pokoju.");
             safeNavigateHome();
             return;
         }
         if (e.code === 4408) {
-            alert('Pokój pełny — w tym pokoju może być maksymalnie 8 graczy.');
-            const inlineJoin = document.getElementById('room-inline-join');
-            const chatSection = document.getElementById('chat-section');
-            if (inlineJoin) inlineJoin.style.display = 'block';
-            if (chatSection) chatSection.style.display = 'none';
+            alert("Pokój pełny — w tym pokoju może być maksymalnie 8 graczy.");
+            const inlineJoin = document.getElementById("room-inline-join");
+            const chatSection = document.getElementById("chat-section");
+            if (inlineJoin) inlineJoin.style.display = "block";
+            if (chatSection) chatSection.style.display = "none";
             return;
         }
         if (e.code === 1008) {
-            alert('Nick jest już zajęty lub nieprawidłowy!');
-            const inlineJoin = document.getElementById('room-inline-join');
-            const chatSection = document.getElementById('chat-section');
-            if (inlineJoin) inlineJoin.style.display = 'block';
-            if (chatSection) chatSection.style.display = 'none';
+            alert("Nick jest już zajęty lub nieprawidłowy!");
+            const inlineJoin = document.getElementById("room-inline-join");
+            const chatSection = document.getElementById("chat-section");
+            if (inlineJoin) inlineJoin.style.display = "block";
+            if (chatSection) chatSection.style.display = "none";
             return;
         }
         // If we initiated a manual leave, do not auto-reconnect
@@ -268,9 +315,14 @@ function connect() {
             return;
         }
         // Automatic reconnect after unexpected disconnect
-        addLog(`<em>Utracono połączenie. Próba wznowienia za 2 sekundy...</em>`, "system-msg");
+        addLog(
+            `<em>Utracono połączenie. Próba wznowienia za 2 sekundy...</em>`,
+            "system-msg",
+        );
         setTimeout(() => {
-            if (document.getElementById('chat-section').style.display !== 'none') {
+            if (
+                document.getElementById("chat-section").style.display !== "none"
+            ) {
                 connect();
             }
         }, 2000);
@@ -291,18 +343,28 @@ function connect() {
 
 function onSystemMessage(m) {
     addLog(`<em>${m.message}</em>`, "system-msg");
+    const txt = (m.message || "").toLowerCase();
+    if (txt.includes("dołączył") || txt.includes("jest gotowy")) {
+        tryNotify("Państwa-Miasta", m.message);
+    }
 }
 
 function onScoreUpdate(m) {
-    updateScoreboard(m.scores, m.host_name, globalThis.myNick || '', m.ready_players, m.connected_players);
+    updateScoreboard(
+        m.scores,
+        m.host_name,
+        globalThis.myNick || "",
+        m.ready_players,
+        m.connected_players,
+    );
 }
 
 function onChatMessage(m) {
-    const container = document.createElement('div');
-    const senderDiv = document.createElement('div');
-    senderDiv.className = 'sender';
+    const container = document.createElement("div");
+    const senderDiv = document.createElement("div");
+    senderDiv.className = "sender";
     senderDiv.textContent = m.sender;
-    const textDiv = document.createElement('div');
+    const textDiv = document.createElement("div");
     textDiv.textContent = m.text;
     container.appendChild(senderDiv);
     container.appendChild(textDiv);
@@ -311,12 +373,15 @@ function onChatMessage(m) {
 
 function onKicked(m) {
     isLeaving = true;
-    alert(m.message || 'Host wyrzucił Cię z pokoju.');
+    alert(m.message || "Host wyrzucił Cię z pokoju.");
     safeNavigateHome();
 }
 
 function onKickDenied(m) {
-    addLog(`<em>${m.message || 'Nie można wyrzucić gracza.'}</em>`, 'system-msg');
+    addLog(
+        `<em>${m.message || "Nie można wyrzucić gracza."}</em>`,
+        "system-msg",
+    );
 }
 
 function onRoomDissolved(m) {
@@ -325,9 +390,9 @@ function onRoomDissolved(m) {
     isLeaving = true;
     if (leftByUser) return; // user left -> do not bounce them back into /room/:id
     try {
-        globalThis.sessionStorage?.setItem('pm_skip_auto_join', '1');
+        globalThis.sessionStorage?.setItem("pm_skip_auto_join", "1");
     } catch (e) {
-        console.debug('pm: sessionStorage setItem skipped', e);
+        console.debug("pm: sessionStorage setItem skipped", e);
     }
     alert(m.message);
     safeNavigateHome();
@@ -357,16 +422,16 @@ const MESSAGE_HANDLERS = {
 };
 
 function onRoundStartedResume(msg) {
-    const letterEl = document.getElementById('current-letter');
+    const letterEl = document.getElementById("current-letter");
     if (letterEl) letterEl.textContent = msg.letter;
-    const btn = document.getElementById('btn-draw');
+    const btn = document.getElementById("btn-draw");
     if (btn) {
-        btn.classList.remove('ready');
-        btn.style.display = 'none';
+        btn.classList.remove("ready");
+        btn.style.display = "none";
     }
     addLog(
         `<em>Połączenie przywrócone. Runda ${msg.current_round}/${msg.max_rounds}, litera: <strong>${msg.letter}</strong>.</em>`,
-        'system-msg',
+        "system-msg",
     );
     clearClientRoundTimers();
     if (msg.answer_submitted) {
@@ -377,19 +442,22 @@ function onRoundStartedResume(msg) {
     }
     if (msg.stop_triggered) {
         onStopRound({
-            sender: 'Serwer (Wznowienie)',
-            time_left: typeof msg.stop_seconds_left === 'number' ? msg.stop_seconds_left : 10,
+            sender: "Serwer (Wznowienie)",
+            time_left:
+                typeof msg.stop_seconds_left === "number"
+                    ? msg.stop_seconds_left
+                    : 10,
             resume: true,
         });
         return;
     }
-    if (typeof msg.seconds_left === 'number') {
+    if (typeof msg.seconds_left === "number") {
         startRoundTimer(msg.seconds_left);
     } else {
-        const rt = document.getElementById('round-timer');
+        const rt = document.getElementById("round-timer");
         if (rt) {
-            rt.style.display = 'block';
-            rt.textContent = '—';
+            rt.style.display = "block";
+            rt.textContent = "—";
         }
     }
 }
@@ -400,9 +468,12 @@ function onRoundStartedFresh(msg) {
         lotteryFunc(msg.letter, () => {
             document.getElementById("current-letter").textContent = msg.letter;
             const btn = document.getElementById("btn-draw");
-            btn.classList.remove('ready');
-            btn.style.display = 'none';
-            addLog(`<em>Gra rozpoczęta! Litera: <strong>${msg.letter}</strong> (Runda ${msg.current_round}/${msg.max_rounds}). Limit czasu: ${msg.time_limit}s</em>`, "system-msg");
+            btn.classList.remove("ready");
+            btn.style.display = "none";
+            addLog(
+                `<em>Gra rozpoczęta! Litera: <strong>${msg.letter}</strong> (Runda ${msg.current_round}/${msg.max_rounds}). Limit czasu: ${msg.time_limit}s</em>`,
+                "system-msg",
+            );
             clearInputColors();
             enableInputs();
             let timeLeft = msg.time_limit;
@@ -411,7 +482,8 @@ function onRoundStartedFresh(msg) {
             startRoundTimer(timeLeft);
         });
     };
-    const countdownFn = globalThis.runRoundStartCountdown || runRoundStartCountdown;
+    const countdownFn =
+        globalThis.runRoundStartCountdown || runRoundStartCountdown;
     countdownFn(afterReveal);
 }
 
@@ -420,7 +492,7 @@ function onRoundStarted(msg) {
     provisionalRoundResultsMsg = null;
     globalThis.currentLetter = msg.letter;
     pmHadRoundStarted = true;
-    if (typeof setRoomPhase === 'function') setRoomPhase('playing');
+    if (typeof setRoomPhase === "function") setRoomPhase("playing");
     if (msg.resume) {
         onRoundStartedResume(msg);
         return;
@@ -432,28 +504,36 @@ function onStopRound(msg) {
     playGong();
     clearClientRoundTimers();
     document.getElementById("round-timer").style.display = "none";
-    if (!msg.resume) {
-        addLog(`<em>🚨 <strong>${msg.sender} zatrzymał rundę!</strong> Oczekiwanie na przesłanie odpowiedzi... Masz 10 sekund!</em>`, "system-msg");
+    if (!msg.resume && msg.sender) {
+        tryNotify("Państwa-Miasta", `${msg.sender} zatrzymał rundę!`);
     }
-    const btnStop = document.getElementById('btn-stop');
+    if (!msg.resume) {
+        addLog(
+            `<em>🚨 <strong>${msg.sender} zatrzymał rundę!</strong> Oczekiwanie na przesłanie odpowiedzi... Masz 10 sekund!</em>`,
+            "system-msg",
+        );
+    }
+    const btnStop = document.getElementById("btn-stop");
     btnStop.disabled = true;
-    const stickyTimer = document.getElementById('sticky-timer');
-    const stickyTime = document.getElementById('sticky-time');
-    if (stickyTimer) stickyTimer.style.display = 'block';
-    let timeLeft = typeof msg.time_left === 'number' ? msg.time_left : 10;
+    const stickyTimer = document.getElementById("sticky-timer");
+    const stickyTime = document.getElementById("sticky-time");
+    if (stickyTimer) stickyTimer.style.display = "block";
+    let timeLeft = typeof msg.time_left === "number" ? msg.time_left : 10;
     if (stickyTime) stickyTime.innerText = String(timeLeft);
-    document.getElementById('current-letter').innerHTML = `<span style="color:var(--danger)">${timeLeft}s</span>`;
+    document.getElementById("current-letter").innerHTML =
+        `<span style="color:var(--danger)">${timeLeft}s</span>`;
     btnStop.innerHTML = `⏳ ${timeLeft}s`;
     if (timeLeft <= 0) {
         btnStop.innerHTML = `WYSYŁANIE...`;
-        if (stickyTimer) stickyTimer.style.display = 'none';
+        if (stickyTimer) stickyTimer.style.display = "none";
         disableAndSubmit();
         return;
     }
     globalThis.currentCountdown = setInterval(() => {
         timeLeft--;
-        if(timeLeft > 0) {
-            document.getElementById('current-letter').innerHTML = `<span style="color:var(--danger)">${timeLeft}s</span>`;
+        if (timeLeft > 0) {
+            document.getElementById("current-letter").innerHTML =
+                `<span style="color:var(--danger)">${timeLeft}s</span>`;
             btnStop.innerHTML = `⏳ ${timeLeft}s`;
             if (stickyTime) stickyTime.innerText = String(timeLeft);
             playTick();
@@ -461,7 +541,7 @@ function onStopRound(msg) {
             clearInterval(globalThis.currentCountdown);
             globalThis.currentCountdown = null;
             btnStop.innerHTML = `WYSYŁANIE...`;
-            if (stickyTimer) stickyTimer.style.display = 'none';
+            if (stickyTimer) stickyTimer.style.display = "none";
             disableAndSubmit();
         }
     }, 1000);
@@ -508,8 +588,14 @@ function sortRoundResultPlayers(scores, viewer) {
         const aw = a === viewer ? 1 : 0;
         const bw = b === viewer ? 1 : 0;
         if (aw !== bw) return bw - aw;
-        const at = scores[a] && typeof scores[a].total === "number" ? scores[a].total : 0;
-        const bt = scores[b] && typeof scores[b].total === "number" ? scores[b].total : 0;
+        const at =
+            scores[a] && typeof scores[a].total === "number"
+                ? scores[a].total
+                : 0;
+        const bt =
+            scores[b] && typeof scores[b].total === "number"
+                ? scores[b].total
+                : 0;
         return bt - at || a.localeCompare(b, "pl");
     });
 }
@@ -527,15 +613,26 @@ function buildPlayerResultHtml(player, rScore, pAnswers, viewerNick) {
 
 function buildRoundResultsHtml(msg, options = {}) {
     const variant = options.variant === "overlay" ? "overlay" : "sidebar";
-    const answersRoot = msg.answers && typeof msg.answers === "object" ? msg.answers : {};
+    const answersRoot =
+        msg.answers && typeof msg.answers === "object" ? msg.answers : {};
     const viewer = globalThis.myNick || myNick || "";
-    const scores = msg.round_scores && typeof msg.round_scores === "object" ? msg.round_scores : {};
-    const tallies = msg.veto_tallies && typeof msg.veto_tallies === "object" ? msg.veto_tallies : {};
+    const scores =
+        msg.round_scores && typeof msg.round_scores === "object"
+            ? msg.round_scores
+            : {};
+    const tallies =
+        msg.veto_tallies && typeof msg.veto_tallies === "object"
+            ? msg.veto_tallies
+            : {};
     const isFinal = msg.final !== false;
     const allowAppeals = Boolean(options.allowAppeals);
     const roundNumber = Number(options.roundNumber) || 0;
     const roomId = String(options.roomId || "");
-    const roundLetter = String(options.roundLetter || globalThis.currentLetter || "").trim().toLowerCase();
+    const roundLetter = String(
+        options.roundLetter || globalThis.currentLetter || "",
+    )
+        .trim()
+        .toLowerCase();
     const players = sortRoundResultPlayers(scores, viewer);
 
     let html = `<div class="round-results-block round-results-block--${variant}"><div class="round-results-table-wrap"><table class="round-results-table round-results-table--players"><thead><tr><th scope="col">Gracz</th>`;
@@ -546,8 +643,12 @@ function buildRoundResultsHtml(msg, options = {}) {
 
     for (const player of players) {
         const rScore = scores[player] || { total: 0, details: {} };
-        const answers = answersRoot[player] && typeof answersRoot[player] === "object" ? answersRoot[player] : {};
-        const meClass = player === viewer ? " round-results-player-row--me" : "";
+        const answers =
+            answersRoot[player] && typeof answersRoot[player] === "object"
+                ? answersRoot[player]
+                : {};
+        const meClass =
+            player === viewer ? " round-results-player-row--me" : "";
         html += `<tr class="round-results-player-row${meClass}"><th scope="row" class="round-results-player">${escapeHtml(player)}</th>`;
         for (const cat of ROUND_RESULT_CATEGORIES) {
             const raw = answers[cat];
@@ -561,10 +662,22 @@ function buildRoundResultsHtml(msg, options = {}) {
                 const nie = typeof tally.nie === "number" ? tally.nie : 0;
                 cell += `<span class="round-results-veto-tally" aria-hidden="true">${tak}·${nie}</span><div class="round-results-veto-actions" data-veto-target="${escapeHtml(player)}"><button type="button" class="round-results-veto-btn round-results-veto-btn--up" data-target="${escapeHtml(player)}" data-vote="tak" aria-label="Zatwierdź odpowiedź">👍</button><button type="button" class="round-results-veto-btn round-results-veto-btn--down" data-target="${escapeHtml(player)}" data-vote="nie" aria-label="Odrzuć odpowiedź">👎</button></div>`;
             }
-            if (allowAppeals && player === viewer && pts === 0 && roundNumber > 0 && roomId) {
+            if (
+                allowAppeals &&
+                player === viewer &&
+                pts === 0 &&
+                roundNumber > 0 &&
+                roomId
+            ) {
                 cell += `<button type="button" class="postgame-appeal-btn" data-room-id="${escapeHtml(roomId)}" data-round="${roundNumber}" data-category="${escapeHtml(cat)}">Wyjaśnij</button><div class="postgame-appeal-result" hidden></div>`;
             }
-            if (allowAppeals && player === viewer && pts === 0 && hasAns && roundLetter.length === 1) {
+            if (
+                allowAppeals &&
+                player === viewer &&
+                pts === 0 &&
+                hasAns &&
+                roundLetter.length === 1
+            ) {
                 const wordText = String(raw).trim();
                 cell += `<button type="button" class="postgame-word-report-btn" data-word="${escapeHtml(wordText)}" data-category="${escapeHtml(cat)}" data-letter="${escapeHtml(roundLetter)}">Zapisz do słownika</button><div class="postgame-word-report-result" hidden></div>`;
             }
@@ -593,7 +706,10 @@ function clearRoundResultsCountdown() {
 function updateRoundResultsCountdownLabel(secondsLeft) {
     const label = document.getElementById("round-results-countdown");
     if (!label) return;
-    label.textContent = secondsLeft > 0 ? `Następna runda za ${secondsLeft}s` : "Następna runda…";
+    label.textContent =
+        secondsLeft > 0
+            ? `Następna runda za ${secondsLeft}s`
+            : "Następna runda…";
     label.hidden = false;
 }
 
@@ -629,11 +745,16 @@ function bindRoundResultsVeto(root) {
 
 function refreshProvisionalRoundResultsOverlay() {
     if (!provisionalRoundResultsMsg) return;
-    showRoundResultsOverlay(buildRoundResultsHtml(provisionalRoundResultsMsg, { variant: "overlay" }), {
-        gameOver: false,
-        provisional: true,
-        vetoEndsAt: provisionalRoundResultsMsg.veto_ends_at,
-    });
+    showRoundResultsOverlay(
+        buildRoundResultsHtml(provisionalRoundResultsMsg, {
+            variant: "overlay",
+        }),
+        {
+            gameOver: false,
+            provisional: true,
+            vetoEndsAt: provisionalRoundResultsMsg.veto_ends_at,
+        },
+    );
 }
 
 function hideRoundResultsOverlay() {
@@ -650,7 +771,10 @@ function hideRoundResultsOverlay() {
     if (chatSection) chatSection.hidden = false;
 }
 
-function showRoundResultsOverlay(html, { gameOver = false, provisional = false, vetoEndsAt = null } = {}) {
+function showRoundResultsOverlay(
+    html,
+    { gameOver = false, provisional = false, vetoEndsAt = null } = {},
+) {
     const overlay = document.getElementById("round-results-overlay");
     const body = document.getElementById("round-results-modal-body");
     if (!overlay || !body) return;
@@ -691,7 +815,10 @@ function showRoundResultsOverlay(html, { gameOver = false, provisional = false, 
 }
 
 function buildGameOverScoreboardHtml(msg) {
-    const totals = msg.total_scores && typeof msg.total_scores === "object" ? msg.total_scores : {};
+    const totals =
+        msg.total_scores && typeof msg.total_scores === "object"
+            ? msg.total_scores
+            : {};
     const players = Object.keys(totals).sort((a, b) => {
         const av = typeof totals[a] === "number" ? totals[a] : 0;
         const bv = typeof totals[b] === "number" ? totals[b] : 0;
@@ -700,7 +827,8 @@ function buildGameOverScoreboardHtml(msg) {
     if (!players.length) return "";
 
     const viewer = globalThis.myNick || myNick || "";
-    let html = '<div class="game-over-scoreboard"><ol class="share-score-list" aria-label="Tabela wyników końcowych">';
+    let html =
+        '<div class="game-over-scoreboard"><ol class="share-score-list" aria-label="Tabela wyników końcowych">';
     for (const player of players) {
         const pts = typeof totals[player] === "number" ? totals[player] : 0;
         const meClass = player === viewer ? " game-over-score-row--me" : "";
@@ -738,7 +866,10 @@ function buildGameOverRoundBreakdownHtml(msg) {
             })
             .join("");
     } else {
-        const roundScores = msg.round_scores && typeof msg.round_scores === "object" ? msg.round_scores : {};
+        const roundScores =
+            msg.round_scores && typeof msg.round_scores === "object"
+                ? msg.round_scores
+                : {};
         if (Object.keys(roundScores).length > 0) {
             roundsHtml = buildRoundResultsHtml(msg, {
                 variant: "sidebar",
@@ -772,7 +903,9 @@ async function requestPostgameAppeal(button) {
     const roundNo = Number(button.dataset.round || "0");
     const category = button.dataset.category || "";
     const playerName = globalThis.myNick || myNick || "";
-    const resultBox = button.parentElement?.querySelector(".postgame-appeal-result");
+    const resultBox = button.parentElement?.querySelector(
+        ".postgame-appeal-result",
+    );
     if (!roomId || !roundNo || !category || !playerName) return;
     button.disabled = true;
     if (resultBox) {
@@ -784,18 +917,28 @@ async function requestPostgameAppeal(button) {
         if (pmAppealToken) {
             headers.Authorization = `Bearer ${pmAppealToken}`;
         }
-        const resp = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/appeals`, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({ player_name: playerName, round: roundNo, category }),
-        });
+        const resp = await fetch(
+            `/api/rooms/${encodeURIComponent(roomId)}/appeals`,
+            {
+                method: "POST",
+                headers,
+                body: JSON.stringify({
+                    player_name: playerName,
+                    round: roundNo,
+                    category,
+                }),
+            },
+        );
         const data = await resp.json().catch(() => ({}));
         if (!resp.ok) {
-            const detail = data?.detail ? String(data.detail) : "Nie udało się pobrać wyjaśnienia.";
+            const detail = data?.detail
+                ? String(data.detail)
+                : "Nie udało się pobrać wyjaśnienia.";
             if (resultBox) resultBox.textContent = detail;
             return;
         }
-        if (resultBox) resultBox.textContent = data.message_pl || "Brak wyjaśnienia.";
+        if (resultBox)
+            resultBox.textContent = data.message_pl || "Brak wyjaśnienia.";
     } catch (err) {
         if (resultBox) resultBox.textContent = "Błąd połączenia z serwerem.";
         console.error("requestPostgameAppeal failed:", err);
@@ -837,7 +980,8 @@ function onVetoUpdate(msg) {
     if (!provisionalRoundResultsMsg || msg.final) return;
     provisionalRoundResultsMsg = {
         ...provisionalRoundResultsMsg,
-        veto_tallies: msg.veto_tallies || provisionalRoundResultsMsg.veto_tallies,
+        veto_tallies:
+            msg.veto_tallies || provisionalRoundResultsMsg.veto_tallies,
     };
     refreshProvisionalRoundResultsOverlay();
 }
@@ -845,11 +989,12 @@ function onVetoUpdate(msg) {
 function onRoundResults(msg) {
     clearClientRoundTimers();
     document.getElementById("round-timer").style.display = "none";
-    const stickyTimer = document.getElementById('sticky-timer');
-    if (stickyTimer) stickyTimer.style.display = 'none';
-    document.getElementById('current-letter').innerHTML = globalThis.currentLetter || '?';
-    const btnStop = document.getElementById('btn-stop');
-    btnStop.innerHTML = '🛑 STOP!';
+    const stickyTimer = document.getElementById("sticky-timer");
+    if (stickyTimer) stickyTimer.style.display = "none";
+    document.getElementById("current-letter").innerHTML =
+        globalThis.currentLetter || "?";
+    const btnStop = document.getElementById("btn-stop");
+    btnStop.innerHTML = "🛑 STOP!";
     btnStop.disabled = true;
 
     const isFinal = msg.final !== false;
@@ -859,23 +1004,37 @@ function onRoundResults(msg) {
         hideRoundResultsOverlay();
         provisionalRoundResultsMsg = null;
         clearRoundResultsCountdown();
-        updateScoreboard(msg.total_scores, msg.host_name, globalThis.myNick || "");
+        updateScoreboard(
+            msg.total_scores,
+            msg.host_name,
+            globalThis.myNick || "",
+        );
         const viewer = globalThis.myNick || myNick || "";
-        const scores = msg.round_scores && typeof msg.round_scores === "object" ? msg.round_scores : {};
+        const scores =
+            msg.round_scores && typeof msg.round_scores === "object"
+                ? msg.round_scores
+                : {};
         if (scores[viewer]) highlightMyInputs(scores[viewer]);
         handleGameOver(msg.host_name, msg.room_id, msg);
         return;
     }
 
-    showRoundResultsOverlay(buildRoundResultsHtml(msg, { variant: "overlay" }), {
-        gameOver: false,
-        provisional: !isFinal,
-        vetoEndsAt: msg.veto_ends_at,
-    });
+    showRoundResultsOverlay(
+        buildRoundResultsHtml(msg, { variant: "overlay" }),
+        {
+            gameOver: false,
+            provisional: !isFinal,
+            vetoEndsAt: msg.veto_ends_at,
+        },
+    );
 
     if (!isFinal) {
         provisionalRoundResultsMsg = { ...msg, final: false };
-        updateScoreboard(msg.total_scores, msg.host_name, globalThis.myNick || "");
+        updateScoreboard(
+            msg.total_scores,
+            msg.host_name,
+            globalThis.myNick || "",
+        );
         return;
     }
 
@@ -883,20 +1042,23 @@ function onRoundResults(msg) {
     clearRoundResultsCountdown();
     updateScoreboard(msg.total_scores, msg.host_name, globalThis.myNick || "");
     const viewer = globalThis.myNick || myNick || "";
-    const scores = msg.round_scores && typeof msg.round_scores === "object" ? msg.round_scores : {};
+    const scores =
+        msg.round_scores && typeof msg.round_scores === "object"
+            ? msg.round_scores
+            : {};
     if (scores[viewer]) highlightMyInputs(scores[viewer]);
 }
 
 function hideGameOverShare() {
-    const share = document.getElementById('game-over-share');
+    const share = document.getElementById("game-over-share");
     if (!share) return;
-    share.style.display = 'none';
-    const copyBtn = document.getElementById('btn-copy-share');
-    const nativeBtn = document.getElementById('btn-native-share');
+    share.style.display = "none";
+    const copyBtn = document.getElementById("btn-copy-share");
+    const nativeBtn = document.getElementById("btn-native-share");
     if (copyBtn) copyBtn.onclick = null;
     if (nativeBtn) {
         nativeBtn.onclick = null;
-        nativeBtn.style.display = 'none';
+        nativeBtn.style.display = "none";
     }
 }
 
@@ -905,19 +1067,19 @@ function hideGameOverShare() {
  */
 function wireGameOverShare(roomId) {
     hideGameOverShare();
-    const rid = String(roomId || '').trim();
+    const rid = String(roomId || "").trim();
     if (!rid) return;
-    const share = document.getElementById('game-over-share');
-    const anchor = document.getElementById('share-link-anchor');
-    const copyBtn = document.getElementById('btn-copy-share');
-    const nativeBtn = document.getElementById('btn-native-share');
+    const share = document.getElementById("game-over-share");
+    const anchor = document.getElementById("share-link-anchor");
+    const copyBtn = document.getElementById("btn-copy-share");
+    const nativeBtn = document.getElementById("btn-native-share");
     if (!share || !anchor || !copyBtn) return;
 
-    let base = '';
+    let base = "";
     try {
-        base = globalThis.location.origin || '';
+        base = globalThis.location.origin || "";
     } catch (e) {
-        console.debug('pm: location.origin skipped', e);
+        console.debug("pm: location.origin skipped", e);
     }
     const url = `${base}/share/${encodeURIComponent(rid)}`;
     anchor.href = url;
@@ -925,19 +1087,22 @@ function wireGameOverShare(roomId) {
     copyBtn.onclick = async () => {
         try {
             await globalThis.navigator.clipboard.writeText(url);
-            addLog('<em>Skopiowano link do schowka.</em>', 'system-msg');
+            addLog("<em>Skopiowano link do schowka.</em>", "system-msg");
         } catch (e) {
-            addLog('<em>Nie udało się skopiować — otwórz link lub zaznacz go ręcznie.</em>', 'system-msg');
-            console.warn('clipboard', e);
+            addLog(
+                "<em>Nie udało się skopiować — otwórz link lub zaznacz go ręcznie.</em>",
+                "system-msg",
+            );
+            console.warn("clipboard", e);
         }
     };
 
-    if (nativeBtn && typeof globalThis.navigator?.share === 'function') {
-        nativeBtn.style.display = 'inline-block';
+    if (nativeBtn && typeof globalThis.navigator?.share === "function") {
+        nativeBtn.style.display = "inline-block";
         nativeBtn.onclick = () => {
             globalThis.navigator
                 .share({
-                    title: 'Państwa-Miasta — wynik',
+                    title: "Państwa-Miasta — wynik",
                     text: `Wynik pokoju ${rid}`,
                     url,
                 })
@@ -945,100 +1110,139 @@ function wireGameOverShare(roomId) {
         };
     }
 
-    share.style.display = 'block';
+    share.style.display = "block";
 }
 
 function highlightMyInputs(rScore) {
-    const inputs = document.querySelectorAll('#categories input');
-    inputs.forEach(inp => {
+    const inputs = document.querySelectorAll("#categories input");
+    inputs.forEach((inp) => {
         const cat = inp.dataset.category;
         const pts = rScore.details[cat] || 0;
         // Czyścimy stare klasy
-        inp.classList.remove('pts-15', 'pts-10', 'pts-5', 'pts-0', 'success-10', 'warning-5', 'error-0');
-        
-        if (pts === 15) inp.classList.add('pts-15');
-        else if (pts === 10) inp.classList.add('pts-10');
-        else if (pts === 5) inp.classList.add('pts-5');
-        else if (inp.value.trim() !== "") inp.classList.add('pts-0');
+        inp.classList.remove(
+            "pts-15",
+            "pts-10",
+            "pts-5",
+            "pts-0",
+            "success-10",
+            "warning-5",
+            "error-0",
+        );
+
+        if (pts === 15) inp.classList.add("pts-15");
+        else if (pts === 10) inp.classList.add("pts-10");
+        else if (pts === 5) inp.classList.add("pts-5");
+        else if (inp.value.trim() !== "") inp.classList.add("pts-0");
     });
 }
 
 function handleGameOver(hostName, roomId, resultsMsg = null) {
     stopCelebrationEffects();
     hideRoundResultsOverlay();
-    addLog(`<div style="margin-top:1rem; font-weight:800; color:var(--pts-15); text-align:center;">🏁 KONIEC GRY!</div>`, "system-msg");
+    addLog(
+        `<div style="margin-top:1rem; font-weight:800; color:var(--pts-15); text-align:center;">🏁 KONIEC GRY!</div>`,
+        "system-msg",
+    );
 
-    if (typeof setRoomPhase === 'function') setRoomPhase('results');
+    if (typeof setRoomPhase === "function") setRoomPhase("results");
 
-    const chatSection = document.getElementById('chat-section');
+    const chatSection = document.getElementById("chat-section");
     if (chatSection) chatSection.hidden = false;
 
-    const gameLayout = document.getElementById('game-layout');
-    if (gameLayout) gameLayout.classList.add('game-over');
+    const gameLayout = document.getElementById("game-layout");
+    if (gameLayout) gameLayout.classList.add("game-over");
 
-    const gameMain = document.getElementById('game-main-area');
-    if (gameMain) gameMain.style.display = 'none';
+    const gameMain = document.getElementById("game-main-area");
+    if (gameMain) gameMain.style.display = "none";
 
-    const postgame = document.getElementById('room-postgame');
+    const postgame = document.getElementById("room-postgame");
     if (postgame) postgame.hidden = false;
 
-    const restartArea = document.getElementById('restart-settings');
-    if (restartArea) restartArea.style.display = 'block';
+    const restartArea = document.getElementById("restart-settings");
+    if (restartArea) restartArea.style.display = "block";
 
     if (myNick === hostName) {
-        document.getElementById('btn-restart-game').style.display = 'block';
-        document.getElementById('btn-dissolve').style.display = 'block';
+        document.getElementById("btn-restart-game").style.display = "block";
+        document.getElementById("btn-dissolve").style.display = "block";
     }
 
     fireConfetti({ particleCount: 200, spread: 100, origin: { y: 0.3 } });
-    setTimeout(() => fireConfetti({ particleCount: 200, spread: 120, origin: { y: 0.4 } }), 1000);
+    setTimeout(
+        () =>
+            fireConfetti({
+                particleCount: 200,
+                spread: 120,
+                origin: { y: 0.4 },
+            }),
+        1000,
+    );
 
     renderGameOverResults(resultsMsg);
     wireGameOverShare(roomId);
 }
 
 function resetReadyButton() {
-    const btn = document.getElementById('btn-draw');
-    btn.classList.remove('ready');
-    btn.innerHTML = '👍 Gotowy';
-    btn.style.backgroundColor = 'var(--primary)';
-    btn.style.display = 'block';
-    if (typeof setRoomPhase === 'function') setRoomPhase('playing');
+    const btn = document.getElementById("btn-draw");
+    btn.classList.remove("ready");
+    btn.innerHTML = "👍 Gotowy";
+    btn.style.backgroundColor = "var(--primary)";
+    btn.style.display = "block";
+    if (typeof setRoomPhase === "function") setRoomPhase("playing");
 }
 
 function onGameRestarted(msg) {
     hideRoundResultsOverlay();
     hideGameOverShare();
     clearGameOverResults();
-    document.getElementById('game-layout')?.classList.remove('game-over');
-    document.getElementById('game-main-area').style.display = 'block';
-    document.getElementById('chat-sidebar')?.classList.remove('hidden');
-    const postgame = document.getElementById('room-postgame');
+    document.getElementById("game-layout")?.classList.remove("game-over");
+    document.getElementById("game-main-area").style.display = "block";
+    document.getElementById("chat-sidebar")?.classList.remove("hidden");
+    const postgame = document.getElementById("room-postgame");
     if (postgame) postgame.hidden = true;
-    const restartArea = document.getElementById('restart-settings');
-    if (restartArea) restartArea.style.display = 'none';
-    if (typeof setRoomPhase === 'function') setRoomPhase('lobby');
+    const restartArea = document.getElementById("restart-settings");
+    if (restartArea) restartArea.style.display = "none";
+    if (typeof setRoomPhase === "function") setRoomPhase("lobby");
 
-    const btn = document.getElementById('btn-draw');
-    btn.style.display = 'inline-block';
-    btn.classList.remove('ready');
-    btn.innerHTML = '👍 Gotowy';
-    btn.style.backgroundColor = 'var(--primary)';
-    document.getElementById('current-letter').innerHTML = '?';
-    updateScoreboard(msg.scores, msg.host_name, globalThis.myNick || '');
-    const inputs = document.querySelectorAll('#categories input');
-    inputs.forEach(inp => {
-        inp.value = '';
+    const btn = document.getElementById("btn-draw");
+    btn.style.display = "inline-block";
+    btn.classList.remove("ready");
+    btn.innerHTML = "👍 Gotowy";
+    btn.style.backgroundColor = "var(--primary)";
+    document.getElementById("current-letter").innerHTML = "?";
+    updateScoreboard(msg.scores, msg.host_name, globalThis.myNick || "");
+    const inputs = document.querySelectorAll("#categories input");
+    inputs.forEach((inp) => {
+        inp.value = "";
         inp.disabled = true;
-        inp.classList.remove('error', 'pts-15', 'pts-10', 'pts-5', 'pts-0', 'success-10', 'warning-5', 'error-0');
+        inp.classList.remove(
+            "error",
+            "pts-15",
+            "pts-10",
+            "pts-5",
+            "pts-0",
+            "success-10",
+            "warning-5",
+            "error-0",
+        );
     });
-    addLog(`<em>Gospodarz <strong>${msg.sender}</strong> zrestartował grę z nowymi ustawieniami! Wyniki zostały wyzerowane.</em>`, "system-msg");
+    addLog(
+        `<em>Gospodarz <strong>${msg.sender}</strong> zrestartował grę z nowymi ustawieniami! Wyniki zostały wyzerowane.</em>`,
+        "system-msg",
+    );
 }
 
 function clearInputColors() {
-    const inputs = document.querySelectorAll('#categories input');
-    inputs.forEach(inp => {
-        inp.classList.remove('pts-15', 'pts-10', 'pts-5', 'pts-0', 'success-10', 'warning-5', 'error-0');
+    const inputs = document.querySelectorAll("#categories input");
+    inputs.forEach((inp) => {
+        inp.classList.remove(
+            "pts-15",
+            "pts-10",
+            "pts-5",
+            "pts-0",
+            "success-10",
+            "warning-5",
+            "error-0",
+        );
     });
 }
 
@@ -1046,45 +1250,45 @@ function clearInputColors() {
  * Odliczanie 3–2–1 przed animacją losowania litery (Faza 3). Przy ``prefers-reduced-motion`` pomija.
  */
 function runRoundStartCountdown(onComplete) {
-    if (typeof onComplete !== 'function') return;
-    if (globalThis.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+    if (typeof onComplete !== "function") return;
+    if (globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
         onComplete();
         return;
     }
-    const overlay = document.getElementById('round-countdown-overlay');
-    const numEl = document.getElementById('round-countdown-num');
+    const overlay = document.getElementById("round-countdown-overlay");
+    const numEl = document.getElementById("round-countdown-num");
     if (!overlay || !numEl) {
         onComplete();
         return;
     }
-    overlay.removeAttribute('hidden');
-    overlay.setAttribute('aria-hidden', 'false');
-    const labels = ['3', '2', '1'];
+    overlay.removeAttribute("hidden");
+    overlay.setAttribute("aria-hidden", "false");
+    const labels = ["3", "2", "1"];
     let step = 0;
     const INTER_MS = 720;
     const tick = () => {
         if (step < labels.length) {
             numEl.textContent = labels[step];
-            if (typeof globalThis.playCountdownHaptic === 'function') {
+            if (typeof globalThis.playCountdownHaptic === "function") {
                 globalThis.playCountdownHaptic();
             }
             step += 1;
             globalThis.setTimeout(tick, INTER_MS);
             return;
         }
-        numEl.textContent = '';
-        overlay.setAttribute('hidden', '');
-        overlay.setAttribute('aria-hidden', 'true');
+        numEl.textContent = "";
+        overlay.setAttribute("hidden", "");
+        overlay.setAttribute("aria-hidden", "true");
         onComplete();
     };
     tick();
 }
 
 function runLetterLottery(targetLetter, onComplete) {
-    const modal = document.getElementById('lottery-modal');
-    const letterDiv = document.getElementById('lottery-letter');
+    const modal = document.getElementById("lottery-modal");
+    const letterDiv = document.getElementById("lottery-letter");
     const alphabet = "ABCDEFGHIJKLMNOPRSTUWZ";
-    modal.style.display = 'flex';
+    modal.style.display = "flex";
     let duration = 2500;
     let intervalTime = 50;
     let elapsed = 0;
@@ -1094,25 +1298,33 @@ function runLetterLottery(targetLetter, onComplete) {
         globalThis.crypto.getRandomValues(array);
         const randomLetter = alphabet[array[0] % alphabet.length];
         letterDiv.innerText = randomLetter;
-        letterDiv.style.filter = `blur(${Math.max(0, 5 - (elapsed/duration)*5)}px)`;
+        letterDiv.style.filter = `blur(${Math.max(0, 5 - (elapsed / duration) * 5)}px)`;
         if (elapsed >= duration) {
             clearInterval(interval);
             letterDiv.innerText = targetLetter;
-            letterDiv.style.filter = 'none';
-            letterDiv.style.transform = 'scale(1.2)';
-            letterDiv.style.color = 'var(--success)';
+            letterDiv.style.filter = "none";
+            letterDiv.style.transform = "scale(1.2)";
+            letterDiv.style.color = "var(--success)";
             playRoundStartReveal();
-            if (typeof playLotteryRevealHaptic === 'function') playLotteryRevealHaptic();
-            fireConfetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            if (typeof playLotteryRevealHaptic === "function")
+                playLotteryRevealHaptic();
+            fireConfetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+            });
             setTimeout(() => {
-                modal.style.display = 'none';
-                letterDiv.style.transform = 'scale(1)';
-                letterDiv.style.color = 'var(--accent)';
+                modal.style.display = "none";
+                letterDiv.style.transform = "scale(1)";
+                letterDiv.style.color = "var(--accent)";
                 if (onComplete) onComplete();
             }, 1500);
         } else {
             playLotterySpinTick(elapsed, duration);
-            if (elapsed % 100 === 0 && typeof playLotterySpinHaptic === 'function') {
+            if (
+                elapsed % 100 === 0 &&
+                typeof playLotterySpinHaptic === "function"
+            ) {
                 playLotterySpinHaptic();
             }
         }
@@ -1121,7 +1333,7 @@ function runLetterLottery(targetLetter, onComplete) {
 
 globalThis.stopCelebrationEffects = stopCelebrationEffects;
 
-if (typeof module !== 'undefined') {
+if (typeof module !== "undefined") {
     module.exports = {
         leaveRoom,
         connect,
@@ -1146,6 +1358,6 @@ if (typeof module !== 'undefined') {
         onGameRestarted,
         runRoundStartCountdown,
         runLetterLottery,
-        sendJson
+        sendJson,
     };
 }
