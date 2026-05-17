@@ -9,6 +9,16 @@ import aiosqlite
 from .cities_seed import CITIES_SEED
 from .countries_seed import COUNTRIES_SEED
 from .db_backend import connect, connect_dictionary
+from .db_redis import (
+    redis_configured,
+    redis_delete_room,
+    redis_fetch_room_snapshot,
+    redis_get_active_rooms,
+    redis_remove_player,
+    redis_room_id_exists,
+    redis_save_player_score,
+    redis_save_room,
+)
 from .jobs_seed import JOBS_SEED
 from .logger import get_logger
 from .names_seed import NAMES_SEED
@@ -372,6 +382,8 @@ async def init_db():
 
 
 async def deactivate_room(room_id: str) -> None:
+    if redis_configured():
+        return
     async with connect() as db:
         await db.execute("UPDATE rooms SET is_active = 0 WHERE room_id = ?", (room_id,))
         await db.commit()
@@ -380,6 +392,9 @@ async def deactivate_room(room_id: str) -> None:
 async def save_room(
     room_id, max_rounds, time_limit, current_round, host_name, visibility: str = "public"
 ):
+    if redis_configured():
+        await redis_save_room(room_id, max_rounds, time_limit, current_round, host_name, visibility)
+        return
     async with connect() as db:
         await db.execute(
             """
@@ -399,6 +414,9 @@ async def save_room(
 
 
 async def save_player_score(room_id, player_name, score):
+    if redis_configured():
+        await redis_save_player_score(room_id, player_name, score)
+        return
     async with connect() as db:
         await db.execute(
             """
@@ -412,6 +430,9 @@ async def save_player_score(room_id, player_name, score):
 
 
 async def delete_room(room_id):
+    if redis_configured():
+        await redis_delete_room(room_id)
+        return
     async with connect() as db:
         await db.execute("DELETE FROM rooms WHERE room_id = ?", (room_id,))
         await db.commit()
@@ -419,6 +440,8 @@ async def delete_room(room_id):
 
 async def fetch_room_snapshot(room_id: str) -> dict[str, object] | None:
     """Zwraca wiersz ``rooms`` + ``players`` jako słownik, albo ``None`` gdy brak pokoju."""
+    if redis_configured():
+        return await redis_fetch_room_snapshot(room_id)
     async with connect() as db:
         db.row_factory = aiosqlite.Row
         async with db.execute("SELECT * FROM rooms WHERE room_id = ?", (room_id,)) as cur:
@@ -437,6 +460,8 @@ async def fetch_room_snapshot(room_id: str) -> dict[str, object] | None:
 
 async def room_id_exists(room_id: str) -> bool:
     """Czy ``room_id`` jest już zajęty w SQLite (aktywny pokój lub transkrypt)."""
+    if redis_configured():
+        return await redis_room_id_exists(room_id)
     async with connect() as db:
         async with db.execute(
             "SELECT 1 FROM rooms WHERE room_id = ? LIMIT 1",
@@ -452,6 +477,9 @@ async def room_id_exists(room_id: str) -> bool:
 
 
 async def remove_player(room_id: str, player_name: str) -> None:
+    if redis_configured():
+        await redis_remove_player(room_id, player_name)
+        return
     async with connect() as db:
         await db.execute(
             "DELETE FROM players WHERE room_id = ? AND player_name = ?",
@@ -461,6 +489,8 @@ async def remove_player(room_id: str, player_name: str) -> None:
 
 
 async def get_active_rooms():
+    if redis_configured():
+        return await redis_get_active_rooms()
     async with connect() as db:
         db.row_factory = aiosqlite.Row
         async with db.execute("SELECT * FROM rooms WHERE is_active = 1") as cursor:
