@@ -861,7 +861,9 @@ button.choice-card:focus-visible {
 /* ---------- Landing (index) — start bez scrolla ---------- */
 body.landing-page {
     min-height: 100svh;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
     --landing-shell-w: 100%;
     --landing-inset: var(--space-4);
     --landing-shell-pad-top: var(--space-4);
@@ -888,7 +890,8 @@ body.landing-page {
 
 body.landing-page.landing-scrollable {
     min-height: 100svh;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 body.landing-page .page-wrapper {
