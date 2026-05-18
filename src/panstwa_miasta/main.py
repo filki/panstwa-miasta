@@ -5,7 +5,7 @@ import time
 from contextlib import asynccontextmanager, suppress
 from datetime import date
 from html import escape
-from typing import Annotated, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Literal, cast
 
 import aiofiles
 from fastapi import FastAPI, Header, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
@@ -61,10 +61,13 @@ from .limits import (
     http_rate_bucket_name,
 )
 from .logger import get_logger
+
+if TYPE_CHECKING:
+    from .manager import ConnectionManager
+
 from .manager import (
     STOP_SUBMIT_GRACE_SECONDS,
     STOP_SUBMIT_SECONDS,
-    ConnectionManager,
     room_listed_in_active_lobby,
 )
 from .routers.dictionary import router as dictionary_router
@@ -618,7 +621,10 @@ async def websocket_endpoint(
             room_id,
             reject_reason,
         )
-        close_code = 4408 if reject_reason == "room_full" else 1008
+        close_code = {
+            "room_full": 4408,
+            "game_in_progress": 4409,
+        }.get(reject_reason, 1008)
         await websocket.close(code=close_code)
         return
 

@@ -270,6 +270,12 @@ function connect() {
       if (chatSection) chatSection.style.display = "none";
       return;
     }
+    if (e.code === 4409) {
+      isLeaving = true;
+      const msg = "Gra w tym pokoju już trwa. Poczekaj na zakończenie lub znajdź inny pokój.";
+      if (confirm(msg + "\n\nKliknij OK żeby wrócić do strony głównej.")) {
+        safeNavigateHome();
+      }
     if (e.code === 1008) {
       alert("Nick jest już zajęty lub nieprawidłowy!");
       const inlineJoin = document.getElementById("room-inline-join");
