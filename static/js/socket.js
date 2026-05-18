@@ -258,24 +258,40 @@ function connect() {
     if (socketGeneration !== pmWsGeneration) return;
     if (e.code === 4401) {
       isLeaving = true;
-      alert("Host wyrzucił Cię z pokoju.");
-      safeNavigateHome();
+      if (
+        confirm(
+          "Host wyrzucił Cię z pokoju.\n\nKliknij OK żeby wrócić do strony głównej.",
+        )
+      ) {
+        safeNavigateHome();
+      }
       return;
     }
     if (e.code === 4408) {
-      alert("Pokój pełny — w tym pokoju może być maksymalnie 8 graczy.");
-      const inlineJoin = document.getElementById("room-inline-join");
-      const chatSection = document.getElementById("chat-section");
-      if (inlineJoin) inlineJoin.style.display = "block";
-      if (chatSection) chatSection.style.display = "none";
+      isLeaving = true;
+      const msg =
+        "Pokój jest pełny (maksymalnie 8 graczy). Spróbuj za chwilę lub wybierz inny.";
+      if (confirm(msg + "\n\nKliknij OK żeby wrócić do strony głównej.")) {
+        safeNavigateHome();
+      }
+      return;
+    }
+    if (e.code === 4409) {
+      isLeaving = true;
+      const msg =
+        "Gra w tym pokoju już trwa. Poczekaj na zakończenie rund lub znajdź inny pokój.";
+      if (confirm(msg + "\n\nKliknij OK żeby wrócić do strony głównej.")) {
+        safeNavigateHome();
+      }
       return;
     }
     if (e.code === 1008) {
-      alert("Nick jest już zajęty lub nieprawidłowy!");
-      const inlineJoin = document.getElementById("room-inline-join");
-      const chatSection = document.getElementById("chat-section");
-      if (inlineJoin) inlineJoin.style.display = "block";
-      if (chatSection) chatSection.style.display = "none";
+      isLeaving = true;
+      const msg =
+        "Ten nick jest już zajęty lub nieprawidłowy. Zmień go i spróbuj ponownie.";
+      if (confirm(msg + "\n\nKliknij OK żeby wrócić do strony głównej.")) {
+        safeNavigateHome();
+      }
       return;
     }
     // If we initiated a manual leave, do not auto-reconnect

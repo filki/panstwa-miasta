@@ -48,12 +48,14 @@ async def _broadcast_score_update(room: Room) -> None:
 def lobby_state_payload(room: Room) -> dict:
     connected = sorted(room.connections.keys())
     ready = sorted(room.ready_players & room.connections.keys())
+    disconnected = sorted(room.disconnected_players.keys() - room.connections.keys())
     return {
         "type": "lobby_state",
         "ready_players": ready,
         "connected_players": connected,
+        "disconnected_players": disconnected,
         "host_name": room.host_name,
-        "player_count": len(connected),
+        "player_count": len(connected) + len(disconnected),
         "max_players": 8,
     }
 

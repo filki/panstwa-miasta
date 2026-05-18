@@ -489,7 +489,17 @@ function renderLobbyState(m) {
   const connectedSet = Array.isArray(m.connected_players)
     ? new Set(m.connected_players)
     : null;
-  renderLobbyRoster(scores, hostName, readySet, viewerNick, connectedSet);
+  const disconnectedSet = Array.isArray(m.disconnected_players)
+    ? new Set(m.disconnected_players)
+    : new Set();
+  renderLobbyRoster(
+    scores,
+    hostName,
+    readySet,
+    viewerNick,
+    connectedSet,
+    disconnectedSet,
+  );
 }
 
 function updateScoreboard(
@@ -614,6 +624,7 @@ function renderLobbyRoster(
   readyPlayers = new Set(),
   viewerNick = "",
   connectedPlayers = null,
+  disconnectedPlayers = new Set(),
 ) {
   const roster = document.getElementById("lobby-roster");
   if (!roster) return;
@@ -630,13 +641,20 @@ function renderLobbyRoster(
       const readyCount = rosterNames.filter((name) =>
         readyPlayers.has(name),
       ).length;
-      countEl.textContent = `${rosterNames.length}/${MAX_LOBBY_SLOTS} · ${readyCount} gotowych`;
+      const disconnectedCount = [...disconnectedPlayers].filter((name) =>
+        rosterNames.includes(name),
+      ).length;
+      countEl.textContent = `${rosterNames.length}/${MAX_LOBBY_SLOTS} · ${readyCount} gotowych${disconnectedCount > 0 ? ` · ${disconnectedCount} rozłączonych` : ""}`;
     }
   }
 
+  const allNames = [
+    ...new Set([...rosterNames, ...disconnectedPlayers]),
+  ].filter((name) => Object.hasOwn(scores, name));
+
   const slots = Array.from(
     { length: MAX_LOBBY_SLOTS },
-    (_, index) => rosterNames[index] || null,
+    (_, index) => allNames[index] || null,
   );
   slots.forEach((name) => {
     const row = document.createElement("div");
@@ -652,6 +670,7 @@ function renderLobbyRoster(
     }
 
     if (hostName && name === hostName) row.classList.add("is-host");
+    if (disconnectedPlayers.has(name)) row.classList.add("is-disconnected");
 
     const nameSpan = document.createElement("span");
     nameSpan.className = "lobby-roster-name";
@@ -672,7 +691,12 @@ function renderLobbyRoster(
     const status = document.createElement("span");
     status.className = "lobby-roster-status";
     if (readyPlayers.has(name)) status.classList.add("is-ready");
-    status.textContent = readyPlayers.has(name) ? "Gotowy" : "Czeka";
+    if (disconnectedPlayers.has(name)) {
+      status.textContent = "Rozłączony";
+      status.classList.add("is-disconnected");
+    } else {
+      status.textContent = readyPlayers.has(name) ? "Gotowy" : "Czeka";
+    }
 
     row.appendChild(identity);
     row.appendChild(status);
