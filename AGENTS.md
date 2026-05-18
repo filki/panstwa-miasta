@@ -69,3 +69,12 @@ Po każdej implementacji/zakończonym tasku:
 4. Stwórz PR przez `gh` lub narzędzia GitHub
 5. `gh pr merge <n> --auto --squash`
 Nie zostawiaj wiszących branchy — po mergu usuń lokalny branch.
+
+## 🏷️ Release cadence
+
+- Tag (`v0.x.y`) + GitHub Release po każdym mergu na `main` z nową
+  funkcjonalnością lub istotną poprawką.
+- Semver: `0.x.y` — `x` dla nowych feat, `y` dla fixów.
+- Service worker (`static/sw.js`): podbij `pm-vN` przy zmianach JS/CSS,
+  które muszą przebić cache PWA.
+- CHANGELOG: wpisz wpis w sekcji [Unreleased] przed tagiem.
