@@ -65,8 +65,9 @@ from .logger import get_logger
 if TYPE_CHECKING:
     from .manager import ConnectionManager
 
-from .constants import STOP_SUBMIT_GRACE_SECONDS, STOP_SUBMIT_SECONDS
 from .manager import (
+    STOP_SUBMIT_GRACE_SECONDS,
+    STOP_SUBMIT_SECONDS,
     room_listed_in_active_lobby,
 )
 from .routers.dictionary import router as dictionary_router

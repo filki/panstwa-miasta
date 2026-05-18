@@ -9,16 +9,19 @@ from typing import Any, cast
 from fastapi import WebSocket
 from starlette.websockets import WebSocketState
 
-from .constants import (
-    _FAUNA_FLORA,
-    ALPHABET,
-    GAME_CATEGORIES,
-    HOST_REASSIGN_GRACE_SECONDS,
-    QUICK_JOIN_DEFAULT_ROUNDS,
-    QUICK_JOIN_DEFAULT_TIME_LIMIT,
-    STOP_SUBMIT_SECONDS,
-    VETO_CATEGORY,
-)
+ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
+LETTER_CYCLE_ROUNDS = len(ALPHABET)
+GAME_CATEGORIES = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
+VETO_CATEGORY = "Rzecz"
+_FAUNA_FLORA = {"Zwierzę", "Roślina"}
+RESULTS_PHASE_SECONDS = 30
+STOP_SUBMIT_SECONDS = 10
+STOP_SUBMIT_GRACE_SECONDS = 1.0
+HOST_REASSIGN_GRACE_SECONDS = 5.0
+QUICK_JOIN_DEFAULT_ROUNDS = 5
+QUICK_JOIN_DEFAULT_TIME_LIMIT = 90
+
+
 from .db import (
     delete_room,
     fetch_room_snapshot,

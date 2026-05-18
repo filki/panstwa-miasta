@@ -10,10 +10,9 @@ import json
 import time
 
 from .appeal_tokens import issue_appeal_token
-from .constants import RESULTS_PHASE_SECONDS, VETO_CATEGORY
 from .db import deactivate_room, save_game_transcript
 from .logger import get_logger
-from .manager import ConnectionManager, Room
+from .manager import RESULTS_PHASE_SECONDS, VETO_CATEGORY, ConnectionManager, Room
 from .share_store import record_finished_game
 from .things_lexicon import persist_accepted_things
 
