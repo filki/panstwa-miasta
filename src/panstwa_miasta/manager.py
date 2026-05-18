@@ -19,14 +19,15 @@ from .db import (
     save_room,
 )
 from .db_redis import redis_configured
+
+# Logger import
+from .handlers import lobby_state_payload
 from .limits import (
     check_ws_before_connect,
     max_players_per_room,
     max_rooms_cap,
     record_ws_connect_ok,
 )
-
-# Logger import
 from .logger import get_logger
 from .room_ids import _MAX_ALLOC_ATTEMPTS, generate_room_id_candidate
 
@@ -806,16 +807,7 @@ class ConnectionManager:
                 }
             )
         )
-        await room.broadcast(
-            json.dumps(
-                {
-                    "type": "score_update",
-                    "scores": room.scores,
-                    "host_name": room.host_name,
-                    "ready_players": sorted(room.ready_players),
-                }
-            )
-        )
+        await room.broadcast(json.dumps(lobby_state_payload(room)))
 
         if room.is_playing and room.all_players_answered():
             from .handlers import _begin_results_phase
@@ -897,6 +889,7 @@ class ConnectionManager:
             return
         room.scores.pop(client_name, None)
         await remove_player(room_id, client_name)
+        await room.broadcast(json.dumps(lobby_state_payload(room)))
         logger.info(
             "Removed lobby roster for disconnected player %r in room %s", client_name, room_id
         )

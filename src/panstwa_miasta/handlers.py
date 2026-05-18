@@ -45,6 +45,23 @@ async def _broadcast_score_update(room: Room) -> None:
     await room.broadcast(json.dumps(score_update_payload(room)))
 
 
+def lobby_state_payload(room: Room) -> dict:
+    connected = sorted(room.connections.keys())
+    ready = sorted(room.ready_players & room.connections.keys())
+    return {
+        "type": "lobby_state",
+        "ready_players": ready,
+        "connected_players": connected,
+        "host_name": room.host_name,
+        "player_count": len(connected),
+        "max_players": 8,
+    }
+
+
+async def _broadcast_lobby_state(room: Room) -> None:
+    await room.broadcast(json.dumps(lobby_state_payload(room)))
+
+
 def _round_results_payload(
     room: Room,
     room_id: str,
@@ -227,6 +244,7 @@ async def handle_ready(room: Room, room_id: str, client_name: str, timeout_coro)
         )
     )
     await _broadcast_score_update(room)
+    await _broadcast_lobby_state(room)
     all_ready = len(room.ready_players) >= len(room.connections) and len(room.connections) > 0
     if all_ready:
         letter = room.start_round()
@@ -261,6 +279,8 @@ async def handle_not_ready(room: Room, client_name: str) -> None:
         )
     )
     await _broadcast_score_update(room)
+    await _broadcast_lobby_state(room)
+
 
 
 async def handle_restart_game(room: Room, client_name: str, msg: dict) -> None:

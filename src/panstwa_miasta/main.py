@@ -50,6 +50,7 @@ from .handlers import (
     handle_restart_game,
     handle_stop,
     handle_veto_vote,
+    lobby_state_payload,
     score_update_payload,
 )
 from .limits import (
@@ -489,6 +490,7 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
         json.dumps({"type": "system", "message": f"{client_name} dołączył do gry"})
     )
     await room.broadcast(json.dumps(score_update_payload(room)))
+    await room.broadcast(json.dumps(lobby_state_payload(room)))
 
     if room.is_playing:
         resume_payload: dict[str, object] = {
