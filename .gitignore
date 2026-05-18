@@ -50,4 +50,14 @@ logs/
 **/8_-_Wykaz_imion_żeńskich*.csv
 
 # MCP memory graph — dynamic, agent-managed, machine-local
-.cursor/memory.json
+.zed/memory.json
+
+# Cursor config (migrated to .zed/)
+.cursor/
+
+# Zed local config (machine-specific paths)
+.zed/
+
+# SQLite WAL and SHM files
+*.db-wal
+*.db-shm
