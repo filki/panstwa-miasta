@@ -572,7 +572,7 @@ async def _dispatch(msg: dict, room, room_id: str, client_name: str) -> None:
         await handle_chat(room, client_name, msg)
     elif msg_type == "ready":
         await handle_ready(room, room_id, client_name, global_round_timeout)
-        await _touch_lobby_after_ready(room)
+        _touch_lobby_after_ready(room)
     elif msg_type == "not_ready":
         await handle_not_ready(room, client_name)
         manager.touch_lobby_idle(room, reset=True)
