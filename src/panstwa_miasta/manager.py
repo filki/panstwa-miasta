@@ -9,6 +9,27 @@ from typing import Any, cast
 from fastapi import WebSocket
 from starlette.websockets import WebSocketState
 
+from .db import (
+    delete_room,
+    fetch_room_snapshot,
+    get_active_rooms,
+    remove_player,
+    room_id_exists,
+    save_player_score,
+    save_room,
+)
+from .db_redis import redis_configured
+from .limits import (
+    check_ws_before_connect,
+    max_players_per_room,
+    max_rooms_cap,
+    record_ws_connect_ok,
+)
+from .logger import get_logger
+from .room_ids import _MAX_ALLOC_ATTEMPTS, generate_room_id_candidate
+
+logger = get_logger(__name__)
+
 ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
 LETTER_CYCLE_ROUNDS = len(ALPHABET)
 GAME_CATEGORIES = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
@@ -20,30 +41,6 @@ STOP_SUBMIT_GRACE_SECONDS = 1.0
 HOST_REASSIGN_GRACE_SECONDS = 5.0
 QUICK_JOIN_DEFAULT_ROUNDS = 5
 QUICK_JOIN_DEFAULT_TIME_LIMIT = 90
-
-
-from .db import (
-    delete_room,
-    fetch_room_snapshot,
-    get_active_rooms,
-    remove_player,
-    room_id_exists,
-    save_player_score,
-    save_room,
-)
-from .db_redis import redis_configured
-
-# Logger import
-from .limits import (
-    check_ws_before_connect,
-    max_players_per_room,
-    max_rooms_cap,
-    record_ws_connect_ok,
-)
-from .logger import get_logger
-from .room_ids import _MAX_ALLOC_ATTEMPTS, generate_room_id_candidate
-
-logger = get_logger(__name__)
 
 
 def room_listed_in_active_lobby(room: "Room") -> bool:

@@ -244,7 +244,9 @@ describe("ws lifecycle", () => {
     const { connect } = loadSocket();
     connect();
     lastWs.onclose({ code: 1008 });
-    expect(global.alert).toHaveBeenCalledWith(expect.stringContaining("Nick"));
+    expect(global.confirm).toHaveBeenCalledWith(
+      expect.stringContaining("nick"),
+    );
   });
 
   test("onclose 4401 alerts kicked by host and suppresses reconnect", () => {
@@ -253,7 +255,7 @@ describe("ws lifecycle", () => {
     connect();
     lastWs.onopen();
     lastWs.onclose({ code: 4401 });
-    expect(global.alert).toHaveBeenCalledWith(
+    expect(global.confirm).toHaveBeenCalledWith(
       expect.stringContaining("wyrzucił"),
     );
     jest.advanceTimersByTime(2500);
