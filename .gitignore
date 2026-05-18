@@ -58,9 +58,6 @@ logs/
 # Zed local config (machine-specific paths)
 .zed/
 
-# Google Cloud credentials
-projekt-testowy-*.json
+# SQLite WAL and SHM files
 *.db-wal
 *.db-shm
-*.db?mode=ro
-.codegraph/
