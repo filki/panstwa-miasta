@@ -127,6 +127,7 @@ class Room:
         self.round_started_at: float | None = None
         self.stop_submit_ends_at: float | None = None
         self.results_veto_ends_at: float | None = None
+        self.disconnected_players: dict[str, float] = {}  # nazwa -> timestamp disconnectu
 
         # Faza podsumowania rundy (Veto na Rzecz + auto-start)
         self.results_phase_active = False
@@ -888,20 +889,48 @@ class ConnectionManager:
         return True
 
     async def cleanup_player_after_disconnect(self, room_id: str, client_name: str) -> None:
-        """Drop lobby-only roster rows for players who left without an active round."""
+        """Mark player as disconnected; keep scores for rejoin within grace period."""
         room = self.rooms.get(room_id)
         if room is None:
             return
         room.ready_players.discard(client_name)
-        if room.is_playing or room.results_phase_active or room.game_over:
-            return
-        if client_name not in room.scores:
-            return
-        room.scores.pop(client_name, None)
-        await remove_player(room_id, client_name)
+        room.disconnected_players[client_name] = time.time()
+        if not room.is_playing:
+            # W lobby — uruchom GC task który usunie po 120s
+            asyncio.ensure_future(self._gc_disconnected_player(room_id, client_name))
         from .handlers import lobby_state_payload
 
         await room.broadcast(json.dumps(lobby_state_payload(room)))
         logger.info(
-            "Removed lobby roster for disconnected player %r in room %s", client_name, room_id
+            "Player %r disconnected from room %s (grace period started)", client_name, room_id
+        )
+
+    async def _gc_disconnected_player(self, room_id: str, client_name: str) -> None:
+        """Remove disconnected player after 120s grace period."""
+        try:
+            await asyncio.sleep(120)
+        except asyncio.CancelledError:
+            return
+        room = self.rooms.get(room_id)
+        if room is None:
+            return
+        # Jeśli gracz zdążył wrócić — nie usuwaj
+        if client_name not in room.disconnected_players:
+            return
+        # Jeśli gra jest w trakcie — nie usuwaj
+        if room.is_playing:
+            # Jeśli gracz wróci później, reconnect go przywróci
+            return
+        if client_name in room.scores:
+            room.scores.pop(client_name, None)
+        room.disconnected_players.pop(client_name, None)
+        await remove_player(room_id, client_name)
+        from .handlers import lobby_state_payload
+
+        if room_id in self.rooms:
+            await room.broadcast(json.dumps(lobby_state_payload(room)))
+        logger.info(
+            "Removed disconnected player %r from room %s (grace expired)",
+            client_name,
+            room_id,
         )
