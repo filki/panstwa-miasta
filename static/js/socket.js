@@ -285,15 +285,6 @@ function connect() {
       }
       return;
     }
-    if (e.code === 4409) {
-      isLeaving = true;
-      const msg =
-        "Gra w tym pokoju już trwa. Poczekaj na zakończenie lub znajdź inny pokój.";
-      if (confirm(msg + "\n\nKliknij OK żeby wrócić do strony głównej.")) {
-        safeNavigateHome();
-      }
-      return;
-    }
     if (e.code === 1008) {
       isLeaving = true;
       const msg =
@@ -301,6 +292,8 @@ function connect() {
       if (confirm(msg + "\n\nKliknij OK żeby wrócić do strony głównej.")) {
         safeNavigateHome();
       }
+      if (inlineJoin) inlineJoin.style.display = "block";
+      if (chatSection) chatSection.style.display = "none";
       return;
     }
     // If we initiated a manual leave, do not auto-reconnect

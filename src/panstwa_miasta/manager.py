@@ -901,11 +901,8 @@ class ConnectionManager:
         room.ready_players.discard(client_name)
         room.disconnected_players[client_name] = time.time()
         if not room.is_playing:
-            # W lobby — czyścimy od razu, bez okresu karencji
-            if client_name in room.scores:
-                room.scores.pop(client_name, None)
-            room.disconnected_players.pop(client_name, None)
-            await remove_player(room_id, client_name)
+            # W lobby — uruchom GC task który usunie po 120s
+            asyncio.ensure_future(self._gc_disconnected_player(room_id, client_name))
         from .handlers import lobby_state_payload
 
         await room.broadcast(json.dumps(lobby_state_payload(room)))
