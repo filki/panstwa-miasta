@@ -99,13 +99,13 @@ jobs:
           fetch-depth: 0
 
       - name: Download Python coverage + JUnit
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: coverage-python
           path: .
 
       - name: Download JS coverage (lcov)
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: coverage-js
           path: coverage-js
