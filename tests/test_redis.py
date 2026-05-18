@@ -224,3 +224,25 @@ async def test_redis_not_configured_returns_none(monkeypatch):
     assert not rc()
     assert await connect_redis() is None
     assert not await redis_ping()
+    # Functions should not crash when Redis is not configured
+    assert await redis_fetch_room_snapshot("x") is None
+    assert await redis_room_id_exists("x") is False
+    assert await redis_get_active_rooms() == []
+    await redis_save_room("x", 5, 90, 0, "h", "public")
+    await redis_delete_room("x")
+    await redis_save_player_score("x", "p", 10)
+    await redis_remove_player("x", "p")
+
+
+async def test_redis_ping_exception_returns_false(fake_redis, monkeypatch):
+    """redis_ping() should return False on exception."""
+    original = fake_redis.ping
+
+    async def failing_ping():
+        raise ConnectionError("connection refused")
+
+    fake_redis.ping = failing_ping
+    from panstwa_miasta.db_redis import redis_ping as rp
+
+    assert not await rp()
+    fake_redis.ping = original
