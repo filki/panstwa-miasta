@@ -556,7 +556,7 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
         )
 
 
-async def _touch_lobby_after_ready(room) -> None:
+def _touch_lobby_after_ready(room) -> None:
     if room.is_playing:
         manager.cancel_lobby_idle(room)
     else:

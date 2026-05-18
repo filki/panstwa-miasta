@@ -36,6 +36,7 @@ ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
 LETTER_CYCLE_ROUNDS = len(ALPHABET)
 GAME_CATEGORIES = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
 VETO_CATEGORY = "Rzecz"
+_FAUNA_FLORA = {"Zwierzę", "Roślina"}
 RESULTS_PHASE_SECONDS = 30
 STOP_SUBMIT_SECONDS = 10
 STOP_SUBMIT_GRACE_SECONDS = 1.0
@@ -357,7 +358,7 @@ class Room:
                     round_scores[player]["details"][category] = 0
                     continue
 
-                if category in ("Zwierzę", "Roślina") and len(normalize_text(ans_raw)) < 2:
+                if category in _FAUNA_FLORA and len(normalize_text(ans_raw)) < 2:
                     round_scores[player]["details"][category] = 0
                     continue
 

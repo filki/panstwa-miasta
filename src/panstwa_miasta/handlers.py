@@ -170,10 +170,7 @@ async def _finalize_results_phase(room: Room, room_id: str, timeout_coro) -> Non
 
 
 async def _results_phase_countdown(room: Room, room_id: str, timeout_coro) -> None:
-    try:
-        await asyncio.sleep(RESULTS_PHASE_SECONDS)
-    except asyncio.CancelledError:
-        raise
+    await asyncio.sleep(RESULTS_PHASE_SECONDS)
     await _finalize_results_phase(room, room_id, timeout_coro)
 
 
