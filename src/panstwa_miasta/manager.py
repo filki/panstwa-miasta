@@ -674,11 +674,17 @@ class ConnectionManager:
         room = self.rooms[room_id]
 
         if client_name not in room.connections and room.is_playing:
-            logger.warning(
-                "Rejected connection: room %s is already playing",
+            if client_name not in room.scores:
+                logger.warning(
+                    "Rejected connection: room %s is already playing",
+                    room_id,
+                )
+                return False, "game_in_progress"
+            logger.info(
+                "Reconnect mid-round: known player '%s' rejoining room %s",
+                client_name,
                 room_id,
             )
-            return False, "game_in_progress"
 
         if client_name not in room.connections and len(room.connections) >= max_players_per_room():
             logger.warning(
@@ -732,6 +738,7 @@ class ConnectionManager:
 
         if room.is_playing:
             room.answers_received.pop(client_name, None)
+            room.disconnected_players.pop(client_name, None)
             room.expected_answers = len(room.connections)
 
         await record_ws_connect_ok(client_ip, is_new_room=is_new_room)
@@ -893,8 +900,11 @@ class ConnectionManager:
         room.ready_players.discard(client_name)
         room.disconnected_players[client_name] = time.time()
         if not room.is_playing:
-            # W lobby — uruchom GC task który usunie po 120s
-            asyncio.ensure_future(self._gc_disconnected_player(room_id, client_name))
+            # W lobby — czyścimy od razu, bez okresu karencji
+            if client_name in room.scores:
+                room.scores.pop(client_name, None)
+            room.disconnected_players.pop(client_name, None)
+            await remove_player(room_id, client_name)
         from .handlers import lobby_state_payload
 
         await room.broadcast(json.dumps(lobby_state_payload(room)))
