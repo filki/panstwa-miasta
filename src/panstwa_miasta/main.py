@@ -63,12 +63,11 @@ from .limits import (
 from .logger import get_logger
 
 if TYPE_CHECKING:
-    pass
+    from .manager import ConnectionManager
 
 from .manager import (
     STOP_SUBMIT_GRACE_SECONDS,
     STOP_SUBMIT_SECONDS,
-    ConnectionManager,
     room_listed_in_active_lobby,
 )
 from .routers.dictionary import router as dictionary_router
@@ -622,11 +621,10 @@ async def websocket_endpoint(
             room_id,
             reject_reason,
         )
-        close_code = 1008
-        if reject_reason == "room_full":
-            close_code = 4408
-        elif reject_reason == "game_in_progress":
-            close_code = 4409
+        close_code = {
+            "room_full": 4408,
+            "game_in_progress": 4409,
+        }.get(reject_reason, 1008)
         await websocket.close(code=close_code)
         return
 
