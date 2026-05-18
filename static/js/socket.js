@@ -287,10 +287,13 @@ function connect() {
     }
     if (e.code === 4409) {
       isLeaving = true;
-      const msg = "Gra w tym pokoju już trwa. Poczekaj na zakończenie lub znajdź inny pokój.";
+      const msg =
+        "Gra w tym pokoju już trwa. Poczekaj na zakończenie lub znajdź inny pokój.";
       if (confirm(msg + "\n\nKliknij OK żeby wrócić do strony głównej.")) {
         safeNavigateHome();
       }
+      return;
+    }
     if (e.code === 1008) {
       isLeaving = true;
       const msg =
