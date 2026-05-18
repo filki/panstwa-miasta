@@ -59,3 +59,13 @@ działam w trybie planowania:
   server persists knowledge graph at `.zed/memory.json`
 - Dynamic facts (decisions, gotchas discovered mid-work) are stored in
   a knowledge graph via MCP memory server
+
+## 🚀 Flow zmian
+
+Po każdej implementacji/zakończonym tasku:
+1. `git add` zmienionych plików
+2. `git commit -m "..."`
+3. `git push`
+4. Stwórz PR przez `gh` lub narzędzia GitHub
+5. `gh pr merge <n> --auto --squash`
+Nie zostawiaj wiszących branchy — po mergu usuń lokalny branch.
