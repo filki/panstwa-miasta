@@ -62,6 +62,10 @@ działam w trybie planowania:
 
 ## 🚀 Flow zmian
 
+Przed każdym pushem:
+1. `uv run ruff check . && uv run ruff format --check . && uv run ty check && npm test`
+2. Dopiero jak wszystko zielone → commit i push.
+
 Po każdej implementacji/zakończonym tasku:
 1. `git add` zmienionych plików
 2. `git commit -m "..."`
