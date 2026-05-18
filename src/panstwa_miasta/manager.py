@@ -807,6 +807,7 @@ class ConnectionManager:
             )
         )
         from .handlers import lobby_state_payload
+
         await room.broadcast(json.dumps(lobby_state_payload(room)))
 
         if room.is_playing and room.all_players_answered():
@@ -890,6 +891,7 @@ class ConnectionManager:
         room.scores.pop(client_name, None)
         await remove_player(room_id, client_name)
         from .handlers import lobby_state_payload
+
         await room.broadcast(json.dumps(lobby_state_payload(room)))
         logger.info(
             "Removed lobby roster for disconnected player %r in room %s", client_name, room_id
