@@ -282,7 +282,6 @@ async def handle_not_ready(room: Room, client_name: str) -> None:
     await _broadcast_lobby_state(room)
 
 
-
 async def handle_restart_game(room: Room, client_name: str, msg: dict) -> None:
     if not room.game_over or client_name != room.host_name:
         return
