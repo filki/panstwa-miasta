@@ -1,88 +1,75 @@
 # Państwa-Miasta
 
 [![CI](https://github.com/filki/panstwa-miasta/actions/workflows/ci.yml/badge.svg)](https://github.com/filki/panstwa-miasta/actions/workflows/ci.yml)
+[![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=filip-org_panstwa-masta&metric=alert_status)](https://sonarcloud.io/dashboard?id=filip-org_panstwa-masta)
 
-Klasyczna gra Państwa-Miasta odpalana w kilka sekund na telefonie. Bez kont; odpowiedzi sprawdzane względem **lokalnych** list na serwerze (m.in. miasta, zwierzęta, rośliny).
+Klasyczna gra Państwa-Miasta w czasie rzeczywistym. Bez kont, bez reklam.
+Odpowiedzi sprawdzane względem lokalnych list na serwerze.
 
-> Stwórz pokój, wyślij kod znajomym, grajcie razem w czasie rzeczywistym.
+> Stwórz pokój, wyślij kod znajomym, grajcie razem.
 
 ## Stack
 
-- **Backend**: FastAPI + WebSockets, `aiosqlite`
-- **Frontend**: Pure HTML/CSS/JS, PWA (manifest + service worker), mobile-first
-- **Walidacja**: zbiory w SQLite / cache w pamięci (build offline dla części danych) — bez zewnętrznego API w locie przy punktacji
+- **Backend**: Python 3.13 / FastAPI + WebSockets
+- **Frontend**: vanilla JS / HTML / CSS, PWA, mobile-first
+- **Baza**: SQLite (dev) / Turso embedded replica (prod) przez libSQL
+- **Walidacja**: dane w SQLite + cache w pamięci — bez zewnętrznego API przy punktacji
 - **Package manager**: [uv](https://docs.astral.sh/uv/)
+- **Jakość**: `ruff` (lint+format), `ty` (type check), SonarCloud, pytest + Jest
 
 ## Quickstart (dev)
 
 ```bash
-uv sync --extra dev
-uv run uvicorn panstwa_miasta.main:app --reload
+# Zależności
+uv sync --extra dev --extra redis
+npm ci
+
+# Uruchom (z Turso — .env wymagane) lub bez (lokalny SQLite)
+uv run uvicorn src.panstwa_miasta.main:app --reload --port 8000
 ```
 
-Aplikacja działa pod `http://localhost:8000`.
+Aplikacja pod `http://localhost:8000`.
 
-### Docker (serwer cały czas w tle)
-
-Żeby nie odpalać `uvicorn` po każdym restarcie IDE:
+### Docker
 
 ```bash
 docker compose up -d
 ```
 
-- Adres jak wyżej: `http://localhost:8000` (port zbindowany tylko na loopback).
-- **`--reload`**: zmiany w `src/` i `static/` na hoście widać po zapisie pliku.
-- Baza `panstwa_miasta.db` leży w katalogu projektu na hoście (montowanie `.:/app`).
-- Zatrzymanie: `docker compose down`.
+## Testy
 
-Po zmianie zależności w `pyproject.toml` / `uv.lock`: `docker compose build --no-cache` i znowu `up`.
-
-#### Docker + ngrok (tunel w drugim kontenerze)
-
-Serwis **`ngrok`** jest na profilu Compose **`tunnel`** — domyślne `docker compose up -d` uruchamia **tylko `web`** (bez błędów auth przy pustym tokenie). Tunel włączasz tak:
-
-1. **Token** z [ngrok — Your Authtoken](https://dashboard.ngrok.com/get-started/your-authtoken) (konto **zweryfikowane** e‑mailem — inaczej `ERR_NGROK_4018`).
-2. W katalogu z `docker-compose.yml` plik **`.env`** (skopiuj z `.env.example`), np.:
-   - **Sposób A:** `COMPOSE_PROFILES=tunnel` oraz `NGROK_AUTHTOKEN=...` → potem `docker compose up -d` (Docker Desktop też wczyta `.env`).
-   - **Sposób B:** sam `NGROK_AUTHTOKEN=...` w `.env`, a tunel tylko gdy uruchomisz:  
-     `docker compose --profile tunnel up -d`
-
-Publiczny URL: `docker compose logs ngrok` albo panel inspect: **`http://127.0.0.1:14040`** (zmiana portu: `NGROK_INSPECT_PORT` w `.env`). Konflikt z lokalnym ngrok na **4040** na hoście — dlatego domyślnie **14040**.
-
-#### Windows: skrypt z tunelem
-
-```powershell
-Set-ExecutionPolicy -Scope CurrentUser RemoteSigned   # jednorazowo, jeśli skrypty są zablokowane
-.\scripts\dev-docker-ngrok.ps1
+```bash
+uv run pytest                 # Python (183 testów, ~87% coverage)
+npm test                      # Frontend Jest (121 testów)
 ```
 
-To `docker compose --profile tunnel up -d --build` + przypomnienie adresów. Bez `NGROK_AUTHTOKEN` w `.env` kontener ngrok zakończy się błędem — `web` nadal działa pod `http://127.0.0.1:8000`.
+## Jakość kodu
 
-## Quality gates
-
-Wszystko leci w CI na każdy push i PR do `main`:
-
-| Krok | Komenda lokalna |
-| --- | --- |
+| Krok | Komenda |
+|------|---------|
 | Format | `uv run ruff format --check .` |
 | Lint | `uv run ruff check .` |
-| Typy | `uv run ty check src` |
-| Testy (Python) | `uv run pytest` |
-| Testy (JS) | `npm test` |
+| Typy | `uv run ty check` |
+| Coverage target | 80% (SonarCloud) |
 
-Auto-fix lokalnie: `uv run ruff format . && uv run ruff check --fix .`.
+## Środowiska
+
+- **Dev**: lokalny SQLite (plika `panstwa_miasta.db`)
+- **Prod**: Turso embedded replica (Hetzner + Caddy reverse proxy)
+- **CI**: GitHub Actions (ruff → ty → pytest → jest → SonarCloud)
 
 ## Struktura
 
 ```
-src/panstwa_miasta/   # backend (FastAPI app)
-static/               # frontend (index.html, room.html, css, js, sw)
-tests/                # pytest (~87% coverage)
-.github/workflows/    # CI
+src/panstwa_miasta/   # backend
+static/               # frontend (HTML, CSS, JS, service worker)
+tests/                # pytest + Jest
+deploy/               # Caddyfile, systemd, runbooki
+scripts/              # build, seed, narzędzia developerskie
+knowledge_base/       # lokalna baza wiedzy (Kùzu) dla agenta
+.zed/                 # konfiguracja Zeda (MCP, profile)
 ```
 
 ## Workflow
 
-Trunk-based — `main` to jedyna stała gałąź, zawsze deployowalna. Każda zmiana idzie krótką gałęzią `feat/*` / `fix/*` / `chore/*` przez PR. Branch protection wymusza zielone CI przed mergem.
-
-Commit cadence: 100–200 zmienionych linii na commit (`.cursor/rules/commit-cadence.mdc`).
+Trunk-based: `main` zawsze deployowalna. Zmiany przez `feat/*` / `fix/*` / `chore/*` → PR z auto-merge squash. CI wymagane.
