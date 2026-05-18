@@ -113,7 +113,7 @@ jobs:
       - name: SonarQube Cloud Scan (attempt 1)
         id: sonar1
         continue-on-error: true
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@v8
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -121,13 +121,13 @@ jobs:
         if: steps.sonar1.outcome == 'failure'
         id: sonar2
         continue-on-error: true
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@v8
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: SonarQube Cloud Scan (attempt 3)
         if: steps.sonar2.outcome == 'failure'
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@v8
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
