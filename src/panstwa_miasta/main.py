@@ -5,7 +5,7 @@ import time
 from contextlib import asynccontextmanager, suppress
 from datetime import date
 from html import escape
-from typing import TYPE_CHECKING, Annotated, Literal, cast
+from typing import Annotated, Literal, cast
 
 import aiofiles
 from fastapi import FastAPI, Header, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
@@ -27,6 +27,7 @@ from .api_models import (
 )
 from .appeal_tokens import issue_appeal_token, verify_appeal_token
 from .appeals_service import submit_appeal
+from .constants import STOP_SUBMIT_GRACE_SECONDS, STOP_SUBMIT_SECONDS
 from .data import (
     reload_countries,
     reload_jobs,
@@ -61,12 +62,7 @@ from .limits import (
     http_rate_bucket_name,
 )
 from .logger import get_logger
-
-if TYPE_CHECKING:
-    from .manager import ConnectionManager
-
-from .constants import STOP_SUBMIT_GRACE_SECONDS, STOP_SUBMIT_SECONDS
-from .manager import room_listed_in_active_lobby
+from .manager import ConnectionManager, room_listed_in_active_lobby
 from .routers.dictionary import router as dictionary_router
 from .routers.words import router as words_router
 from .routers.words_worker import router as words_worker_router
