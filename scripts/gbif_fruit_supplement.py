@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import json
 import sys
 import time
 from pathlib import Path
@@ -27,8 +26,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from panstwa_miasta.gbif_seed import keep_fauna_flora_name, norm_game
-from panstwa_miasta.seed_data_loader import (
+from panstwa_miasta.gbif_seed import keep_fauna_flora_name, norm_game  # noqa: E402
+from panstwa_miasta.seed_data_loader import (  # noqa: E402
     load_plant_norms_from_seed_file,
     write_plant_norms_jsonl_gz,
 )
@@ -140,7 +139,7 @@ def main() -> None:
                 continue
 
             if not results:
-                print(f"  ⚠️  brak wyników")
+                print("  ⚠️  brak wyników")
                 # Dodajemy samą nazwę jako fallback jeśli nie ma w seedzie
                 n = norm_game(pl_name)
                 if n not in existing:
@@ -160,7 +159,7 @@ def main() -> None:
                 vn_records = get_vernacular(client, int(key))
             except httpx.HTTPError:
                 vn_records = []
-                print(f"  ⚠️  brak vernacularNames")
+                print("  ⚠️  brak vernacularNames")
 
             en_names: list[str] = []
             pl_names: list[str] = []
@@ -171,9 +170,7 @@ def main() -> None:
                     continue
                 if lang == "en":
                     en_names.append(name)
-                elif lang in ("pl", "pol"):
-                    pl_names.append(name)
-                elif not lang and any(c in "ąćęłńóśźż" for c in name):
+                elif lang in ("pl", "pol") or not lang and any(c in "ąćęłńóśźż" for c in name):
                     pl_names.append(name)
 
             print(f"  🔬 {scientific} ({kingdom}, {rank})")
@@ -240,7 +237,7 @@ def main() -> None:
         write_plant_norms_jsonl_gz(merged)
         print(f"Zaktualizowano plants_norms.jsonl.gz: {len(existing)} → {len(merged)}")
     elif not args.apply:
-        print(f"Użyj --apply, żeby zapisać nowe normy do seeda.")
+        print("Użyj --apply, żeby zapisać nowe normy do seeda.")
 
 
 if __name__ == "__main__":

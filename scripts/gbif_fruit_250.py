@@ -25,8 +25,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from panstwa_miasta.gbif_seed import keep_fauna_flora_name, norm_game
-from panstwa_miasta.seed_data_loader import (
+from panstwa_miasta.gbif_seed import keep_fauna_flora_name, norm_game  # noqa: E402
+from panstwa_miasta.seed_data_loader import (  # noqa: E402
     load_plant_norms_from_seed_file,
     write_plant_norms_jsonl_gz,
 )
@@ -291,9 +291,7 @@ def main() -> None:
                     continue
                 if lang == "en":
                     en_names.append(name)
-                elif lang in ("pl", "pol"):
-                    pl_names.append(name)
-                elif not lang and any(c in POLISH_CHARS for c in name):
+                elif lang in ("pl", "pol") or not lang and any(c in POLISH_CHARS for c in name):
                     pl_names.append(name)
 
             if not pl_names:
@@ -306,9 +304,8 @@ def main() -> None:
 
             for pn in pl_names:
                 n = norm_game(pn)
-                if keep_fauna_flora_name(pn) and len(n) >= 2:
-                    if n not in existing:
-                        new_norms.add(n)
+                if keep_fauna_flora_name(pn) and len(n) >= 2 and n not in existing:
+                    new_norms.add(n)
 
             csv_rows.append(
                 {

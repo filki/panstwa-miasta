@@ -21,15 +21,14 @@ import sys
 import time
 from pathlib import Path
 
-import httpx
 from pygbif import species
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from panstwa_miasta.gbif_seed import keep_fauna_flora_name, norm_game
-from panstwa_miasta.seed_data_loader import (
+from panstwa_miasta.gbif_seed import keep_fauna_flora_name, norm_game  # noqa: E402
+from panstwa_miasta.seed_data_loader import (  # noqa: E402
     load_plant_norms_from_seed_file,
     write_plant_norms_jsonl_gz,
 )
@@ -76,9 +75,7 @@ def _pl_names_from_nub(nub_key: int, seen_nubs: set[int]) -> set[str]:
     for rec in vn_list:
         lang = (rec.get("language") or "").lower()
         name = str(rec.get("vernacularName") or "").strip()
-        if lang in ("pl", "pol"):
-            out.add(name)
-        elif not lang and any(c in POLISH_CHARS for c in name):
+        if lang in ("pl", "pol") or not lang and any(c in POLISH_CHARS for c in name):
             out.add(name)
     return out
 
@@ -112,7 +109,7 @@ def main() -> None:
             continue
         results = res.get("results", [])
         if not results:
-            print(f"  — brak wyników")
+            print("  — brak wyników")
             continue
         print(f"  {len(results)} gatunków")
 
@@ -184,7 +181,7 @@ def main() -> None:
         write_plant_norms_jsonl_gz(merged)
         print(f"plant_norms: {len(existing)} → {len(merged)}")
     elif not args.apply and actually_new:
-        print(f"Użyj --apply, żeby zapisać")
+        print("Użyj --apply, żeby zapisać")
 
 
 if __name__ == "__main__":
