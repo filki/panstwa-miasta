@@ -639,8 +639,9 @@ async def test_cleanup_player_after_disconnect_drops_lobby_roster(monkeypatch):
 
     await manager.cleanup_player_after_disconnect("room_cleanup", "Ada")
 
-    assert "Ada" not in room.scores
-    remove_player.assert_awaited_once_with("room_cleanup", "Ada")
+    assert "Ada" in room.disconnected_players
+    assert room.scores["Ada"] == 0  # score preserved during grace period
+    remove_player.assert_not_called()
 
 
 @pytest.mark.asyncio
