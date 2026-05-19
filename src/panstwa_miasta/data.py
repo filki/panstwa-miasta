@@ -26,6 +26,9 @@ Source of truth:
   Dodatkowo alias **bez polskich znaków** jak przy ``MIASTA`` (np. „jabłoń” → „jablon”).
   ``ZWIERZETA``: ten sam alias ASCII co ``ROSLINY`` + wpisy z ``ZWIERZETA_EXTRA``
   (np. potoczne „źrebak” / „żrebak”, ogólne „koza”).
+  Od marca 2026 potoczne nazwy owoców/ warzyw („jabłko”, „ziemniak” itp.)
+  są dodane wprost do plant_norms (seed + GBIF).
+  W przyszłości tryb rankingowy może je pominąć (botanicznie to nie gatunki).
 
 In-memory caches are filled by the FastAPI lifespan handler (and pytest
 fixtures via :func:`db.init_db`).
@@ -77,7 +80,11 @@ JOB_STANDALONE_OR_PREFIX: frozenset[str] = frozenset(
 ZWIERZETA_EXTRA: frozenset[str] = frozenset({"źrebak", "żrebak", "koza", "małpa"})
 
 # Potoczne / luki w seedzie roślin (Wikipedia/GBIF).
-ROSLINY_EXTRA: frozenset[str] = frozenset({"gruszka", "baobab", "iglak"})
+# Uwaga: potoczne nazwy owoców ("jabłko", "gruszka" itp.) są teraz w seedzie
+# (plant_norms) — patrz scripts/gbif_fruit_supplement.py.
+# W przyszłości dla trybu rankingowego: nie mergować tych nazw (botanicznie
+# to nie gatunki, tylko owoce).
+ROSLINY_EXTRA: frozenset[str] = frozenset({"baobab", "iglak"})
 
 # Miasta z bazy (GeoNames itd.), które w polskiej grze brzmią jak typowa odpowiedź
 # w innej kategorii — odrzucamy przy walidacji „Miasto”, żeby uniknąć absurdalnych punktów.
