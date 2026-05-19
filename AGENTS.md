@@ -18,3 +18,15 @@ Zanim zaczniesz cokolwiek robić (pisać kod, proponować zmiany, diagnozować),
 Knowledge base to Kùzu grafowa baza, dostępna przez MCP (`knowledge-base`)
 lub przez `tools/mcp-bridge.py`. Zawiera: projekty, stack, ADR, workflow,
 konwencje, serwery, release'y, konfiguracje.
+
+## 🔁 Obowiązkowy cykl KB
+
+Przed każdą operacją na kodzie:
+1. `list_entities()` lub `search_entities(query)` — sprawdź czy są reguły, fixy, gotchas na dany temat
+2. Przeczytaj **wszystkie encje typu `rule-*`, `wf-*`, `convention`** — to są wiążące reguły workflow
+
+Po każdej zakończonej operacji (fix, refactor, test, commit, push, PR, merge):
+3. `search_entities()` pod kątem nowych faktów do zapisania
+4. `create_entity()` lub `add_observations()` — dodaj decyzje, gotchas, konfiguracje, problemy
+
+Bez kroków 1-4 twoja praca jest niekompletna.
