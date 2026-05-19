@@ -25,7 +25,7 @@ git pull --ff-only origin main
 
 echo "Deploy: $(git rev-parse --short HEAD) ($(git log -1 --format=%ci))"
 
-uv sync --frozen
+uv sync --frozen --extra dev
 
 if [[ "$(id -u)" -eq 0 ]]; then
   systemctl restart panstwa-miasta
