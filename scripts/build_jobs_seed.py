@@ -24,6 +24,11 @@ DEFAULT_OUT = ROOT / "src" / "panstwa_miasta" / "jobs_seed.py"
 _WS = re.compile(r"\s+")
 
 
+def _dq(s: str) -> str:
+    """repr() but with double quotes (ruff-compliant)."""
+    return json.dumps(s, ensure_ascii=False)
+
+
 def fold(s: str) -> str:
     s = s.strip().lower().replace("-", " ").replace("/", " ")
     s = _WS.sub(" ", s)
@@ -82,6 +87,12 @@ def main() -> None:
         help="Opcjonalnie: JSON PKD liniowy (pozycje[]) — dopasowanie kodów PKD",
     )
     ap.add_argument(
+        "--add-new",
+        action="store_true",
+        default=False,
+        help="Dodaj nowe zawody z KZiS, które nie pasują do żadnego z --zawody",
+    )
+    ap.add_argument(
         "--out",
         type=Path,
         default=DEFAULT_OUT,
@@ -104,13 +115,35 @@ def main() -> None:
         seen.add(opis)
         lines.append(opis.lower())
 
+    # Track which KZiS entries are matched, so we can add unmatched ones later
+    matched_kzis: set[str] = set()
+
     body: list[str] = []
     for opis in lines:
         kod = _best_kod(opis, pkd)
         if kod:
-            body.append(f'    {{"opis": {repr(opis)}, "kod": {repr(kod)}}},')
+            matched_kzis.add(kod)
+            body.append(f'    {{"opis": {_dq(opis)}, "kod": {_dq(kod)}}},')
         else:
-            body.append(f'    {{"opis": {repr(opis)}, "kod": None}},')
+            body.append(f'    {{"opis": {_dq(opis)}, "kod": None}},')
+
+    # Add new jobs from KZiS that weren't matched by any seed entry
+    new_count = 0
+    if args.add_new and pkd:
+        for kod, raw_opis, _of in pkd:
+            if kod in matched_kzis:
+                continue
+            # Skip "Pozostali..." entries (kod ending in 90) — too generic for gameplay
+            if kod.endswith("90"):
+                continue
+            opis = raw_opis.strip().lower()
+            if opis in seen:
+                continue
+            seen.add(opis)
+            body.append(f'    {{"opis": {_dq(opis)}, "kod": {_dq(kod)}}},')
+            new_count += 1
+
+    body.sort()  # keep sorted for deterministic diffs
 
     content = f'''"""Seed data for the ``jobs`` SQL table.
 
@@ -136,7 +169,9 @@ JOBS_SEED: Final[list[JobSeed]] = [
 '''
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(content, encoding="utf-8")
-    print(f"Zapisano {len(lines)} pozycji do {args.out.relative_to(ROOT)}")
+    print(
+        f"Zapisano {len(lines) + new_count} pozycji ({len(lines)} z seeda + {new_count} nowych z KZiS) do {args.out.relative_to(ROOT)}"
+    )
 
 
 if __name__ == "__main__":
