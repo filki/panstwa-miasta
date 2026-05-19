@@ -292,8 +292,10 @@ function connect() {
       if (confirm(msg + "\n\nKliknij OK żeby wrócić do strony głównej.")) {
         safeNavigateHome();
       }
-      if (inlineJoin) inlineJoin.style.display = "block";
-      if (chatSection) chatSection.style.display = "none";
+      const _inlineJoin = document.getElementById("room-inline-join");
+      const _chatSection = document.getElementById("chat-section");
+      if (_inlineJoin) _inlineJoin.style.display = "block";
+      if (_chatSection) _chatSection.style.display = "none";
       return;
     }
     // If we initiated a manual leave, do not auto-reconnect
