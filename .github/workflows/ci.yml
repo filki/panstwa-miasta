@@ -44,6 +44,7 @@ jobs:
     name: Tests (pytest)
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: [lint, types]
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
@@ -67,6 +68,7 @@ jobs:
     name: Frontend (jest)
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    needs: [lint, types]
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
