@@ -10,27 +10,24 @@ import os
 from collections.abc import Awaitable
 from typing import cast
 
-import redis.asyncio as aioredis
-
-_pool: aioredis.Redis | None = None
+_pool = None
 
 
 def redis_configured() -> bool:
-    """True if REDIS_URL is set and non-empty."""
     url = (os.environ.get("REDIS_URL") or "").strip()
     return bool(url)
 
 
-async def connect_redis() -> aioredis.Redis | None:
-    """Create connection pool from REDIS_URL env var.
-
-    Returns None if REDIS_URL is not configured.
-    """
+async def connect_redis():
     global _pool
     if not redis_configured():
         return None
     if _pool is not None:
         return _pool
+    try:
+        import redis.asyncio as aioredis
+    except ImportError:
+        return None
     url = os.environ["REDIS_URL"].strip()
     _pool = aioredis.from_url(url, decode_responses=True)
     return _pool
