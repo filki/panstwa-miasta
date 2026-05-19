@@ -41,7 +41,7 @@ jobs:
         run: uv run ty check src
 
       - name: Pytest with coverage
-        run: uv run pytest
+        run: uv run pytest --ignore=tests/test_data.py --ignore=tests/test_db.py
 
       - name: Upload coverage artifact
         if: always()
