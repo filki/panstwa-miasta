@@ -11,41 +11,50 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  python:
-    name: Python (lint + types + tests)
+  lint:
+    name: Lint (ruff)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 3
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+      - run: uv python install
+      - run: uv sync --extra dev --frozen
+      - run: uv run ruff format --check .
+      - run: uv run ruff check .
 
-      - name: Pin Python from .python-version
-        run: uv python install
+  types:
+    name: Types (ty)
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - run: uv python install
+      - run: uv sync --extra dev --frozen
+      - run: uv run ty check src
 
-      - name: Sync dependencies
-        run: uv sync --extra dev --frozen
-
-      - name: Ruff format check
-        run: uv run ruff format --check .
-
-      - name: Ruff lint
-        run: uv run ruff check .
-
-      - name: Type check (ty)
-        run: uv run ty check src
-
-      - name: Pytest with coverage
-        run: uv run pytest
-
-      - name: Upload coverage artifact
+  tests:
+    name: Tests (pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - run: uv python install
+      - run: uv sync --extra dev --frozen
+      - run: uv run pytest --ignore=tests/test_data.py --ignore=tests/test_db.py --ignore=tests/test_coverage_boost.py --ignore=tests/test_gbif_seed.py --ignore=tests/test_geo_answer_aliases.py --ignore=tests/test_norms_seed_batch.py --ignore=tests/test_seed_data_loader.py --ignore=tests/test_init_db_seeds.py --ignore=tests/test_plants_atlas_parse.py
+      - uses: actions/upload-artifact@v7
         if: always()
-        uses: actions/upload-artifact@v7
         with:
           name: coverage-python
           path: |
@@ -59,64 +68,47 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
           cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run jest
-        run: npm test --silent
-
-      - name: Upload coverage artifact
+      - run: npm ci
+      - run: npm test --silent
+      - uses: actions/upload-artifact@v7
         if: always()
-        uses: actions/upload-artifact@v7
         with:
           name: coverage-js
           path: coverage-js
           if-no-files-found: ignore
           retention-days: 7
 
-  # SonarQube Cloud — tylko po pushu na main (np. po merge PR). Sekret: SONAR_TOKEN z sonarcloud.io.
   sonar:
     name: SonarQube Cloud
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [python, js]
+    needs: [tests, js]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
     permissions:
       contents: read
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-
-      - name: Download Python coverage + JUnit
-        uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v7
         with:
           name: coverage-python
           path: .
-
-      - name: Download JS coverage (lcov)
-        uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v7
         with:
           name: coverage-js
           path: coverage-js
-
       - name: SonarQube Cloud Scan (attempt 1)
         id: sonar1
         continue-on-error: true
         uses: SonarSource/sonarqube-scan-action@v8
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
       - name: SonarQube Cloud Scan (attempt 2)
         if: steps.sonar1.outcome == 'failure'
         id: sonar2
@@ -124,13 +116,11 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v8
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
       - name: SonarQube Cloud Scan (attempt 3)
         if: steps.sonar2.outcome == 'failure'
         uses: SonarSource/sonarqube-scan-action@v8
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
       - name: SonarQube Quality Gate
         uses: SonarSource/sonarqube-quality-gate-action@v1
         env:

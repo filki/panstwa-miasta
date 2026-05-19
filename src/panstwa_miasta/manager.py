@@ -9,6 +9,16 @@ from typing import Any, cast
 from fastapi import WebSocket
 from starlette.websockets import WebSocketState
 
+from .constants import (
+    _FAUNA_FLORA,
+    ALPHABET,
+    GAME_CATEGORIES,
+    HOST_REASSIGN_GRACE_SECONDS,
+    QUICK_JOIN_DEFAULT_ROUNDS,
+    QUICK_JOIN_DEFAULT_TIME_LIMIT,
+    STOP_SUBMIT_SECONDS,
+    VETO_CATEGORY,
+)
 from .db import (
     delete_room,
     fetch_room_snapshot,
@@ -29,18 +39,6 @@ from .logger import get_logger
 from .room_ids import _MAX_ALLOC_ATTEMPTS, generate_room_id_candidate
 
 logger = get_logger(__name__)
-
-ALPHABET = "ABCDEFGHIJKLMNOPRSTUWZ"
-LETTER_CYCLE_ROUNDS = len(ALPHABET)
-GAME_CATEGORIES = ["Państwo", "Miasto", "Rzecz", "Zwierzę", "Roślina", "Imię", "Zawód"]
-VETO_CATEGORY = "Rzecz"
-_FAUNA_FLORA = {"Zwierzę", "Roślina"}
-RESULTS_PHASE_SECONDS = 30
-STOP_SUBMIT_SECONDS = 10
-STOP_SUBMIT_GRACE_SECONDS = 1.0
-HOST_REASSIGN_GRACE_SECONDS = 5.0
-QUICK_JOIN_DEFAULT_ROUNDS = 5
-QUICK_JOIN_DEFAULT_TIME_LIMIT = 90
 
 
 def room_listed_in_active_lobby(room: "Room") -> bool:
@@ -900,11 +898,8 @@ class ConnectionManager:
         room.ready_players.discard(client_name)
         room.disconnected_players[client_name] = time.time()
         if not room.is_playing:
-            # W lobby — czyścimy od razu, bez okresu karencji
-            if client_name in room.scores:
-                room.scores.pop(client_name, None)
-            room.disconnected_players.pop(client_name, None)
-            await remove_player(room_id, client_name)
+            # W lobby — uruchom GC task który usunie po 120s
+            asyncio.ensure_future(self._gc_disconnected_player(room_id, client_name))
         from .handlers import lobby_state_payload
 
         await room.broadcast(json.dumps(lobby_state_payload(room)))
