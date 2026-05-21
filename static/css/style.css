@@ -936,9 +936,19 @@ body.landing-page .landing-shell-header {
 
 body.landing-page .landing-shell-title-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
     gap: var(--space-3);
+}
+
+body.landing-page .landing-hero-subtitle {
+    width: 100%;
+    margin: 0;
+    text-align: center;
+    font-size: 1rem;
+    color: var(--text-secondary, #475569);
+    line-height: 1.5;
 }
 
 body.landing-page .landing-guide-open {

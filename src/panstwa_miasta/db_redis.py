@@ -106,10 +106,10 @@ async def redis_fetch_room_snapshot(room_id: str) -> dict[str, object] | None:
     if r is None:
         return None
     key = _room_key(room_id)
-    room_data = await r.hgetall(key)  # ty: ignore[invalid-await]
+    room_data = await r.hgetall(key)
     if not room_data:
         return None
-    scores = await r.hgetall(_scores_key(room_id))  # ty: ignore[invalid-await]
+    scores = await r.hgetall(_scores_key(room_id))
     out: dict[str, object] = {
         "room_id": room_id,
         "max_rounds": int(room_data.get("max_rounds", 0)),
@@ -148,7 +148,7 @@ async def redis_get_active_rooms() -> list[dict[str, object]]:
     r = await connect_redis()
     if r is None:
         return []
-    room_ids = await r.smembers(_active_key())  # ty: ignore[invalid-await]
+    room_ids = await r.smembers(_active_key())
     if not room_ids:
         return []
     result: list[dict[str, object]] = []
@@ -165,7 +165,7 @@ async def redis_save_player_score(room_id: str, player_name: str, score: int) ->
     if r is None:
         return
     key = _scores_key(room_id)
-    await r.hset(key, player_name, str(score))  # ty: ignore[invalid-await]
+    await r.hset(key, player_name, str(score))
     await r.expire(_room_key(room_id), ROOM_TTL)
     await r.expire(key, ROOM_TTL)
 
@@ -176,8 +176,8 @@ async def redis_remove_player(room_id: str, player_name: str) -> None:
     if r is None:
         return
     key = _scores_key(room_id)
-    await r.hdel(key, player_name)  # ty: ignore[invalid-await]
+    await r.hdel(key, player_name)
     # If no more players, keep TTL to auto-cleanup
-    remaining = await r.hlen(key)  # ty: ignore[invalid-await]
+    remaining = await r.hlen(key)
     if remaining == 0:
         await redis_delete_room(room_id)

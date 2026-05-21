@@ -8,6 +8,7 @@ from html import escape
 from typing import Annotated, Literal, cast
 
 import aiofiles
+import aiosqlite
 from fastapi import FastAPI, Header, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -37,7 +38,7 @@ from .data import (
     reload_things,
     reload_zwierzeta,
 )
-from .db import delete_room, fetch_game_transcript, init_db
+from .db import delete_room, fetch_game_transcript, fetch_room_snapshot, init_db
 from .db_backend import connect
 from .db_redis import close_redis, connect_redis, redis_configured, redis_ping
 from .handlers import (
@@ -223,6 +224,28 @@ async def _html_with_injected_footer(page_path: pathlib.Path) -> HTMLResponse:
     return HTMLResponse(content=html_content)
 
 
+async def _html_with_meta(page_path: pathlib.Path, extra_head: str) -> HTMLResponse:
+    """Like _html_with_injected_footer but with extra meta tags injected."""
+    async with aiofiles.open(page_path, encoding="utf-8") as f:
+        html_content = await f.read()
+    if "<!-- SITE_FOOTER -->" in html_content:
+        html_content = html_content.replace("<!-- SITE_FOOTER -->", FOOTER_HTML, 1)
+    html_content = inject_before_head_close(html_content, public_head_snippets())
+    html_content = _replace_room_head(html_content, extra_head)
+    return HTMLResponse(content=html_content)
+
+
+def _replace_room_head(html: str, extra: str) -> str:
+    """Zastąp statyczny <title> i wstrzyknij extra meta przed </head>."""
+    # Nadpisz fallback title z room.html
+    html = html.replace(
+        "<title>Państwa-Miasta Online — dołącz do gry</title>",
+        "",
+        1,
+    )
+    return inject_before_head_close(html, extra)
+
+
 def _html_with_analytics(html: str) -> str:
     return inject_before_head_close(html, public_head_snippets())
 
@@ -234,8 +257,36 @@ async def get_root() -> HTMLResponse:
 
 @app.get("/room/{room_id}")
 async def get_room(room_id: RoomIdPath) -> HTMLResponse:
-    _ = room_id  # validated path param; HTML shell is the same for every room
-    return await _html_with_injected_footer(ROOM_PATH)
+    # Sprawdź w DB czy pokój istnieje i jest publiczny
+    try:
+        snap = await fetch_room_snapshot(room_id)
+    except Exception:
+        snap = None
+    if snap is not None:
+        vis = str(snap.get("visibility", "public") or "public")
+        if vis == "public":
+            # Publiczny pokój → dynamiczne meta tagi
+            safe_id = escape(room_id, quote=True)
+            dyn_title = f"Państwa-Miasta online — pokój {safe_id} | Gra ze znajomymi"
+            dyn_desc = (
+                f"Dołącz do gry Państwa-Miasta w pokoju {safe_id}. "
+                "Graj online ze znajomymi w przeglądarce, bez logowania."
+            )
+            extra = (
+                f"<title>{dyn_title}</title>\n"
+                f'<meta name="description" content="{dyn_desc}" />\n'
+                f'<meta property="og:title" content="{dyn_title}" />\n'
+                f'<meta property="og:description" content="{dyn_desc}" />\n'
+                f'<meta name="twitter:title" content="{dyn_title}" />\n'
+                f'<meta name="twitter:description" content="{dyn_desc}" />\n'
+            )
+        else:
+            # Prywatny pokój — nie indeksuj
+            extra = '<meta name="robots" content="noindex, nofollow" />\n'
+        return await _html_with_meta(ROOM_PATH, extra)
+    # Nieznany pokój — noindex
+    extra = '<meta name="robots" content="noindex, nofollow" />\n'
+    return await _html_with_meta(ROOM_PATH, extra)
 
 
 @app.get("/polityka-prywatnosci")
@@ -260,7 +311,6 @@ async def get_robots_txt() -> PlainTextResponse:
         "Allow: /\n"
         "Disallow: /api/\n"
         "Disallow: /ws/\n"
-        "Disallow: /room/\n"
         "Disallow: /share/\n"
         f"Sitemap: {SITE_PUBLIC_ORIGIN}/sitemap.xml\n"
     )
@@ -269,12 +319,29 @@ async def get_robots_txt() -> PlainTextResponse:
 
 @app.get("/sitemap.xml")
 async def get_sitemap_xml() -> Response:
-    paths = ("/", "/polityka-prywatnosci", "/cookies", "/regulamin")
     lastmod = _sitemap_lastmod()
+    # Statyczne strony
+    paths = ["/", "/polityka-prywatnosci", "/cookies", "/regulamin"]
     urls = "".join(
         f"<url><loc>{SITE_PUBLIC_ORIGIN}{path}</loc><lastmod>{lastmod}</lastmod></url>\n"
         for path in paths
     )
+    # Publiczne pokoje z bazy (aktywne i nieaktywne — wszystkie publiczne)
+    try:
+        async with connect() as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT room_id FROM rooms WHERE visibility = 'public' ORDER BY room_id"
+            ) as cur:
+                for row in await cur.fetchall():
+                    rid = str(row["room_id"])
+                    safe = escape(rid, quote=True)
+                    urls += (
+                        f"<url><loc>{SITE_PUBLIC_ORIGIN}/room/{safe}</loc>"
+                        f"<lastmod>{lastmod}</lastmod></url>\n"
+                    )
+    except Exception:
+        pass
     body = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
