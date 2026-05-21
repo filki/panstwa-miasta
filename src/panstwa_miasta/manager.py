@@ -735,7 +735,8 @@ class ConnectionManager:
         logger.debug(f"Persisted room {room_id} and player {client_name} to DB")
 
         if room.is_playing:
-            room.answers_received.pop(client_name, None)
+            # reconnect w trakcie rundy — NIE usuwaj answers_received
+            # (odpowiedzi mogły już przyjść przed rozłączeniem)
             room.disconnected_players.pop(client_name, None)
             room.expected_answers = len(room.connections)
 
@@ -863,9 +864,10 @@ class ConnectionManager:
         del room.connections[client_name]
         logger.info("Removed connection for '%s' from room %s", client_name, room_id)
 
-        # Decrease expected answer count
+        # Decrease expected answer count – NIE usuwaj answers_received,
+        # bo gracz może wrócić (reconnect) w trakcie rundy i straci
+        # odpowiedzi które już wysłał (#fix-zero-point-race-condition).
         if room.is_playing:
-            room.answers_received.pop(client_name, None)
             room.expected_answers = max(0, room.expected_answers - 1)
             logger.debug(
                 "Adjusted expected_answers for room %s: %s",
