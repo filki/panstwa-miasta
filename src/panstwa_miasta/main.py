@@ -224,6 +224,17 @@ async def _html_with_injected_footer(page_path: pathlib.Path) -> HTMLResponse:
     return HTMLResponse(content=html_content)
 
 
+async def _html_with_meta(page_path: pathlib.Path, extra_head: str) -> HTMLResponse:
+    """Like _html_with_injected_footer but with extra meta tags injected."""
+    async with aiofiles.open(page_path, encoding="utf-8") as f:
+        html_content = await f.read()
+    if "<!-- SITE_FOOTER -->" in html_content:
+        html_content = html_content.replace("<!-- SITE_FOOTER -->", FOOTER_HTML, 1)
+    html_content = inject_before_head_close(html_content, public_head_snippets())
+    html_content = _replace_room_head(html_content, extra_head)
+    return HTMLResponse(content=html_content)
+
+
 def _replace_room_head(html: str, extra: str) -> str:
     """Zastąp statyczny <title> i wstrzyknij extra meta przed </head>."""
     # Nadpisz fallback title z room.html
@@ -246,7 +257,6 @@ async def get_root() -> HTMLResponse:
 
 @app.get("/room/{room_id}")
 async def get_room(room_id: RoomIdPath) -> HTMLResponse:
-    html = await _html_with_injected_footer(ROOM_PATH)
     # Sprawdź w DB czy pokój istnieje i jest publiczny
     try:
         snap = await fetch_room_snapshot(room_id)
@@ -255,7 +265,7 @@ async def get_room(room_id: RoomIdPath) -> HTMLResponse:
     if snap is not None:
         vis = str(snap.get("visibility", "public") or "public")
         if vis == "public":
-            # Publiczny pokój → dynamiczne meta tagi, bez noindex
+            # Publiczny pokój → dynamiczne meta tagi
             safe_id = escape(room_id, quote=True)
             dyn_title = f"Państwa-Miasta online — pokój {safe_id} | Gra ze znajomymi"
             dyn_desc = (
@@ -273,12 +283,10 @@ async def get_room(room_id: RoomIdPath) -> HTMLResponse:
         else:
             # Prywatny pokój — nie indeksuj
             extra = '<meta name="robots" content="noindex, nofollow" />\n'
-        html = _replace_room_head(html, extra)
-    else:
-        # Nieznany pokój — dodaj noindex, żeby Google nie indeksował
-        extra = '<meta name="robots" content="noindex, nofollow" />\n'
-        html = _replace_room_head(html, extra)
-    return HTMLResponse(content=html)
+        return await _html_with_meta(ROOM_PATH, extra)
+    # Nieznany pokój — noindex
+    extra = '<meta name="robots" content="noindex, nofollow" />\n'
+    return await _html_with_meta(ROOM_PATH, extra)
 
 
 @app.get("/polityka-prywatnosci")
