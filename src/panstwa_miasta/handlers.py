@@ -343,11 +343,16 @@ async def handle_stop(room: Room, room_id: str, client_name: str, force_end_coro
 async def handle_answers(
     room: Room, room_id: str, client_name: str, msg: dict, timeout_coro
 ) -> None:
-    if room.results_phase_active:
-        return
     if not room.is_playing and not room.stop_triggered:
         return
-    room.answers_received[client_name] = msg.get("answers", {})
+    # ZAPISZ odpowiedzi ZANIM sprawdzisz results_phase_active —
+    # inaczej gracz traci odpowiedzi jeśli faza wyników wystartowała
+    # między wysłaniem przez niego formularza a dotarciem wiadomości.
+    answers = msg.get("answers", {})
+    if answers:
+        room.answers_received[client_name] = answers
+    if room.results_phase_active:
+        return
     answered = len(room.answers_received)
     expected = len(room.connections)
     logger.info(f"Answers received from '{client_name}' in room {room_id} ({answered}/{expected})")

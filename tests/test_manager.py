@@ -263,8 +263,8 @@ async def test_connect_resyncs_expected_answers_mid_round_reconnect(monkeypatch)
 
 
 @pytest.mark.asyncio
-async def test_reconnect_mid_round_clears_stale_answers(monkeypatch):
-    """Reconnect w rundzie: stary wpis w answers_received nie blokuje zakończenia rundy."""
+async def test_reconnect_mid_round_keeps_answers(monkeypatch):
+    """Reconnect w rundzie: odpowiedzi gracza NIE są usuwane (fix #fix-zero-point-race-condition)."""
     import panstwa_miasta.manager as mod
 
     monkeypatch.setattr(mod, "save_room", AsyncMock())
@@ -279,12 +279,16 @@ async def test_reconnect_mid_round_clears_stale_answers(monkeypatch):
     room.start_round()
     room.answers_received["B"] = {"Państwo": "polska"}
 
+    # disconnect NIE usuwa answers_received — gracz może wrócić
     manager.disconnect("rx_ans", "B", ws_b)
-    assert "B" not in room.answers_received
+    assert "B" in room.answers_received
+    assert room.answers_received["B"] == {"Państwo": "polska"}
 
     ws_b2 = AsyncMock(spec=WebSocket)
     await manager.connect(ws_b2, "rx_ans", "B", 3, 60)
-    assert "B" not in room.answers_received
+    # odpowiedzi wciąż tam są po reconnect
+    assert "B" in room.answers_received
+    assert room.answers_received["B"] == {"Państwo": "polska"}
     assert room.expected_answers == 2
 
 
