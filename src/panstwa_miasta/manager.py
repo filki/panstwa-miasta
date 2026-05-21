@@ -648,6 +648,12 @@ class ConnectionManager:
                 )
                 room.current_round = int(snap_any.get("current_round") or 0)
                 room.host_name = str(snap_any.get("host_name") or "")
+                # Restore is_playing when game was in progress (current_round > 0
+                # AND is_active == 1), otherwise a new player joining sees an
+                # empty lobby instead of being blocked (#fix-in-progress-join).
+                snap_is_active = int(snap_any.get("is_active") or 0)
+                if room.current_round > 0 and snap_is_active:
+                    room.is_playing = True
                 players = snap_any.get("players")
                 if isinstance(players, dict):
                     room.scores = {str(k): int(cast(int | str, v)) for k, v in players.items()}
@@ -671,11 +677,20 @@ class ConnectionManager:
 
         room = self.rooms[room_id]
 
-        if client_name not in room.connections and room.is_playing:
+        # Block new players from joining an active game session:
+        # is_playing (round in progress), results_phase_active (veto phase
+        # between rounds) or game_over — in all cases the room is "in use".
+        # Known players can reconnect (they are in room.scores).
+        game_active = room.is_playing or room.results_phase_active or room.game_over
+        if client_name not in room.connections and game_active:
             if client_name not in room.scores:
                 logger.warning(
-                    "Rejected connection: room %s is already playing",
+                    "Rejected connection: room %s is already playing"
+                    " (is_playing=%s, results=%s, game_over=%s)",
                     room_id,
+                    room.is_playing,
+                    room.results_phase_active,
+                    room.game_over,
                 )
                 return False, "game_in_progress"
             logger.info(
