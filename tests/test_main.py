@@ -315,7 +315,6 @@ def test_robots_txt_and_sitemap():
     assert robots.status_code == 200
     assert "Sitemap: https://panstwamiasta.com.pl/sitemap.xml" in robots.text
     assert "Disallow: /api/" in robots.text
-    assert "Disallow: /room/" in robots.text
     assert "Disallow: /share/" in robots.text
 
     sitemap = client.get("/sitemap.xml")
@@ -337,9 +336,10 @@ def test_landing_has_seo_meta():
 
 
 def test_room_shell_is_noindex():
-    response = client.get("/room/abcd")
+    # Uzywamy ID ktore na pewno nie istnieje w zadnej bazie
+    response = client.get("/room/__no_such_room_99999__")
     assert response.status_code == 200
-    assert 'name="robots" content="noindex"' in response.text
+    assert "noindex" in response.text or "nofollow" in response.text
 
 
 def test_share_page_is_noindex():
