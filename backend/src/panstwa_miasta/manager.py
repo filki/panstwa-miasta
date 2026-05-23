@@ -662,7 +662,7 @@ class ConnectionManager:
             return False, "rate_limited"
         return True, None
 
-    async def _resolve_room_join(
+    def _resolve_room_join(
         self, room: Room, client_name: str, room_id: str
     ) -> tuple[bool, str | None]:
         """Check if client_name can join this room; returns (ok, reason)."""
@@ -736,7 +736,7 @@ class ConnectionManager:
 
         room = self.rooms[room_id]
 
-        ok, reason = await self._resolve_room_join(room, client_name, room_id)
+        ok, reason = self._resolve_room_join(room, client_name, room_id)
         if not ok:
             return False, reason
 

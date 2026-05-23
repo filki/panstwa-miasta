@@ -60,15 +60,17 @@ export class PmApp extends GemElement {
     const { connected, reconnecting } = connectionStore;
     const inRoom = page === 'room';
     const roomId = roomStore.room_id;
-    const statusClass = connected ? 'nav-status--connected' : (reconnecting ? 'nav-status--reconnecting' : 'nav-status--disconnected');
-    const statusTitle = connected ? 'Połączono' : (reconnecting ? 'Ponowne łączenie…' : 'Rozłączono');
+    let statusClass = 'nav-status--disconnected';
+    let statusTitle = 'Rozłączono';
+    if (connected) { statusClass = 'nav-status--connected'; statusTitle = 'Połączono'; }
+    else if (reconnecting) { statusClass = 'nav-status--reconnecting'; statusTitle = 'Ponowne łączenie…'; }
 
     return html`
       ${inRoom ? html`
         <nav class="navbar">
           <div class="nav-left">
             <span class="logo" @click=${() => sock.leaveRoom()}>Państwa<span>Miasta</span></span>
-            ${roomId ? html`<span class="nav-room-info">Pokój <strong>${roomId}</strong></span>` : ''}
+            ${roomId ? html`<span class="nav-room-info">Pokój <strong>${String(roomId)}</strong></span>` : null}
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             <span class="nav-status ${statusClass}" title=${statusTitle}></span>
@@ -137,7 +139,8 @@ export class PmLanding extends GemElement {
   }
   #rerollAvatar() {
     const cur = Number(localStorage.getItem('pm_avatar')||0);
-    let n = Math.trunc(Math.random()*4); if (n === cur % 4) n = (n+1)%4;
+    const rand = Math.trunc(Math.random() * 4);
+    const n = rand === cur % 4 ? (rand + 1) % 4 : rand;
     localStorage.setItem('pm_avatar', String(n)); this.update();
   }
   #ensureNick() { const n = this.#getNick() || 'Gracz'; this.#setNick(n); return n; }
@@ -179,7 +182,7 @@ export class PmLanding extends GemElement {
       `}
       <div class="rooms-section">
         <div class="rooms-title"><h3>Aktywne pokoje</h3></div>
-        ${!rooms.length ? html`<div class="empty-state">Brak aktywnych pokoi. Stwórz pierwszy!</div>` :
+        ${rooms.length === 0 ? html`<div class="empty-state">Brak aktywnych pokoi. Stwórz pierwszy!</div>` :
           rooms.map((r: any) => html`
             <div class="room-card" @click=${() => { this.#ensureNick(); sock.connect(r.room_id); }}>
               <div class="room-card-left"><span class="room-card-code">${r.room_id}</span><span class="room-card-meta">${r.host_name} · ${r.player_count} graczy · ${r.rounds} rund</span></div>
@@ -245,13 +248,6 @@ export class PmRoom extends GemElement {
   #sendChat() { if (!this.#chatInput.trim()) return; sock.sendChat(this.#chatInput.trim()); this.#chatInput = ''; this.update(); }
   #getViewer() { return nickStore.nick; }
 
-  #getInputValues(): Record<string, string> {
-    const a: Record<string, string> = {};
-    const r = this.shadowRoot!;
-    GAME_CATEGORIES.forEach(c => { const e = r.getElementById('inp-'+c.id) as HTMLInputElement; if (e) a[c.id] = e.value.trim(); });
-    return a;
-  }
-
   #allFilled(): boolean {
     return GAME_CATEGORIES.every(c => {
       const e = this.shadowRoot?.getElementById('inp-'+c.id) as HTMLInputElement;
@@ -274,12 +270,12 @@ export class PmRoom extends GemElement {
     const viewer = this.#getViewer();
     const discoSet = new Set(disconnected_players || []);
     const readySet = new Set(ready_players || []);
-    const allFilled = !roundStore.round_active ? false : this.#allFilled();
+    const allFilled = roundStore.round_active ? this.#allFilled() : false;
     const sorted = Object.entries(scores || {}).sort((a,b) => (b[1] as number) - (a[1] as number));
 
-    if (!room_id) return html`<div class="flex-center" style="height:100%"><p>Łączenie z pokojem…</p></div>`;
+    if (room_id == null || room_id === '') return html`<div class="flex-center" style="height:100%"><p>Łączenie z pokojem…</p></div>`;
 
-    if (is_playing && !game_over) return html`
+    if (is_playing && game_over === false) return html`
       <div class="hud">
         <span class="hud-letter">${letter}</span>
         <span class="hud-timer ${time_left <= 10 ? 'hud-timer--urgent' : ''}">${time_left}s</span>
@@ -330,11 +326,11 @@ export class PmRoom extends GemElement {
                 <div class="roster-item ${name===host_name?'roster-item--host':''}">
                   <img class="roster-avatar" src=${avatarUrl(name, viewer)} alt="" />
                   <span class="roster-name">${esc(name)}${name===host_name?' 👑':''}</span>
-                  <span class="roster-status ${readySet.has(name)?'roster-status--ready':''}">${readySet.has(name)?'✓ Gotowy':discoSet.has(name)?'Rozłączony':'—'}</span>
-                  ${scores?.[name]!==undefined?html`<span class="roster-score">${scores[name]}p</span>`:''}
+                  ${(() => { const ready = readySet.has(name); const disco = discoSet.has(name); const label = ready ? '✓ Gotowy' : (disco ? 'Rozłączony' : '—'); return html`<span class="roster-status ${ready?'roster-status--ready':''}">${label}</span>`})() }
+                  ${scores?.[name] !== undefined ? html`<span class="roster-score">${String(scores[name])}p</span>` : null}
                 </div>
               `)}
-              ${(disconnected_players||[]).filter(n=>!(connected_players||[]).includes(n)).map(name => html`
+              ${(disconnected_players||[]).filter(n => (connected_players||[]).includes(n) === false).map(name => html`
                 <div class="roster-item" style="opacity:.5"><span class="roster-name">${esc(name)}</span><span class="roster-status">Rozłączony</span></div>
               `)}
             </div>
@@ -369,7 +365,7 @@ export class PmChatPanel extends GemElement {
     const msgs = (this.messages || []).slice(-50);
     return html`
       <div class="ch">💬 Czat</div>
-      <div class="cm">${msgs.map(m => html`<div class="msg">${m.type==='system'?html`<span class="my">${m.text}</span>`:html`<span class="ms">${m.sender}:</span> ${m.text}`}</div>`)}</div>
+      <div class="cm">${msgs.map(m => { const system = m.type==='system'; const text = m.text; return system ? html`<span class="my">${text}</span>` : html`<span class="ms">${m.sender}:</span> ${text}`; })}</div>
       <div class="cr">
         <input .value=${this.chatInput||''} placeholder="Napisz…" maxlength="200" @input=${(e:Event)=>this.dispatchEvent(new CustomEvent('chatinput',{detail:(e.target as HTMLInputElement).value}))} @keypress=${(e:KeyboardEvent)=>e.key==='Enter'&&this.dispatchEvent(new CustomEvent('chatsend'))} />
         <button class="btn-primary btn-sm" @click=${()=>this.dispatchEvent(new CustomEvent('chatsend'))}>Wyślij</button>
