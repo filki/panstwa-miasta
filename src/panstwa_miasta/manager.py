@@ -890,7 +890,7 @@ class ConnectionManager:
                 room.expected_answers,
             )
 
-        # If host left, assign new host after a short grace (refresh / reconnect).
+        # If host left mid-game, assign new host after grace period.
         if client_name == room.host_name and room.connections:
             self._schedule_host_reassign(room, room_id, client_name)
 
@@ -914,8 +914,9 @@ class ConnectionManager:
             return
         room.ready_players.discard(client_name)
         room.disconnected_players[client_name] = time.time()
-        if not room.is_playing:
-            # W lobby — uruchom GC task który usunie po 120s
+        game_active = room.is_playing or room.results_phase_active
+        if not game_active:
+            # W lobby (nie w grze ani results_phase) — GC task za 120s
             asyncio.ensure_future(self._gc_disconnected_player(room_id, client_name))
         from .handlers import lobby_state_payload
 
@@ -936,9 +937,8 @@ class ConnectionManager:
         # Jeśli gracz zdążył wrócić — nie usuwaj
         if client_name not in room.disconnected_players:
             return
-        # Jeśli gra jest w trakcie — nie usuwaj
-        if room.is_playing:
-            # Jeśli gracz wróci później, reconnect go przywróci
+        # Jeśli gra jest w trakcie albo w fazie wyników — nie usuwaj
+        if room.is_playing or room.results_phase_active:
             return
         if client_name in room.scores:
             room.scores.pop(client_name, None)

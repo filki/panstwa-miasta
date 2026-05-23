@@ -63,3 +63,4 @@ projekt-testowy-*.json
 *.db-wal
 *.db-shm
 *.db?mode=ro
+.codegraph/
