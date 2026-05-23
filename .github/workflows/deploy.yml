@@ -57,7 +57,8 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           source: backend/deploy/vps-pull-and-restart.sh
-          target: /tmp/
+          target: /tmp/deploy
+          strip_components: 2
 
       - name: Run deploy script
         uses: appleboy/ssh-action@v1.2.2
@@ -65,7 +66,6 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script_stop: true
           command_timeout: 25m
           script: |
             set -euo pipefail

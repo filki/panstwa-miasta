@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   root: '.',
   build: {
-    outDir: 'dist',
+    outDir: '../backend/static',
     emptyOutDir: true,
     target: 'es2022',
     sourcemap: true,
