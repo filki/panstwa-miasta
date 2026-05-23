@@ -19,7 +19,7 @@ twoja-domena.pl {
 	# Ścieżka = katalog clone na VPS (domyślnie /srv/panstwa-miasta).
 	@maintenance file /etc/caddy/maintenance.on
 	handle @maintenance {
-		root * /srv/panstwa-miasta/deploy/maintenance
+		root * /srv/panstwa-miasta/backend/deploy/maintenance
 		rewrite * /index.html
 		file_server
 	}
@@ -28,7 +28,7 @@ twoja-domena.pl {
 	handle_errors {
 		@down expression `{http.error.status_code} >= 502 && {http.error.status_code} <= 504`
 		handle @down {
-			root * /srv/panstwa-miasta/deploy/maintenance
+			root * /srv/panstwa-miasta/backend/deploy/maintenance
 			rewrite * /index.html
 			file_server
 		}

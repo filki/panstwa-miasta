@@ -6,8 +6,8 @@ set -euo pipefail
 APP_DIR="${DEPLOY_APP_DIR:-/srv/panstwa-miasta}"
 MAINT_FLAG="${PM_MAINTENANCE_FLAG:-/etc/caddy/maintenance.on}"
 
-if [[ ! -f "${APP_DIR}/deploy/maintenance/index.html" ]]; then
-  echo "Brak ${APP_DIR}/deploy/maintenance/index.html — zrób git pull w APP_DIR." >&2
+if [[ ! -f "${APP_DIR}/backend/deploy/maintenance/index.html" ]]; then
+  echo "Brak ${APP_DIR}/backend/deploy/maintenance/index.html — zrób git pull w APP_DIR." >&2
   exit 1
 fi
 
