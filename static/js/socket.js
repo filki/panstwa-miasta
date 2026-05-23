@@ -116,6 +116,43 @@ function leaveRoom() {
   safeNavigateHome();
 }
 
+function handleCloseCode(code) {
+  if (code === 4401) {
+    isLeaving = true;
+    alert("Host wyrzucił Cię z pokoju.");
+    safeNavigateHome();
+    return true;
+  }
+  if (code === 4408) {
+    isLeaving = true;
+    alert(
+      "Pokój jest pełny (maksymalnie 8 graczy).\n\nSpróbuj za chwilę lub stwórz własny pokój na stronie głównej.",
+    );
+    safeNavigateHome();
+    return true;
+  }
+  if (code === 4409) {
+    isLeaving = true;
+    alert(
+      "Gra w tym pokoju już trwa. Nie można dołączyć w trakcie rundy.\n\nWróć na stronę główną i znajdź inny pokój lub stwórz własny.",
+    );
+    safeNavigateHome();
+    return true;
+  }
+  if (code === 1008) {
+    isLeaving = true;
+    alert(
+      "Ten nick jest już zajęty lub nieprawidłowy.\n\nZmień go i spróbuj ponownie.",
+    );
+    const ij = document.getElementById("room-inline-join");
+    const cs = document.getElementById("chat-section");
+    if (ij) ij.style.display = "block";
+    if (cs) cs.style.display = "none";
+    return true;
+  }
+  return false;
+}
+
 function connect() {
   leftByUser = false;
   initAudio();
@@ -256,39 +293,7 @@ function connect() {
 
   socket.onclose = (e) => {
     if (socketGeneration !== pmWsGeneration) return;
-    if (e.code === 4401) {
-      isLeaving = true;
-      alert("Host wyrzucił Cię z pokoju.");
-      safeNavigateHome();
-      return;
-    }
-    if (e.code === 4408) {
-      isLeaving = true;
-      alert(
-        "Pokój jest pełny (maksymalnie 8 graczy).\n\nSpróbuj za chwilę lub stwórz własny pokój na stronie głównej.",
-      );
-      safeNavigateHome();
-      return;
-    }
-    if (e.code === 4409) {
-      isLeaving = true;
-      alert(
-        "Gra w tym pokoju już trwa. Nie można dołączyć w trakcie rundy.\n\nWróć na stronę główną i znajdź inny pokój lub stwórz własny.",
-      );
-      safeNavigateHome();
-      return;
-    }
-    if (e.code === 1008) {
-      isLeaving = true;
-      alert(
-        "Ten nick jest już zajęty lub nieprawidłowy.\n\nZmień go i spróbuj ponownie.",
-      );
-      const _inlineJoin = document.getElementById("room-inline-join");
-      const _chatSection = document.getElementById("chat-section");
-      if (_inlineJoin) _inlineJoin.style.display = "block";
-      if (_chatSection) _chatSection.style.display = "none";
-      return;
-    }
+    if (handleCloseCode(e.code)) return;
     // If we initiated a manual leave, do not auto-reconnect
     if (isLeaving) {
       isLeaving = false;
