@@ -3,7 +3,7 @@
 set -euo pipefail
 
 APP_DIR="${DEPLOY_APP_DIR:-/srv/panstwa-miasta}"
-DB="${APP_DIR}/panstwa_miasta.db"
+DB="${APP_DIR}/backend/panstwa_miasta.db"
 BACKUP_DIR="${PM_DB_BACKUP_DIR:-${APP_DIR}/backups}"
 KEEP_DAYS="${PM_DB_BACKUP_KEEP_DAYS:-14}"
 

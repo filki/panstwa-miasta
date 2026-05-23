@@ -19,7 +19,9 @@ git checkout main
 git pull --ff-only origin main
 git checkout "$rev"
 
+cd "$APP_DIR/backend"
 uv sync --frozen
+cd "$APP_DIR"
 
 if [[ "$(id -u)" -eq 0 ]]; then
   systemctl restart panstwa-miasta
