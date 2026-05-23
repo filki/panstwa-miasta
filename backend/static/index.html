@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="pl">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#f2f6ff" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta
+            name="description"
+            content="Państwa-Miasta online — gra w przeglądarce ze znajomymi. Stwórz pokój, dołącz kodem lub szybka gra bez konta."
+        />
+        <meta
+            property="og:title"
+            content="Państwa-Miasta online — gra w przeglądarce"
+        />
+        <meta
+            property="og:description"
+            content="Państwa-Miasta online — gra w przeglądarce ze znajomymi. Stwórz pokój, dołącz kodem lub szybka gra bez konta."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="pl_PL" />
+        <meta property="og:url" content="https://panstwamiasta.com.pl/" />
+        <meta
+            property="og:image"
+            content="https://panstwamiasta.com.pl/static/img/og-image.svg"
+        />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+            name="twitter:title"
+            content="Państwa-Miasta online — gra w przeglądarce"
+        />
+        <meta
+            name="twitter:description"
+            content="Państwa-Miasta online — gra w przeglądarce ze znajomymi. Stwórz pokój, dołącz kodem lub szybka gra bez konta."
+        />
+        <meta
+            name="twitter:image"
+            content="https://panstwamiasta.com.pl/static/img/og-image.svg"
+        />
+        <link rel="canonical" href="https://panstwamiasta.com.pl/" />
+        <link rel="manifest" href="/manifest.json" />
+        <title>Państwa-Miasta online — gra w przeglądarce ze znajomymi</title>
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "WebApplication",
+                "name": "Państwa-Miasta",
+                "url": "https://panstwamiasta.com.pl/",
+                "applicationCategory": "GameApplication",
+                "operatingSystem": "Web",
+                "inLanguage": "pl",
+                "offers": {
+                    "@type": "Offer",
+                    "price": "0",
+                    "priceCurrency": "PLN"
+                }
+            }
+        </script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@400;700;900&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="/static/css/style.css" />
+        <link rel="stylesheet" href="/static/css/site-footer.css" />
+    </head>
+    <body class="landing-page">
+        <main class="page-wrapper">
+            <header class="hero">
+                <div class="landing-shell">
+                    <header class="landing-shell-header">
+                        <div class="landing-shell-title-row">
+                            <h1 class="landing-shell-title">
+                                Państwa<span>Miasta</span> — gra online
+                            </h1>
+                            <p class="landing-hero-subtitle">
+                                Graj ze znajomymi w przeglądarce. Stwórz pokój,
+                                dołącz kodem lub szybka gra bez konta.
+                            </p>
+                            <button
+                                type="button"
+                                class="landing-guide-open"
+                                id="landing-guide-open"
+                                aria-label="Jak grać?"
+                                aria-expanded="false"
+                                aria-controls="landing-guide-carousel"
+                            >
+                                <span
+                                    class="landing-guide-open-icon"
+                                    aria-hidden="true"
+                                    >I</span
+                                >
+                            </button>
+                        </div>
+                    </header>
+
+                    <div class="landing-grid">
+                        <section
+                            id="lobby"
+                            class="lobby-section start-panel landing-actions"
+                        >
+                            <div
+                                id="join-section"
+                                class="join-card landing-join-card"
+                            >
+                                <div
+                                    class="landing-access-tabs"
+                                    role="tablist"
+                                    aria-label="Sposób wejścia do gry"
+                                >
+                                    <button
+                                        type="button"
+                                        class="landing-access-tab landing-access-tab--active"
+                                        role="tab"
+                                        aria-selected="true"
+                                        id="landing-access-tab-anon"
+                                    >
+                                        Anonim
+                                    </button>
+                                    <span class="landing-access-tab-shell">
+                                        <button
+                                            type="button"
+                                            class="landing-access-tab landing-access-tab--locked"
+                                            role="tab"
+                                            aria-selected="false"
+                                            aria-disabled="true"
+                                            disabled
+                                            id="landing-access-tab-auth"
+                                            tabindex="-1"
+                                        >
+                                            Uwierzytelnienie
+                                            <span
+                                                class="landing-access-tab-lock"
+                                                aria-hidden="true"
+                                                >🔒</span
+                                            >
+                                        </button>
+                                        <span
+                                            class="landing-access-tab-tooltip"
+                                            role="tooltip"
+                                            >Już wkrótce :)</span
+                                        >
+                                    </span>
+                                </div>
+
+                                <div
+                                    class="landing-access-panel"
+                                    role="tabpanel"
+                                    aria-labelledby="landing-access-tab-anon"
+                                >
+                                    <div
+                                        class="landing-anon-stage"
+                                        id="landing-anon-start"
+                                    >
+                                        <div class="landing-anon-profile">
+                                            <div
+                                                class="landing-anon-avatar-block"
+                                            >
+                                                <div
+                                                    class="landing-anon-avatar-frame"
+                                                >
+                                                    <img
+                                                        class="landing-anon-avatar"
+                                                        id="landing-anon-avatar"
+                                                        src="/static/img/avatars/avatar-01.png"
+                                                        width="108"
+                                                        height="108"
+                                                        alt="Awatar gracza"
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    class="landing-anon-avatar-reroll"
+                                                    onclick="
+                                                        rerollPlayerAvatar()
+                                                    "
+                                                    aria-label="Losuj inny awatar"
+                                                >
+                                                    <span aria-hidden="true"
+                                                        >↻</span
+                                                    >
+                                                </button>
+                                            </div>
+                                            <div class="landing-anon-identity">
+                                                <p
+                                                    class="landing-anon-identity-label"
+                                                    id="landing-anon-identity-label"
+                                                >
+                                                    Wybierz pseudonim
+                                                </p>
+                                                <div
+                                                    class="landing-anon-nick-row"
+                                                >
+                                                    <input
+                                                        type="text"
+                                                        class="landing-anon-nickname"
+                                                        id="landing_nickname"
+                                                        maxlength="16"
+                                                        autocomplete="nickname"
+                                                        inputmode="text"
+                                                        aria-labelledby="landing-anon-identity-label"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        class="landing-anon-nick-reroll"
+                                                        onclick="
+                                                            rerollPlayerNickname()
+                                                        "
+                                                        aria-label="Losuj inny pseudonim"
+                                                    >
+                                                        <span aria-hidden="true"
+                                                            >↻</span
+                                                        >
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div
+                                            class="landing-anon-actions"
+                                            id="landing-anon-actions"
+                                        >
+                                            <button
+                                                type="button"
+                                                class="landing-anon-cta landing-anon-cta--create"
+                                                onclick="showCreateModal()"
+                                            >
+                                                Stwórz pokój
+                                            </button>
+                                            <button
+                                                type="button"
+                                                class="landing-anon-cta landing-anon-cta--join"
+                                                onclick="showLandingJoinCode()"
+                                            >
+                                                Dołącz do pokoju
+                                            </button>
+                                        </div>
+                                        <div class="landing-anon-support-row">
+                                            <a
+                                                class="landing-anon-cta landing-anon-cta--support"
+                                                href="https://buycoffee.to/filki"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                >Wesprzyj serwer</a
+                                            >
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        class="landing-anon-stage landing-anon-stage--join"
+                                        id="landing-anon-join"
+                                        hidden
+                                    >
+                                        <div class="landing-anon-join-head">
+                                            <button
+                                                type="button"
+                                                class="landing-anon-back"
+                                                onclick="showLandingStartMode()"
+                                            >
+                                                ‹ Wróć
+                                            </button>
+                                            <p class="landing-anon-join-title">
+                                                Kod pokoju
+                                            </p>
+                                        </div>
+                                        <label
+                                            class="landing-anon-join-label"
+                                            for="landing_room_code"
+                                            >Wpisz kod od znajomego</label
+                                        >
+                                        <div class="landing-anon-join-row">
+                                            <input
+                                                type="text"
+                                                class="landing-anon-room-code"
+                                                id="landing_room_code"
+                                                maxlength="12"
+                                                autocomplete="off"
+                                                inputmode="text"
+                                                placeholder="np. 4821"
+                                                aria-describedby="landing-quick-join-hint"
+                                            />
+                                            <button
+                                                type="button"
+                                                class="landing-anon-cta landing-anon-cta--submit"
+                                                onclick="
+                                                    connectFromLandingJoin()
+                                                "
+                                            >
+                                                <span
+                                                    class="landing-anon-cta-icon"
+                                                    aria-hidden="true"
+                                                    >▶</span
+                                                >
+                                                <span>Dołącz</span>
+                                            </button>
+                                        </div>
+                                        <p
+                                            id="landing-quick-join-hint"
+                                            class="landing-anon-join-hint"
+                                        >
+                                            Pseudonim zapiszemy z poprzedniego
+                                            kroku.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section
+                            id="landing-guide-carousel"
+                            class="landing-guide-carousel landing-guide-carousel--gartic"
+                            aria-labelledby="landing-guide-carousel-title"
+                            aria-roledescription="karuzela"
+                        >
+                            <div class="landing-guide-carousel-panel">
+                                <div class="landing-guide-carousel-toolbar">
+                                    <h2
+                                        id="landing-guide-carousel-title"
+                                        class="landing-guide-carousel-title"
+                                    >
+                                        Jak grać?
+                                    </h2>
+                                    <button
+                                        type="button"
+                                        class="landing-guide-close"
+                                        aria-label="Zamknij instrukcję"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                                <div class="landing-guide-carousel-viewport">
+                                    <div
+                                        class="landing-guide-carousel-track"
+                                        id="landing-guide-carousel-track"
+                                    >
+                                        <article
+                                            class="landing-guide-carousel-slide"
+                                            aria-labelledby="landing-carousel-step-1"
+                                        >
+                                            <p
+                                                class="landing-guide-carousel-step-num"
+                                                aria-hidden="true"
+                                            >
+                                                1.
+                                            </p>
+                                            <h3
+                                                id="landing-carousel-step-1"
+                                                class="landing-guide-carousel-slide-title"
+                                            >
+                                                Gotowość
+                                            </h3>
+                                            <p
+                                                class="landing-guide-carousel-copy"
+                                            >
+                                                Wszyscy oznaczają gotowość w
+                                                lobby.
+                                            </p>
+                                        </article>
+                                        <article
+                                            class="landing-guide-carousel-slide"
+                                            aria-labelledby="landing-carousel-step-2"
+                                        >
+                                            <p
+                                                class="landing-guide-carousel-step-num"
+                                                aria-hidden="true"
+                                            >
+                                                2.
+                                            </p>
+                                            <h3
+                                                id="landing-carousel-step-2"
+                                                class="landing-guide-carousel-slide-title"
+                                            >
+                                                Litera
+                                            </h3>
+                                            <p
+                                                class="landing-guide-carousel-copy"
+                                            >
+                                                Serwer losuje literę rundy.
+                                            </p>
+                                        </article>
+                                        <article
+                                            class="landing-guide-carousel-slide"
+                                            aria-labelledby="landing-carousel-step-3"
+                                        >
+                                            <p
+                                                class="landing-guide-carousel-step-num"
+                                                aria-hidden="true"
+                                            >
+                                                3.
+                                            </p>
+                                            <h3
+                                                id="landing-carousel-step-3"
+                                                class="landing-guide-carousel-slide-title"
+                                            >
+                                                Wypełnij i STOP
+                                            </h3>
+                                            <p
+                                                class="landing-guide-carousel-copy"
+                                            >
+                                                Uzupełniasz kategorie i wciskasz
+                                                STOP.
+                                            </p>
+                                        </article>
+                                        <article
+                                            class="landing-guide-carousel-slide"
+                                            aria-labelledby="landing-carousel-categories-title"
+                                        >
+                                            <p
+                                                class="landing-guide-carousel-step-num"
+                                                aria-hidden="true"
+                                            >
+                                                4.
+                                            </p>
+                                            <h3
+                                                id="landing-carousel-categories-title"
+                                                class="landing-guide-carousel-slide-title"
+                                            >
+                                                Kategorie
+                                            </h3>
+                                            <ul
+                                                class="landing-guide-category-list landing-guide-category-list--carousel"
+                                            >
+                                                <li>Państwo</li>
+                                                <li>Miasto</li>
+                                                <li>Rzecz</li>
+                                                <li>Zwierzę</li>
+                                                <li>Roślina</li>
+                                                <li>Imię</li>
+                                                <li>Zawód</li>
+                                            </ul>
+                                        </article>
+                                        <article
+                                            class="landing-guide-carousel-slide"
+                                            aria-labelledby="landing-carousel-letters-title"
+                                        >
+                                            <p
+                                                class="landing-guide-carousel-step-num"
+                                                aria-hidden="true"
+                                            >
+                                                5.
+                                            </p>
+                                            <h3
+                                                id="landing-carousel-letters-title"
+                                                class="landing-guide-carousel-slide-title"
+                                            >
+                                                Litery
+                                            </h3>
+                                            <p
+                                                class="landing-guide-carousel-copy"
+                                            >
+                                                22 litery w losowaniu — bez Q, V
+                                                i X. Bez powtórek w kolejnych
+                                                grach w tym samym pokoju.
+                                            </p>
+                                        </article>
+                                        <article
+                                            class="landing-guide-carousel-slide"
+                                            aria-labelledby="landing-carousel-scores-title"
+                                        >
+                                            <p
+                                                class="landing-guide-carousel-step-num"
+                                                aria-hidden="true"
+                                            >
+                                                6.
+                                            </p>
+                                            <h3
+                                                id="landing-carousel-scores-title"
+                                                class="landing-guide-carousel-slide-title"
+                                            >
+                                                Punktacja
+                                            </h3>
+                                            <dl
+                                                class="landing-guide-scores landing-guide-scores--carousel"
+                                                aria-label="Punktacja"
+                                            >
+                                                <div>
+                                                    <dt>15</dt>
+                                                    <dd>
+                                                        <span
+                                                            class="landing-guide-score-label"
+                                                            >unikat</span
+                                                        >
+                                                        — tylko ty masz hasło
+                                                    </dd>
+                                                </div>
+                                                <div>
+                                                    <dt>10</dt>
+                                                    <dd>
+                                                        <span
+                                                            class="landing-guide-score-label"
+                                                            >powtórka</span
+                                                        >
+                                                        — inni mają hasło, ale
+                                                        masz inne od nich
+                                                    </dd>
+                                                </div>
+                                                <div>
+                                                    <dt>5</dt>
+                                                    <dd>
+                                                        <span
+                                                            class="landing-guide-score-label"
+                                                            >z listy</span
+                                                        >
+                                                        — masz to samo co ktoś
+                                                    </dd>
+                                                </div>
+                                                <div>
+                                                    <dt>0</dt>
+                                                    <dd>
+                                                        <span
+                                                            class="landing-guide-score-label"
+                                                            >pusto</span
+                                                        >
+                                                        — nie masz nic / błąd
+                                                    </dd>
+                                                </div>
+                                            </dl>
+                                        </article>
+                                    </div>
+                                </div>
+                                <footer class="landing-guide-carousel-footer">
+                                    <div
+                                        class="landing-guide-carousel-controls"
+                                        aria-label="Nawigacja Jak grać"
+                                    >
+                                        <button
+                                            type="button"
+                                            class="landing-guide-carousel-nav"
+                                            data-carousel-dir="prev"
+                                            aria-label="Poprzedni slajd"
+                                        >
+                                            ‹
+                                        </button>
+                                        <div
+                                            class="landing-guide-carousel-dots"
+                                            id="landing-guide-carousel-dots"
+                                            role="tablist"
+                                            aria-label="Slajdy Jak grać"
+                                        ></div>
+                                        <button
+                                            type="button"
+                                            class="landing-guide-carousel-nav"
+                                            data-carousel-dir="next"
+                                            aria-label="Następny slajd"
+                                        >
+                                            ›
+                                        </button>
+                                    </div>
+                                </footer>
+                            </div>
+                            <p
+                                class="landing-guide-carousel-live visually-hidden"
+                                id="landing-guide-carousel-live"
+                                aria-live="polite"
+                            ></p>
+                        </section>
+                    </div>
+
+                    <section
+                        id="landing-quick-game"
+                        class="landing-quick-game"
+                        aria-labelledby="landing-quick-game-title"
+                    >
+                        <h3
+                            id="landing-quick-game-title"
+                            class="landing-quick-game-title"
+                        >
+                            Szybka gra
+                        </h3>
+                        <p class="landing-quick-game-copy">
+                            Dołączysz do publicznego lobby z graczami. Gdy pokój
+                            jest pełny, otworzymy nowy. Maks. 8 osób.
+                        </p>
+                        <button
+                            type="button"
+                            class="landing-anon-cta landing-anon-cta--quick"
+                            onclick="quickJoinFromLanding()"
+                        >
+                            Szybka gra
+                        </button>
+                    </section>
+
+                    <div id="active-rooms-section" class="active-rooms-block">
+                        <h3 class="active-rooms-title">Aktywne pokoje</h3>
+                        <div id="active-rooms-empty" class="active-rooms-empty">
+                            <div
+                                class="active-rooms-empty-visual"
+                                aria-hidden="true"
+                            >
+                                <span class="active-rooms-empty-ring"></span>
+                                <span
+                                    class="active-rooms-empty-ring active-rooms-empty-ring--delay"
+                                ></span>
+                                <span class="active-rooms-empty-icon">✨</span>
+                            </div>
+                            <p class="active-rooms-empty-text">
+                                Nie ma żadnych aktywnych pokoi. Rozruszaj
+                                towarzystwo — stwórz pokój i zaproś znajomych.
+                            </p>
+                            <button
+                                type="button"
+                                class="active-rooms-empty-cta"
+                                onclick="showCreateModal()"
+                            >
+                                Stwórz pokój
+                            </button>
+                        </div>
+                        <div
+                            id="active-rooms-table-wrap"
+                            class="table-container active-rooms-table-wrap"
+                            hidden
+                        >
+                            <table class="rooms-table">
+                                <thead>
+                                    <tr>
+                                        <th>Kod</th>
+                                        <th>Host</th>
+                                        <th>Gracze</th>
+                                        <th>Rundy</th>
+                                        <th>Czas</th>
+                                        <th>Typ</th>
+                                        <th>Akcja</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rooms-list"></tbody>
+                            </table>
+                        </div>
+                        <ul
+                            id="active-rooms-cards-wrap"
+                            class="active-rooms-cards"
+                            hidden
+                        ></ul>
+                    </div>
+                </div>
+            </header>
+        </main>
+
+        <!-- MODALS -->
+        <div id="join-modal" class="modal-overlay" style="display: none">
+            <div class="modal-content">
+                <h3>Dołącz do pokoju</h3>
+                <div class="form-group play-nickname">
+                    <label class="header-label" for="nickname_join"
+                        >Pseudonim</label
+                    >
+                    <div class="nick-field-row">
+                        <input
+                            type="text"
+                            id="nickname_join"
+                            maxlength="16"
+                            autocomplete="nickname"
+                            inputmode="text"
+                        />
+                        <button
+                            type="button"
+                            class="nick-reroll nick-reroll--dice secondary"
+                            onclick="rerollPlayerNickname()"
+                            aria-label="Losuj inny pseudonim"
+                        >
+                            <span aria-hidden="true">🎲</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input
+                        type="text"
+                        id="room_id"
+                        placeholder="KOD POKOJU"
+                        style="
+                            text-align: center;
+                            font-size: 1.4rem;
+                            letter-spacing: 0.2em;
+                        "
+                    />
+                </div>
+                <div class="modal-btns">
+                    <button class="secondary" onclick="hideModals()">
+                        Anuluj
+                    </button>
+                    <button onclick="connect()">Start</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="create-modal" class="modal-overlay" style="display: none">
+            <div class="modal-content">
+                <h3>Nowy pokój</h3>
+                <div class="settings-grid">
+                    <div class="form-group" style="grid-column: 1 / -1">
+                        <label for="room_game_mode">Tryb gry</label>
+                        <select id="room_game_mode">
+                            <option value="standard" selected>Standard</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="max_rounds">Rundy</label>
+                        <select id="max_rounds">
+                            <option value="1">1</option>
+                            <option value="3">3</option>
+                            <option value="5" selected>5</option>
+                            <option value="10">10</option>
+                            <option value="22">22 — każda litera raz</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="time_limit">Czas (s)</label>
+                        <select id="time_limit">
+                            <option value="60">60</option>
+                            <option value="90" selected>90</option>
+                            <option value="120">120</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1">
+                        <label for="room_visibility">Widoczność w lobby</label>
+                        <select id="room_visibility">
+                            <option value="public" selected>
+                                Publiczny — widać na liście aktywnych pokoi
+                            </option>
+                            <option value="private">
+                                Prywatny — tylko z linku / kodu
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-btns">
+                    <button class="secondary" onclick="hideModals()">
+                        Anuluj
+                    </button>
+                    <button onclick="createRoomAndEnter()">
+                        Stwórz i wejdź
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="lottery-modal" class="modal-overlay" style="display: none">
+            <div class="modal-content text-center">
+                <div
+                    id="lottery-letter"
+                    style="
+                        font-size: 6rem;
+                        font-weight: 900;
+                        color: var(--accent);
+                    "
+                >
+                    ?
+                </div>
+            </div>
+        </div>
+
+        <button
+            type="button"
+            id="btn-leave"
+            onclick="location.href = '/'"
+            class="danger"
+            style="display: none"
+        >
+            Wyjdź
+        </button>
+
+        <!-- SITE_FOOTER -->
+
+        <script
+            src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"
+            integrity="sha384-HAH79XdRvHr6axVGh4xQWVCp14kcd32bNk4Xu0sHDHtFQ42n6BAM8ykvB47dGz6D"
+            crossorigin="anonymous"
+        ></script>
+        <script src="/static/js/audio.js"></script>
+        <script src="/static/js/avatar.js"></script>
+        <script src="/static/js/ui.js"></script>
+        <script src="/static/js/game.js"></script>
+        <script src="/static/js/socket.js"></script>
+        <script>
+            const isLocalDev =
+                ["localhost", "127.0.0.1"].includes(location.hostname) ||
+                location.hostname.endsWith(".ngrok-free.dev");
+            if ("serviceWorker" in navigator) {
+                if (isLocalDev) {
+                    navigator.serviceWorker
+                        .getRegistrations()
+                        .then((regs) => regs.forEach((r) => r.unregister()))
+                        .catch(() => {});
+                } else {
+                    window.addEventListener("load", () => {
+                        navigator.serviceWorker
+                            .register("/sw.js")
+                            .catch(() => {});
+                    });
+                }
+            }
+        </script>
+    </body>
+</html>

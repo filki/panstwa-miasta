@@ -1,0 +1,23 @@
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:2.3.4
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5678:5678"
+    environment:
+      N8N_HOST: ${N8N_HOST}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: https
+      WEBHOOK_URL: ${WEBHOOK_URL}
+      GENERIC_TIMEZONE: Europe/Warsaw
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  n8n_data:

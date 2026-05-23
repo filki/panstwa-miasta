@@ -1,0 +1,76 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [CI]
+    types:
+      - completed
+    branches:
+      - main
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: VPS (git pull + uv + restart)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.event == 'push' &&
+        (
+          vars.DEPLOY_ENABLED == 'true' ||
+          vars.DEPLOY_ENABLED == 'True'
+        )
+      )
+    steps:
+      - name: Preflight (wymagane sekrety)
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          : "${DEPLOY_HOST:?Ustaw sekret DEPLOY_HOST (deploy/README.md §5)}"
+          : "${DEPLOY_USER:?Ustaw sekret DEPLOY_USER}"
+          : "${DEPLOY_SSH_KEY:?Ustaw sekret DEPLOY_SSH_KEY}"
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Upload deploy script
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: deploy/vps-pull-and-restart.sh
+          target: /tmp/
+
+      - name: Run deploy script
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          command_timeout: 25m
+          script: |
+            set -euo pipefail
+            chmod +x /tmp/deploy/vps-pull-and-restart.sh
+            export DEPLOY_APP_DIR="${{ vars.DEPLOY_APP_DIR }}"
+            export PROD_BASE_URL="https://panstwamiasta.com.pl"
+            /tmp/deploy/vps-pull-and-restart.sh
+            rm -f /tmp/deploy/vps-pull-and-restart.sh

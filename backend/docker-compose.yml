@@ -1,0 +1,52 @@
+services:
+  web:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      UV_PROJECT_ENVIRONMENT: /opt/venv
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - redis
+    command:
+      - uv
+      - run
+      - uvicorn
+      - panstwa_miasta.main:app
+      - --reload
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8000"
+      - --ws-max-size
+      - "262144"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+
+  ngrok:
+    # Włącz: w .env ustaw COMPOSE_PROFILES=tunnel oraz NGROK_AUTHTOKEN (bez tego ERR_NGROK_4018).
+    profiles:
+      - tunnel
+    image: ngrok/ngrok:latest
+    restart: "no"
+    depends_on:
+      - web
+    command:
+      - "http"
+      - "http://web:8000"
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN:-}
+    # Host 4040 often conflicts with a locally installed ngrok agent (same inspect port).
+    ports:
+      - "127.0.0.1:${NGROK_INSPECT_PORT:-14040}:4040"
