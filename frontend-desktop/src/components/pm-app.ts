@@ -70,7 +70,7 @@ export class PmApp extends GemElement {
         <nav class="navbar">
           <div class="nav-left">
             <span class="logo" @click=${() => sock.leaveRoom()}>Państwa<span>Miasta</span></span>
-            ${roomId ? html`<span class="nav-room-info">Pokój <strong>${String(roomId)}</strong></span>` : null}
+            ${(() => { if (roomId) { return html`<span class="nav-room-info">Pokój <strong>${String(roomId)}</strong></span>`; } return null; })() }
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             <span class="nav-status ${statusClass}" title=${statusTitle}></span>
@@ -144,8 +144,8 @@ export class PmLanding extends GemElement {
     localStorage.setItem('pm_avatar', String(n)); this.update();
   }
   #ensureNick() { const n = this.#getNick() || 'Gracz'; this.#setNick(n); return n; }
-  async #quickJoin() { const n = this.#ensureNick(); const rid = await sock.quickJoin(); if (rid) sock.connect(rid); }
-  async #createRoom() { const n = this.#ensureNick(); const rid = await sock.createRoom(5,90,'public'); if (rid) sock.connect(rid,5,90,'public'); }
+  async #quickJoin() { this.#ensureNick(); const rid = await sock.quickJoin(); if (rid) sock.connect(rid); }
+  async #createRoom() { this.#ensureNick(); const rid = await sock.createRoom(5,90,'public'); if (rid) sock.connect(rid,5,90,'public'); }
   #connectWithCode() {
     const el = this.shadowRoot?.getElementById('landing-code') as HTMLInputElement;
     const code = el?.value.trim(); if (!code) return;
@@ -245,7 +245,7 @@ export class PmRoom extends GemElement {
 
   #toggleReady() { sock.toggleReady(); }
   #sendStop() { sock.sendStop(); }
-  #sendChat() { if (!this.#chatInput.trim()) return; sock.sendChat(this.#chatInput.trim()); this.#chatInput = ''; this.update(); }
+  #sendChat() { if (!this.#chatInput.trim()) { return; } sock.sendChat(this.#chatInput.trim()); this.#chatInput = ''; this.update(); }
   #getViewer() { return nickStore.nick; }
 
   #allFilled(): boolean {
@@ -326,8 +326,8 @@ export class PmRoom extends GemElement {
                 <div class="roster-item ${name===host_name?'roster-item--host':''}">
                   <img class="roster-avatar" src=${avatarUrl(name, viewer)} alt="" />
                   <span class="roster-name">${esc(name)}${name===host_name?' 👑':''}</span>
-                  ${(() => { const ready = readySet.has(name); const disco = discoSet.has(name); const label = ready ? '✓ Gotowy' : (disco ? 'Rozłączony' : '—'); return html`<span class="roster-status ${ready?'roster-status--ready':''}">${label}</span>`})() }
-                  ${scores?.[name] !== undefined ? html`<span class="roster-score">${String(scores[name])}p</span>` : null}
+                  ${(() => { const ready = readySet.has(name); const disco = discoSet.has(name); let label = '—'; if (ready) { label = '✓ Gotowy'; } if (!ready && disco) { label = 'Rozłączony'; } return html`<span class="roster-status ${ready?'roster-status--ready':''}">${label}</span>`})() }
+                  ${scores?.[name] === undefined ? null : html`<span class="roster-score">${String(scores[name])}p</span>`}
                 </div>
               `)}
               ${(disconnected_players||[]).filter(n => (connected_players||[]).includes(n) === false).map(name => html`
