@@ -667,6 +667,48 @@ async def test_cleanup_player_after_disconnect_keeps_score_mid_round(monkeypatch
     remove_player.assert_not_called()
 
 
+@pytest.mark.asyncio
+async def test_cleanup_player_after_disconnect_keeps_score_during_results_phase(monkeypatch):
+    """Disconnect w results_phase nie kasuje score (fix #fix-results-phase-disconnect)."""
+    import panstwa_miasta.manager as mod
+
+    remove_player = AsyncMock()
+    monkeypatch.setattr(mod, "remove_player", remove_player)
+
+    manager = ConnectionManager()
+    room = Room("room_results")
+    room.results_phase_active = True
+    room.is_playing = False
+    room.scores = {"Ada": 42}
+    manager.rooms["room_results"] = room
+
+    await manager.cleanup_player_after_disconnect("room_results", "Ada")
+    assert room.scores["Ada"] == 42
+    remove_player.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_gc_disconnected_player_during_results_phase_keeps_score(monkeypatch):
+    """GC task nie usuwa score w results_phase."""
+    import panstwa_miasta.manager as mod
+
+    remove_player = AsyncMock()
+    monkeypatch.setattr(mod, "remove_player", remove_player)
+    monkeypatch.setattr(mod.asyncio, "sleep", AsyncMock())
+
+    manager = ConnectionManager()
+    room = Room("room_gc")
+    room.results_phase_active = True
+    room.is_playing = False
+    room.scores = {"Ada": 42}
+    room.disconnected_players["Ada"] = 12345.0
+    manager.rooms["room_gc"] = room
+
+    await manager._gc_disconnected_player("room_gc", "Ada")
+    assert room.scores["Ada"] == 42
+    remove_player.assert_not_called()
+
+
 def test_room_listed_in_active_lobby_hides_full_room():
     from panstwa_miasta.manager import Room, room_listed_in_active_lobby
 
