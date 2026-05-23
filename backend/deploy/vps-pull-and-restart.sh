@@ -27,6 +27,12 @@ echo "Deploy: $(git rev-parse --short HEAD) ($(git log -1 --format=%ci))"
 
 cd "$APP_DIR/backend"
 uv sync --frozen --extra dev
+
+echo "Building frontend (vite)..."
+cd "$APP_DIR"
+npm ci
+npm run build:desktop
+
 cd "$APP_DIR"
 
 if [[ "$(id -u)" -eq 0 ]]; then
