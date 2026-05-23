@@ -1,7 +1,7 @@
 import { GemElement, html, customElement, connectStore, property, css, adoptedStyle } from '@mantou/gem';
-import { pageStore, connectionStore, roomStore, roundStore, overlayStore, resultsStore, chatStore, nickStore, activeRoomsStore, GAME_CATEGORIES } from './store';
-import * as sock from './socket';
-import { getAvatarSrc, avatarIdForPlayer } from './avatar';
+import { pageStore, connectionStore, roomStore, roundStore, overlayStore, resultsStore, chatStore, nickStore, activeRoomsStore, GAME_CATEGORIES } from '../store';
+import * as sock from '../socket';
+import { getAvatarSrc, avatarIdForPlayer } from '../avatar';
 
 const appStyle = css`
   :host { display:flex; flex-direction:column; height:100%; overflow:hidden; }
