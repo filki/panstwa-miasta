@@ -1,0 +1,37 @@
+#!/bin/sh
+# Pre-commit hook — QA loop + KB reminder
+#
+# Instaluj: git config core.hooksPath .githooks
+# Pomin: SKIP_QA=1 git commit ...
+
+if [ -n "$SKIP_QA" ]; then
+    echo "=== pre-commit SKIPPED (SKIP_QA=1) ==="
+    exit 0
+fi
+
+echo ""
+echo "=============================="
+echo " pre-commit QA"
+echo "=============================="
+
+# KB reminder
+echo ""
+echo " [KB] >>> Zaktualizowales knowledge base? <<<"
+echo " [KB] create_entity / add_observations"
+echo ""
+
+# Ruff check
+uv run ruff check . 2>&1 | tail -1
+rc=$?; if [ $rc -ne 0 ]; then exit $rc; fi
+
+# Ruff format
+uv run ruff format --check . 2>&1 | tail -1
+rc=$?; if [ $rc -ne 0 ]; then exit $rc; fi
+
+# ty check
+uv run ty check src 2>&1 | tail -1
+rc=$?; if [ $rc -ne 0 ]; then exit $rc; fi
+
+echo "=============================="
+echo " pre-commit OK"
+echo "=============================="

@@ -1,7 +1,3 @@
-# Build outputs (frontend)
-frontend-mobile/www/
-frontend-desktop/dist/
-
 # Python-generated files
 __pycache__/
 *.py[oc]
@@ -30,14 +26,14 @@ test_output.txt
 jest_full_output.txt
 *.output.txt
 
-# Lokalne zrzuty PKD / surowe listy (gra: SQLite + *_seed.py) — w backendzie
-backend/data/
+# Lokalne zrzuty PKD / surowe listy (gra: SQLite + *_seed.py) — tylko katalog w rootcie
+/data/
 
 # GeoNames źródło (pobierz: https://download.geonames.org/export/dump/cities15000.zip)
-backend/scripts/cities15000.txt
+scripts/cities15000.txt
 
-# Wyjście backend/scripts/extract_jobs.py
-backend/scripts/pkd_raw_jobs.txt
+# Wyjście scripts/extract_jobs.py
+scripts/pkd_raw_jobs.txt
 
 # Ruff cache
 .ruff_cache/

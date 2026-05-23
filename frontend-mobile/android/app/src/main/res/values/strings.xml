@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Panstwa Miasta</string>
-    <string name="title_activity_main">Panstwa Miasta</string>
-    <string name="package_name">pl.com.panstwamiasta</string>
-    <string name="custom_url_scheme">pl.com.panstwamiasta</string>
-</resources>

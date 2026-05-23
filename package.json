@@ -1,17 +1,11 @@
 {
-  "name": "panstwa-miasta-monorepo",
+  "name": "panstwa-miasta",
   "version": "1.0.0",
-  "private": true,
-  "workspaces": [
-    "frontend-desktop",
-    "frontend-mobile"
-  ],
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
   "scripts": {
-    "dev:desktop": "npm run dev --workspace=frontend-desktop",
-    "dev:mobile": "npm run dev --workspace=frontend-mobile",
-    "build:desktop": "npm run build --workspace=frontend-desktop",
-    "build:mobile": "npm run build --workspace=frontend-mobile",
-    "build:all": "npm run build:desktop && npm run build:mobile",
     "test": "jest --coverage"
   },
   "jest": {
@@ -23,8 +17,16 @@
       "lcov"
     ]
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
   "devDependencies": {
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1"
+  },
+  "dependencies": {
+    "@capacitor/cli": "^8.3.3",
+    "@capacitor/core": "^8.3.3"
   }
 }
