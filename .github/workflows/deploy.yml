@@ -56,7 +56,7 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: deploy/vps-pull-and-restart.sh
+          source: backend/deploy/vps-pull-and-restart.sh
           target: /tmp/
 
       - name: Run deploy script
