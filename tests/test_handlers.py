@@ -251,3 +251,206 @@ def test_vetoed_rzecz_players_no_votes_keeps_answer():
     room = Room("room1")
     room.answers_received = {"Ada": {"Rzecz": "Aparat"}}
     assert room.vetoed_rzecz_players() == set()
+
+
+# --- Tests for uncovered helpers and edge cases ---
+
+
+@pytest.mark.asyncio
+async def test_broadcast_json():
+    """_broadcast_json serializes and broadcasts a dict payload."""
+    from panstwa_miasta.handlers import _broadcast_json
+
+    room = Room("r_bc")
+    room.broadcast = AsyncMock()
+    task = _broadcast_json(room, {"type": "test", "val": 1})
+    assert task is not None
+    room.broadcast.assert_called_once()
+    payload = room.broadcast.call_args[0][0]
+    assert '"type"' in payload
+
+
+def test_round_results_payload_final_with_history():
+    """_round_results_payload with game_over includes round_history."""
+    from panstwa_miasta.handlers import _round_results_payload
+
+    room = Room("r_rrp")
+    room.answers_received = {"A": {"Państwo": "Polska"}}
+    room.scores = {"A": 15}
+    room.host_name = "A"
+    room.round_history = [{"round": 1, "letter": "p"}]
+    payload = _round_results_payload(
+        room,
+        "r_rrp",
+        final=True,
+        round_scores={"A": {"total": 15, "details": {"Państwo": 15}}},
+        game_over=True,
+    )
+    assert payload["type"] == "round_results"
+    assert payload["game_over"] is True
+    assert "round_history" in payload
+
+
+def test_round_results_payload_non_final_with_veto_ends():
+    """_round_results_payload with veto_ends_at includes the timestamp."""
+    from panstwa_miasta.handlers import _round_results_payload
+
+    room = Room("r_rrp2")
+    room.answers_received = {}
+    room.scores = {}
+    room.host_name = "H"
+    payload = _round_results_payload(
+        room,
+        "r_rrp2",
+        final=False,
+        round_scores={},
+        game_over=False,
+        veto_ends_at=999000,
+    )
+    assert payload["veto_ends_at"] == 999000
+
+
+@pytest.mark.asyncio
+async def test_handle_ready_returns_only_on_first_round():
+    """handle_ready guards: is_playing True → early return."""
+    room = Room("r_guard")
+    room.is_playing = True
+    room.broadcast = AsyncMock()
+    timeout_mock = AsyncMock()
+    await handle_ready(room, "r_guard", "Player1", timeout_mock)
+    room.broadcast.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handle_ready_results_phase_guard():
+    """handle_ready guards: results_phase_active → early return."""
+    room = Room("r_rp_guard")
+    room.results_phase_active = True
+    room.broadcast = AsyncMock()
+    timeout_mock = AsyncMock()
+    await handle_ready(room, "r_rp_guard", "Player1", timeout_mock)
+    room.broadcast.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handle_stop_not_playing_guard():
+    """handle_stop guards: not is_playing → early return."""
+    room = Room("r_stop_guard")
+    room.is_playing = False
+    room.broadcast = AsyncMock()
+    force_end_mock = AsyncMock()
+    await handle_stop(room, "r_stop_guard", "P1", force_end_mock)
+    room.broadcast.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handle_stop_already_stopped_guard():
+    """handle_stop guards: already stop_triggered → early return."""
+    room = Room("r_stopped")
+    room.is_playing = True
+    room.stop_triggered = True
+    room.broadcast = AsyncMock()
+    force_end_mock = AsyncMock()
+    await handle_stop(room, "r_stopped", "P1", force_end_mock)
+    room.broadcast.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handle_answers_not_playing_and_not_stop_guard():
+    """handle_answers guards: not playing and not stop_triggered → early return."""
+    room = Room("r_ans_guard")
+    room.is_playing = False
+    room.stop_triggered = False
+    room.broadcast = AsyncMock()
+    timeout_mock = AsyncMock()
+    await handle_answers(room, "r_ans_guard", "P1", {"answers": {}}, timeout_mock)
+    assert "P1" not in room.answers_received
+
+
+@pytest.mark.asyncio
+async def test_handle_answers_results_phase_guard():
+    """handle_answers saves answers but returns early if results_phase_active."""
+    room = Room("r_ans_rp")
+    room.is_playing = True
+    room.results_phase_active = True
+    room.broadcast = AsyncMock()
+    timeout_mock = AsyncMock()
+    await handle_answers(room, "r_ans_rp", "P1", {"answers": {"Państwo": "Polska"}}, timeout_mock)
+    assert room.answers_received["P1"] == {"Państwo": "Polska"}
+
+
+@pytest.mark.asyncio
+async def test_handle_veto_vote_not_active_guard():
+    """handle_veto_vote guards: results_phase_active False → early return."""
+    room = Room("r_veto_guard")
+    room.results_phase_active = False
+    room.broadcast = AsyncMock()
+    await handle_veto_vote(room, "P1", {"target": "P2", "vote": "tak"})
+    room.broadcast.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handle_veto_vote_invalid_vote_guard():
+    """handle_veto_vote guards: vote not 'tak'/'nie' → early return."""
+    room = Room("r_veto_bad")
+    room.results_phase_active = True
+    room.answers_received = {"P2": {"Rzecz": "Test"}}
+    room.broadcast = AsyncMock()
+    await handle_veto_vote(room, "P1", {"target": "P2", "vote": "maybe"})
+    room.broadcast.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handle_veto_vote_self_target_guard():
+    """handle_veto_vote guards: target == client_name → early return."""
+    room = Room("r_veto_self")
+    room.results_phase_active = True
+    room.answers_received = {"P1": {"Rzecz": "Test"}}
+    room.broadcast = AsyncMock()
+    await handle_veto_vote(room, "P1", {"target": "P1", "vote": "nie"})
+    room.broadcast.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handle_dissolve_room_non_host_guard():
+    """handle_dissolve_room guards: not host → early return."""
+    room = Room("r_diss")
+    room.host_name = "Host"
+    room.broadcast = AsyncMock()
+    delete_mock = AsyncMock()
+    await handle_dissolve_room(room, "r_diss", "NotHost", delete_mock)
+    room.broadcast.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handle_restart_game_non_host_guard():
+    """handle_restart_game guards: not host → early return."""
+    room = Room("r_rest")
+    room.host_name = "Host"
+    room.game_over = True
+    room.restart_game = AsyncMock()
+    room.broadcast = AsyncMock()
+    await handle_restart_game(room, "NotHost", {"rounds": 5})
+    room.restart_game.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handle_restart_game_not_game_over_guard():
+    """handle_restart_game guards: not game_over → early return."""
+    room = Room("r_rest2")
+    room.host_name = "Host"
+    room.game_over = False
+    room.restart_game = AsyncMock()
+    room.broadcast = AsyncMock()
+    await handle_restart_game(room, "Host", {"rounds": 5})
+    room.restart_game.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handle_not_ready_playing_guard():
+    """handle_not_ready guards: is_playing True → early return."""
+    room = Room("r_nr")
+    room.is_playing = True
+    room.broadcast = AsyncMock()
+    await handle_not_ready(room, "P1")
+    room.broadcast.assert_not_called()
