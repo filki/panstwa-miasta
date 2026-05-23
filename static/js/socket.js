@@ -116,65 +116,131 @@ function leaveRoom() {
   safeNavigateHome();
 }
 
-function connect() {
-  leftByUser = false;
-  initAudio();
+function handleCloseCode(code) {
+  if (code === 4401) {
+    isLeaving = true;
+    alert("Host wyrzucił Cię z pokoju.");
+    safeNavigateHome();
+    return true;
+  }
+  if (code === 4408) {
+    isLeaving = true;
+    alert(
+      "Pokój jest pełny (maksymalnie 8 graczy).\n\nSpróbuj za chwilę lub stwórz własny pokój na stronie głównej.",
+    );
+    safeNavigateHome();
+    return true;
+  }
+  if (code === 4409) {
+    isLeaving = true;
+    alert(
+      "Gra w tym pokoju już trwa. Nie można dołączyć w trakcie rundy.\n\nWróć na stronę główną i znajdź inny pokój lub stwórz własny.",
+    );
+    safeNavigateHome();
+    return true;
+  }
+  if (code === 1008) {
+    isLeaving = true;
+    alert(
+      "Ten nick jest już zajęty lub nieprawidłowy.\n\nZmień go i spróbuj ponownie.",
+    );
+    const ij = document.getElementById("room-inline-join");
+    const cs = document.getElementById("chat-section");
+    if (ij) ij.style.display = "block";
+    if (cs) cs.style.display = "none";
+    return true;
+  }
+  return false;
+}
+
+function _resolveNickname() {
   const joinNick = document.getElementById("nickname_join")?.value.trim() || "";
   const createNick = document.getElementById("nickname")?.value.trim() || "";
   const landingNick =
     document.getElementById("landing_nickname")?.value.trim() || "";
-  myNick = (
+  let nick = (
     globalThis.clampNickname ||
     ((value) =>
       String(value ?? "")
         .trim()
         .slice(0, 16))
   )(joinNick || createNick || landingNick);
-  if (!myNick && typeof getResolvedNickname === "function") {
-    myNick = getResolvedNickname() || "";
+  if (!nick && typeof getResolvedNickname === "function") {
+    nick = getResolvedNickname() || "";
   }
-  if (!myNick && typeof ensureNicknameInput === "function") {
-    myNick = ensureNicknameInput() || "";
+  if (!nick && typeof ensureNicknameInput === "function") {
+    nick = ensureNicknameInput() || "";
   }
-  globalThis.myNick = myNick;
-  if (!myNick) return alert("Nie udało się nadać nicku — odśwież stronę.");
+  globalThis.myNick = nick;
+  return nick;
+}
 
+function _detectRoomId() {
   const pathParts = globalThis.location.pathname.split("/");
-  let roomId = "";
-
-  // 1. Sprawdź czy to wejście z bezpośredniego linku
   if (pathParts.length >= 3 && pathParts[1] === "room") {
-    roomId = pathParts[2];
-  } else {
-    // 2. Sprawdź czy wpisano kod w modalu dołączania
-    roomId = document.getElementById("room_id").value.trim();
-    if (!roomId) {
-      roomId = document.getElementById("landing_room_code")?.value.trim() || "";
+    return pathParts[2];
+  }
+  const roomId = document.getElementById("room_id").value.trim();
+  if (roomId) return roomId;
+  return document.getElementById("landing_room_code")?.value.trim() || "";
+}
+
+function _resolveConnectionSettings() {
+  const roomId = _detectRoomId();
+  if (!roomId) {
+    if (document.getElementById("create-modal").style.display !== "none") {
+      alert("Najpierw utwórz pokój przyciskiem „Stwórz i wejdź”.");
+      return null;
     }
+    alert("Proszę podać kod pokoju lub wybrać opcję stworzenia nowego.");
+    return null;
   }
-
-  // 3. Tworzenie pokoju wymaga wcześniejszego POST /api/rooms (createRoomAndEnter).
-  const isCreating =
-    document.getElementById("create-modal").style.display !== "none";
-  if (!roomId && isCreating) {
-    return alert("Najpierw utwórz pokój przyciskiem „Stwórz i wejdź”.");
-  }
-
-  if (!roomId)
-    return alert("Proszę podać kod pokoju lub wybrać opcję stworzenia nowego.");
-
-  // Pobierz ustawienia (jeśli tworzymy)
   const maxRounds = document.getElementById("max_rounds").value || 5;
   const timeLimit = document.getElementById("time_limit").value || 90;
-
+  const isCreating =
+    document.getElementById("create-modal").style.display !== "none";
   const urlParams = new URLSearchParams(globalThis.location.search);
   let visibility =
     urlParams.get("visibility") === "private" ? "private" : "public";
   if (isCreating) {
-    const visEl = document.getElementById("room_visibility");
-    const v = visEl?.value;
+    const v = document.getElementById("room_visibility")?.value;
     if (v === "private" || v === "public") visibility = v;
   }
+  return { roomId, maxRounds, timeLimit, visibility };
+}
+
+function _buildWsUrl(roomId, maxRounds, timeLimit, visibility) {
+  const protocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
+  const encNick = encodeURIComponent(myNick);
+  return `${protocol}//${globalThis.location.host}/ws/${roomId}/${encNick}?rounds=${maxRounds}&limit=${timeLimit}&visibility=${visibility}`;
+}
+
+function _teardownPrevSocket() {
+  if (!ws) return;
+  ws.onclose = null;
+  ws.onerror = null;
+  ws.onmessage = null;
+  try {
+    if (
+      ws.readyState === WebSocket.OPEN ||
+      ws.readyState === WebSocket.CONNECTING
+    ) {
+      ws.close();
+    }
+  } catch (e) {
+    console.debug("pm: prior websocket close skipped", e);
+  }
+}
+
+function connect() {
+  leftByUser = false;
+  initAudio();
+  myNick = _resolveNickname();
+  if (!myNick) return alert("Nie udało się nadać nicku — odśwież stronę.");
+
+  const settings = _resolveConnectionSettings();
+  if (!settings) return;
+  const { roomId, maxRounds, timeLimit, visibility } = settings;
 
   if (typeof persistNickname === "function") {
     persistNickname(myNick);
@@ -182,8 +248,6 @@ function connect() {
     localStorage.setItem("pm_nickname", myNick);
   }
 
-  // Landing page has no game UI; redirect to the dedicated room page,
-  // which auto-joins using the stored nickname + url params.
   if (!globalThis.location.pathname.startsWith("/room/")) {
     if (typeof markRoomAutoJoinIntent === "function") {
       markRoomAutoJoinIntent();
@@ -198,27 +262,11 @@ function connect() {
     `/room/${roomId}?rounds=${encodeURIComponent(String(maxRounds))}&limit=${encodeURIComponent(String(timeLimit))}&visibility=${encodeURIComponent(visibility)}`,
   );
 
-  const protocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
-  const encNick = encodeURIComponent(myNick);
-  let wsUrl = `${protocol}//${globalThis.location.host}/ws/${roomId}/${encNick}?rounds=${maxRounds}&limit=${timeLimit}&visibility=${visibility}`;
+  const wsUrl = _buildWsUrl(roomId, maxRounds, timeLimit, visibility);
 
   pmWsGeneration += 1;
   const socketGeneration = pmWsGeneration;
-  if (ws) {
-    ws.onclose = null;
-    ws.onerror = null;
-    ws.onmessage = null;
-    try {
-      if (
-        ws.readyState === WebSocket.OPEN ||
-        ws.readyState === WebSocket.CONNECTING
-      ) {
-        ws.close();
-      }
-    } catch (e) {
-      console.debug("pm: prior websocket close skipped", e);
-    }
-  }
+  _teardownPrevSocket();
 
   const socket = new WebSocket(wsUrl);
   ws = socket;
@@ -256,63 +304,25 @@ function connect() {
 
   socket.onclose = (e) => {
     if (socketGeneration !== pmWsGeneration) return;
-    if (e.code === 4401) {
-      isLeaving = true;
-      if (
-        confirm(
-          "Host wyrzucił Cię z pokoju.\n\nKliknij OK żeby wrócić do strony głównej.",
-        )
-      ) {
-        safeNavigateHome();
-      }
-      return;
-    }
-    if (e.code === 4408) {
-      isLeaving = true;
-      const msg =
-        "Pokój jest pełny (maksymalnie 8 graczy). Spróbuj za chwilę lub wybierz inny.";
-      if (confirm(msg + "\n\nKliknij OK żeby wrócić do strony głównej.")) {
-        safeNavigateHome();
-      }
-      return;
-    }
-    if (e.code === 4409) {
-      isLeaving = true;
-      const msg =
-        "Gra w tym pokoju już trwa. Poczekaj na zakończenie rund lub znajdź inny pokój.";
-      if (confirm(msg + "\n\nKliknij OK żeby wrócić do strony głównej.")) {
-        safeNavigateHome();
-      }
-      return;
-    }
-    if (e.code === 1008) {
-      isLeaving = true;
-      const msg =
-        "Ten nick jest już zajęty lub nieprawidłowy. Zmień go i spróbuj ponownie.";
-      if (confirm(msg + "\n\nKliknij OK żeby wrócić do strony głównej.")) {
-        safeNavigateHome();
-      }
-      const _inlineJoin = document.getElementById("room-inline-join");
-      const _chatSection = document.getElementById("chat-section");
-      if (_inlineJoin) _inlineJoin.style.display = "block";
-      if (_chatSection) _chatSection.style.display = "none";
-      return;
-    }
+    if (handleCloseCode(e.code)) return;
     // If we initiated a manual leave, do not auto-reconnect
     if (isLeaving) {
       isLeaving = false;
       return;
     }
-    // Automatic reconnect after unexpected disconnect
+    // Unexpected disconnect — try to reconnect
     addLog(
-      `<em>Utracono połączenie. Próba wznowienia za 2 sekundy...</em>`,
+      `<em>Utracono połączenie z serwerem. Próba wznowienia za 3 sekundy...</em>`,
       "system-msg",
     );
     setTimeout(() => {
-      if (document.getElementById("chat-section").style.display !== "none") {
+      const chatVisible =
+        document.getElementById("chat-section")?.style.display !== "none";
+      if (chatVisible) {
+        addLog(`<em>Próba ponownego połączenia...</em>`, "system-msg");
         connect();
       }
-    }, 2000);
+    }, 3000);
   };
 
   socket.onmessage = (event) => {
@@ -324,6 +334,10 @@ function connect() {
 
   socket.onerror = (e) => {
     if (socketGeneration !== pmWsGeneration) return;
+    addLog(
+      `<em>Błąd połączenia. Sprawdź swoje połączenie internetowe i odśwież stronę.</em>`,
+      "system-msg",
+    );
     console.error("WS Error:", e);
   };
 }
@@ -589,6 +603,50 @@ function buildPlayerResultHtml(player, rScore, pAnswers, viewerNick) {
   );
 }
 
+function buildResultCell(
+  cat,
+  hasAns,
+  raw,
+  pts,
+  player,
+  viewer,
+  isFinal,
+  tallies,
+  allowAppeals,
+  roundNumber,
+  roomId,
+  roundLetter,
+) {
+  let cell = `<div class="round-results-cell"><span class="round-results-val">${hasAns ? escapeHtml(String(raw).trim()) : "—"}</span><span class="${roundResultsPtsClass(pts)}">${pts}</span>`;
+  if (cat === "Rzecz" && !isFinal && player !== viewer && hasAns) {
+    const tally = tallies[player] || {};
+    const tak = typeof tally.tak === "number" ? tally.tak : 0;
+    const nie = typeof tally.nie === "number" ? tally.nie : 0;
+    cell += `<span class="round-results-veto-tally" aria-hidden="true">${tak}·${nie}</span><div class="round-results-veto-actions" data-veto-target="${escapeHtml(player)}"><button type="button" class="round-results-veto-btn round-results-veto-btn--up" data-target="${escapeHtml(player)}" data-vote="tak" aria-label="Zatwierdź odpowiedź">👍</button><button type="button" class="round-results-veto-btn round-results-veto-btn--down" data-target="${escapeHtml(player)}" data-vote="nie" aria-label="Odrzuć odpowiedź">👎</button></div>`;
+  }
+  if (
+    allowAppeals &&
+    player === viewer &&
+    pts === 0 &&
+    roundNumber > 0 &&
+    roomId
+  ) {
+    cell += `<button type="button" class="postgame-appeal-btn" data-room-id="${escapeHtml(roomId)}" data-round="${roundNumber}" data-category="${escapeHtml(cat)}">Wyjaśnij</button><div class="postgame-appeal-result" hidden></div>`;
+  }
+  if (
+    allowAppeals &&
+    player === viewer &&
+    pts === 0 &&
+    hasAns &&
+    roundLetter.length === 1
+  ) {
+    const wordText = String(raw).trim();
+    cell += `<button type="button" class="postgame-word-report-btn" data-word="${escapeHtml(wordText)}" data-category="${escapeHtml(cat)}" data-letter="${escapeHtml(roundLetter)}">Zapisz do słownika</button><div class="postgame-word-report-result" hidden></div>`;
+  }
+  cell += "</div>";
+  return cell;
+}
+
 function buildRoundResultsHtml(msg, options = {}) {
   const variant = options.variant === "overlay" ? "overlay" : "sidebar";
   const answersRoot =
@@ -632,33 +690,20 @@ function buildRoundResultsHtml(msg, options = {}) {
       const hasAns = raw != null && String(raw).trim() !== "";
       const ptsRaw = rScore.details?.[cat];
       const pts = typeof ptsRaw === "number" ? ptsRaw : 0;
-      let cell = `<div class="round-results-cell"><span class="round-results-val">${hasAns ? escapeHtml(String(raw).trim()) : "—"}</span><span class="${roundResultsPtsClass(pts)}">${pts}</span>`;
-      if (cat === "Rzecz" && !isFinal && player !== viewer && hasAns) {
-        const tally = tallies[player] || {};
-        const tak = typeof tally.tak === "number" ? tally.tak : 0;
-        const nie = typeof tally.nie === "number" ? tally.nie : 0;
-        cell += `<span class="round-results-veto-tally" aria-hidden="true">${tak}·${nie}</span><div class="round-results-veto-actions" data-veto-target="${escapeHtml(player)}"><button type="button" class="round-results-veto-btn round-results-veto-btn--up" data-target="${escapeHtml(player)}" data-vote="tak" aria-label="Zatwierdź odpowiedź">👍</button><button type="button" class="round-results-veto-btn round-results-veto-btn--down" data-target="${escapeHtml(player)}" data-vote="nie" aria-label="Odrzuć odpowiedź">👎</button></div>`;
-      }
-      if (
-        allowAppeals &&
-        player === viewer &&
-        pts === 0 &&
-        roundNumber > 0 &&
-        roomId
-      ) {
-        cell += `<button type="button" class="postgame-appeal-btn" data-room-id="${escapeHtml(roomId)}" data-round="${roundNumber}" data-category="${escapeHtml(cat)}">Wyjaśnij</button><div class="postgame-appeal-result" hidden></div>`;
-      }
-      if (
-        allowAppeals &&
-        player === viewer &&
-        pts === 0 &&
-        hasAns &&
-        roundLetter.length === 1
-      ) {
-        const wordText = String(raw).trim();
-        cell += `<button type="button" class="postgame-word-report-btn" data-word="${escapeHtml(wordText)}" data-category="${escapeHtml(cat)}" data-letter="${escapeHtml(roundLetter)}">Zapisz do słownika</button><div class="postgame-word-report-result" hidden></div>`;
-      }
-      cell += "</div>";
+      const cell = buildResultCell(
+        cat,
+        hasAns,
+        raw,
+        pts,
+        player,
+        viewer,
+        isFinal,
+        tallies,
+        allowAppeals,
+        roundNumber,
+        roomId,
+        roundLetter,
+      );
       html += `<td class="round-results-td">${cell}</td>`;
     }
     const total = typeof rScore.total === "number" ? rScore.total : 0;
@@ -764,6 +809,23 @@ function showRoundResultsOverlay(
   overlay.setAttribute("aria-hidden", "false");
   document.body.classList.add("room-results-open");
 
+  _configureResultsOverlayControls(overlay, gameOver, provisional, vetoEndsAt);
+
+  if (!roundResultsOverlayBound) {
+    roundResultsOverlayBound = true;
+    const dismissBtn = document.getElementById("btn-round-results-dismiss");
+    const backdrop = overlay.querySelector(".round-results-overlay-backdrop");
+    dismissBtn?.addEventListener("click", hideRoundResultsOverlay);
+    backdrop?.addEventListener("click", hideRoundResultsOverlay);
+  }
+}
+
+function _configureResultsOverlayControls(
+  overlay,
+  gameOver,
+  provisional,
+  vetoEndsAt,
+) {
   const dismissBtn = document.getElementById("btn-round-results-dismiss");
   const backdrop = overlay.querySelector(".round-results-overlay-backdrop");
   const countdown = document.getElementById("round-results-countdown");
@@ -780,12 +842,6 @@ function showRoundResultsOverlay(
 
   if (provisional) startRoundResultsCountdown(vetoEndsAt);
   else clearRoundResultsCountdown();
-
-  if (!roundResultsOverlayBound) {
-    roundResultsOverlayBound = true;
-    dismissBtn?.addEventListener("click", hideRoundResultsOverlay);
-    backdrop?.addEventListener("click", hideRoundResultsOverlay);
-  }
 }
 
 function buildGameOverScoreboardHtml(msg) {
