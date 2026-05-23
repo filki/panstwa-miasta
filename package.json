@@ -11,6 +11,20 @@
     "dev:mobile": "npm run dev --workspace=frontend-mobile",
     "build:desktop": "npm run build --workspace=frontend-desktop",
     "build:mobile": "npm run build --workspace=frontend-mobile",
-    "build:all": "npm run build:desktop && npm run build:mobile"
+    "build:all": "npm run build:desktop && npm run build:mobile",
+    "test": "jest --coverage"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "collectCoverage": true,
+    "coverageDirectory": "coverage-js",
+    "coverageReporters": [
+      "text",
+      "lcov"
+    ]
+  },
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1"
   }
 }
