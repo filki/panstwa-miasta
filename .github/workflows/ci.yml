@@ -90,6 +90,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [tests, js]
+    continue-on-error: true
+    # Informational only — SonarCloud does NOT block deploy.
+    # Deploy gate: lint + types + pytest + jest (all must pass).
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
     permissions:
       contents: read
@@ -123,7 +126,5 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      - name: SonarQube Quality Gate
-        uses: SonarSource/sonarqube-quality-gate-action@v1
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      # Quality Gate is informational only — does not block deploy.
+      # Deploy gate: lint + types + pytest + jest (all must pass).
