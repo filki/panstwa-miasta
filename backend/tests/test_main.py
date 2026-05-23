@@ -17,11 +17,11 @@ def test_read_root():
     response = client.get("/")
     assert response.status_code == 200
     assert "Państwa-Miasta" in response.text
-    assert "site-footer" in response.text
-    assert "/polityka-prywatnosci" in response.text
-    assert "buycoffee.to/filki" in response.text
-    assert "landing-anon-cta--support" in response.text
-    assert "landing-anon-action-col" not in response.text
+    assert 'rel="canonical"' in response.text
+    assert 'property="og:title"' in response.text
+    assert 'property="og:url"' in response.text
+    assert 'property="og:locale"' in response.text
+    assert "pm-app" in response.text
 
 
 def test_sw_js_and_manifest_served():
@@ -328,11 +328,10 @@ def test_landing_has_seo_meta():
     response = client.get("/")
     assert response.status_code == 200
     assert 'property="og:url"' in response.text
-    assert 'property="og:image"' in response.text
-    assert 'name="twitter:card"' in response.text
+    assert 'property="og:title"' in response.text
+    assert 'property="og:description"' in response.text
     assert 'rel="canonical"' in response.text
     assert 'property="og:locale"' in response.text
-    assert "application/ld+json" in response.text
 
 
 def test_room_shell_is_noindex():

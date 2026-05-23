@@ -4,7 +4,7 @@ export default defineConfig({
   root: '.',
   build: {
     outDir: '../backend/static',
-    emptyOutDir: true,
+    emptyOutDir: false,
     target: 'es2022',
     sourcemap: true,
     rollupOptions: {
