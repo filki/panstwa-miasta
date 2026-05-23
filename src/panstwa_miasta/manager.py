@@ -637,25 +637,13 @@ class ConnectionManager:
                 time_limit,
             )
 
-    async def connect(
-        self,
-        websocket: WebSocket,
-        room_id: str,
-        client_name: str,
-        max_rounds: int,
-        time_limit: int,
-        visibility: str = "public",
-        client_ip: str = "unknown",
+    async def _validate_connect(
+        self, room_id: str, client_name: str, client_ip: str
     ) -> tuple[bool, str | None]:
-        logger.info(
-            f"Attempting connection: room_id={room_id}, client_name={client_name}, "
-            f"max_rounds={max_rounds}, time_limit={time_limit}, visibility={visibility}"
-        )
-
+        """Validate connection prerequisites; returns (ok, reason)."""
         if not client_name or not client_name.strip():
             logger.warning(f"Rejected connection: empty client_name in room {room_id}")
             return False, "empty_name"
-
         is_new_room = room_id not in self.rooms
         if is_new_room and len(self.rooms) >= max_rooms_cap():
             logger.warning(
@@ -672,16 +660,12 @@ class ConnectionManager:
                 room_id,
             )
             return False, "rate_limited"
+        return True, None
 
-        self.cancel_delayed_room_delete(room_id)
-        await self._ensure_room(room_id, max_rounds, time_limit, visibility)
-
-        room = self.rooms[room_id]
-
-        # Block new players from joining an active game session:
-        # is_playing (round in progress), results_phase_active (veto phase
-        # between rounds) or game_over — in all cases the room is "in use".
-        # Known players can reconnect (they are in room.scores).
+    async def _resolve_room_join(
+        self, room: Room, client_name: str, room_id: str
+    ) -> tuple[bool, str | None]:
+        """Check if client_name can join this room; returns (ok, reason)."""
         game_active = room.is_playing or room.results_phase_active or room.game_over
         if client_name not in room.connections and game_active:
             if client_name not in room.scores:
@@ -699,7 +683,6 @@ class ConnectionManager:
                 client_name,
                 room_id,
             )
-
         if client_name not in room.connections and len(room.connections) >= max_players_per_room():
             logger.warning(
                 "Rejected connection: room %s full (%s players)",
@@ -707,23 +690,57 @@ class ConnectionManager:
                 len(room.connections),
             )
             return False, "room_full"
+        return True, None
 
-        # If a player joins with an existing nickname, close previous connection
-        if client_name in room.connections:
-            prev_ws = room.connections[client_name]
-            try:
-                if prev_ws.application_state != WebSocketState.DISCONNECTED:
-                    await prev_ws.close()
-                    logger.info(
-                        f"Closed previous connection for nickname '{client_name}' in room {room_id}"
-                    )
-            except Exception as e:
-                logger.warning(
-                    "Reconnect: could not close previous socket for %r in %s: %s",
-                    client_name,
-                    room_id,
-                    e,
+    async def _close_previous_socket(self, room: Room, client_name: str, room_id: str) -> None:
+        """Close the previous WebSocket for client_name if it exists."""
+        if client_name not in room.connections:
+            return
+        prev_ws = room.connections[client_name]
+        try:
+            if prev_ws.application_state != WebSocketState.DISCONNECTED:
+                await prev_ws.close()
+                logger.info(
+                    f"Closed previous connection for nickname '{client_name}' in room {room_id}"
                 )
+        except Exception as e:
+            logger.warning(
+                "Reconnect: could not close previous socket for %r in %s: %s",
+                client_name,
+                room_id,
+                e,
+            )
+
+    async def connect(
+        self,
+        websocket: WebSocket,
+        room_id: str,
+        client_name: str,
+        max_rounds: int,
+        time_limit: int,
+        visibility: str = "public",
+        client_ip: str = "unknown",
+    ) -> tuple[bool, str | None]:
+        logger.info(
+            f"Attempting connection: room_id={room_id}, client_name={client_name}, "
+            f"max_rounds={max_rounds}, time_limit={time_limit}, visibility={visibility}"
+        )
+
+        ok, reason = await self._validate_connect(room_id, client_name, client_ip)
+        if not ok:
+            return False, reason
+
+        is_new_room = room_id not in self.rooms
+        self.cancel_delayed_room_delete(room_id)
+        await self._ensure_room(room_id, max_rounds, time_limit, visibility)
+
+        room = self.rooms[room_id]
+
+        ok, reason = await self._resolve_room_join(room, client_name, room_id)
+        if not ok:
+            return False, reason
+
+        await self._close_previous_socket(room, client_name, room_id)
 
         await websocket.accept()
         room.connections[client_name] = websocket
@@ -738,7 +755,6 @@ class ConnectionManager:
             room.scores[client_name] = 0
             logger.info(f"Initialized score for '{client_name}' in room {room_id}")
 
-        # Save/update room and player in DB
         await save_room(
             room_id,
             room.max_rounds,
@@ -751,15 +767,11 @@ class ConnectionManager:
         logger.debug(f"Persisted room {room_id} and player {client_name} to DB")
 
         if room.is_playing:
-            # reconnect w trakcie rundy — NIE usuwaj answers_received
-            # (odpowiedzi mogły już przyjść przed rozłączeniem)
             room.disconnected_players.pop(client_name, None)
             room.expected_answers = len(room.connections)
 
         await record_ws_connect_ok(client_ip, is_new_room=is_new_room)
-
         self.touch_lobby_idle(room, reset=False)
-
         return True, None
 
     async def load_from_db(self):
@@ -928,10 +940,7 @@ class ConnectionManager:
 
     async def _gc_disconnected_player(self, room_id: str, client_name: str) -> None:
         """Remove disconnected player after 120s grace period."""
-        try:
-            await asyncio.sleep(120)
-        except asyncio.CancelledError:
-            raise
+        await asyncio.sleep(120)
         room = self.rooms.get(room_id)
         if room is None:
             return

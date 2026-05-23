@@ -524,12 +524,14 @@ function updateScoreboard(
   const resolvedViewer = viewerNick || globalThis.myNick || "";
   // disconnectedPlayers nie przychodzi z score_update — uzyj ostatniego
   // znanego stanu z lobby_state (#7-ui-player-status)
-  const discoSet =
-    disconnectedPlayers !== null
-      ? Array.isArray(disconnectedPlayers)
-        ? new Set(disconnectedPlayers)
-        : new Set()
-      : lastLobbyRosterState.disconnectedPlayers;
+  let discoSet;
+  if (disconnectedPlayers === null) {
+    discoSet = lastLobbyRosterState.disconnectedPlayers;
+  } else {
+    discoSet = Array.isArray(disconnectedPlayers)
+      ? new Set(disconnectedPlayers)
+      : new Set();
+  }
 
   lastLobbyRosterState = {
     scores,
