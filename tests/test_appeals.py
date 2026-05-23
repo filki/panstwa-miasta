@@ -36,6 +36,76 @@ def test_explain_zero_score_empty():
     assert "puste" in message.lower()
 
 
+def test_explain_zero_score_empty_whitespace():
+    """Same whitespace-only input treated as empty."""
+    code, message = explain_zero_score("Państwo", "   ", "W", veto_rejected=False)
+    assert code == "empty"
+
+
+def test_explain_zero_score_too_short_animal():
+    """Zwierzę < 2 chars after normalization → too_short."""
+    code, message = explain_zero_score("Zwierzę", "K", "K", veto_rejected=False)
+    assert code == "too_short"
+
+
+def test_explain_zero_score_too_short_plant():
+    """Roślina < 2 chars after normalization → too_short."""
+    code, message = explain_zero_score("Roślina", "A", "A", veto_rejected=False)
+    assert code == "too_short"
+
+
+def test_explain_zero_score_veto_rejected():
+    """Rzecz odrzucona przez veto."""
+    code, message = explain_zero_score("Rzecz", "Aparat", "A", veto_rejected=True)
+    assert code == "veto_rejected"
+
+
+def test_explain_zero_score_not_in_dictionary():
+    """Państwo spoza słownika → not_in_dictionary."""
+    code, message = explain_zero_score("Państwo", "Nibylandia", "N", veto_rejected=False)
+    assert code == "not_in_dictionary"
+
+
+def test_explain_zero_score_unknown_category():
+    """Nieznana kategoria → ValueError."""
+    import pytest as pt
+
+    with pt.raises(ValueError, match="unknown category"):
+        explain_zero_score("NieIstnieje", "x", "X", veto_rejected=False)
+
+
+def test_explain_zero_score_rzecz_default_fallback():
+    """Rzecz bez veto — zwraca 'veto_rejected' (zgodnie z logiką kategorii VETO)."""
+    code, message = explain_zero_score("Rzecz", "Xenon", "X", veto_rejected=False)
+    # Rzecz bez veto przechodzi wszystkie checks i trafia na ostatni if category==VETO
+    assert code == "veto_rejected"
+
+
+def test_dictionary_validators_country():
+    """_dictionary_validators returns correct validator for Państwo."""
+    from panstwa_miasta.appeals_explain import _dictionary_validators
+
+    validators = _dictionary_validators()
+    assert "Państwo" in validators
+    assert callable(validators["Państwo"])
+    # Known country
+    assert validators["Państwo"]("polska") is True
+
+
+def test_answer_in_dictionary_veto_category():
+    """VETO_CATEGORY (Rzecz) always returns True."""
+    from panstwa_miasta.appeals_explain import _answer_in_dictionary
+
+    assert _answer_in_dictionary("Rzecz", "cokolwiek") is True
+
+
+def test_answer_in_dictionary_unknown_category():
+    """Category not in validators → True (optimistic)."""
+    from panstwa_miasta.appeals_explain import _answer_in_dictionary
+
+    assert _answer_in_dictionary("NieIstnieje", "x") is True
+
+
 @pytest.mark.asyncio
 async def test_submit_appeal_rejects_positive_cell():
     room_id = "appeal_room_pos"
