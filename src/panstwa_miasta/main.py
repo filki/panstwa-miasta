@@ -214,12 +214,15 @@ async def force_end_round(room_id: str) -> None:
 # ---------------------------------------------------------------------------
 
 
+_FOOTER_PLACEHOLDER = "<!-- SITE_FOOTER -->"
+
+
 async def _html_with_injected_footer(page_path: pathlib.Path) -> HTMLResponse:
-    """Serves HTML and replaces ``<!-- SITE_FOOTER -->`` with shared footer markup."""
+    """Serves HTML and replaces footer placeholder with shared footer markup."""
     async with aiofiles.open(page_path, encoding="utf-8") as f:
         html_content = await f.read()
-    if "<!-- SITE_FOOTER -->" in html_content:
-        html_content = html_content.replace("<!-- SITE_FOOTER -->", FOOTER_HTML, 1)
+    if _FOOTER_PLACEHOLDER in html_content:
+        html_content = html_content.replace(_FOOTER_PLACEHOLDER, FOOTER_HTML, 1)
     html_content = inject_before_head_close(html_content, public_head_snippets())
     return HTMLResponse(content=html_content)
 
@@ -228,8 +231,8 @@ async def _html_with_meta(page_path: pathlib.Path, extra_head: str) -> HTMLRespo
     """Like _html_with_injected_footer but with extra meta tags injected."""
     async with aiofiles.open(page_path, encoding="utf-8") as f:
         html_content = await f.read()
-    if "<!-- SITE_FOOTER -->" in html_content:
-        html_content = html_content.replace("<!-- SITE_FOOTER -->", FOOTER_HTML, 1)
+    if _FOOTER_PLACEHOLDER in html_content:
+        html_content = html_content.replace(_FOOTER_PLACEHOLDER, FOOTER_HTML, 1)
     html_content = inject_before_head_close(html_content, public_head_snippets())
     html_content = _replace_room_head(html_content, extra_head)
     return HTMLResponse(content=html_content)

@@ -664,7 +664,9 @@ function renderLobbyRoster(
       const disconnectedCount = [...disconnectedPlayers].filter((name) =>
         rosterNames.includes(name),
       ).length;
-      countEl.textContent = `${rosterNames.length}/${MAX_LOBBY_SLOTS} · ${readyCount} gotowych${disconnectedCount > 0 ? ` · ${disconnectedCount} rozłączonych` : ""}`;
+      const discoSuffix =
+        disconnectedCount > 0 ? ` · ${disconnectedCount} rozłączonych` : "";
+      countEl.textContent = `${rosterNames.length}/${MAX_LOBBY_SLOTS} · ${readyCount} gotowych${discoSuffix}`;
     }
   }
 

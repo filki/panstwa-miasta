@@ -917,7 +917,7 @@ class ConnectionManager:
         game_active = room.is_playing or room.results_phase_active
         if not game_active:
             # W lobby (nie w grze ani results_phase) — GC task za 120s
-            asyncio.ensure_future(self._gc_disconnected_player(room_id, client_name))
+            _task = asyncio.ensure_future(self._gc_disconnected_player(room_id, client_name))
         from .handlers import lobby_state_payload
 
         await room.broadcast(json.dumps(lobby_state_payload(room)))
@@ -930,7 +930,7 @@ class ConnectionManager:
         try:
             await asyncio.sleep(120)
         except asyncio.CancelledError:
-            return
+            raise
         room = self.rooms.get(room_id)
         if room is None:
             return
