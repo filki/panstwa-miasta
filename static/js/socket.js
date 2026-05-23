@@ -153,56 +153,57 @@ function handleCloseCode(code) {
   return false;
 }
 
-function connect() {
-  leftByUser = false;
-  initAudio();
+function _resolveNickname() {
   const joinNick = document.getElementById("nickname_join")?.value.trim() || "";
   const createNick = document.getElementById("nickname")?.value.trim() || "";
   const landingNick =
     document.getElementById("landing_nickname")?.value.trim() || "";
-  myNick = (
+  let nick = (
     globalThis.clampNickname ||
     ((value) =>
       String(value ?? "")
         .trim()
         .slice(0, 16))
   )(joinNick || createNick || landingNick);
-  if (!myNick && typeof getResolvedNickname === "function") {
-    myNick = getResolvedNickname() || "";
+  if (!nick && typeof getResolvedNickname === "function") {
+    nick = getResolvedNickname() || "";
   }
-  if (!myNick && typeof ensureNicknameInput === "function") {
-    myNick = ensureNicknameInput() || "";
+  if (!nick && typeof ensureNicknameInput === "function") {
+    nick = ensureNicknameInput() || "";
   }
-  globalThis.myNick = myNick;
+  globalThis.myNick = nick;
+  return nick;
+}
+
+function _detectRoomId() {
+  const pathParts = globalThis.location.pathname.split("/");
+  if (pathParts.length >= 3 && pathParts[1] === "room") {
+    return pathParts[2];
+  }
+  const roomId = document.getElementById("room_id").value.trim();
+  if (roomId) return roomId;
+  return document.getElementById("landing_room_code")?.value.trim() || "";
+}
+
+function connect() {
+  leftByUser = false;
+  initAudio();
+  myNick = _resolveNickname();
   if (!myNick) return alert("Nie udało się nadać nicku — odśwież stronę.");
 
-  const pathParts = globalThis.location.pathname.split("/");
-  let roomId = "";
-
-  // 1. Sprawdź czy to wejście z bezpośredniego linku
-  if (pathParts.length >= 3 && pathParts[1] === "room") {
-    roomId = pathParts[2];
-  } else {
-    // 2. Sprawdź czy wpisano kod w modalu dołączania
-    roomId = document.getElementById("room_id").value.trim();
-    if (!roomId) {
-      roomId = document.getElementById("landing_room_code")?.value.trim() || "";
+  const roomId = _detectRoomId();
+  if (!roomId) {
+    if (document.getElementById("create-modal").style.display !== "none") {
+      return alert("Najpierw utwórz pokój przyciskiem „Stwórz i wejdź”.");
     }
-  }
-
-  // 3. Tworzenie pokoju wymaga wcześniejszego POST /api/rooms (createRoomAndEnter).
-  const isCreating =
-    document.getElementById("create-modal").style.display !== "none";
-  if (!roomId && isCreating) {
-    return alert("Najpierw utwórz pokój przyciskiem „Stwórz i wejdź”.");
-  }
-
-  if (!roomId)
     return alert("Proszę podać kod pokoju lub wybrać opcję stworzenia nowego.");
+  }
 
   // Pobierz ustawienia (jeśli tworzymy)
   const maxRounds = document.getElementById("max_rounds").value || 5;
   const timeLimit = document.getElementById("time_limit").value || 90;
+  const isCreating =
+    document.getElementById("create-modal").style.display !== "none";
 
   const urlParams = new URLSearchParams(globalThis.location.search);
   let visibility =
@@ -767,6 +768,23 @@ function showRoundResultsOverlay(
   overlay.setAttribute("aria-hidden", "false");
   document.body.classList.add("room-results-open");
 
+  _configureResultsOverlayControls(overlay, gameOver, provisional, vetoEndsAt);
+
+  if (!roundResultsOverlayBound) {
+    roundResultsOverlayBound = true;
+    const dismissBtn = document.getElementById("btn-round-results-dismiss");
+    const backdrop = overlay.querySelector(".round-results-overlay-backdrop");
+    dismissBtn?.addEventListener("click", hideRoundResultsOverlay);
+    backdrop?.addEventListener("click", hideRoundResultsOverlay);
+  }
+}
+
+function _configureResultsOverlayControls(
+  overlay,
+  gameOver,
+  provisional,
+  vetoEndsAt,
+) {
   const dismissBtn = document.getElementById("btn-round-results-dismiss");
   const backdrop = overlay.querySelector(".round-results-overlay-backdrop");
   const countdown = document.getElementById("round-results-countdown");
@@ -783,12 +801,6 @@ function showRoundResultsOverlay(
 
   if (provisional) startRoundResultsCountdown(vetoEndsAt);
   else clearRoundResultsCountdown();
-
-  if (!roundResultsOverlayBound) {
-    roundResultsOverlayBound = true;
-    dismissBtn?.addEventListener("click", hideRoundResultsOverlay);
-    backdrop?.addEventListener("click", hideRoundResultsOverlay);
-  }
 }
 
 function buildGameOverScoreboardHtml(msg) {
