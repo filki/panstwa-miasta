@@ -470,6 +470,7 @@ let lastLobbyRosterState = {
   readyPlayers: new Set(),
   viewerNick: "",
   connectedPlayers: null,
+  disconnectedPlayers: new Set(),
 };
 
 function resetLobbyRosterState() {
@@ -479,6 +480,7 @@ function resetLobbyRosterState() {
     readyPlayers: new Set(),
     viewerNick: "",
     connectedPlayers: null,
+    disconnectedPlayers: new Set(),
   };
 }
 
@@ -492,6 +494,7 @@ function renderLobbyState(m) {
   const disconnectedSet = Array.isArray(m.disconnected_players)
     ? new Set(m.disconnected_players)
     : new Set();
+  lastLobbyRosterState.disconnectedPlayers = disconnectedSet;
   renderLobbyRoster(
     scores,
     hostName,
@@ -508,6 +511,7 @@ function updateScoreboard(
   viewerNick = "",
   readyPlayers = null,
   connectedPlayers = null,
+  disconnectedPlayers = null,
 ) {
   const scoreboard = document.getElementById("scoreboard");
   const lobbyRoster = document.getElementById("lobby-roster");
@@ -518,6 +522,14 @@ function updateScoreboard(
     ? new Set(connectedPlayers)
     : null;
   const resolvedViewer = viewerNick || globalThis.myNick || "";
+  // disconnectedPlayers nie przychodzi z score_update — uzyj ostatniego
+  // znanego stanu z lobby_state (#7-ui-player-status)
+  const discoSet =
+    disconnectedPlayers !== null
+      ? Array.isArray(disconnectedPlayers)
+        ? new Set(disconnectedPlayers)
+        : new Set()
+      : lastLobbyRosterState.disconnectedPlayers;
 
   lastLobbyRosterState = {
     scores,
@@ -525,10 +537,18 @@ function updateScoreboard(
     readyPlayers: readySet,
     viewerNick: resolvedViewer,
     connectedPlayers: connectedSet,
+    disconnectedPlayers: discoSet,
   };
 
   if (lobbyRoster && document.body.classList.contains("room-phase-lobby")) {
-    renderLobbyRoster(scores, hostName, readySet, resolvedViewer, connectedSet);
+    renderLobbyRoster(
+      scores,
+      hostName,
+      readySet,
+      resolvedViewer,
+      connectedSet,
+      discoSet,
+    );
   }
 
   if (!scoreboard) return;
@@ -644,7 +664,9 @@ function renderLobbyRoster(
       const disconnectedCount = [...disconnectedPlayers].filter((name) =>
         rosterNames.includes(name),
       ).length;
-      countEl.textContent = `${rosterNames.length}/${MAX_LOBBY_SLOTS} · ${readyCount} gotowych${disconnectedCount > 0 ? ` · ${disconnectedCount} rozłączonych` : ""}`;
+      const discoSuffix =
+        disconnectedCount > 0 ? ` · ${disconnectedCount} rozłączonych` : "";
+      countEl.textContent = `${rosterNames.length}/${MAX_LOBBY_SLOTS} · ${readyCount} gotowych${discoSuffix}`;
     }
   }
 

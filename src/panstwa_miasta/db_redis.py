@@ -29,7 +29,7 @@ async def connect_redis():
     except ImportError:
         return None
     url = os.environ["REDIS_URL"].strip()
-    _pool = aioredis.from_url(url, decode_responses=True)
+    _pool = await aioredis.from_url(url, decode_responses=True)
     return _pool
 
 
