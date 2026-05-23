@@ -660,6 +660,49 @@ async def _dispatch(msg: dict, room, room_id: str, client_name: str) -> None:
         logger.warning(f"Unknown message type '{msg_type}' from '{client_name}'")
 
 
+async def _handle_ws_messages(
+    websocket: WebSocket,
+    room_id: str,
+    room,
+    client_name: str,
+) -> None:
+    """Process incoming WebSocket messages until disconnect."""
+    try:
+        while True:
+            data = await websocket.receive_text()
+            logger.debug(f"Raw data from '{client_name}': {data}")
+            if not await check_ws_message_rate(room_id, client_name):
+                logger.warning(
+                    "WS message rate limit exceeded for %r in %s",
+                    client_name,
+                    room_id,
+                )
+                with suppress(Exception):
+                    await websocket.send_json(
+                        {"type": "error", "message": "Zbyt wiele wiadomości."}
+                    )
+                await websocket.close(code=1008)
+                return
+            try:
+                msg = ws_inbound_adapter.validate_json(data)
+                await _dispatch(msg.model_dump(), room, room_id, client_name)
+            except json.JSONDecodeError:
+                logger.warning(f"Invalid JSON from '{client_name}': {data}")
+            except ValidationError as exc:
+                logger.warning(
+                    "Invalid WS payload from %r in %s: %s",
+                    client_name,
+                    room_id,
+                    exc,
+                )
+                with suppress(Exception):
+                    await websocket.send_json({"type": "error", "message": "Invalid message"})
+            except Exception as exc:
+                logger.exception(f"Error handling message from '{client_name}': {exc}")
+    except WebSocketDisconnect:
+        pass
+
+
 @app.websocket("/ws/{room_id}/{client_name}")
 async def websocket_endpoint(
     websocket: WebSocket,
@@ -697,39 +740,8 @@ async def websocket_endpoint(
         await websocket.close(code=1011)
         return
     await _send_initial_state(websocket, room, client_name)
-
     try:
-        while True:
-            data = await websocket.receive_text()
-            logger.debug(f"Raw data from '{client_name}': {data}")
-            if not await check_ws_message_rate(room_id, client_name):
-                logger.warning(
-                    "WS message rate limit exceeded for %r in %s",
-                    client_name,
-                    room_id,
-                )
-                with suppress(Exception):
-                    await websocket.send_json(
-                        {"type": "error", "message": "Zbyt wiele wiadomości."}
-                    )
-                await websocket.close(code=1008)
-                return
-            try:
-                msg = ws_inbound_adapter.validate_json(data)
-                await _dispatch(msg.model_dump(), room, room_id, client_name)
-            except json.JSONDecodeError:
-                logger.warning(f"Invalid JSON from '{client_name}': {data}")
-            except ValidationError as exc:
-                logger.warning(
-                    "Invalid WS payload from %r in %s: %s",
-                    client_name,
-                    room_id,
-                    exc,
-                )
-                with suppress(Exception):
-                    await websocket.send_json({"type": "error", "message": "Invalid message"})
-            except Exception as exc:
-                logger.exception(f"Error handling message from '{client_name}': {exc}")
+        await _handle_ws_messages(websocket, room_id, room, client_name)
     except WebSocketDisconnect:
         logger.info(f"WebSocketDisconnect: '{client_name}' left room {room_id}")
         if not manager.disconnect(room_id, client_name, websocket):

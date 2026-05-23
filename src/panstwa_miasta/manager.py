@@ -597,6 +597,46 @@ class ConnectionManager:
             QUICK_JOIN_DEFAULT_TIME_LIMIT,
         )
 
+    async def _ensure_room(
+        self, room_id: str, max_rounds: int, time_limit: int, visibility: str
+    ) -> None:
+        """Create room from DB snapshot or make a new one if it doesn't exist."""
+        if room_id in self.rooms:
+            return
+        snap = await fetch_room_snapshot(room_id)
+        if snap is not None:
+            snap_any = cast(dict[str, Any], snap)
+            vis = normalize_room_visibility(str(snap_any.get("visibility", "public")))
+            room = Room(
+                room_id,
+                int(snap_any["max_rounds"]),
+                int(snap_any["time_limit"]),
+                visibility=vis,
+            )
+            room.current_round = int(snap_any.get("current_round") or 0)
+            room.host_name = str(snap_any.get("host_name") or "")
+            snap_is_active = int(snap_any.get("is_active") or 0)
+            if room.current_round > 0 and snap_is_active:
+                room.is_playing = True
+            players = snap_any.get("players")
+            if isinstance(players, dict):
+                room.scores = {str(k): int(cast(int | str, v)) for k, v in players.items()}
+            self.rooms[room_id] = room
+            logger.info("Restored room %s from DB (scores=%s)", room_id, len(room.scores))
+        else:
+            self.rooms[room_id] = Room(
+                room_id,
+                max_rounds,
+                time_limit,
+                visibility=normalize_room_visibility(visibility),
+            )
+            logger.info(
+                "Created new room: %s (rounds=%s, limit=%s)",
+                room_id,
+                max_rounds,
+                time_limit,
+            )
+
     async def connect(
         self,
         websocket: WebSocket,
@@ -634,46 +674,7 @@ class ConnectionManager:
             return False, "rate_limited"
 
         self.cancel_delayed_room_delete(room_id)
-
-        if room_id not in self.rooms:
-            snap = await fetch_room_snapshot(room_id)
-            if snap is not None:
-                snap_any = cast(dict[str, Any], snap)
-                vis = normalize_room_visibility(str(snap_any.get("visibility", "public")))
-                room = Room(
-                    room_id,
-                    int(snap_any["max_rounds"]),
-                    int(snap_any["time_limit"]),
-                    visibility=vis,
-                )
-                room.current_round = int(snap_any.get("current_round") or 0)
-                room.host_name = str(snap_any.get("host_name") or "")
-                # Restore is_playing when game was in progress (current_round > 0
-                # AND is_active == 1), otherwise a new player joining sees an
-                # empty lobby instead of being blocked (#fix-in-progress-join).
-                snap_is_active = int(snap_any.get("is_active") or 0)
-                if room.current_round > 0 and snap_is_active:
-                    room.is_playing = True
-                players = snap_any.get("players")
-                if isinstance(players, dict):
-                    room.scores = {str(k): int(cast(int | str, v)) for k, v in players.items()}
-                self.rooms[room_id] = room
-                logger.info(
-                    "Restored room %s from DB (scores=%s players)",
-                    room_id,
-                    len(room.scores),
-                )
-            else:
-                self.rooms[room_id] = Room(
-                    room_id,
-                    max_rounds,
-                    time_limit,
-                    visibility=normalize_room_visibility(visibility),
-                )
-                logger.info(
-                    f"Created new room: {room_id} (max_rounds={max_rounds}, time_limit={time_limit}, "
-                    f"visibility={self.rooms[room_id].visibility})"
-                )
+        await self._ensure_room(room_id, max_rounds, time_limit, visibility)
 
         room = self.rooms[room_id]
 
