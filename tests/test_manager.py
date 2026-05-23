@@ -752,3 +752,148 @@ async def test_pick_quick_join_creates_room_when_no_candidate():
     assert room_id.isalnum()
     assert max_rounds == 5
     assert time_limit == 90
+
+
+# --- Tests for newly extracted helper methods (cognitive complexity reduction) ---
+
+
+@pytest.mark.asyncio
+async def test_validate_connect_empty_name():
+    """_validate_connect odrzuca pusty/pusty-po-strip client_name."""
+    manager = ConnectionManager()
+    ok, reason = await manager._validate_connect("r1", "", "127.0.0.1")
+    assert ok is False
+    assert reason == "empty_name"
+
+    ok, reason = await manager._validate_connect("r1", "   ", "127.0.0.1")
+    assert ok is False
+    assert reason == "empty_name"
+
+
+@pytest.mark.asyncio
+async def test_validate_connect_accepts_valid_name():
+    """_validate_connect przepuszcza poprawne dane."""
+    manager = ConnectionManager()
+    ok, reason = await manager._validate_connect("r_valid", "Player1", "127.0.0.1")
+    assert ok is True
+    assert reason is None
+
+
+@pytest.mark.asyncio
+async def test_resolve_room_join_game_in_progress_rejects_stranger():
+    """_resolve_room_join blokuje nowego gracza w trakcie gry."""
+    manager = ConnectionManager()
+    room = Room("r_game")
+    room.is_playing = True
+    room.scores = {"Host": 0}
+    room.connections = {"Host": AsyncMock(spec=WebSocket)}
+    ok, reason = await manager._resolve_room_join(room, "Stranger", "r_game")
+    assert ok is False
+    assert reason == "game_in_progress"
+
+
+@pytest.mark.asyncio
+async def test_resolve_room_join_allows_known_player_reconnect():
+    """_resolve_room_join pozwala reconnect znanemu graczowi."""
+    manager = ConnectionManager()
+    room = Room("r_game")
+    room.is_playing = True
+    room.scores = {"Host": 0, "ReconnectMe": 5}
+    room.connections = {"Host": AsyncMock(spec=WebSocket)}
+    ok, reason = await manager._resolve_room_join(room, "ReconnectMe", "r_game")
+    assert ok is True
+    assert reason is None
+
+
+@pytest.mark.asyncio
+async def test_resolve_room_join_room_full():
+    """_resolve_room_join blokuje gdy pokój pełny."""
+    manager = ConnectionManager()
+    room = Room("r_full")
+    room.connections = {f"p{i}": AsyncMock(spec=WebSocket) for i in range(8)}
+    ok, reason = await manager._resolve_room_join(room, "NewGuy", "r_full")
+    assert ok is False
+    assert reason == "room_full"
+
+
+@pytest.mark.asyncio
+async def test_close_previous_socket_no_existing_connection():
+    """_close_previous_socket nic nie robi gdy gracz nie ma istniejącego poł."""
+    manager = ConnectionManager()
+    room = Room("r_none")
+    room.connections = {"Other": AsyncMock(spec=WebSocket)}
+    await manager._close_previous_socket(room, "NewPlayer", "r_none")
+    # No exception == success
+
+
+@pytest.mark.asyncio
+async def test_close_previous_socket_closes_existing():
+    """_close_previous_socket zamyka stare połączenie przed reconnect."""
+    manager = ConnectionManager()
+    room = Room("r_old")
+    old_ws = AsyncMock(spec=WebSocket)
+    old_ws.application_state = MagicMock()
+    old_ws.application_state.DISCONNECTED = None
+    old_ws.application_state.name = "CONNECTED"
+    # Ensure it's not DISCONNECTED
+    from starlette.websockets import WebSocketState
+
+    old_ws.application_state = WebSocketState.CONNECTED
+    room.connections = {"Rejoin": old_ws}
+    await manager._close_previous_socket(room, "Rejoin", "r_old")
+    old_ws.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_gc_disconnected_player_room_gone(monkeypatch):
+    """_gc_disconnected_player nic nie robi gdy pokój już nie istnieje."""
+    import panstwa_miasta.manager as mod
+
+    monkeypatch.setattr(mod.asyncio, "sleep", AsyncMock())
+    manager = ConnectionManager()
+    await manager._gc_disconnected_player("r_gone", "Ghost")
+    # No exception — room not in manager.rooms
+
+
+@pytest.mark.asyncio
+async def test_gc_disconnected_player_rejoined(monkeypatch):
+    """_gc_disconnected_player nie usuwa gracza który wrócił przed timeout."""
+    import panstwa_miasta.manager as mod
+
+    remove_player = AsyncMock()
+    monkeypatch.setattr(mod, "remove_player", remove_player)
+    monkeypatch.setattr(mod.asyncio, "sleep", AsyncMock())
+    manager = ConnectionManager()
+    room = Room("r_rejoin")
+    room.is_playing = False
+    room.results_phase_active = False
+    room.scores = {"Lucky": 10}
+    room.disconnected_players["Lucky"] = 12345.0
+    manager.rooms["r_rejoin"] = room
+
+    # Gracz zdążył wrócić — usuwamy go z disconnected_players przed GC
+    room.disconnected_players.pop("Lucky", None)
+
+    await manager._gc_disconnected_player("r_rejoin", "Lucky")
+    assert room.scores.get("Lucky") == 10
+    remove_player.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_gc_disconnected_player_playing_guard(monkeypatch):
+    """_gc_disconnected_player nie usuwa gracza gdy gra trwa."""
+    import panstwa_miasta.manager as mod
+
+    remove_player = AsyncMock()
+    monkeypatch.setattr(mod, "remove_player", remove_player)
+    monkeypatch.setattr(mod.asyncio, "sleep", AsyncMock())
+    manager = ConnectionManager()
+    room = Room("r_playing")
+    room.is_playing = True
+    room.scores = {"Active": 5}
+    room.disconnected_players["Active"] = 12345.0
+    manager.rooms["r_playing"] = room
+
+    await manager._gc_disconnected_player("r_playing", "Active")
+    assert room.scores.get("Active") == 5
+    remove_player.assert_not_called()

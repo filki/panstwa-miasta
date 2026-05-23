@@ -26,3 +26,13 @@ def test_resolve_city_german_fold_only() -> None:
 def test_resolve_country_rpa_long_form() -> None:
     assert resolve_country_answer("republika południowej afryki") == "południowa afryka"
     assert resolve_country_answer("rpa") == "południowa afryka"
+
+
+def test_resolve_country_plain_no_alias() -> None:
+    """Nazwa kraju bez aliasu i bez niemieckich znaków — zwracana jak jest."""
+    assert resolve_country_answer("polska") == "polska"
+
+
+def test_resolve_city_plain_no_alias() -> None:
+    """Nazwa miasta bez aliasu i bez niemieckich znaków — zwracana jak jest."""
+    assert resolve_city_answer("warszawa") == "warszawa"

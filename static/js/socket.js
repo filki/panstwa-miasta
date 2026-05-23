@@ -185,34 +185,62 @@ function _detectRoomId() {
   return document.getElementById("landing_room_code")?.value.trim() || "";
 }
 
+function _resolveConnectionSettings() {
+  const roomId = _detectRoomId();
+  if (!roomId) {
+    if (document.getElementById("create-modal").style.display !== "none") {
+      alert("Najpierw utwórz pokój przyciskiem „Stwórz i wejdź”.");
+      return null;
+    }
+    alert("Proszę podać kod pokoju lub wybrać opcję stworzenia nowego.");
+    return null;
+  }
+  const maxRounds = document.getElementById("max_rounds").value || 5;
+  const timeLimit = document.getElementById("time_limit").value || 90;
+  const isCreating =
+    document.getElementById("create-modal").style.display !== "none";
+  const urlParams = new URLSearchParams(globalThis.location.search);
+  let visibility =
+    urlParams.get("visibility") === "private" ? "private" : "public";
+  if (isCreating) {
+    const v = document.getElementById("room_visibility")?.value;
+    if (v === "private" || v === "public") visibility = v;
+  }
+  return { roomId, maxRounds, timeLimit, visibility };
+}
+
+function _buildWsUrl(roomId, maxRounds, timeLimit, visibility) {
+  const protocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
+  const encNick = encodeURIComponent(myNick);
+  return `${protocol}//${globalThis.location.host}/ws/${roomId}/${encNick}?rounds=${maxRounds}&limit=${timeLimit}&visibility=${visibility}`;
+}
+
+function _teardownPrevSocket() {
+  if (!ws) return;
+  ws.onclose = null;
+  ws.onerror = null;
+  ws.onmessage = null;
+  try {
+    if (
+      ws.readyState === WebSocket.OPEN ||
+      ws.readyState === WebSocket.CONNECTING
+    ) {
+      ws.close();
+    }
+  } catch (e) {
+    console.debug("pm: prior websocket close skipped", e);
+  }
+}
+
 function connect() {
   leftByUser = false;
   initAudio();
   myNick = _resolveNickname();
   if (!myNick) return alert("Nie udało się nadać nicku — odśwież stronę.");
 
-  const roomId = _detectRoomId();
-  if (!roomId) {
-    if (document.getElementById("create-modal").style.display !== "none") {
-      return alert("Najpierw utwórz pokój przyciskiem „Stwórz i wejdź”.");
-    }
-    return alert("Proszę podać kod pokoju lub wybrać opcję stworzenia nowego.");
-  }
-
-  // Pobierz ustawienia (jeśli tworzymy)
-  const maxRounds = document.getElementById("max_rounds").value || 5;
-  const timeLimit = document.getElementById("time_limit").value || 90;
-  const isCreating =
-    document.getElementById("create-modal").style.display !== "none";
-
-  const urlParams = new URLSearchParams(globalThis.location.search);
-  let visibility =
-    urlParams.get("visibility") === "private" ? "private" : "public";
-  if (isCreating) {
-    const visEl = document.getElementById("room_visibility");
-    const v = visEl?.value;
-    if (v === "private" || v === "public") visibility = v;
-  }
+  const settings = _resolveConnectionSettings();
+  if (!settings) return;
+  const { roomId, maxRounds, timeLimit, visibility } = settings;
 
   if (typeof persistNickname === "function") {
     persistNickname(myNick);
@@ -220,8 +248,6 @@ function connect() {
     localStorage.setItem("pm_nickname", myNick);
   }
 
-  // Landing page has no game UI; redirect to the dedicated room page,
-  // which auto-joins using the stored nickname + url params.
   if (!globalThis.location.pathname.startsWith("/room/")) {
     if (typeof markRoomAutoJoinIntent === "function") {
       markRoomAutoJoinIntent();
@@ -236,27 +262,11 @@ function connect() {
     `/room/${roomId}?rounds=${encodeURIComponent(String(maxRounds))}&limit=${encodeURIComponent(String(timeLimit))}&visibility=${encodeURIComponent(visibility)}`,
   );
 
-  const protocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
-  const encNick = encodeURIComponent(myNick);
-  let wsUrl = `${protocol}//${globalThis.location.host}/ws/${roomId}/${encNick}?rounds=${maxRounds}&limit=${timeLimit}&visibility=${visibility}`;
+  const wsUrl = _buildWsUrl(roomId, maxRounds, timeLimit, visibility);
 
   pmWsGeneration += 1;
   const socketGeneration = pmWsGeneration;
-  if (ws) {
-    ws.onclose = null;
-    ws.onerror = null;
-    ws.onmessage = null;
-    try {
-      if (
-        ws.readyState === WebSocket.OPEN ||
-        ws.readyState === WebSocket.CONNECTING
-      ) {
-        ws.close();
-      }
-    } catch (e) {
-      console.debug("pm: prior websocket close skipped", e);
-    }
-  }
+  _teardownPrevSocket();
 
   const socket = new WebSocket(wsUrl);
   ws = socket;
@@ -593,6 +603,50 @@ function buildPlayerResultHtml(player, rScore, pAnswers, viewerNick) {
   );
 }
 
+function buildResultCell(
+  cat,
+  hasAns,
+  raw,
+  pts,
+  player,
+  viewer,
+  isFinal,
+  tallies,
+  allowAppeals,
+  roundNumber,
+  roomId,
+  roundLetter,
+) {
+  let cell = `<div class="round-results-cell"><span class="round-results-val">${hasAns ? escapeHtml(String(raw).trim()) : "—"}</span><span class="${roundResultsPtsClass(pts)}">${pts}</span>`;
+  if (cat === "Rzecz" && !isFinal && player !== viewer && hasAns) {
+    const tally = tallies[player] || {};
+    const tak = typeof tally.tak === "number" ? tally.tak : 0;
+    const nie = typeof tally.nie === "number" ? tally.nie : 0;
+    cell += `<span class="round-results-veto-tally" aria-hidden="true">${tak}·${nie}</span><div class="round-results-veto-actions" data-veto-target="${escapeHtml(player)}"><button type="button" class="round-results-veto-btn round-results-veto-btn--up" data-target="${escapeHtml(player)}" data-vote="tak" aria-label="Zatwierdź odpowiedź">👍</button><button type="button" class="round-results-veto-btn round-results-veto-btn--down" data-target="${escapeHtml(player)}" data-vote="nie" aria-label="Odrzuć odpowiedź">👎</button></div>`;
+  }
+  if (
+    allowAppeals &&
+    player === viewer &&
+    pts === 0 &&
+    roundNumber > 0 &&
+    roomId
+  ) {
+    cell += `<button type="button" class="postgame-appeal-btn" data-room-id="${escapeHtml(roomId)}" data-round="${roundNumber}" data-category="${escapeHtml(cat)}">Wyjaśnij</button><div class="postgame-appeal-result" hidden></div>`;
+  }
+  if (
+    allowAppeals &&
+    player === viewer &&
+    pts === 0 &&
+    hasAns &&
+    roundLetter.length === 1
+  ) {
+    const wordText = String(raw).trim();
+    cell += `<button type="button" class="postgame-word-report-btn" data-word="${escapeHtml(wordText)}" data-category="${escapeHtml(cat)}" data-letter="${escapeHtml(roundLetter)}">Zapisz do słownika</button><div class="postgame-word-report-result" hidden></div>`;
+  }
+  cell += "</div>";
+  return cell;
+}
+
 function buildRoundResultsHtml(msg, options = {}) {
   const variant = options.variant === "overlay" ? "overlay" : "sidebar";
   const answersRoot =
@@ -636,33 +690,20 @@ function buildRoundResultsHtml(msg, options = {}) {
       const hasAns = raw != null && String(raw).trim() !== "";
       const ptsRaw = rScore.details?.[cat];
       const pts = typeof ptsRaw === "number" ? ptsRaw : 0;
-      let cell = `<div class="round-results-cell"><span class="round-results-val">${hasAns ? escapeHtml(String(raw).trim()) : "—"}</span><span class="${roundResultsPtsClass(pts)}">${pts}</span>`;
-      if (cat === "Rzecz" && !isFinal && player !== viewer && hasAns) {
-        const tally = tallies[player] || {};
-        const tak = typeof tally.tak === "number" ? tally.tak : 0;
-        const nie = typeof tally.nie === "number" ? tally.nie : 0;
-        cell += `<span class="round-results-veto-tally" aria-hidden="true">${tak}·${nie}</span><div class="round-results-veto-actions" data-veto-target="${escapeHtml(player)}"><button type="button" class="round-results-veto-btn round-results-veto-btn--up" data-target="${escapeHtml(player)}" data-vote="tak" aria-label="Zatwierdź odpowiedź">👍</button><button type="button" class="round-results-veto-btn round-results-veto-btn--down" data-target="${escapeHtml(player)}" data-vote="nie" aria-label="Odrzuć odpowiedź">👎</button></div>`;
-      }
-      if (
-        allowAppeals &&
-        player === viewer &&
-        pts === 0 &&
-        roundNumber > 0 &&
-        roomId
-      ) {
-        cell += `<button type="button" class="postgame-appeal-btn" data-room-id="${escapeHtml(roomId)}" data-round="${roundNumber}" data-category="${escapeHtml(cat)}">Wyjaśnij</button><div class="postgame-appeal-result" hidden></div>`;
-      }
-      if (
-        allowAppeals &&
-        player === viewer &&
-        pts === 0 &&
-        hasAns &&
-        roundLetter.length === 1
-      ) {
-        const wordText = String(raw).trim();
-        cell += `<button type="button" class="postgame-word-report-btn" data-word="${escapeHtml(wordText)}" data-category="${escapeHtml(cat)}" data-letter="${escapeHtml(roundLetter)}">Zapisz do słownika</button><div class="postgame-word-report-result" hidden></div>`;
-      }
-      cell += "</div>";
+      const cell = buildResultCell(
+        cat,
+        hasAns,
+        raw,
+        pts,
+        player,
+        viewer,
+        isFinal,
+        tallies,
+        allowAppeals,
+        roundNumber,
+        roomId,
+        roundLetter,
+      );
       html += `<td class="round-results-td">${cell}</td>`;
     }
     const total = typeof rScore.total === "number" ? rScore.total : 0;
