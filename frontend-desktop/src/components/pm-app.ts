@@ -1,7 +1,6 @@
-import { GemElement, html, customElement, connectStore, attribute, property, boolattribute, css, adoptedStyle } from '@mantou/gem';
-import { pageStore, connectionStore, roomStore, roundStore, overlayStore, resultsStore, chatStore, nickStore, activeRoomsStore, appealStore, GAME_CATEGORIES } from './store';
+import { GemElement, html, customElement, connectStore, property, css, adoptedStyle } from '@mantou/gem';
+import { pageStore, connectionStore, roomStore, roundStore, overlayStore, resultsStore, chatStore, nickStore, activeRoomsStore, GAME_CATEGORIES } from './store';
 import * as sock from './socket';
-import * as audio from './audio';
 import { getAvatarSrc, avatarIdForPlayer } from './avatar';
 
 const appStyle = css`
@@ -61,7 +60,8 @@ export class PmApp extends GemElement {
     const { connected, reconnecting } = connectionStore;
     const inRoom = page === 'room';
     const roomId = roomStore.room_id;
-    const sc = connected ? 'nav-status--connected' : reconnecting ? 'nav-status--reconnecting' : 'nav-status--disconnected';
+    const statusClass = connected ? 'nav-status--connected' : (reconnecting ? 'nav-status--reconnecting' : 'nav-status--disconnected');
+    const statusTitle = connected ? 'Połączono' : (reconnecting ? 'Ponowne łączenie…' : 'Rozłączono');
 
     return html`
       ${inRoom ? html`
@@ -71,7 +71,7 @@ export class PmApp extends GemElement {
             ${roomId ? html`<span class="nav-room-info">Pokój <strong>${roomId}</strong></span>` : ''}
           </div>
           <div style="display:flex;align-items:center;gap:8px">
-            <span class="nav-status ${sc}" title=${connected ? 'Połączono' : reconnecting ? 'Ponowne łączenie…' : 'Rozłączono'}></span>
+            <span class="nav-status ${statusClass}" title=${statusTitle}></span>
             <button class="btn-danger btn-sm" @click=${() => sock.leaveRoom()}>Wyjdź</button>
           </div>
         </nav>
@@ -133,11 +133,11 @@ export class PmLanding extends GemElement {
   #rerollNick() {
     const a = ['Szybki','Cichy','Wesoły','Bystry','Odważny','Sprytny','Miły','Zwinny'];
     const b = ['Wilk','Lis','Sokół','Bóbr','Żubr','Ryś','Orzeł','Kot'];
-    this.#setNick(a[~~(Math.random()*8)] + b[~~(Math.random()*8)]);
+    this.#setNick(a[Math.trunc(Math.random()*8)] + b[Math.trunc(Math.random()*8)]);
   }
   #rerollAvatar() {
     const cur = Number(localStorage.getItem('pm_avatar')||0);
-    let n = ~~(Math.random()*4); if (n === cur % 4) n = (n+1)%4;
+    let n = Math.trunc(Math.random()*4); if (n === cur % 4) n = (n+1)%4;
     localStorage.setItem('pm_avatar', String(n)); this.update();
   }
   #ensureNick() { const n = this.#getNick() || 'Gracz'; this.#setNick(n); return n; }
