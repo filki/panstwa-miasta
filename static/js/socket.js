@@ -258,40 +258,31 @@ function connect() {
     if (socketGeneration !== pmWsGeneration) return;
     if (e.code === 4401) {
       isLeaving = true;
-      if (
-        confirm(
-          "Host wyrzucił Cię z pokoju.\n\nKliknij OK żeby wrócić do strony głównej.",
-        )
-      ) {
-        safeNavigateHome();
-      }
+      alert("Host wyrzucił Cię z pokoju.");
+      safeNavigateHome();
       return;
     }
     if (e.code === 4408) {
       isLeaving = true;
-      const msg =
-        "Pokój jest pełny (maksymalnie 8 graczy). Spróbuj za chwilę lub wybierz inny.";
-      if (confirm(msg + "\n\nKliknij OK żeby wrócić do strony głównej.")) {
-        safeNavigateHome();
-      }
+      alert(
+        "Pokój jest pełny (maksymalnie 8 graczy).\n\nSpróbuj za chwilę lub stwórz własny pokój na stronie głównej.",
+      );
+      safeNavigateHome();
       return;
     }
     if (e.code === 4409) {
       isLeaving = true;
-      const msg =
-        "Gra w tym pokoju już trwa. Poczekaj na zakończenie rund lub znajdź inny pokój.";
-      if (confirm(msg + "\n\nKliknij OK żeby wrócić do strony głównej.")) {
-        safeNavigateHome();
-      }
+      alert(
+        "Gra w tym pokoju już trwa. Nie można dołączyć w trakcie rundy.\n\nWróć na stronę główną i znajdź inny pokój lub stwórz własny.",
+      );
+      safeNavigateHome();
       return;
     }
     if (e.code === 1008) {
       isLeaving = true;
-      const msg =
-        "Ten nick jest już zajęty lub nieprawidłowy. Zmień go i spróbuj ponownie.";
-      if (confirm(msg + "\n\nKliknij OK żeby wrócić do strony głównej.")) {
-        safeNavigateHome();
-      }
+      alert(
+        "Ten nick jest już zajęty lub nieprawidłowy.\n\nZmień go i spróbuj ponownie.",
+      );
       const _inlineJoin = document.getElementById("room-inline-join");
       const _chatSection = document.getElementById("chat-section");
       if (_inlineJoin) _inlineJoin.style.display = "block";
@@ -303,16 +294,19 @@ function connect() {
       isLeaving = false;
       return;
     }
-    // Automatic reconnect after unexpected disconnect
+    // Unexpected disconnect — try to reconnect
     addLog(
-      `<em>Utracono połączenie. Próba wznowienia za 2 sekundy...</em>`,
+      `<em>Utracono połączenie z serwerem. Próba wznowienia za 3 sekundy...</em>`,
       "system-msg",
     );
     setTimeout(() => {
-      if (document.getElementById("chat-section").style.display !== "none") {
+      const chatVisible =
+        document.getElementById("chat-section")?.style.display !== "none";
+      if (chatVisible) {
+        addLog(`<em>Próba ponownego połączenia...</em>`, "system-msg");
         connect();
       }
-    }, 2000);
+    }, 3000);
   };
 
   socket.onmessage = (event) => {
@@ -324,6 +318,10 @@ function connect() {
 
   socket.onerror = (e) => {
     if (socketGeneration !== pmWsGeneration) return;
+    addLog(
+      `<em>Błąd połączenia. Sprawdź swoje połączenie internetowe i odśwież stronę.</em>`,
+      "system-msg",
+    );
     console.error("WS Error:", e);
   };
 }
