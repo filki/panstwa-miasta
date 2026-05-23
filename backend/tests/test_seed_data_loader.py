@@ -29,3 +29,67 @@ def test_load_cities_geonames_has_londyn():
     rows = load_cities_geonames_from_seed_file()
     assert len(rows) > 10_000
     assert ("Londyn", "Wielka Brytania") in rows
+
+
+def test_iter_jsonl_gz_missing_file(tmp_path):
+    """iter_jsonl_gz returns empty iterator for non-existent file."""
+    from panstwa_miasta.seed_data_loader import iter_jsonl_gz
+
+    missing = tmp_path / "nonexistent.jsonl.gz"
+    rows = list(iter_jsonl_gz(missing))
+    assert rows == []
+
+
+def test_write_animal_norms_roundtrip(tmp_path, monkeypatch):
+    from panstwa_miasta.seed_data_loader import (
+        iter_animal_norms_from_seed_file,
+        write_animal_norms_jsonl_gz,
+    )
+
+    out_dir = tmp_path / "seed_data"
+    monkeypatch.setattr("panstwa_miasta.seed_data_loader._SEED_DATA_DIR", out_dir)
+
+    norms: set[str] = {"jeleń szlachetny", "sarna europejska", "lis rudy"}
+    count = write_animal_norms_jsonl_gz(norms)
+    assert count == 3
+
+    result = list(iter_animal_norms_from_seed_file())
+    assert sorted(result) == sorted(norms)
+
+
+def test_write_plant_norms_roundtrip(tmp_path, monkeypatch):
+    from panstwa_miasta.seed_data_loader import (
+        iter_plant_norms_from_seed_file,
+        write_plant_norms_jsonl_gz,
+    )
+
+    out_dir = tmp_path / "seed_data"
+    monkeypatch.setattr("panstwa_miasta.seed_data_loader._SEED_DATA_DIR", out_dir)
+
+    norms: set[str] = {"pokrzywa zwyczajna", "mniszek lekarski"}
+    count = write_plant_norms_jsonl_gz(norms)
+    assert count == 2
+
+    result = list(iter_plant_norms_from_seed_file())
+    assert sorted(result) == sorted(norms)
+
+
+def test_write_cities_geonames_roundtrip(tmp_path, monkeypatch):
+    from panstwa_miasta.seed_data_loader import (
+        seed_data_path,
+        write_cities_geonames_jsonl_gz,
+    )
+
+    out_dir = tmp_path / "seed_data"
+    monkeypatch.setattr("panstwa_miasta.seed_data_loader._SEED_DATA_DIR", out_dir)
+
+    rows: list[tuple[str, str]] = [("Gniezno", "Polska"), ("Paryż", "Francja")]
+    count = write_cities_geonames_jsonl_gz(rows)
+    assert count == 2
+
+    from panstwa_miasta.seed_data_loader import iter_jsonl_gz
+
+    result = list(iter_jsonl_gz(seed_data_path("cities_geonames.jsonl.gz")))
+    assert len(result) == 2
+    assert result[0]["nazwa"] == "Gniezno"
+    assert result[1]["kraj"] == "Francja"
