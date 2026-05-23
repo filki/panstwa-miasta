@@ -1,12 +1,13 @@
-export function initAudio() {
-  const ctx = new (globalThis.AudioContext || (globalThis as any).webkitAudioContext)();
+export function initAudio(): AudioContext {
+  const ctx = new (globalThis.AudioContext ?? (globalThis as any).webkitAudioContext)();
   if (ctx.state === 'suspended') ctx.resume();
   return ctx;
 }
 
 export function playTick(ctx?: AudioContext) {
-  if (!ctx) ctx = initAudio();
-  const o = ctx.createOscillator(), g = ctx.createGain();
+  ctx ??= initAudio();
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
   o.connect(g); g.connect(ctx.destination);
   o.type = 'sine'; o.frequency.setValueAtTime(800, ctx.currentTime);
   g.gain.setValueAtTime(0.05, ctx.currentTime);
@@ -15,8 +16,9 @@ export function playTick(ctx?: AudioContext) {
 }
 
 export function playGong(ctx?: AudioContext) {
-  if (!ctx) ctx = initAudio();
-  const o = ctx.createOscillator(), g = ctx.createGain();
+  ctx ??= initAudio();
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
   o.connect(g); g.connect(ctx.destination);
   o.type = 'triangle'; o.frequency.setValueAtTime(150, ctx.currentTime);
   o.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 1.5);
@@ -26,11 +28,12 @@ export function playGong(ctx?: AudioContext) {
 }
 
 export function playRoundStartReveal(ctx?: AudioContext) {
-  if (!ctx) ctx = initAudio();
+  ctx ??= initAudio();
   const t0 = ctx.currentTime;
   [523.25, 659.25].forEach((f, i) => {
-    const o = ctx!.createOscillator(), g = ctx!.createGain();
-    o.type = 'sine'; o.connect(g); g.connect(ctx!.destination);
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine'; o.connect(g); g.connect(ctx.destination);
     const s = t0 + i * 0.07;
     o.frequency.setValueAtTime(f, s);
     g.gain.setValueAtTime(0, s);
