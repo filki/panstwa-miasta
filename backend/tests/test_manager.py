@@ -787,7 +787,7 @@ async def test_resolve_room_join_game_in_progress_rejects_stranger():
     room.is_playing = True
     room.scores = {"Host": 0}
     room.connections = {"Host": AsyncMock(spec=WebSocket)}
-    ok, reason = await manager._resolve_room_join(room, "Stranger", "r_game")
+    ok, reason = manager._resolve_room_join(room, "Stranger", "r_game")
     assert ok is False
     assert reason == "game_in_progress"
 
@@ -800,7 +800,7 @@ async def test_resolve_room_join_allows_known_player_reconnect():
     room.is_playing = True
     room.scores = {"Host": 0, "ReconnectMe": 5}
     room.connections = {"Host": AsyncMock(spec=WebSocket)}
-    ok, reason = await manager._resolve_room_join(room, "ReconnectMe", "r_game")
+    ok, reason = manager._resolve_room_join(room, "ReconnectMe", "r_game")
     assert ok is True
     assert reason is None
 
@@ -811,7 +811,7 @@ async def test_resolve_room_join_room_full():
     manager = ConnectionManager()
     room = Room("r_full")
     room.connections = {f"p{i}": AsyncMock(spec=WebSocket) for i in range(8)}
-    ok, reason = await manager._resolve_room_join(room, "NewGuy", "r_full")
+    ok, reason = manager._resolve_room_join(room, "NewGuy", "r_full")
     assert ok is False
     assert reason == "room_full"
 

@@ -203,7 +203,7 @@ function runLetterLottery(target: string, onDone: () => void) {
       overlayStore({ lotteryLetter: target, lottery: true });
       setTimeout(() => { overlayStore({ lottery: false }); onDone(); }, 600);
     } else {
-      overlayStore({ lotteryLetter: alphabet[~~(Math.random() * alphabet.length)] });
+      overlayStore({ lotteryLetter: alphabet[Math.trunc(Math.random() * alphabet.length)] });
     }
   }, intervalTime);
 }
