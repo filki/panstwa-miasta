@@ -1,3 +1,7 @@
+# Build outputs (frontend)
+frontend-mobile/www/
+frontend-desktop/dist/
+
 # Python-generated files
 __pycache__/
 *.py[oc]

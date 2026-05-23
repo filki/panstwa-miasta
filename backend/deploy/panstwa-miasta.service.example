@@ -1,0 +1,32 @@
+# /etc/systemd/system/panstwa-miasta.service
+# Po edycji: sudo systemctl daemon-reload && sudo systemctl enable --now panstwa-miasta
+#
+# Wymagania:
+# - katalog aplikacji APP_DIR (np. /srv/panstwa-miasta) z clone repozytorium
+# - w APP_DIR: uv sync (powstanie .venv)
+# - użytkownik UNIX_USER mający prawo odczytu/zapisu do APP_DIR (i pliku SQLite w katalogu głównym repo)
+
+[Unit]
+Description=Państwa-Miasta (FastAPI + uvicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=UNIX_USER
+Group=UNIX_USER
+WorkingDirectory=APP_DIR
+# Turso (LIBSQL_*), Umami, limity — patrz deploy/env.example (nie commituj tokenów):
+EnvironmentFile=/etc/panstwa-miasta.env
+Environment=PM_TRUST_X_FORWARDED_FOR=1
+# Opcjonalnie: PM_MAX_ROOMS=512 itd. — zobacz docstring w src/panstwa_miasta/limits.py
+ExecStart=APP_DIR/.venv/bin/uvicorn panstwa_miasta.main:app --host 127.0.0.1 --port 8000 --ws-max-size 262144
+Restart=on-failure
+RestartSec=3
+# Pierwszy start z repliką Turso + reload_* może trwać do ~20 min (patrz deploy/TURSO-cutover.md)
+TimeoutStartSec=1200
+
+# Bezpiecznik (dopasuj do RAM VPS)
+MemoryMax=900M
+
+[Install]
+WantedBy=multi-user.target

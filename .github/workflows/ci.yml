@@ -15,12 +15,15 @@ jobs:
     name: Lint (ruff)
     runs-on: ubuntu-latest
     timeout-minutes: 3
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          cache-dependency-glob: "backend/uv.lock"
       - run: uv python install
       - run: uv sync --extra dev --frozen
       - run: uv run ruff format --check .
@@ -30,12 +33,15 @@ jobs:
     name: Types (ty)
     runs-on: ubuntu-latest
     timeout-minutes: 3
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          cache-dependency-glob: "backend/uv.lock"
       - run: uv python install
       - run: uv sync --extra dev --frozen
       - run: uv run ty check src
@@ -45,12 +51,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [lint, types]
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          cache-dependency-glob: "backend/uv.lock"
       - run: uv python install
       - run: uv sync --extra dev --frozen
       - run: uv run pytest --ignore=tests/test_data.py --ignore=tests/test_db.py --ignore=tests/test_coverage_boost.py --ignore=tests/test_gbif_seed.py --ignore=tests/test_geo_answer_aliases.py --ignore=tests/test_norms_seed_batch.py --ignore=tests/test_seed_data_loader.py --ignore=tests/test_init_db_seeds.py --ignore=tests/test_plants_atlas_parse.py
@@ -59,8 +68,8 @@ jobs:
         with:
           name: coverage-python
           path: |
-            coverage.xml
-            test-results.xml
+            backend/coverage.xml
+            backend/test-results.xml
           if-no-files-found: ignore
           retention-days: 7
 
@@ -91,8 +100,6 @@ jobs:
     timeout-minutes: 15
     needs: [tests, js]
     continue-on-error: true
-    # Informational only — SonarCloud does NOT block deploy.
-    # Deploy gate: lint + types + pytest + jest (all must pass).
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
     permissions:
       contents: read
@@ -126,5 +133,3 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      # Quality Gate is informational only — does not block deploy.
-      # Deploy gate: lint + types + pytest + jest (all must pass).

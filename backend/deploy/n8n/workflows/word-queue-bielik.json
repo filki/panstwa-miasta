@@ -1,0 +1,177 @@
+{
+  "name": "Word queue Bielik (HF Inference)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Every 30 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.PM_APP_BASE_URL}}/api/internal/words/pending",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "limit",
+                "value": "10"
+              }
+            ]
+          }
+        }
+      },
+      "id": "fetch-pending",
+      "name": "Fetch pending",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [260, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME",
+          "name": "PM words worker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "items",
+        "options": {}
+      },
+      "id": "split-items",
+      "name": "Split items",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [520, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-inference.huggingface.co/models/speakleash/Bielik-PL-Minitron-7B-v3.0-Instruct",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "huggingFaceApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { inputs: 'Odpowiedz wyłącznie JSON: {\"verdict\":\"reject\"|\"suggest_seed\",\"explanation\":\"...\",\"proposed_entry\":\"...\"}. Kategoria: ' + $json.category + ', litera: ' + $json.letter + ', słowo: ' + $json.proposed_display } }}"
+      },
+      "id": "hf-inference",
+      "name": "HF Bielik",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [780, 0],
+      "credentials": {
+        "huggingFaceApi": {
+          "id": "REPLACE_ME",
+          "name": "Hugging Face account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.data ?? $json;\nlet text = typeof raw === 'string' ? raw : JSON.stringify(raw);\nlet parsed;\ntry {\n  const match = text.match(/\\{[\\s\\S]*\\}/);\n  parsed = JSON.parse(match ? match[0] : text);\n} catch (e) {\n  return [{ json: { status: 'error', ai_explanation: '', review_note: 'parse_error' } }];\n}\nconst verdict = parsed.verdict === 'suggest_seed' ? 'accepted' : 'rejected';\nreturn [{ json: { status: verdict, ai_explanation: String(parsed.explanation || ''), review_note: 'hf_bielik' } }];"
+      },
+      "id": "parse-json",
+      "name": "Parse verdict",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1040, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.PM_APP_BASE_URL}}/api/internal/words/{{$('Split items').item.json.id}}/decision",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { status: $json.status, ai_explanation: $json.ai_explanation, review_note: $json.review_note } }}"
+      },
+      "id": "post-decision",
+      "name": "Post decision",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME",
+          "name": "PM words worker"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every 30 minutes": {
+      "main": [
+        [
+          {
+            "node": "Fetch pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch pending": {
+      "main": [
+        [
+          {
+            "node": "Split items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split items": {
+      "main": [
+        [
+          {
+            "node": "HF Bielik",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HF Bielik": {
+      "main": [
+        [
+          {
+            "node": "Parse verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse verdict": {
+      "main": [
+        [
+          {
+            "node": "Post decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "word-queue-bielik-v1"
+}

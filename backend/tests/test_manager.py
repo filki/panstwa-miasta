@@ -1,0 +1,899 @@
+import asyncio
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+from fastapi import WebSocket
+
+from panstwa_miasta.manager import ConnectionManager, Room
+
+
+@pytest.fixture
+def room():
+    return Room("test_room", max_rounds=3, time_limit=60)
+
+
+def test_normalize_room_visibility():
+    from panstwa_miasta.manager import normalize_room_visibility
+
+    assert normalize_room_visibility("private") == "private"
+    assert normalize_room_visibility("PUBLIC") == "public"
+    assert normalize_room_visibility("") == "public"
+    assert normalize_room_visibility("evil") == "public"
+
+
+def test_room_initialization(room):
+    assert room.room_id == "test_room"
+    assert room.max_rounds == 3
+    assert room.time_limit == 60
+    assert room.visibility == "public"
+    assert len(room.letter_queue) == 22  # ALPHABET size
+
+
+def test_room_private_visibility():
+    r = Room("x", visibility="private")
+    assert r.visibility == "private"
+    r2 = Room("y", visibility="bogus")
+    assert r2.visibility == "public"
+
+
+def test_deck_shuffle_refill(room):
+    # Empty the queue
+    room.letter_queue = []
+    # Trigger start_round which should refill
+    letter = room.start_round()
+    assert letter in "ABCDEFGHIJKLMNOPRSTUWZ"
+    assert len(room.letter_queue) == 21
+
+
+def test_22_rounds_no_repeats(room):
+    """W jednej grze (do 22 rund) każda litera dokładnie raz."""
+    letters = [room.start_round() for _ in range(22)]
+    assert len(letters) == 22
+    assert len(set(letters)) == 22, f"Powtórki w cyklu: {letters}"
+    assert set(letters) == set("ABCDEFGHIJKLMNOPRSTUWZ")
+
+
+def test_restart_continues_existing_queue(room):
+    """`restart_game` NIE tasuje od nowa -- ciągnie z istniejącej talii."""
+    import asyncio
+
+    letters_before = [room.start_round() for _ in range(5)]
+    queue_snapshot = list(room.letter_queue)
+
+    asyncio.run(_restart(room))
+    # Po restarcie talia powinna być nietknięta (poza może state'ami gry).
+    assert room.letter_queue == queue_snapshot, "restart_game nie powinien tasować"
+    assert room.current_round == 0
+
+    letters_after = [room.start_round() for _ in range(5)]
+    # 5 + 5 = 10 unikalnych liter łącznie (cykl 22 jeszcze niewyczerpany).
+    combined = letters_before + letters_after
+    assert len(set(combined)) == 10, f"Powtórki między grami: {combined}"
+
+
+async def _restart(room):
+    """Helper: stubuje save_* żeby restart nie wołał DB."""
+    from unittest.mock import AsyncMock
+
+    import panstwa_miasta.manager as mod
+
+    orig_save_room = mod.save_room
+    orig_save_score = mod.save_player_score
+    mod.save_room = AsyncMock()
+    mod.save_player_score = AsyncMock()
+    try:
+        await room.restart_game(5, 60)
+    finally:
+        mod.save_room = orig_save_room
+        mod.save_player_score = orig_save_score
+
+
+def test_recent_letters_pushed_to_bottom_after_reshuffle(room):
+    """Po wyczerpaniu talii ostatnie N liter ląduje na dnie nowego cyklu."""
+    # Wyczerpujemy całą talię (22 litery).
+    cycle1 = [room.start_round() for _ in range(22)]
+    assert room.letter_queue == []
+    last7 = cycle1[-7:]
+
+    # Następny start_round wymusza re-shuffle.
+    first_of_cycle2 = room.start_round()
+    # Pierwsze 15 liter cyklu 2 (czyli `last_7` z poprzedniego cyklu odłożone na DOLE)
+    # NIE powinno zawierać żadnej z `last7`.
+    rest_of_cycle2 = [room.start_round() for _ in range(14)]
+    fresh_part = [first_of_cycle2, *rest_of_cycle2]
+    assert not (set(fresh_part) & set(last7)), (
+        f"Ostatnie z cyklu 1 ({last7}) pojawiły się za wcześnie w cyklu 2: {fresh_part}"
+    )
+
+
+@pytest.mark.asyncio
+async def test_room_broadcast():
+    room = Room("test")
+    ws1 = AsyncMock(spec=WebSocket)
+    ws2 = AsyncMock(spec=WebSocket)
+    room.connections = {"p1": ws1, "p2": ws2}
+
+    await room.broadcast("hello")
+    ws1.send_text.assert_called_once_with("hello")
+    ws2.send_text.assert_called_once_with("hello")
+
+
+@pytest.mark.asyncio
+async def test_room_broadcast_continues_after_one_send_fails():
+    room = Room("test")
+    ws1 = AsyncMock(spec=WebSocket)
+    ws2 = AsyncMock(spec=WebSocket)
+    ws1.send_text = AsyncMock(side_effect=RuntimeError("stale socket"))
+    room.connections = {"p1": ws1, "p2": ws2}
+
+    await room.broadcast("hello")
+    ws2.send_text.assert_called_once_with("hello")
+
+
+@pytest.mark.asyncio
+async def test_manager_connect():
+    manager = ConnectionManager()
+    ws = AsyncMock(spec=WebSocket)
+
+    # Mock DB functions
+    import panstwa_miasta.manager
+
+    panstwa_miasta.manager.save_room = AsyncMock()
+    panstwa_miasta.manager.save_player_score = AsyncMock()
+
+    success, reason = await manager.connect(ws, "room1", "player1", 5, 90)
+    assert success is True
+    assert reason is None
+    assert "room1" in manager.rooms
+    assert manager.rooms["room1"].host_name == "player1"
+    assert "player1" in manager.rooms["room1"].connections
+
+
+@pytest.mark.asyncio
+async def test_manager_connect_visibility_only_on_first_join():
+    """Pierwsze połączenie ustawia widoczność; kolejni gracze nie nadpisują."""
+    manager = ConnectionManager()
+    import panstwa_miasta.manager
+
+    panstwa_miasta.manager.save_room = AsyncMock()
+    panstwa_miasta.manager.save_player_score = AsyncMock()
+
+    ws1 = AsyncMock(spec=WebSocket)
+    await manager.connect(ws1, "r_vis", "p1", 5, 90, "private")
+    assert manager.rooms["r_vis"].visibility == "private"
+
+    ws2 = AsyncMock(spec=WebSocket)
+    await manager.connect(ws2, "r_vis", "p2", 5, 90, "public")
+    assert manager.rooms["r_vis"].visibility == "private"
+
+
+@pytest.mark.asyncio
+async def test_manager_disconnect(monkeypatch):
+    import panstwa_miasta.manager as mod
+
+    monkeypatch.setattr(mod, "HOST_REASSIGN_GRACE_SECONDS", 0.05)
+    monkeypatch.setattr(mod, "save_room", AsyncMock())
+
+    manager = ConnectionManager()
+    room = Room("room1")
+    manager.rooms["room1"] = room
+    ws = AsyncMock(spec=WebSocket)
+    room.connections = {"p1": ws, "p2": AsyncMock(spec=WebSocket)}
+    room.host_name = "p1"
+
+    manager.disconnect("room1", "p1")
+    assert "p1" not in room.connections
+    assert room.host_name == "p1"
+    await asyncio.sleep(0.1)
+    assert room.host_name == "p2"
+
+    manager.disconnect("room1", "p2")
+    assert "room1" not in manager.rooms
+    manager.cancel_delayed_room_delete("room1")
+
+
+@pytest.mark.asyncio
+async def test_host_reconnect_preserves_host_on_refresh(monkeypatch):
+    import panstwa_miasta.manager as mod
+
+    monkeypatch.setattr(mod, "HOST_REASSIGN_GRACE_SECONDS", 0.2)
+    monkeypatch.setattr(mod, "save_room", AsyncMock())
+    monkeypatch.setattr(mod, "save_player_score", AsyncMock())
+
+    manager = ConnectionManager()
+    ws_host = AsyncMock(spec=WebSocket)
+    ws_guest = AsyncMock(spec=WebSocket)
+    await manager.connect(ws_host, "room_host", "Filipino", 5, 90)
+    await manager.connect(ws_guest, "room_host", "Julka", 5, 90)
+    room = manager.rooms["room_host"]
+    assert room.host_name == "Filipino"
+
+    manager.disconnect("room_host", "Filipino", ws_host)
+    assert room.host_name == "Filipino"
+
+    ws_host_rejoin = AsyncMock(spec=WebSocket)
+    await manager.connect(ws_host_rejoin, "room_host", "Filipino", 5, 90)
+    assert room.host_name == "Filipino"
+
+    await asyncio.sleep(0.3)
+    assert room.host_name == "Filipino"
+
+
+@pytest.mark.asyncio
+async def test_disconnect_ignores_stale_socket():
+    """Reconnect: old socket's WebSocketDisconnect must not remove the new socket."""
+    manager = ConnectionManager()
+    room = Room("room1")
+    ws_new = AsyncMock(spec=WebSocket)
+    ws_old = AsyncMock(spec=WebSocket)
+    room.connections = {"p1": ws_new}
+    manager.rooms["room1"] = room
+
+    assert manager.disconnect("room1", "p1", ws_old) is False
+    assert room.connections["p1"] is ws_new
+
+    assert manager.disconnect("room1", "p1", ws_new) is True
+    assert "room1" not in manager.rooms
+    manager.cancel_delayed_room_delete("room1")
+
+
+@pytest.mark.asyncio
+async def test_connect_resyncs_expected_answers_mid_round_reconnect(monkeypatch):
+    """Po disconnect w rundzie `expected_answers` maleje; reconnect ustawia z powrotem na N graczy."""
+    import panstwa_miasta.manager as mod
+
+    monkeypatch.setattr(mod, "save_room", AsyncMock())
+    monkeypatch.setattr(mod, "save_player_score", AsyncMock())
+
+    manager = ConnectionManager()
+    ws_a = AsyncMock(spec=WebSocket)
+    ws_b = AsyncMock(spec=WebSocket)
+    await manager.connect(ws_a, "rx_exp", "A", 3, 60)
+    await manager.connect(ws_b, "rx_exp", "B", 3, 60)
+    room = manager.rooms["rx_exp"]
+    room.start_round()
+    assert room.expected_answers == 2
+
+    manager.disconnect("rx_exp", "B", ws_b)
+    assert room.expected_answers == 1
+
+    ws_b2 = AsyncMock(spec=WebSocket)
+    await manager.connect(ws_b2, "rx_exp", "B", 3, 60)
+    assert room.expected_answers == 2
+
+
+@pytest.mark.asyncio
+async def test_reconnect_mid_round_keeps_answers(monkeypatch):
+    """Reconnect w rundzie: odpowiedzi gracza NIE są usuwane (fix #fix-zero-point-race-condition)."""
+    import panstwa_miasta.manager as mod
+
+    monkeypatch.setattr(mod, "save_room", AsyncMock())
+    monkeypatch.setattr(mod, "save_player_score", AsyncMock())
+
+    manager = ConnectionManager()
+    ws_a = AsyncMock(spec=WebSocket)
+    ws_b = AsyncMock(spec=WebSocket)
+    await manager.connect(ws_a, "rx_ans", "A", 3, 60)
+    await manager.connect(ws_b, "rx_ans", "B", 3, 60)
+    room = manager.rooms["rx_ans"]
+    room.start_round()
+    room.answers_received["B"] = {"Państwo": "polska"}
+
+    # disconnect NIE usuwa answers_received — gracz może wrócić
+    manager.disconnect("rx_ans", "B", ws_b)
+    assert "B" in room.answers_received
+    assert room.answers_received["B"] == {"Państwo": "polska"}
+
+    ws_b2 = AsyncMock(spec=WebSocket)
+    await manager.connect(ws_b2, "rx_ans", "B", 3, 60)
+    # odpowiedzi wciąż tam są po reconnect
+    assert "B" in room.answers_received
+    assert room.answers_received["B"] == {"Państwo": "polska"}
+    assert room.expected_answers == 2
+
+
+@pytest.mark.asyncio
+async def test_connect_restores_room_snapshot_from_sqlite(monkeypatch):
+    """Gdy RAM jest pusty, ale w SQLite jest pokój — `connect` odtwarza Room ze scores."""
+    import panstwa_miasta.manager as mod
+    from panstwa_miasta import db as dbmod
+
+    rid = "hroom_snap"
+    await dbmod.save_room(rid, 9, 120, 3, "A", "private")
+    await dbmod.save_player_score(rid, "A", 15)
+    await dbmod.save_player_score(rid, "B", 7)
+
+    monkeypatch.setattr(mod, "save_room", AsyncMock())
+    monkeypatch.setattr(mod, "save_player_score", AsyncMock())
+
+    manager = ConnectionManager()
+    ws = AsyncMock(spec=WebSocket)
+    ok, reason = await manager.connect(ws, rid, "A", 5, 90, "public")
+    assert ok is True
+    assert reason is None
+    room = manager.rooms[rid]
+    assert room.max_rounds == 9
+    assert room.time_limit == 120
+    assert room.current_round == 3
+    assert room.visibility == "private"
+    assert room.scores["A"] == 15
+    assert room.scores["B"] == 7
+
+    manager.cancel_delayed_room_delete(rid)
+    await dbmod.delete_room(rid)
+
+
+@pytest.mark.asyncio
+async def test_delayed_delete_removes_room_from_sqlite(monkeypatch):
+    """Po opuszczeniu przez ostatniego gracza rekord w DB znika po grace (skróconym w teście)."""
+    import panstwa_miasta.manager as mod
+    from panstwa_miasta import db as dbmod
+
+    monkeypatch.setattr(dbmod, "ROOM_EMPTY_GRACE_SECONDS", 0.05)
+    monkeypatch.setattr(mod, "save_room", dbmod.save_room)
+    monkeypatch.setattr(mod, "save_player_score", dbmod.save_player_score)
+
+    manager = ConnectionManager()
+    ws = AsyncMock(spec=WebSocket)
+    rid = "droom_grace"
+    await manager.connect(ws, rid, "solo", 3, 60)
+
+    manager.disconnect(rid, "solo", ws)
+    assert rid not in manager.rooms
+    assert await dbmod.fetch_room_snapshot(rid) is not None
+
+    await asyncio.sleep(0.2)
+    assert await dbmod.fetch_room_snapshot(rid) is None
+    manager.cancel_delayed_room_delete(rid)
+
+
+@pytest.mark.asyncio
+async def test_manager_kick_player_removes_target(monkeypatch):
+    import panstwa_miasta.manager as mod
+
+    mod.remove_player = AsyncMock()
+    mod.save_room = AsyncMock()
+
+    manager = ConnectionManager()
+    room = Room("room1")
+    ws_h = AsyncMock()
+    ws_g = AsyncMock()
+    room.connections = {"Host": ws_h, "Guest": ws_g}
+    room.host_name = "Host"
+    room.scores = {"Host": 0, "Guest": 10}
+    manager.rooms["room1"] = room
+
+    ok, err = await manager.kick_player("room1", "Host", "Guest")
+    assert ok is True
+    assert err == ""
+    assert "Guest" not in room.connections
+    assert "Guest" not in room.scores
+    ws_g.send_text.assert_called_once()
+    assert "kicked" in ws_g.send_text.call_args[0][0]
+    ws_g.close.assert_called_once_with(code=4401)
+    mod.remove_player.assert_called_once_with("room1", "Guest")
+
+
+@pytest.mark.asyncio
+async def test_calculate_scores_zwierze_roslina_local():
+    """Zwierzę / Roślina z lokalnych zbiorów (bez HTTP)."""
+    import panstwa_miasta.manager as mod
+
+    mod.save_room = AsyncMock()
+    mod.save_player_score = AsyncMock()
+
+    room = Room("room_fauna", max_rounds=1, time_limit=30)
+    room.start_round()
+    room.current_letter = "L"
+    room.answers_received = {"solo": {"Zwierzę": "labraks", "Roślina": "lipa"}}
+    scores = await room.calculate_scores()
+    assert scores["solo"]["details"]["Zwierzę"] == 15
+    assert scores["solo"]["details"]["Roślina"] == 15
+
+
+@pytest.mark.asyncio
+async def test_calculate_scores_zwierze_first_word_prefix():
+    """Ogólna nazwa rodzaju (np. „dzięcioł”) zalicza się, gdy w seedzie są gatunki „dzięcioł …”."""
+    import panstwa_miasta.manager as mod
+
+    mod.save_room = AsyncMock()
+    mod.save_player_score = AsyncMock()
+
+    room = Room("room_woodpecker", max_rounds=1, time_limit=30)
+    room.start_round()
+    room.current_letter = "D"
+    room.answers_received = {"solo": {"Zwierzę": "dzięcioł"}}
+    scores = await room.calculate_scores()
+    assert scores["solo"]["details"]["Zwierzę"] == 15
+
+
+@pytest.mark.asyncio
+async def test_calculate_scores_roslina_first_word_prefix():
+    """To samo dla flory: „bez” → wpisy „bez czarny” itd."""
+    import panstwa_miasta.manager as mod
+
+    mod.save_room = AsyncMock()
+    mod.save_player_score = AsyncMock()
+
+    room = Room("room_elder", max_rounds=1, time_limit=30)
+    room.start_round()
+    room.current_letter = "B"
+    room.answers_received = {"solo": {"Roślina": "bez"}}
+    scores = await room.calculate_scores()
+    assert scores["solo"]["details"]["Roślina"] == 15
+
+
+@pytest.mark.asyncio
+async def test_calculate_scores_zwierze_prefix_too_short_rejected():
+    """Prefiks < 3 znaków nie włącza dopasowania „pierwsze słowo + reszta”."""
+    import panstwa_miasta.manager as mod
+
+    mod.save_room = AsyncMock()
+    mod.save_player_score = AsyncMock()
+
+    room = Room("room_short", max_rounds=1, time_limit=30)
+    room.start_round()
+    room.current_letter = "L"
+    room.answers_received = {"solo": {"Zwierzę": "la"}}
+    scores = await room.calculate_scores()
+    assert scores["solo"]["details"]["Zwierzę"] == 0
+
+
+@pytest.mark.asyncio
+async def test_calculate_scores_miasto_uran_blocklisted():
+    """„uran” nie jest akceptowane jako Miasto (GeoNames: Uran, Indie vs pierwiastek)."""
+    import panstwa_miasta.manager as mod
+    from panstwa_miasta import data
+
+    mod.save_room = AsyncMock()
+    mod.save_player_score = AsyncMock()
+
+    room = Room("room_uran_city", max_rounds=1, time_limit=30)
+    room.start_round()
+    room.current_letter = "u"
+    room.answers_received = {"solo": {"Miasto": "uran"}}
+    scores = await room.calculate_scores()
+    assert scores["solo"]["details"]["Miasto"] == 0
+    assert "uran" not in data.MIASTA
+
+
+def test_answer_first_letter_matches_polish_diacritics():
+    """Runda losuje ASCII; odpowiedź może zaczynać się od Ś, Ć, Ź, Ż, Ł, …"""
+    from panstwa_miasta.manager import _answer_first_letter_matches_round
+
+    assert _answer_first_letter_matches_round("świerk", "S")
+    assert _answer_first_letter_matches_round("Świerk", "S")
+    assert _answer_first_letter_matches_round("źrebak", "Z")
+    assert _answer_first_letter_matches_round("żrebak", "Z")
+    assert _answer_first_letter_matches_round("ćma", "C")
+    assert _answer_first_letter_matches_round("łódź", "L")
+
+
+@pytest.mark.asyncio
+async def test_calculate_scores_zwierze_zrebak_letter_z():
+    """Litera Z + potoczne „źrebak” / „zrebak” (EXTRA + alias ASCII)."""
+    import panstwa_miasta.manager as mod
+
+    mod.save_room = AsyncMock()
+    mod.save_player_score = AsyncMock()
+
+    room = Room("room_foal", max_rounds=1, time_limit=30)
+    room.start_round()
+    room.current_letter = "Z"
+    room.answers_received = {"solo": {"Zwierzę": "źrebak"}}
+    scores = await room.calculate_scores()
+    assert scores["solo"]["details"]["Zwierzę"] == 15
+
+    room2 = Room("room_foal2", max_rounds=1, time_limit=30)
+    room2.start_round()
+    room2.current_letter = "Z"
+    room2.answers_received = {"solo": {"Zwierzę": "zrebak"}}
+    scores2 = await room2.calculate_scores()
+    assert scores2["solo"]["details"]["Zwierzę"] == 15
+
+
+@pytest.mark.asyncio
+async def test_compute_round_scores_includes_connected_players_without_answers():
+    import panstwa_miasta.manager as mod
+
+    mod.save_room = AsyncMock()
+    mod.save_player_score = AsyncMock()
+
+    room = Room("room_roster", max_rounds=1, time_limit=30)
+    room.start_round()
+    room.current_letter = "u"
+    room.connections = {"Ada": MagicMock(), "Bob": MagicMock()}
+    room.answers_received = {
+        "Ada": {
+            "Państwo": "Ukraina",
+            "Miasto": "",
+            "Rzecz": "ukulele",
+            "Zwierzę": "",
+            "Roślina": "",
+            "Imię": "",
+            "Zawód": "",
+        }
+    }
+
+    scores = await room.compute_round_scores(persist=False)
+
+    assert set(scores) == {"Ada", "Bob"}
+    assert scores["Bob"]["total"] == 0
+
+
+@pytest.mark.asyncio
+async def test_lobby_idle_dissolves_public_lobby(monkeypatch):
+    import panstwa_miasta.manager as mod
+    from panstwa_miasta import db as dbmod
+
+    monkeypatch.setattr(dbmod, "LOBBY_IDLE_TIMEOUT_SECONDS", 0.05)
+    monkeypatch.setattr(mod, "save_room", dbmod.save_room)
+    monkeypatch.setattr(mod, "save_player_score", dbmod.save_player_score)
+
+    manager = ConnectionManager()
+    ws_host = AsyncMock(spec=WebSocket)
+    ws_guest = AsyncMock(spec=WebSocket)
+    rid = "idle_lobby"
+    await manager.connect(ws_host, rid, "Host", 5, 90)
+    await manager.connect(ws_guest, rid, "Guest", 5, 90)
+
+    assert rid in manager.rooms
+    await asyncio.sleep(0.2)
+    assert rid not in manager.rooms
+    assert await dbmod.fetch_room_snapshot(rid) is None
+    ws_host.close.assert_called()
+    ws_guest.close.assert_called()
+    manager.cancel_delayed_room_delete(rid)
+
+
+@pytest.mark.asyncio
+async def test_lobby_idle_timer_resets_on_ready(monkeypatch):
+    import panstwa_miasta.manager as mod
+    from panstwa_miasta import db as dbmod
+
+    monkeypatch.setattr(dbmod, "LOBBY_IDLE_TIMEOUT_SECONDS", 0.12)
+    monkeypatch.setattr(mod, "save_room", dbmod.save_room)
+    monkeypatch.setattr(mod, "save_player_score", dbmod.save_player_score)
+
+    manager = ConnectionManager()
+    ws = AsyncMock(spec=WebSocket)
+    rid = "idle_ready"
+    await manager.connect(ws, rid, "solo", 5, 90)
+    await asyncio.sleep(0.06)
+    manager.touch_lobby_idle(manager.rooms[rid], reset=True)
+    await asyncio.sleep(0.08)
+    assert rid in manager.rooms
+    manager.cancel_lobby_idle(manager.rooms[rid])
+    manager.cancel_delayed_room_delete(rid)
+    await dbmod.delete_room(rid)
+
+
+@pytest.mark.asyncio
+async def test_lobby_idle_canceled_when_round_starts(monkeypatch):
+    import panstwa_miasta.manager as mod
+    from panstwa_miasta import db as dbmod
+
+    monkeypatch.setattr(dbmod, "LOBBY_IDLE_TIMEOUT_SECONDS", 0.05)
+    monkeypatch.setattr(mod, "save_room", dbmod.save_room)
+    monkeypatch.setattr(mod, "save_player_score", dbmod.save_player_score)
+
+    manager = ConnectionManager()
+    ws = AsyncMock(spec=WebSocket)
+    rid = "idle_play"
+    await manager.connect(ws, rid, "solo", 5, 90)
+    manager.rooms[rid].start_round()
+    manager.cancel_lobby_idle(manager.rooms[rid])
+    await asyncio.sleep(0.2)
+    assert rid in manager.rooms
+    manager.cancel_delayed_room_delete(rid)
+    await dbmod.delete_room(rid)
+
+
+@pytest.mark.asyncio
+async def test_connect_rejects_ninth_player(monkeypatch):
+    import panstwa_miasta.manager as mod
+
+    monkeypatch.setattr(mod, "save_room", AsyncMock())
+    monkeypatch.setattr(mod, "save_player_score", AsyncMock())
+
+    manager = ConnectionManager()
+    rid = "room_full"
+    for i in range(8):
+        ws = AsyncMock(spec=WebSocket)
+        ok, reason = await manager.connect(ws, rid, f"p{i}", 5, 90)
+        assert ok is True
+        assert reason is None
+
+    ws9 = AsyncMock(spec=WebSocket)
+    ok9, reason9 = await manager.connect(ws9, rid, "p9", 5, 90)
+    assert ok9 is False
+    assert reason9 == "room_full"
+
+
+@pytest.mark.asyncio
+async def test_connect_reconnect_same_nick_when_room_full(monkeypatch):
+    import panstwa_miasta.manager as mod
+
+    monkeypatch.setattr(mod, "save_room", AsyncMock())
+    monkeypatch.setattr(mod, "save_player_score", AsyncMock())
+
+    manager = ConnectionManager()
+    rid = "room_rejoin_full"
+    for i in range(8):
+        ws = AsyncMock(spec=WebSocket)
+        await manager.connect(ws, rid, f"p{i}", 5, 90)
+
+    ws_rejoin = AsyncMock(spec=WebSocket)
+    ok, reason = await manager.connect(ws_rejoin, rid, "p3", 5, 90)
+    assert ok is True
+    assert reason is None
+
+
+@pytest.mark.asyncio
+async def test_cleanup_player_after_disconnect_drops_lobby_roster(monkeypatch):
+    import panstwa_miasta.manager as mod
+
+    remove_player = AsyncMock()
+    monkeypatch.setattr(mod, "remove_player", remove_player)
+
+    manager = ConnectionManager()
+    room = Room("room_cleanup")
+    room.scores = {"Ada": 0, "Bob": 0}
+    manager.rooms["room_cleanup"] = room
+
+    await manager.cleanup_player_after_disconnect("room_cleanup", "Ada")
+
+    assert "Ada" in room.disconnected_players
+    assert room.scores["Ada"] == 0  # score preserved during grace period
+    remove_player.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_cleanup_player_after_disconnect_keeps_score_mid_round(monkeypatch):
+    import panstwa_miasta.manager as mod
+
+    remove_player = AsyncMock()
+    monkeypatch.setattr(mod, "remove_player", remove_player)
+
+    manager = ConnectionManager()
+    room = Room("room_mid")
+    room.is_playing = True
+    room.scores = {"Ada": 12}
+    manager.rooms["room_mid"] = room
+
+    await manager.cleanup_player_after_disconnect("room_mid", "Ada")
+
+    assert room.scores["Ada"] == 12
+    remove_player.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_cleanup_player_after_disconnect_keeps_score_during_results_phase(monkeypatch):
+    """Disconnect w results_phase nie kasuje score (fix #fix-results-phase-disconnect)."""
+    import panstwa_miasta.manager as mod
+
+    remove_player = AsyncMock()
+    monkeypatch.setattr(mod, "remove_player", remove_player)
+
+    manager = ConnectionManager()
+    room = Room("room_results")
+    room.results_phase_active = True
+    room.is_playing = False
+    room.scores = {"Ada": 42}
+    manager.rooms["room_results"] = room
+
+    await manager.cleanup_player_after_disconnect("room_results", "Ada")
+    assert room.scores["Ada"] == 42
+    remove_player.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_gc_disconnected_player_during_results_phase_keeps_score(monkeypatch):
+    """GC task nie usuwa score w results_phase."""
+    import panstwa_miasta.manager as mod
+
+    remove_player = AsyncMock()
+    monkeypatch.setattr(mod, "remove_player", remove_player)
+    monkeypatch.setattr(mod.asyncio, "sleep", AsyncMock())
+
+    manager = ConnectionManager()
+    room = Room("room_gc")
+    room.results_phase_active = True
+    room.is_playing = False
+    room.scores = {"Ada": 42}
+    room.disconnected_players["Ada"] = 12345.0
+    manager.rooms["room_gc"] = room
+
+    await manager._gc_disconnected_player("room_gc", "Ada")
+    assert room.scores["Ada"] == 42
+    remove_player.assert_not_called()
+
+
+def test_room_listed_in_active_lobby_hides_full_room():
+    from panstwa_miasta.manager import Room, room_listed_in_active_lobby
+
+    room = Room("full", 5, 90, visibility="public")
+    room.connections = {f"p{i}": AsyncMock() for i in range(8)}
+    assert room_listed_in_active_lobby(room) is False
+
+
+@pytest.mark.asyncio
+async def test_pick_quick_join_prefers_busiest_public_lobby():
+    from panstwa_miasta.manager import Room
+
+    manager = ConnectionManager()
+    quiet = Room("quiet", 5, 90, visibility="public")
+    quiet.connections = {"a": AsyncMock()}
+    busy = Room("busy", 7, 120, visibility="public")
+    busy.connections = {f"p{i}": AsyncMock() for i in range(3)}
+    full = Room("full", 5, 90, visibility="public")
+    full.connections = {f"p{i}": AsyncMock() for i in range(8)}
+    private = Room("priv", 5, 90, visibility="private")
+    private.connections = {"solo": AsyncMock()}
+    manager.rooms = {
+        "quiet": quiet,
+        "busy": busy,
+        "full": full,
+        "priv": private,
+    }
+    room_id, created, max_rounds, time_limit = await manager.pick_quick_join_room()
+    assert room_id == "busy"
+    assert created is False
+    assert max_rounds == 7
+    assert time_limit == 120
+
+
+@pytest.mark.asyncio
+async def test_pick_quick_join_creates_room_when_no_candidate():
+    manager = ConnectionManager()
+    room_id, created, max_rounds, time_limit = await manager.pick_quick_join_room()
+    assert created is True
+    assert len(room_id) == 10
+    assert room_id.isalnum()
+    assert max_rounds == 5
+    assert time_limit == 90
+
+
+# --- Tests for newly extracted helper methods (cognitive complexity reduction) ---
+
+
+@pytest.mark.asyncio
+async def test_validate_connect_empty_name():
+    """_validate_connect odrzuca pusty/pusty-po-strip client_name."""
+    manager = ConnectionManager()
+    ok, reason = await manager._validate_connect("r1", "", "127.0.0.1")
+    assert ok is False
+    assert reason == "empty_name"
+
+    ok, reason = await manager._validate_connect("r1", "   ", "127.0.0.1")
+    assert ok is False
+    assert reason == "empty_name"
+
+
+@pytest.mark.asyncio
+async def test_validate_connect_accepts_valid_name():
+    """_validate_connect przepuszcza poprawne dane."""
+    manager = ConnectionManager()
+    ok, reason = await manager._validate_connect("r_valid", "Player1", "127.0.0.1")
+    assert ok is True
+    assert reason is None
+
+
+@pytest.mark.asyncio
+async def test_resolve_room_join_game_in_progress_rejects_stranger():
+    """_resolve_room_join blokuje nowego gracza w trakcie gry."""
+    manager = ConnectionManager()
+    room = Room("r_game")
+    room.is_playing = True
+    room.scores = {"Host": 0}
+    room.connections = {"Host": AsyncMock(spec=WebSocket)}
+    ok, reason = await manager._resolve_room_join(room, "Stranger", "r_game")
+    assert ok is False
+    assert reason == "game_in_progress"
+
+
+@pytest.mark.asyncio
+async def test_resolve_room_join_allows_known_player_reconnect():
+    """_resolve_room_join pozwala reconnect znanemu graczowi."""
+    manager = ConnectionManager()
+    room = Room("r_game")
+    room.is_playing = True
+    room.scores = {"Host": 0, "ReconnectMe": 5}
+    room.connections = {"Host": AsyncMock(spec=WebSocket)}
+    ok, reason = await manager._resolve_room_join(room, "ReconnectMe", "r_game")
+    assert ok is True
+    assert reason is None
+
+
+@pytest.mark.asyncio
+async def test_resolve_room_join_room_full():
+    """_resolve_room_join blokuje gdy pokój pełny."""
+    manager = ConnectionManager()
+    room = Room("r_full")
+    room.connections = {f"p{i}": AsyncMock(spec=WebSocket) for i in range(8)}
+    ok, reason = await manager._resolve_room_join(room, "NewGuy", "r_full")
+    assert ok is False
+    assert reason == "room_full"
+
+
+@pytest.mark.asyncio
+async def test_close_previous_socket_no_existing_connection():
+    """_close_previous_socket nic nie robi gdy gracz nie ma istniejącego poł."""
+    manager = ConnectionManager()
+    room = Room("r_none")
+    room.connections = {"Other": AsyncMock(spec=WebSocket)}
+    await manager._close_previous_socket(room, "NewPlayer", "r_none")
+    # No exception == success
+
+
+@pytest.mark.asyncio
+async def test_close_previous_socket_closes_existing():
+    """_close_previous_socket zamyka stare połączenie przed reconnect."""
+    manager = ConnectionManager()
+    room = Room("r_old")
+    old_ws = AsyncMock(spec=WebSocket)
+    old_ws.application_state = MagicMock()
+    old_ws.application_state.DISCONNECTED = None
+    old_ws.application_state.name = "CONNECTED"
+    # Ensure it's not DISCONNECTED
+    from starlette.websockets import WebSocketState
+
+    old_ws.application_state = WebSocketState.CONNECTED
+    room.connections = {"Rejoin": old_ws}
+    await manager._close_previous_socket(room, "Rejoin", "r_old")
+    old_ws.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_gc_disconnected_player_room_gone(monkeypatch):
+    """_gc_disconnected_player nic nie robi gdy pokój już nie istnieje."""
+    import panstwa_miasta.manager as mod
+
+    monkeypatch.setattr(mod.asyncio, "sleep", AsyncMock())
+    manager = ConnectionManager()
+    await manager._gc_disconnected_player("r_gone", "Ghost")
+    # No exception — room not in manager.rooms
+
+
+@pytest.mark.asyncio
+async def test_gc_disconnected_player_rejoined(monkeypatch):
+    """_gc_disconnected_player nie usuwa gracza który wrócił przed timeout."""
+    import panstwa_miasta.manager as mod
+
+    remove_player = AsyncMock()
+    monkeypatch.setattr(mod, "remove_player", remove_player)
+    monkeypatch.setattr(mod.asyncio, "sleep", AsyncMock())
+    manager = ConnectionManager()
+    room = Room("r_rejoin")
+    room.is_playing = False
+    room.results_phase_active = False
+    room.scores = {"Lucky": 10}
+    room.disconnected_players["Lucky"] = 12345.0
+    manager.rooms["r_rejoin"] = room
+
+    # Gracz zdążył wrócić — usuwamy go z disconnected_players przed GC
+    room.disconnected_players.pop("Lucky", None)
+
+    await manager._gc_disconnected_player("r_rejoin", "Lucky")
+    assert room.scores.get("Lucky") == 10
+    remove_player.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_gc_disconnected_player_playing_guard(monkeypatch):
+    """_gc_disconnected_player nie usuwa gracza gdy gra trwa."""
+    import panstwa_miasta.manager as mod
+
+    remove_player = AsyncMock()
+    monkeypatch.setattr(mod, "remove_player", remove_player)
+    monkeypatch.setattr(mod.asyncio, "sleep", AsyncMock())
+    manager = ConnectionManager()
+    room = Room("r_playing")
+    room.is_playing = True
+    room.scores = {"Active": 5}
+    room.disconnected_players["Active"] = 12345.0
+    manager.rooms["r_playing"] = room
+
+    await manager._gc_disconnected_player("r_playing", "Active")
+    assert room.scores.get("Active") == 5
+    remove_player.assert_not_called()

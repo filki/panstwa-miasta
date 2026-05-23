@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f2f6ff" />
+    <meta name="description" content="Państwa-Miasta online — gra w przeglądarce ze znajomymi." />
+    <meta property="og:title" content="Państwa-Miasta online" />
+    <meta property="og:description" content="Gra w przeglądarce ze znajomymi." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pl_PL" />
+    <meta property="og:url" content="https://panstwamiasta.com.pl/" />
+    <link rel="canonical" href="https://panstwamiasta.com.pl/" />
+    <title>Państwa-Miasta — gra online</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet" />
+    <style>
+      *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+      html,body{height:100%;overflow:hidden;font-family:Inter,system-ui,sans-serif}
+      body{background:var(--bg,#f2f6ff);color:var(--text,#1a1a2e)}
+      :root{
+        --bg:#f2f6ff;--text:#1a1a2e;--primary:#4f46e5;--primary-hover:#4338ca;
+        --accent:#f59e0b;--danger:#ef4444;--success:#22c55e;
+        --card-bg:#ffffff;--border:#e5e7eb;--text-secondary:#6b7280;
+        --radius:12px;--radius-lg:16px;--shadow:0 1px 3px rgba(0,0,0,.1);
+      }
+      pm-app{display:block;height:100%;width:100%;overflow:hidden}
+      input,select,textarea,button{font-family:inherit}
+    </style>
+  </head>
+  <body>
+    <pm-app></pm-app>
+    <script type="module" src="./src/index.ts"></script>
+  </body>
+</html>

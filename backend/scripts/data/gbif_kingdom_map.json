@@ -1,0 +1,10 @@
+{
+  "Animalia": "zwierze",
+  "Plantae": "roslina",
+  "Fungi": "roslina",
+  "Chromista": "roslina",
+  "Bacteria": "skip",
+  "Archaea": "skip",
+  "Viruses": "skip",
+  "Protozoa": "skip"
+}
