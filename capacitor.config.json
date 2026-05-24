@@ -4,12 +4,13 @@
   "webDir": "static",
   "bundledWebRuntime": false,
   "server": {
+    "url": "https://panstwamiasta.com.pl",
     "hostname": "localhost",
-    "androidScheme": "http",
-    "cleartext": true
+    "androidScheme": "https",
+    "cleartext": false
   },
   "android": {
-    "allowMixedContent": true
+    "allowMixedContent": false
   },
   "plugins": {
     "SplashScreen": {
