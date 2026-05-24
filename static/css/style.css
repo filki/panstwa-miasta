@@ -10,10 +10,11 @@
 
 :root {
     /* Brand */
-    --primary: #0ea5e9;
-    --primary-dark: #0284c7;
-    --accent: #06b6d4;
-    --accent-2: #a855f7;
+    --primary: #7918ef;
+    --primary-dark: #a12fd3;
+    --accent: #c930f9;
+    --accent-2: #fd6beb;
+    --accent-3: #f184be;
 
     /* Surface */
     --background: #f2f6ff;
@@ -66,9 +67,9 @@
     --landing-inset: clamp(var(--space-7), 5vw, var(--space-12));
     --landing-shell-pad-top: clamp(var(--space-7), 4vw, var(--space-11));
     --landing-shell-pad-bottom: clamp(var(--space-10), 5.5vw, var(--space-14));
-    --landing-tint-join: 14, 165, 233;
-    --landing-tint-guide: 56, 189, 248;
-    --landing-tint-rooms: 99, 102, 241;
+    --landing-tint-join: 121, 24, 239;
+    --landing-tint-guide: 201, 48, 249;
+    --landing-tint-rooms: 161, 47, 211;
     --landing-opacity-join: 0.16;
     --landing-opacity-panel: 0.34;
     --landing-opacity-guide: 0.14;
@@ -873,20 +874,20 @@ body.landing-page {
     background-image:
         radial-gradient(
             circle at 12% 18%,
-            rgba(14, 165, 233, 0.2),
+            rgba(121, 24, 239, 0.12),
             transparent 42%
         ),
         radial-gradient(
             circle at 88% 12%,
-            rgba(168, 85, 247, 0.16),
+            rgba(253, 107, 235, 0.1),
             transparent 38%
         ),
         radial-gradient(
             circle at 50% 100%,
-            rgba(6, 182, 212, 0.12),
+            rgba(201, 48, 249, 0.08),
             transparent 48%
         ),
-        linear-gradient(180deg, #f7faff 0%, #eef4ff 100%);
+        linear-gradient(180deg, #fdf4ff 0%, #f2f6ff 100%);
 }
 
 body.landing-page.landing-scrollable {
@@ -2794,20 +2795,20 @@ body.room-page {
     background-image:
         radial-gradient(
             circle at 12% 18%,
-            rgba(14, 165, 233, 0.2),
+            rgba(121, 24, 239, 0.12),
             transparent 42%
         ),
         radial-gradient(
             circle at 88% 12%,
-            rgba(168, 85, 247, 0.16),
+            rgba(253, 107, 235, 0.1),
             transparent 38%
         ),
         radial-gradient(
             circle at 50% 100%,
-            rgba(6, 182, 212, 0.12),
+            rgba(201, 48, 249, 0.08),
             transparent 48%
         ),
-        linear-gradient(180deg, #f7faff 0%, #eef4ff 100%);
+        linear-gradient(180deg, #fdf4ff 0%, #f2f6ff 100%);
 }
 
 body.room-page h1,
