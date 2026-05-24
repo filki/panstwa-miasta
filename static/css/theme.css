@@ -1849,6 +1849,18 @@ body.room-phase-playing .game-header-room {
 }
 
 /* ── Navbar ── */
+@utility navbar {
+    position: fixed;
+    inset: 0 0 auto 0;
+    height: var(--nav-h);
+    z-index: 50;
+    background: rgba(239, 239, 210, 0.96);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid rgba(236, 166, 124, 0.18);
+    padding-top: env(safe-area-inset-top, 0);
+}
+
 @utility nav-container {
     height: 100%;
     max-width: var(--container-w);
