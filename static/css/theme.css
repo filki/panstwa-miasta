@@ -1801,6 +1801,7 @@ button {
     flex-direction: column;
     min-height: 0;
     flex: 1 1 auto;
+    padding-top: var(--nav-h);
 }
 
 /* ── Animations ── */
