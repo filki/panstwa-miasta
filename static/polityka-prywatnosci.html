@@ -1,108 +1,366 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#fdf8f5">
-    <meta name="description" content="Polityka prywatności serwisu Państwa-Miasta — zasady przetwarzania danych.">
-    <meta property="og:title" content="Polityka prywatności | Państwa-Miasta">
-    <meta property="og:description" content="Polityka prywatności serwisu Państwa-Miasta — zasady przetwarzania danych.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://panstwamiasta.com.pl/polityka-prywatnosci">
-    <link rel="canonical" href="https://panstwamiasta.com.pl/polityka-prywatnosci">
-    <title>Polityka prywatności | Państwa-Miasta</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/dist.css" />
-</head>
-<body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="/" class="logo" style="text-decoration:none;">Państwa<span>Miasta</span></a>
-            <div class="nav-links">
-                <a href="/" class="nav-link-extra">Strona główna</a>
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#fdf8f5" />
+        <meta
+            name="description"
+            content="Polityka prywatności serwisu Państwa-Miasta — zasady przetwarzania danych."
+        />
+        <meta
+            property="og:title"
+            content="Polityka prywatności | Państwa-Miasta"
+        />
+        <meta
+            property="og:description"
+            content="Polityka prywatności serwisu Państwa-Miasta — zasady przetwarzania danych."
+        />
+        <meta property="og:type" content="website" />
+        <meta
+            property="og:url"
+            content="https://panstwamiasta.com.pl/polityka-prywatnosci"
+        />
+        <link
+            rel="canonical"
+            href="https://panstwamiasta.com.pl/polityka-prywatnosci"
+        />
+        <title>Polityka prywatności | Państwa-Miasta</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@400;700;900&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="/static/css/dist.css" />
+    </head>
+    <body>
+        <nav class="navbar">
+            <div class="nav-container">
+                <a href="/" class="logo" style="text-decoration: none"
+                    >Państwa<span>Miasta</span></a
+                >
+                <div class="nav-links">
+                    <a href="/" class="nav-link-extra">Strona główna</a>
+                </div>
             </div>
-        </div>
-    </nav>
-
-    <main class="page-wrapper legal-page">
-        <div class="container legal-doc">
-            <h1>Polityka prywatności serwisu Państwa-Miasta</h1>
-            <p class="legal-note">Niniejsza polityka dotyczy serwisu pod adresem <strong>https://panstwamiasta.com.pl</strong> (w tym wariant z prefiksem <strong>www</strong>). Opis uwzględnia architekturę aplikacji (baza na serwerze, opcjonalna kolejka weryfikacji słów przez zewnętrzny model językowy).</p>
-
-            <h2>1. Administrator danych</h2>
-            <p>Administratorem danych osobowych jest właściciel serwisu i twórca gry, <strong>Filip Kin</strong>. We wszystkich sprawach związanych z prywatnością i funkcjonowaniem serwisu możesz skontaktować się pod adresem e-mail: <strong><a href="mailto:filip.jan.kin@gmail.com">filip.jan.kin@gmail.com</a></strong>.</p>
-
-            <h2>2. Jakie dane przetwarzamy i w jaki sposób</h2>
-            <p>Nasz serwis został zaprojektowany z myślą o minimalizacji zbieranych danych. Nie wymagamy zakładania konta, podawania nazwiska ani hasła. Przetwarzamy m.in.:</p>
-            <ul>
-                <li><strong>Dane techniczne (logi serwera i ruch HTTP):</strong> m.in. adres IP, rodzaj przeglądarki, ścieżka żądania. Są to standardowe informacje przetwarzane przez infrastrukturę serwerową w celu zapewnienia bezpieczeństwa i stabilności działania (np. obrona przed nadużyciami i przeciążeniem serwisu). W ramach aplikacji stosujemy także lekkie limity częstotliwości żądań oparte m.in. o adres IP.</li>
-                <li><strong>Pseudonim (nick):</strong> nazwa, którą wpisujesz dołączając do pokoju. Służy wyłącznie do identyfikacji gracza w trwającej sesji gry i jest widoczna dla innych uczestników tego samego pokoju.</li>
-                <li><strong>Treść rozgrywki:</strong> odpowiedzi wpisywane w poszczególnych kategoriach oraz treść czatu w pokoju. Walidacja słów odbywa się <strong>po stronie naszego serwera</strong> w oparciu o wbudowane słowniki i reguły. Jeśli włączysz dobrowolnie funkcję zgłaszania słowa do kolejki weryfikacji (po zakończeniu rundy), przekazujemy do przetwarzania wyłącznie <strong>wpisane przez Ciebie słowo, kategorię i literę</strong> — nie całą historię czatu.</li>
-                <li><strong>Kolejka weryfikacji słów (opcjonalna):</strong> gdy funkcja jest włączona w konfiguracji serwisu, zgłoszenia trafiają do tabeli technicznej <code>dictionary_suggestions</code> (status, kategoria, słowo, litera, ewentualny skrócony opis decyzji modelu). Służy to ocenie, czy słowo może trafić do słownika gry w przyszłości — <strong>nie gwarantuje</strong> przyjęcia ani zmiany punktacji w już zakończonej rundzie.</li>
-                <li><strong>Stan rozgrywki w bazie na serwerze:</strong> na czas działania pokoju przechowywane są m.in. identyfikator pokoju, ustawienia rundy, lista graczy i bieżąca punktacja — wyłącznie w celu działania gry wieloosobowej i odtworzenia stanu po restarcie procesu serwera. <strong>Pełna treść odpowiedzi z poszczególnych rund nie jest zapisywana w tej bazie</strong> (pozostaje w pamięci operacyjnej serwera na czas trwania rundy i jest przekazywana uczestnikom w ramach sesji).</li>
-                <li><strong>Udostępnianie wyniku końcowego (opcjonalnie):</strong> po zakończeniu całej rozgrywki serwer może przez ograniczony czas przechować w pamięci podręcznej <strong>zwięzły snapshot</strong> wyniku (kod pokoju, nick hosta, tabela pseudonimów i punktów końcowych) wyłącznie w celu obsługi linku do podglądu udostępnienia. Snapshot <strong>nie obejmuje</strong> historii poszczególnych rund ani treści wpisów z kategorii.</li>
-            </ul>
-
-            <h2>3. Cele i podstawy prawne</h2>
-            <ul>
-                <li><strong>Umożliwienie udziału w rozgrywce wieloosobowej w czasie rzeczywistym</strong> — podstawa prawna: art. 6 ust. 1 lit. b RODO (niezbędność do wykonania umowy o świadczenie usługi drogą elektroniczną / korzystania z serwisu gry).</li>
-                <li><strong>Zapewnienie stabilności, bezpieczeństwa i optymalizacji działania serwisu</strong> (m.in. logi, limity zapytań) — podstawa prawna: art. 6 ust. 1 lit. f RODO (prawnie uzasadniony interes administratora).</li>
-            </ul>
-
-            <h2>4. Okres przechowywania i minimalizacja</h2>
-            <p>Architektura serwisu nastawiona jest na minimalizację danych osobowych poza tym, co niezbędne do działania gry.</p>
-            <ul>
-                <li><strong>Dane pokoju w bazie na serwerze:</strong> rekordy pokoju i graczy są utrzymywane <strong>wyłącznie na czas istnienia aktywnego pokoju</strong>. Po opuszczeniu pokoju przez ostatniego uczestnika (lub po rozwiązaniu pokoju przez hosta) powiązane dane są usuwane z bazy zgodnie z logiką aplikacji.</li>
-                <li><strong>Zgłoszenia słów do kolejki weryfikacji:</strong> przechowywane do czasu rozpatrzenia i ewentualnej kuracji słownika; wpisy odrzucone lub z błędem mogą być utrzymywane w celach audytu technicznego przez ograniczony czas, po którym mogą zostać usunięte przy konserwacji bazy.</li>
-                <li><strong>Odpowiedzi i czat:</strong> przetwarzane w pamięci operacyjnej serwera w ramach trwającej sesji; <strong>nie prowadzimy trwałej historii rozgrywek przypisanej do konta użytkownika</strong> (brak rejestracji konta).</li>
-                <li><strong>Snapshot udostępniania wyniku:</strong> przechowywany jest ograniczony czas w pamięci podręcznej procesu, z ograniczeniem liczby wpisów — najstarsze są usuwane przy przekroczeniu pojemności.</li>
-                <li><strong>Logi serwerowe:</strong> okres przechowywania zależy od konfiguracji hostingu i rotacji logów; przyjmuje się orientacyjnie <strong>do 30 dni</strong> dla logów dostępowych, o ile krótszy okres nie wynika z ustawień dostawcy — po tym czasie są nadpisywane lub usuwane, chyba że przepisy prawa wymagają dłuższego archiwizowania.</li>
-            </ul>
-
-            <h2>5. Odbiorcy danych (infrastruktura)</h2>
-            <p>Aby serwis mógł działać, dane techniczne mogą być przetwarzane przez:</p>
-            <ul>
-                <li><strong>Dostawcę hostingu</strong> serwera aplikacji (VPS w chmurze publicznej) — serwis jest uruchomiony w <strong>Hetzner Cloud</strong>; centrum danych: <strong>Helsinki (Finlandia)</strong>. Podmiotem dostawcy usługi hostingowej jest <strong>Hetzner Online GmbH</strong> (Niemcy), z siedzibą w ramach EOG.</li>
-                <li><strong>Rejestratora domeny i DNS</strong> dla nazwy <strong>panstwamiasta.com.pl</strong>: <strong>Seohost</strong> (PERSKIMEDIA Szymon Perski), we współpracy z rejestrem domeny .pl prowadzonym przez <strong>NASK</strong> — zgodnie z obowiązującą delegacją DNS i regulaminami rejestratora.</li>
-                <li><strong>Hugging Face</strong> (USA / UE w zależności od regionu hostingu dostawcy) — wyłącznie gdy włączona jest kolejka weryfikacji słów: przetwarzanie zgłoszonego słowa, kategorii i litery przez model językowy w celu wygenerowania krótkiej oceny technicznej (bez profilowania marketingowego).</li>
-            </ul>
-            <p><strong>Dobrowolne wsparcie serwisu (napiwek):</strong> w stopce serwisu udostępniamy link do zewnętrznego operatora płatności <a href="https://buycoffee.to/filki" rel="noopener noreferrer">BuyCoffee.to</a> (Coffee Media Sp. z o.o.). Po kliknięciu zostaniesz przekierowany na jego stronę; ten operator staje się odrębnym administratorem danych związanych z płatnością. Nasz serwis <strong>nie przetwarza</strong> numerów BLIK, danych karty ani innych informacji płatniczych.</p>
-
-            <h2>6. Analityka</h2>
-            <p>W celu statystyk odwiedzin (liczba odsłon, źródła ruchu w formie zagregowanej) korzystamy z narzędzia <strong>Umami</strong> (hosting w chmurze dostawcy Umami). Skrypt ładowany jest tylko wtedy, gdy administrator włączył go w konfiguracji produkcyjnej serwisu. Umami działa w modelu z naciskiem na prywatność (bez profilowania reklamowego w stylu klasycznych sieci reklamowych); szczegóły retencji i przetwarzania po stronie dostawcy opisuje dokumentacja Umami oraz umowa powierzenia (DPA), jeśli dotyczy.</p>
-            <p><strong>Podstawa prawna:</strong> art. 6 ust. 1 lit. f RODO (prawnie uzasadniony interes administratora — poznanie sposobu korzystania z serwisu i jego rozwój). W środowisku developerskim i testowym analityka może być wyłączona.</p>
-            <p><strong>Nie stosujemy</strong> Google Analytics ani podobnych narzędzi śledzących w modelu reklamowym. Jeśli w przyszłości wdrożymy analitykę zdarzeniową wymagającą identyfikatora sesji (np. PostHog), zaktualizujemy ten dokument i — w razie potrzeby — mechanizm zgody zgodny z prawem.</p>
-
-            <h2>7. Pamięć przeglądarki (localStorage, sessionStorage) i PWA</h2>
-            <p>Opis zapisów w przeglądarce znajduje się na stronie <a href="/cookies">Cookies i pamięć lokalna</a>. Serwis może korzystać z <strong>Service Workera</strong> w celu cache’owania zasobów statycznych (PWA) — nie służy to profilowaniu reklamowemu.</p>
-
-            <h2>8. Twoje prawa</h2>
-            <p>Zgodnie z RODO przysługuje Ci m.in. prawo dostępu do danych, ich sprostowania, usunięcia, ograniczenia przetwarzania, wniesienia sprzeciwu (w zakresie przewidzianym prawem) oraz prawo do przenoszenia danych. Możesz wnieść skargę do <strong>Prezesa Urzędu Ochrony Danych Osobowych (PUODO)</strong>.</p>
-            <p>Ponieważ w większości przypadków <strong>nie zbieramy adresu e-mail ani loginu konta</strong>, realizacja niektórych żądań może być utrudniona po zakończeniu sesji w pokoju i usunięciu danych technicznych — w sprawach indywidualnych skontaktuj się z administratorem pod adresem z pkt 1.</p>
-
-            <h2>9. Zmiany w polityce</h2>
-            <p>Zastrzegamy sobie prawo do zmiany niniejszej polityki wraz z rozwojem serwisu. Data ostatniej istotnej aktualizacji treści: <strong>14 maja 2026 r.</strong></p>
-        </div>
-    </main>
-<footer class="site-footer">
-    <div class="site-footer-inner">
-        <nav class="site-footer-nav">
-            <a href="/polityka-prywatnosci">Polityka prywatności</a>
-            <span class="site-footer-sep">·</span>
-            <a href="/cookies">Cookies</a>
-            <span class="site-footer-sep">·</span>
-            <a href="/regulamin">Regulamin</a>
-            <span class="site-footer-sep">·</span>
-            <a href="/slownik">Słownik</a>
-            <span class="site-footer-sep">·</span>
-            <a href="https://buycoffee.to/filki" target="_blank" rel="noopener noreferrer">Wesprzyj serwer</a>
         </nav>
-        <div class="site-footer-meta">
-            <span class="site-footer-brand">Państwa-Miasta</span>
-        </div>
-    </div>
-</footer>
-</body>
+
+        <main class="page-wrapper legal-page">
+            <div class="container legal-doc">
+                <h1>Polityka prywatności serwisu Państwa-Miasta</h1>
+                <p class="legal-note">
+                    Niniejsza polityka dotyczy serwisu pod adresem
+                    <strong>https://panstwamiasta.com.pl</strong> (w tym wariant
+                    z prefiksem <strong>www</strong>). Opis uwzględnia
+                    architekturę aplikacji (baza na serwerze, opcjonalna kolejka
+                    weryfikacji słów przez zewnętrzny model językowy).
+                </p>
+
+                <h2>1. Administrator danych</h2>
+                <p>
+                    Administratorem danych osobowych jest właściciel serwisu i
+                    twórca gry, <strong>Filip Kin</strong>. We wszystkich
+                    sprawach związanych z prywatnością i funkcjonowaniem serwisu
+                    możesz skontaktować się pod adresem e-mail:
+                    <strong
+                        ><a href="mailto:filip.jan.kin@gmail.com"
+                            >filip.jan.kin@gmail.com</a
+                        ></strong
+                    >.
+                </p>
+
+                <h2>2. Jakie dane przetwarzamy i w jaki sposób</h2>
+                <p>
+                    Nasz serwis został zaprojektowany z myślą o minimalizacji
+                    zbieranych danych. Nie wymagamy zakładania konta, podawania
+                    nazwiska ani hasła. Przetwarzamy m.in.:
+                </p>
+                <ul>
+                    <li>
+                        <strong
+                            >Dane techniczne (logi serwera i ruch HTTP):</strong
+                        >
+                        m.in. adres IP, rodzaj przeglądarki, ścieżka żądania. Są
+                        to standardowe informacje przetwarzane przez
+                        infrastrukturę serwerową w celu zapewnienia
+                        bezpieczeństwa i stabilności działania (np. obrona przed
+                        nadużyciami i przeciążeniem serwisu). W ramach aplikacji
+                        stosujemy także lekkie limity częstotliwości żądań
+                        oparte m.in. o adres IP.
+                    </li>
+                    <li>
+                        <strong>Pseudonim (nick):</strong> nazwa, którą
+                        wpisujesz dołączając do pokoju. Służy wyłącznie do
+                        identyfikacji gracza w trwającej sesji gry i jest
+                        widoczna dla innych uczestników tego samego pokoju.
+                    </li>
+                    <li>
+                        <strong>Treść rozgrywki:</strong> odpowiedzi wpisywane w
+                        poszczególnych kategoriach oraz treść czatu w pokoju.
+                        Walidacja słów odbywa się
+                        <strong>po stronie naszego serwera</strong> w oparciu o
+                        wbudowane słowniki i reguły. Jeśli włączysz dobrowolnie
+                        funkcję zgłaszania słowa do kolejki weryfikacji (po
+                        zakończeniu rundy), przekazujemy do przetwarzania
+                        wyłącznie
+                        <strong
+                            >wpisane przez Ciebie słowo, kategorię i
+                            literę</strong
+                        >
+                        — nie całą historię czatu.
+                    </li>
+                    <li>
+                        <strong>Kolejka weryfikacji słów (opcjonalna):</strong>
+                        gdy funkcja jest włączona w konfiguracji serwisu,
+                        zgłoszenia trafiają do tabeli technicznej
+                        <code>dictionary_suggestions</code> (status, kategoria,
+                        słowo, litera, ewentualny skrócony opis decyzji modelu).
+                        Służy to ocenie, czy słowo może trafić do słownika gry w
+                        przyszłości — <strong>nie gwarantuje</strong> przyjęcia
+                        ani zmiany punktacji w już zakończonej rundzie.
+                    </li>
+                    <li>
+                        <strong>Stan rozgrywki w bazie na serwerze:</strong> na
+                        czas działania pokoju przechowywane są m.in.
+                        identyfikator pokoju, ustawienia rundy, lista graczy i
+                        bieżąca punktacja — wyłącznie w celu działania gry
+                        wieloosobowej i odtworzenia stanu po restarcie procesu
+                        serwera.
+                        <strong
+                            >Pełna treść odpowiedzi z poszczególnych rund nie
+                            jest zapisywana w tej bazie</strong
+                        >
+                        (pozostaje w pamięci operacyjnej serwera na czas trwania
+                        rundy i jest przekazywana uczestnikom w ramach sesji).
+                    </li>
+                    <li>
+                        <strong
+                            >Udostępnianie wyniku końcowego
+                            (opcjonalnie):</strong
+                        >
+                        po zakończeniu całej rozgrywki serwer może przez
+                        ograniczony czas przechować w pamięci podręcznej
+                        <strong>zwięzły snapshot</strong> wyniku (kod pokoju,
+                        nick hosta, tabela pseudonimów i punktów końcowych)
+                        wyłącznie w celu obsługi linku do podglądu
+                        udostępnienia. Snapshot
+                        <strong>nie obejmuje</strong> historii poszczególnych
+                        rund ani treści wpisów z kategorii.
+                    </li>
+                </ul>
+
+                <h2>3. Cele i podstawy prawne</h2>
+                <ul>
+                    <li>
+                        <strong
+                            >Umożliwienie udziału w rozgrywce wieloosobowej w
+                            czasie rzeczywistym</strong
+                        >
+                        — podstawa prawna: art. 6 ust. 1 lit. b RODO
+                        (niezbędność do wykonania umowy o świadczenie usługi
+                        drogą elektroniczną / korzystania z serwisu gry).
+                    </li>
+                    <li>
+                        <strong
+                            >Zapewnienie stabilności, bezpieczeństwa i
+                            optymalizacji działania serwisu</strong
+                        >
+                        (m.in. logi, limity zapytań) — podstawa prawna: art. 6
+                        ust. 1 lit. f RODO (prawnie uzasadniony interes
+                        administratora).
+                    </li>
+                </ul>
+
+                <h2>4. Okres przechowywania i minimalizacja</h2>
+                <p>
+                    Architektura serwisu nastawiona jest na minimalizację danych
+                    osobowych poza tym, co niezbędne do działania gry.
+                </p>
+                <ul>
+                    <li>
+                        <strong>Dane pokoju w bazie na serwerze:</strong>
+                        rekordy pokoju i graczy są utrzymywane
+                        <strong
+                            >wyłącznie na czas istnienia aktywnego
+                            pokoju</strong
+                        >. Po opuszczeniu pokoju przez ostatniego uczestnika
+                        (lub po rozwiązaniu pokoju przez hosta) powiązane dane
+                        są usuwane z bazy zgodnie z logiką aplikacji.
+                    </li>
+                    <li>
+                        <strong>Zgłoszenia słów do kolejki weryfikacji:</strong>
+                        przechowywane do czasu rozpatrzenia i ewentualnej
+                        kuracji słownika; wpisy odrzucone lub z błędem mogą być
+                        utrzymywane w celach audytu technicznego przez
+                        ograniczony czas, po którym mogą zostać usunięte przy
+                        konserwacji bazy.
+                    </li>
+                    <li>
+                        <strong>Odpowiedzi i czat:</strong> przetwarzane w
+                        pamięci operacyjnej serwera w ramach trwającej sesji;
+                        <strong
+                            >nie prowadzimy trwałej historii rozgrywek
+                            przypisanej do konta użytkownika</strong
+                        >
+                        (brak rejestracji konta).
+                    </li>
+                    <li>
+                        <strong>Snapshot udostępniania wyniku:</strong>
+                        przechowywany jest ograniczony czas w pamięci podręcznej
+                        procesu, z ograniczeniem liczby wpisów — najstarsze są
+                        usuwane przy przekroczeniu pojemności.
+                    </li>
+                    <li>
+                        <strong>Logi serwerowe:</strong> okres przechowywania
+                        zależy od konfiguracji hostingu i rotacji logów;
+                        przyjmuje się orientacyjnie
+                        <strong>do 30 dni</strong> dla logów dostępowych, o ile
+                        krótszy okres nie wynika z ustawień dostawcy — po tym
+                        czasie są nadpisywane lub usuwane, chyba że przepisy
+                        prawa wymagają dłuższego archiwizowania.
+                    </li>
+                </ul>
+
+                <h2>5. Odbiorcy danych (infrastruktura)</h2>
+                <p>
+                    Aby serwis mógł działać, dane techniczne mogą być
+                    przetwarzane przez:
+                </p>
+                <ul>
+                    <li>
+                        <strong>Dostawcę hostingu</strong> serwera aplikacji
+                        (VPS w chmurze publicznej) — serwis jest uruchomiony w
+                        <strong>Hetzner Cloud</strong>; centrum danych:
+                        <strong>Helsinki (Finlandia)</strong>. Podmiotem
+                        dostawcy usługi hostingowej jest
+                        <strong>Hetzner Online GmbH</strong> (Niemcy), z
+                        siedzibą w ramach EOG.
+                    </li>
+                    <li>
+                        <strong>Rejestratora domeny i DNS</strong> dla nazwy
+                        <strong>panstwamiasta.com.pl</strong>:
+                        <strong>Seohost</strong> (PERSKIMEDIA Szymon Perski), we
+                        współpracy z rejestrem domeny .pl prowadzonym przez
+                        <strong>NASK</strong> — zgodnie z obowiązującą delegacją
+                        DNS i regulaminami rejestratora.
+                    </li>
+                    <li>
+                        <strong>Hugging Face</strong> (USA / UE w zależności od
+                        regionu hostingu dostawcy) — wyłącznie gdy włączona jest
+                        kolejka weryfikacji słów: przetwarzanie zgłoszonego
+                        słowa, kategorii i litery przez model językowy w celu
+                        wygenerowania krótkiej oceny technicznej (bez
+                        profilowania marketingowego).
+                    </li>
+                </ul>
+                <p>
+                    <strong>Dobrowolne wsparcie serwisu (napiwek):</strong> w
+                    stopce serwisu udostępniamy link do zewnętrznego operatora
+                    płatności
+                    <a
+                        href="https://buycoffee.to/filki"
+                        rel="noopener noreferrer"
+                        >BuyCoffee.to</a
+                    >
+                    (Coffee Media Sp. z o.o.). Po kliknięciu zostaniesz
+                    przekierowany na jego stronę; ten operator staje się
+                    odrębnym administratorem danych związanych z płatnością.
+                    Nasz serwis <strong>nie przetwarza</strong> numerów BLIK,
+                    danych karty ani innych informacji płatniczych.
+                </p>
+
+                <h2>6. Analityka</h2>
+                <p>
+                    W celu statystyk odwiedzin (liczba odsłon, źródła ruchu w
+                    formie zagregowanej) korzystamy z narzędzia
+                    <strong>Umami</strong> (hosting w chmurze dostawcy Umami).
+                    Skrypt ładowany jest tylko wtedy, gdy administrator włączył
+                    go w konfiguracji produkcyjnej serwisu. Umami działa w
+                    modelu z naciskiem na prywatność (bez profilowania
+                    reklamowego w stylu klasycznych sieci reklamowych);
+                    szczegóły retencji i przetwarzania po stronie dostawcy
+                    opisuje dokumentacja Umami oraz umowa powierzenia (DPA),
+                    jeśli dotyczy.
+                </p>
+                <p>
+                    <strong>Podstawa prawna:</strong> art. 6 ust. 1 lit. f RODO
+                    (prawnie uzasadniony interes administratora — poznanie
+                    sposobu korzystania z serwisu i jego rozwój). W środowisku
+                    developerskim i testowym analityka może być wyłączona.
+                </p>
+                <p>
+                    <strong>Nie stosujemy</strong> Google Analytics ani
+                    podobnych narzędzi śledzących w modelu reklamowym. Jeśli w
+                    przyszłości wdrożymy analitykę zdarzeniową wymagającą
+                    identyfikatora sesji (np. PostHog), zaktualizujemy ten
+                    dokument i — w razie potrzeby — mechanizm zgody zgodny z
+                    prawem.
+                </p>
+
+                <h2>
+                    7. Pamięć przeglądarki (localStorage, sessionStorage) i PWA
+                </h2>
+                <p>
+                    Opis zapisów w przeglądarce znajduje się na stronie
+                    <a href="/cookies">Cookies i pamięć lokalna</a>. Serwis może
+                    korzystać z <strong>Service Workera</strong> w celu
+                    cache’owania zasobów statycznych (PWA) — nie służy to
+                    profilowaniu reklamowemu.
+                </p>
+
+                <h2>8. Twoje prawa</h2>
+                <p>
+                    Zgodnie z RODO przysługuje Ci m.in. prawo dostępu do danych,
+                    ich sprostowania, usunięcia, ograniczenia przetwarzania,
+                    wniesienia sprzeciwu (w zakresie przewidzianym prawem) oraz
+                    prawo do przenoszenia danych. Możesz wnieść skargę do
+                    <strong
+                        >Prezesa Urzędu Ochrony Danych Osobowych (PUODO)</strong
+                    >.
+                </p>
+                <p>
+                    Ponieważ w większości przypadków
+                    <strong>nie zbieramy adresu e-mail ani loginu konta</strong
+                    >, realizacja niektórych żądań może być utrudniona po
+                    zakończeniu sesji w pokoju i usunięciu danych technicznych —
+                    w sprawach indywidualnych skontaktuj się z administratorem
+                    pod adresem z pkt 1.
+                </p>
+
+                <h2>9. Zmiany w polityce</h2>
+                <p>
+                    Zastrzegamy sobie prawo do zmiany niniejszej polityki wraz z
+                    rozwojem serwisu. Data ostatniej istotnej aktualizacji
+                    treści: <strong>14 maja 2026&nbsp;r.</strong>
+                </p>
+            </div>
+        </main>
+        <footer class="site-footer">
+            <div class="site-footer-inner">
+                <nav class="site-footer-nav">
+                    <a href="/polityka-prywatnosci">Polityka prywatności</a>
+                    <span class="site-footer-sep">·</span>
+                    <a href="/cookies">Cookies</a>
+                    <span class="site-footer-sep">·</span>
+                    <a href="/regulamin">Regulamin</a>
+                    <span class="site-footer-sep">·</span>
+                    <a href="/slownik">Słownik</a>
+                    <span class="site-footer-sep">·</span>
+                    <a
+                        href="https://buycoffee.to/filki"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >Wesprzyj serwer</a
+                    >
+                </nav>
+                <div class="site-footer-meta">
+                    <span class="site-footer-brand">Państwa-Miasta</span>
+                </div>
+            </div>
+        </footer>
+    </body>
 </html>

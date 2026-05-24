@@ -1,73 +1,159 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#fdf8f5">
-    <meta name="description" content="Polityka cookies i pamięci lokalnej w serwisie Państwa-Miasta.">
-    <meta property="og:title" content="Cookies i pamięć lokalna | Państwa-Miasta">
-    <meta property="og:description" content="Polityka cookies i pamięci lokalnej w serwisie Państwa-Miasta.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://panstwamiasta.com.pl/cookies">
-    <link rel="canonical" href="https://panstwamiasta.com.pl/cookies">
-    <title>Cookies i pamięć lokalna | Państwa-Miasta</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/dist.css" />
-</head>
-<body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="/" class="logo" style="text-decoration:none;">Państwa<span>Miasta</span></a>
-            <div class="nav-links">
-                <a href="/" class="nav-link-extra">Strona główna</a>
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#fdf8f5" />
+        <meta
+            name="description"
+            content="Polityka cookies i pamięci lokalnej w serwisie Państwa-Miasta."
+        />
+        <meta
+            property="og:title"
+            content="Cookies i pamięć lokalna | Państwa-Miasta"
+        />
+        <meta
+            property="og:description"
+            content="Polityka cookies i pamięci lokalnej w serwisie Państwa-Miasta."
+        />
+        <meta property="og:type" content="website" />
+        <meta
+            property="og:url"
+            content="https://panstwamiasta.com.pl/cookies"
+        />
+        <link rel="canonical" href="https://panstwamiasta.com.pl/cookies" />
+        <title>Cookies i pamięć lokalna | Państwa-Miasta</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@400;700;900&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="/static/css/dist.css" />
+    </head>
+    <body>
+        <nav class="navbar">
+            <div class="nav-container">
+                <a href="/" class="logo" style="text-decoration: none"
+                    >Państwa<span>Miasta</span></a
+                >
+                <div class="nav-links">
+                    <a href="/" class="nav-link-extra">Strona główna</a>
+                </div>
             </div>
-        </div>
-    </nav>
-
-    <main class="page-wrapper legal-page">
-        <div class="container legal-doc">
-            <h1>Polityka cookies i pamięci przeglądarki</h1>
-            <p class="legal-note">Szczegóły przetwarzania danych osobowych: <a href="/polityka-prywatnosci">Polityka prywatności</a>. Data ostatniej aktualizacji: <strong>14 maja 2026 r.</strong></p>
-
-            <h2>1. Pliki cookies</h2>
-            <p>Serwis <strong>nie wykorzystuje</strong> śledzących plików cookies w celach reklamowych ani nie przekazuje danych o Twojej aktywności zewnętrznym brokerom danych w tym modelu.</p>
-            <p>Link do dobrowolnego wsparcia serwisu (BuyCoffee.to) prowadzi poza naszą domenę — ewentualne cookies po stronie operatora płatności reguluje jego własna polityka.</p>
-            <p>W produkcji może być włączona analityka <strong>Umami</strong> (skrypt ładowany z serwera dostawcy Umami). Służy wyłącznie do statystyk odwiedzin w formie zagregowanej; nie służy profilowaniu reklamowemu. Szczegóły: <a href="/polityka-prywatnosci">Polityka prywatności</a>, §6. Jeśli w przyszłości wdrożymy mechanizmy wymagające zgody (np. reklamy lub marketing), niniejsza strona zostanie zaktualizowana, a w razie potrzeby udostępniony zostanie baner zgód (CMP).</p>
-
-            <h2>2. localStorage i sessionStorage</h2>
-            <p>Wykorzystujemy mechanizmy pamięci lokalnej przeglądarki wyłącznie w celach technicznych, niezbędnych do działania gry.</p>
-            <ul>
-                <li><strong>localStorage — klucz <code>pm_nickname</code>:</strong> zapisujemy w nim Twój ostatnio użyty pseudonim (nick), aby przy kolejnej wizycie zaproponować to samo pole — nie musisz wpisywać go ponownie przy odświeżeniu strony głównej.</li>
-                <li><strong>sessionStorage — klucz <code>pm_skip_auto_join</code>:</strong> krótkotrwały znacznik techniczny używany wyłącznie w ramach jednej sesji przeglądarki, m.in. aby uniknąć niepożądanego automatycznego ponownego dołączenia do pokoju po nawigacji.</li>
-            </ul>
-            <p>Dane te są zapisane <strong>lokalnie na Twoim urządzeniu</strong> i nie służą do śledzenia Cię w internecie poza działaniem naszej witryny. Możesz je w każdej chwili usunąć, czyszcząc dane witryn w ustawieniach przeglądarki.</p>
-
-            <h2>3. Service Worker (PWA)</h2>
-            <p>W trybie produkcyjnym może być zainstalowany Service Worker cache’ujący wybrane pliki statyczne (CSS, JS, ikony). Nie służy to profilowaniu reklamowemu.</p>
-
-            <h2>4. Jak zarządzać danymi w przeglądarce</h2>
-            <p>Możesz w każdej chwili usunąć dane witryny z poziomu ustawień przeglądarki (np. „Wyczyść dane witryn” / „Usuń dane przechowywane przez witrynę”). Spowoduje to skasowanie m.in. zapisanego nicku w localStorage oraz znaczników w sessionStorage dla tej domeny.</p>
-        </div>
-    </main>
-<footer class="site-footer">
-    <div class="site-footer-inner">
-        <nav class="site-footer-nav">
-            <a href="/polityka-prywatnosci">Polityka prywatności</a>
-            <span class="site-footer-sep">·</span>
-            <a href="/cookies">Cookies</a>
-            <span class="site-footer-sep">·</span>
-            <a href="/regulamin">Regulamin</a>
-            <span class="site-footer-sep">·</span>
-            <a href="/slownik">Słownik</a>
-            <span class="site-footer-sep">·</span>
-            <a href="https://buycoffee.to/filki" target="_blank" rel="noopener noreferrer">Wesprzyj serwer</a>
         </nav>
-        <div class="site-footer-meta">
-            <span class="site-footer-brand">Państwa-Miasta</span>
-        </div>
-    </div>
-</footer>
-</body>
+
+        <main class="page-wrapper legal-page">
+            <div class="container legal-doc">
+                <h1>Polityka cookies i pamięci przeglądarki</h1>
+                <p class="legal-note">
+                    Szczegóły przetwarzania danych osobowych:
+                    <a href="/polityka-prywatnosci">Polityka prywatności</a>.
+                    Data ostatniej aktualizacji:
+                    <strong>14 maja 2026&nbsp;r.</strong>
+                </p>
+
+                <h2>1. Pliki cookies</h2>
+                <p>
+                    Serwis <strong>nie wykorzystuje</strong> śledzących plików
+                    cookies w celach reklamowych ani nie przekazuje danych o
+                    Twojej aktywności zewnętrznym brokerom danych w tym modelu.
+                </p>
+                <p>
+                    Link do dobrowolnego wsparcia serwisu (BuyCoffee.to)
+                    prowadzi poza naszą domenę — ewentualne cookies po stronie
+                    operatora płatności reguluje jego własna polityka.
+                </p>
+                <p>
+                    W produkcji może być włączona analityka
+                    <strong>Umami</strong> (skrypt ładowany z serwera dostawcy
+                    Umami). Służy wyłącznie do statystyk odwiedzin w formie
+                    zagregowanej; nie służy profilowaniu reklamowemu. Szczegóły:
+                    <a href="/polityka-prywatnosci">Polityka prywatności</a>,
+                    §6. Jeśli w przyszłości wdrożymy mechanizmy wymagające zgody
+                    (np. reklamy lub marketing), niniejsza strona zostanie
+                    zaktualizowana, a w razie potrzeby udostępniony zostanie
+                    baner zgód (CMP).
+                </p>
+
+                <h2>2. localStorage i sessionStorage</h2>
+                <p>
+                    Wykorzystujemy mechanizmy pamięci lokalnej przeglądarki
+                    wyłącznie w celach technicznych, niezbędnych do działania
+                    gry.
+                </p>
+                <ul>
+                    <li>
+                        <strong
+                            >localStorage — klucz
+                            <code>pm_nickname</code>:</strong
+                        >
+                        zapisujemy w nim Twój ostatnio użyty pseudonim (nick),
+                        aby przy kolejnej wizycie zaproponować to samo pole —
+                        nie musisz wpisywać go ponownie przy odświeżeniu strony
+                        głównej.
+                    </li>
+                    <li>
+                        <strong
+                            >sessionStorage — klucz
+                            <code>pm_skip_auto_join</code>:</strong
+                        >
+                        krótkotrwały znacznik techniczny używany wyłącznie w
+                        ramach jednej sesji przeglądarki, m.in. aby uniknąć
+                        niepożądanego automatycznego ponownego dołączenia do
+                        pokoju po nawigacji.
+                    </li>
+                </ul>
+                <p>
+                    Dane te są zapisane
+                    <strong>lokalnie na Twoim urządzeniu</strong> i nie służą do
+                    śledzenia Cię w internecie poza działaniem naszej witryny.
+                    Możesz je w każdej chwili usunąć, czyszcząc dane witryn w
+                    ustawieniach przeglądarki.
+                </p>
+
+                <h2>3. Service Worker (PWA)</h2>
+                <p>
+                    W trybie produkcyjnym może być zainstalowany Service Worker
+                    cache’ujący wybrane pliki statyczne (CSS, JS, ikony). Nie
+                    służy to profilowaniu reklamowemu.
+                </p>
+
+                <h2>4. Jak zarządzać danymi w przeglądarce</h2>
+                <p>
+                    Możesz w każdej chwili usunąć dane witryny z poziomu
+                    ustawień przeglądarki (np. „Wyczyść dane witryn” / „Usuń
+                    dane przechowywane przez witrynę”). Spowoduje to skasowanie
+                    m.in. zapisanego nicku w localStorage oraz znaczników w
+                    sessionStorage dla tej domeny.
+                </p>
+            </div>
+        </main>
+        <footer class="site-footer">
+            <div class="site-footer-inner">
+                <nav class="site-footer-nav">
+                    <a href="/polityka-prywatnosci">Polityka prywatności</a>
+                    <span class="site-footer-sep">·</span>
+                    <a href="/cookies">Cookies</a>
+                    <span class="site-footer-sep">·</span>
+                    <a href="/regulamin">Regulamin</a>
+                    <span class="site-footer-sep">·</span>
+                    <a href="/slownik">Słownik</a>
+                    <span class="site-footer-sep">·</span>
+                    <a
+                        href="https://buycoffee.to/filki"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >Wesprzyj serwer</a
+                    >
+                </nav>
+                <div class="site-footer-meta">
+                    <span class="site-footer-brand">Państwa-Miasta</span>
+                </div>
+            </div>
+        </footer>
+    </body>
 </html>
