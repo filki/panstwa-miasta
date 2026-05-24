@@ -488,7 +488,8 @@ button {
     flex-direction: column;
     gap: var(--space-5);
     width: min(100%, 36rem);
-    flex: 0 1 auto;
+    flex: 1;
+    justify-content: center;
     align-items: center;
 }
 
