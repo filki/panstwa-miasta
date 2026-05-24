@@ -4345,3 +4345,62 @@ body.share-page {
         transform: none;
     }
 }
+
+/* =========================================================
+   Capacitor / Mobile / Desktop — dedykowane widoki
+   ========================================================= */
+
+/* Capacitor APK — ukryj elementy przegladarkowe */
+.is-capacitor .nav-links a[href="/polityka-prywatnosci"],
+.is-capacitor .nav-links a[href="/regulamin"],
+.is-capacitor .nav-links a[href="/cookies"] {
+    display: none;
+}
+
+/* Landing — zawsze scroll na mobile i Capacitor */
+.is-mobile body.landing-page,
+.is-capacitor body.landing-page {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+.is-mobile body.landing-page .page-wrapper,
+.is-capacitor body.landing-page .page-wrapper {
+    min-height: auto;
+    flex: 0 0 auto;
+}
+
+.is-mobile body.landing-page .hero,
+.is-capacitor body.landing-page .hero {
+    flex: 0 0 auto;
+    min-height: auto;
+}
+
+/* Room page — pelny scroll na mobile/Capacitor */
+.is-mobile body.room-page,
+.is-capacitor body.room-page {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Room page — sticky game actions na dole */
+.is-mobile .game-actions,
+.is-capacitor .game-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    padding: var(--space-3) 0;
+    background: linear-gradient(
+        180deg,
+        transparent,
+        rgba(247, 250, 255, 0.96) 35%
+    );
+    margin-top: var(--space-4);
+}
+
+/* Desktop — pelen layout z sidebar */
+@media (min-width: 1024px) {
+    .is-desktop body.landing-page .active-rooms-cards {
+        display: none;
+    }
+}
