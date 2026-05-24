@@ -94,7 +94,11 @@
                                 />
                                 <button
                                     type="button"
-                                    class="nick-reroll btn-secondary !w-auto !min-w-[5.5rem] !min-h-[var(--tap)] px-[0.9rem] py-[0.65rem]" style="text-transform:none;letter-spacing:0"
+                                    class="nick-reroll btn-secondary !w-auto !min-w-[5.5rem] !min-h-[var(--tap)] px-[0.9rem] py-[0.65rem]"
+                                    style="
+                                        text-transform: none;
+                                        letter-spacing: 0;
+                                    "
                                     onclick="rerollPlayerNickname()"
                                     aria-label="Losuj inny pseudonim"
                                 >
@@ -102,7 +106,11 @@
                                 </button>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-primary" onclick="connect()">
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            onclick="connect()"
+                        >
                             DOŁĄCZ DO GRY
                         </button>
                     </div>
@@ -147,13 +155,11 @@
                             </dl>
                         </header>
                         <div class="room-lobby-body">
-                            <div
-                                class="room-lobby-panel room-lobby-panel--players"
-                            >
+                            <div class="room-lobby-panel">
                                 <p class="room-lobby-panel-title">
                                     Gracze
                                     <span
-                                        class="lobby-panel-meta"
+                                        class="text-muted font-bold"
                                         id="lobby-player-count"
                                         aria-live="polite"
                                     ></span>
@@ -179,13 +185,10 @@
                     <div class="layout-grid" id="game-layout">
                         <div class="game-dashboard-shell room-glass-panel">
                             <div class="game-dashboard">
-                                <section
-                                    class="main-game game-form-pane"
-                                    id="game-main-area"
-                                >
-                                    <header class="game-header game-hud">
+                                <section class="flex-1" id="game-main-area">
+                                    <header class="game-header">
                                         <div
-                                            class="game-header-room"
+                                            class="flex flex-col gap-1"
                                             aria-hidden="true"
                                         >
                                             <span class="header-label"
@@ -198,7 +201,9 @@
                                                 —
                                             </div>
                                         </div>
-                                        <div class="game-hud-letter">
+                                        <div
+                                            class="flex flex-col gap-1 items-center"
+                                        >
                                             <span class="header-label"
                                                 >Litera</span
                                             >
@@ -209,13 +214,15 @@
                                                 ?
                                             </div>
                                         </div>
-                                        <div class="game-hud-timer">
+                                        <div
+                                            class="flex flex-col gap-1 items-end"
+                                        >
                                             <span class="header-label"
                                                 >Czas</span
                                             >
                                             <div
                                                 id="round-timer"
-                                                class="game-hud-timer-value"
+                                                class="game-hud-timer-value hidden font-black text-[1.75rem] leading-none"
                                             >
                                                 --
                                             </div>
