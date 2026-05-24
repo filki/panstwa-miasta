@@ -214,9 +214,15 @@ function _resolveConnectionSettings() {
 }
 
 function _buildWsUrl(roomId, maxRounds, timeLimit, visibility) {
-  const protocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
+  var baseHost = globalThis.location.host;
+  var protocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
+  // W Capacitor WebView laczymy sie z serwerem produkcyjnym
+  if (typeof window !== "undefined" && window.PM_WS_BASE) {
+    var url = new URL(window.PM_WS_BASE);
+    baseHost = url.host;
+  }
   const encNick = encodeURIComponent(myNick);
-  return `${protocol}//${globalThis.location.host}/ws/${roomId}/${encNick}?rounds=${maxRounds}&limit=${timeLimit}&visibility=${visibility}`;
+  return `${protocol}//${baseHost}/ws/${roomId}/${encNick}?rounds=${maxRounds}&limit=${timeLimit}&visibility=${visibility}`;
 }
 
 function _teardownPrevSocket() {

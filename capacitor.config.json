@@ -3,15 +3,6 @@
   "appName": "Państwa-Miasta",
   "webDir": "static",
   "bundledWebRuntime": false,
-  "server": {
-    "url": "https://panstwamiasta.com.pl",
-    "hostname": "localhost",
-    "androidScheme": "https",
-    "cleartext": true
-  },
-  "android": {
-    "allowMixedContent": true
-  },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 800,
