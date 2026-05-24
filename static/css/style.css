@@ -285,7 +285,6 @@ button.danger {
     background: linear-gradient(135deg, var(--danger), #991b1b);
 }
 
-
 .btn-inline {
     width: auto;
     padding: 0.65rem 1.1rem;
@@ -568,7 +567,6 @@ label {
 
 /* ---------- Sections ---------- */
 
-
 /* ---------- Lobby ---------- */
 .lobby-section {
     scroll-margin-top: calc(var(--nav-h) + 16px);
@@ -579,8 +577,6 @@ label {
     max-width: 720px;
     margin: 0 auto;
 }
-
-
 
 .start-nickname {
     max-width: 420px;
@@ -1201,7 +1197,6 @@ body.landing-page .landing-anon-nick-row {
     align-items: stretch;
 }
 
-
 body.landing-page .landing-anon-identity-label {
     margin: 0;
     color: var(--text-muted);
@@ -1223,11 +1218,6 @@ body.landing-page .landing-anon-room-code {
     font-size: var(--fs-sm);
     font-weight: 600;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-
-body.landing-page .landing-anon-nickname::placeholder,
-body.landing-page .landing-anon-room-code::placeholder {
-    color: var(--text-muted);
 }
 
 body.landing-page .landing-anon-actions {
@@ -1857,7 +1847,6 @@ body.landing-page .active-rooms-empty-icon {
     }
 }
 
-
 body.landing-page .landing-quick-join {
     display: flex;
     flex-direction: column;
@@ -2146,7 +2135,6 @@ body.landing-page .site-footer-meta {
     }
 
     body.landing-page .landing-anon-avatar-reroll,
-
     body.landing-page .landing-anon-identity {
         padding: clamp(var(--space-4), 1.8vw, var(--space-5));
         gap: var(--space-3);
@@ -2650,7 +2638,6 @@ body.landing-page .site-footer-meta {
     gap: var(--space-2);
     align-items: stretch;
 }
-
 
 /* ---------- Rooms table ---------- */
 .table-container {
@@ -3312,7 +3299,6 @@ body.room-page .room-postgame .restart-card {
         align-items: center;
     }
 }
-
 
 .sidebar {
     background: transparent;
