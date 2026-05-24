@@ -27,6 +27,10 @@ echo "Deploy: $(git rev-parse --short HEAD) ($(git log -1 --format=%ci))"
 
 uv sync --frozen --extra dev
 
+echo "Buduję CSS (Tailwind)..."
+npm ci --no-audit --no-fund --silent 2>&1
+npm run css:build
+
 if [[ "$(id -u)" -eq 0 ]]; then
   systemctl restart panstwa-miasta
 else
