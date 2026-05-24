@@ -197,7 +197,7 @@
                                                     />
                                                     <button
                                                         type="button"
-                                                        class="landing-anon-nick-reroll"
+                                                        class="btn-secondary !w-[2.5rem] min-w-[2.5rem] p-0 rounded-[var(--r-md)] border border-[rgba(148,163,184,0.24)] bg-white/92 text-muted text-base leading-none" style="text-transform:none;letter-spacing:0"
                                                         onclick="
                                                             rerollPlayerNickname()
                                                         "
@@ -215,14 +215,14 @@
                                         >
                                             <button
                                                 type="button"
-                                                class="landing-anon-cta landing-anon-cta--create"
+                                                class="btn btn-primary"
                                                 onclick="showCreateModal()"
                                             >
                                                 ✨ Stwórz pokój
                                             </button>
                                             <button
                                                 type="button"
-                                                class="landing-anon-cta landing-anon-cta--join"
+                                                class="btn btn-secondary"
                                                 onclick="showJoinStage()"
                                             >
                                                 🔗 Dołącz do pokoju
@@ -230,7 +230,7 @@
                                         </div>
                                         <div class="landing-anon-support-row">
                                             <a
-                                                class="landing-anon-cta landing-anon-cta--support"
+                                                class="btn btn-secondary no-underline justify-center"
                                                 href="https://buycoffee.to/filki"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
@@ -247,7 +247,8 @@
                                         <div class="landing-anon-join-head">
                                             <button
                                                 type="button"
-                                                class="landing-anon-back"
+                                                class="btn !w-auto !min-h-0 bg-transparent border-0 px-[0.35rem] py-[0.55rem] text-muted text-sm no-underline cursor-pointer text-left hover:text-accent"
+                                                style="text-transform:none;letter-spacing:0"
                                                 onclick="showLandingStartMode()"
                                             >
                                                 ‹ Wróć
@@ -274,7 +275,7 @@
                                             />
                                             <button
                                                 type="button"
-                                                class="landing-anon-cta landing-anon-cta--submit"
+                                                class="btn btn-primary inline-flex items-center justify-center gap-1"
                                                 onclick="
                                                     connectFromLandingJoin()
                                                 "
@@ -646,7 +647,7 @@
                         />
                         <button
                             type="button"
-                            class="nick-reroll nick-reroll--dice secondary"
+                            class="nick-reroll btn-secondary !w-auto !min-w-[5.5rem] !min-h-[var(--tap)] px-[0.9rem] py-[0.65rem]" style="text-transform:none;letter-spacing:0"
                             onclick="rerollPlayerNickname()"
                             aria-label="Losuj inny pseudonim"
                         >
@@ -667,10 +668,10 @@
                     />
                 </div>
                 <div class="modal-btns">
-                    <button class="secondary" onclick="hideModals()">
+                    <button class="btn btn-secondary !w-auto !min-w-28" onclick="hideModals()">
                         Anuluj
                     </button>
-                    <button onclick="connect()">Start</button>
+                    <button class="btn btn-primary" onclick="connect()">Start</button>
                 </div>
             </div>
         </div>
@@ -716,10 +717,10 @@
                     </div>
                 </div>
                 <div class="modal-btns">
-                    <button class="secondary" onclick="hideModals()">
+                    <button class="btn btn-secondary !w-auto !min-w-28" onclick="hideModals()">
                         Anuluj
                     </button>
-                    <button onclick="createRoomAndEnter()">
+                    <button class="btn btn-primary" onclick="createRoomAndEnter()">
                         Stwórz i wejdź
                     </button>
                 </div>
@@ -745,8 +746,8 @@
             type="button"
             id="btn-leave"
             onclick="location.href = '/'"
-            class="danger"
-            style="display: none"
+            class="btn btn-primary"
+            style="display:none;background:linear-gradient(135deg,var(--brand-1),#991b1b)"
         >
             Wyjdź
         </button>
