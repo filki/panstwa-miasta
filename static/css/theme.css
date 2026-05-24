@@ -170,6 +170,7 @@ button {
 }
 
 @utility landing-join-card {
+    flex: 1;
     padding: var(--space-4);
     border: 1px solid rgba(var(--landing-tint-join), 0.22);
     background: rgba(var(--landing-tint-join), var(--landing-opacity-join));
