@@ -14,37 +14,36 @@
     --tap: 44px;
 }
 
-@layer base {
-    :root {
-        --brand-1: #3e140f;
-        --brand-2: #74371f;
-        --brand-3: #d58f23;
-        --brand-4: #eee08f;
-        --brand-5: #efefd2;
-    }
+/* Base resets — unlayered to beat style.css */
+:root {
+    --brand-1: #3e140f;
+    --brand-2: #74371f;
+    --brand-3: #d58f23;
+    --brand-4: #eee08f;
+    --brand-5: #efefd2;
+}
 
-    html {
-        -webkit-tap-highlight-color: transparent;
-    }
+html {
+    -webkit-tap-highlight-color: transparent;
+}
 
-    body {
-        font-family: "Inter", "Outfit", system-ui, sans-serif;
-        -webkit-font-smoothing: antialiased;
-        user-select: none;
-        -webkit-user-select: none;
-    }
+body {
+    font-family: "Inter", "Outfit", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    -webkit-user-select: none;
+}
 
-    h1,
-    h2,
-    h3,
-    h4 {
-        font-family: "Outfit", sans-serif;
-    }
+h1,
+h2,
+h3,
+h4 {
+    font-family: "Outfit", sans-serif;
+}
 
-    /* Override style.css button default width — btn utility handles it */
-    button {
-        width: auto;
-    }
+/* Reset button width — overrides style.css button { width: 100% } */
+button {
+    width: auto;
 }
 
 /* Button component utilities */
