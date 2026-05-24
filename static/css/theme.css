@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+    --color-1: #ae601e;
+    --color-2: #b68354;
+    --color-3: #eca67c;
+    --color-4: #68a3bf;
+    --color-5: #317e9d;
+}
+
+@layer base {
+    :root {
+        --brand-1: #ae601e;
+        --brand-2: #b68354;
+        --brand-3: #eca67c;
+        --brand-4: #68a3bf;
+        --brand-5: #317e9d;
+    }
+
+    html {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        font-family: "Inter", "Outfit", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        font-family: "Outfit", sans-serif;
+    }
+}
+
+/* Safe area utilities for Capacitor */
+@utility pt-safe {
+    padding-top: env(safe-area-inset-top, 0);
+}
+
+@utility pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
