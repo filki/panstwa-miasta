@@ -155,6 +155,7 @@ button {
 @utility landing-actions {
     display: flex;
     flex-direction: column;
+    justify-content: center;
     gap: var(--space-4);
     width: 100%;
     max-width: none;
@@ -178,6 +179,9 @@ button {
 
 @utility landing-join-card {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     padding: var(--space-4);
     border: 1px solid rgba(var(--landing-tint-join), 0.22);
     background: rgba(var(--landing-tint-join), var(--landing-opacity-join));
@@ -485,7 +489,7 @@ button {
     background: transparent;
     box-shadow: none;
     box-sizing: border-box;
-    flex: 1 1 auto;
+    flex: 1;
     min-height: 0;
     justify-content: center;
     backdrop-filter: none;
@@ -496,7 +500,6 @@ button {
     flex-direction: column;
     gap: var(--space-5);
     width: min(100%, 36rem);
-    flex: 1;
     justify-content: center;
     align-items: center;
 }
@@ -907,6 +910,9 @@ button {
     animation: none;
     opacity: 0.45;
 }
+@utility active-rooms-empty-ring--delay {
+    animation-delay: 1.4s;
+}
 @utility active-rooms-empty-icon {
     position: absolute;
     z-index: 1;
@@ -986,7 +992,7 @@ button {
 @utility landing-guide-carousel-step-num {
     font-size: var(--fs-sm);
     font-weight: 800;
-    color: var(--accent);
+    color: var(--accent-text);
     margin: 0;
     letter-spacing: 0.04em;
 }
@@ -1454,6 +1460,7 @@ button {
     --primary: var(--brand-3);
     --primary-dark: var(--brand-2);
     --accent: var(--brand-3);
+    --accent-text: #9a5514;
     --accent-2: var(--brand-4);
     --accent-3: var(--brand-5);
     --background: #f5f0e8;
@@ -1567,7 +1574,7 @@ button {
     letter-spacing: 0.3px;
 
     & strong {
-        color: var(--accent);
+        color: var(--accent-text);
         font-weight: 800;
         margin-left: 4px;
         letter-spacing: 1px;
@@ -1702,7 +1709,7 @@ button {
 @utility round-results-player-total {
     margin-left: auto;
     font-weight: 800;
-    color: var(--accent);
+    color: var(--accent-text);
     flex-shrink: 0;
 }
 
@@ -1722,7 +1729,7 @@ button {
         background: rgba(174, 96, 30, 0.1);
         border-left-color: var(--accent);
         font-style: italic;
-        color: var(--accent);
+        color: var(--accent-text);
     }
 
     &.chat {
@@ -1732,7 +1739,7 @@ button {
     & .sender {
         font-weight: 700;
         margin-bottom: 2px;
-        color: var(--accent);
+        color: var(--accent-text);
     }
 
     &.results-msg {
@@ -1888,7 +1895,7 @@ body.room-phase-playing .game-header-room {
     text-decoration: none;
 
     & span {
-        color: var(--accent);
+        color: var(--accent-text);
     }
 }
 
