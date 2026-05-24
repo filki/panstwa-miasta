@@ -86,6 +86,9 @@ function leaveRoom() {
   leftByUser = true;
   isLeaving = true;
   globalThis.myNick = "";
+  // Wyczysc sesje
+  localStorage.removeItem("pm_active_room");
+  localStorage.removeItem("pm_active_nick");
   // Hide chat UI and show join UI (keeps tests stable and helps if navigation
   // is blocked by environment or user agent).
   const chatSection = document.getElementById("chat-section");
@@ -283,6 +286,12 @@ function connect() {
 
   socket.onopen = () => {
     if (socketGeneration !== pmWsGeneration) return;
+    // Zapis sesji dla reconnect po zamknieciu apki/przegladarki
+    var activeRoom = _detectRoomId();
+    if (activeRoom) {
+      localStorage.setItem("pm_active_room", activeRoom);
+      localStorage.setItem("pm_active_nick", myNick);
+    }
     if (typeof hideModals === "function") hideModals();
     document.getElementById("join-section").style.display = "none";
     const inlineJoin = document.getElementById("room-inline-join");
