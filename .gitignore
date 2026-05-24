@@ -68,3 +68,4 @@ projekt-testowy-*.json
 # Android keystore (local secrets)
 release.keystore
 android/keystore.properties
+screenshots/
