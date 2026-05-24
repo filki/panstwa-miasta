@@ -40,6 +40,11 @@
     h4 {
         font-family: "Outfit", sans-serif;
     }
+
+    /* Override style.css button default width — btn utility handles it */
+    button {
+        width: auto;
+    }
 }
 
 /* Button component utilities */
