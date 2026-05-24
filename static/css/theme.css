@@ -462,8 +462,8 @@ button {
 @utility landing-anon-nickname {
     flex: 1;
     width: 100%;
-    min-height: 44px;
-    padding: 0.75rem 1rem;
+    min-height: 48px;
+    padding: 0.85rem 1rem;
     border-radius: 14px;
     border: 1px solid rgba(148, 163, 184, 0.24);
     background: rgba(255, 255, 255, 0.92);
