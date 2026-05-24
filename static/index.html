@@ -7,7 +7,7 @@
             content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
         <base href="https://panstwamiasta.com.pl/" />
-        <meta name="theme-color" content="#0f172a" />
+        <meta name="theme-color" content="#f2f6ff" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -204,41 +204,7 @@
                                         id="landing-anon-start"
                                     >
                                         <div class="landing-anon-profile">
-                                            <div
-                                                class="landing-anon-avatar-block"
-                                            >
-                                                <div
-                                                    class="landing-anon-avatar-frame"
-                                                >
-                                                    <img
-                                                        class="landing-anon-avatar"
-                                                        id="landing-anon-avatar"
-                                                        src="/static/img/avatars/avatar-01.png"
-                                                        width="108"
-                                                        height="108"
-                                                        alt="Awatar gracza"
-                                                    />
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    class="landing-anon-avatar-reroll"
-                                                    onclick="
-                                                        rerollPlayerAvatar()
-                                                    "
-                                                    aria-label="Losuj inny awatar"
-                                                >
-                                                    <span aria-hidden="true"
-                                                        >↻</span
-                                                    >
-                                                </button>
-                                            </div>
                                             <div class="landing-anon-identity">
-                                                <p
-                                                    class="landing-anon-identity-label"
-                                                    id="landing-anon-identity-label"
-                                                >
-                                                    Wybierz pseudonim
-                                                </p>
                                                 <div
                                                     class="landing-anon-nick-row"
                                                 >
@@ -249,6 +215,7 @@
                                                         maxlength="16"
                                                         autocomplete="nickname"
                                                         inputmode="text"
+                                                        placeholder="Twój pseudonim"
                                                         aria-labelledby="landing-anon-identity-label"
                                                     />
                                                     <button
@@ -259,9 +226,7 @@
                                                         "
                                                         aria-label="Losuj inny pseudonim"
                                                     >
-                                                        <span aria-hidden="true"
-                                                            >↻</span
-                                                        >
+                                                        🎲
                                                     </button>
                                                 </div>
                                             </div>
@@ -276,14 +241,14 @@
                                                 class="landing-anon-cta landing-anon-cta--create"
                                                 onclick="showCreateModal()"
                                             >
-                                                Stwórz pokój
+                                                ✨ Stwórz pokój
                                             </button>
                                             <button
                                                 type="button"
                                                 class="landing-anon-cta landing-anon-cta--join"
-                                                onclick="showLandingJoinCode()"
+                                                onclick="showJoinStage()"
                                             >
-                                                Dołącz do pokoju
+                                                🔗 Dołącz do pokoju
                                             </button>
                                         </div>
                                         <div class="landing-anon-support-row">
