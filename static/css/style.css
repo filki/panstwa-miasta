@@ -4268,6 +4268,12 @@ input.pts-0 {
     .nav-cta--leave {
         padding: 0.4rem 0.7rem;
         font-size: 0.8rem;
+        width: auto;
+        min-height: 36px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 80px;
     }
 }
 
@@ -4362,6 +4368,7 @@ body.share-page {
 .is-capacitor body.landing-page {
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
+    min-height: auto;
 }
 
 .is-mobile body.landing-page .page-wrapper,
