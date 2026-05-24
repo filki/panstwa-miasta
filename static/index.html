@@ -74,44 +74,20 @@
     </head>
     <body class="landing-page">
         <nav
-            class="navbar"
-            style="
-                background: rgba(49, 126, 157, 0.96);
-                backdrop-filter: blur(16px);
-                -webkit-backdrop-filter: blur(16px);
-                border-bottom: 1px solid rgba(236, 166, 124, 0.18);
-                padding-top: env(safe-area-inset-top, 0);
-                position: fixed;
-                inset: 0 0 auto 0;
-                height: var(--nav-h);
-                z-index: 1000;
-            "
+            class="fixed inset-x-0 top-0 z-50 h-14 md:h-16 bg-5/96 backdrop-blur-xl border-b border-[rgba(236,166,124,0.18)] pt-safe"
         >
             <div class="nav-container">
                 <a
                     href="/"
-                    class="logo"
-                    style="
-                        text-decoration: none;
-                        display: flex;
-                        align-items: center;
-                        gap: 0.35rem;
-                        font-size: 1.25rem;
-                        color: #fff;
-                    "
-                    >Państwa<span style="color: #ECA67C; font-weight: 900"
+                    class="logo flex items-center gap-1 text-lg md:text-xl font-black text-white no-underline"
+                    >Państwa<span style="color: #eca67c; font-weight: 900"
                         >Miasta</span
                     ></a
                 >
-                <div class="nav-links" style="gap: var(--space-5)">
+                <div class="nav-links flex items-center gap-5">
                     <a
                         href="/slownik"
-                        class="nav-link-extra"
-                        style="
-                            color: rgba(255,255,255,0.72);
-                            font-size: 0.95rem;
-                            font-weight: 600;
-                        "
+                        class="nav-link-extra hidden md:inline-block text-white/70 text-sm font-semibold no-underline"
                         >Słownik</a
                     >
                 </div>
