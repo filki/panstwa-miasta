@@ -10,22 +10,22 @@
 
 :root {
     /* Brand */
-    --primary: #a855f7;
-    --primary-dark: #7c3aed;
+    --primary: #f59e0b;
+    --primary-dark: #d97706;
     --accent: #06b6d4;
-    --accent-2: #f59e0b;
+    --accent-2: #a855f7;
 
     /* Surface */
-    --background: #f2f6ff;
-    --surface-0: #ffffff;
-    --surface-1: #f8fafc;
-    --surface-2: #eef2ff;
-    --border: rgba(15, 23, 42, 0.08);
-    --border-strong: rgba(15, 23, 42, 0.16);
+    --background: #0f172a;
+    --surface-0: #1e293b;
+    --surface-1: #334155;
+    --surface-2: #1e293b;
+    --border: rgba(148, 163, 184, 0.12);
+    --border-strong: rgba(148, 163, 184, 0.22);
 
     /* Text */
-    --text: #0f172a;
-    --text-muted: #64748b;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
 
     /* State */
     --success: #10b981;
@@ -139,7 +139,7 @@ body::before {
     inset: 0;
     background: radial-gradient(
         circle at 50% 0%,
-        #e0f2fe 0%,
+        #312e81 0%,
         var(--background) 55%
     );
     z-index: -2;
@@ -873,20 +873,20 @@ body.landing-page {
     background-image:
         radial-gradient(
             circle at 12% 18%,
-            rgba(14, 165, 233, 0.2),
+            rgba(245, 158, 11, 0.12),
             transparent 42%
         ),
         radial-gradient(
             circle at 88% 12%,
-            rgba(168, 85, 247, 0.16),
+            rgba(168, 85, 247, 0.1),
             transparent 38%
         ),
         radial-gradient(
             circle at 50% 100%,
-            rgba(6, 182, 212, 0.12),
+            rgba(6, 182, 212, 0.08),
             transparent 48%
         ),
-        linear-gradient(180deg, #f7faff 0%, #eef4ff 100%);
+        linear-gradient(180deg, #111827 0%, #0f172a 100%);
 }
 
 body.landing-page.landing-scrollable {
@@ -925,9 +925,9 @@ body.landing-page .landing-shell {
     padding: var(--landing-shell-pad-top) var(--landing-inset)
         var(--landing-shell-pad-bottom);
     border-radius: calc(var(--r-xl) + 2px);
-    border: 1px solid rgba(15, 23, 42, 0.05);
-    background: #fff;
-    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
+    border: 1px solid var(--border);
+    background: var(--surface-0);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
     box-sizing: border-box;
 }
 
@@ -2800,20 +2800,20 @@ body.room-page {
     background-image:
         radial-gradient(
             circle at 12% 18%,
-            rgba(14, 165, 233, 0.2),
+            rgba(245, 158, 11, 0.12),
             transparent 42%
         ),
         radial-gradient(
             circle at 88% 12%,
-            rgba(168, 85, 247, 0.16),
+            rgba(168, 85, 247, 0.1),
             transparent 38%
         ),
         radial-gradient(
             circle at 50% 100%,
-            rgba(6, 182, 212, 0.12),
+            rgba(6, 182, 212, 0.08),
             transparent 48%
         ),
-        linear-gradient(180deg, #f7faff 0%, #eef4ff 100%);
+        linear-gradient(180deg, #111827 0%, #0f172a 100%);
 }
 
 body.room-page h1,
