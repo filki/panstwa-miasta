@@ -292,12 +292,6 @@ button.danger {
     background: linear-gradient(135deg, var(--danger), #991b1b);
 }
 
-button.secondary,
-button.btn-secondary {
-    background: var(--surface-2);
-    border: 1px solid var(--border-strong);
-    color: var(--text);
-}
 
 .btn-inline {
     width: auto;
@@ -1223,17 +1217,6 @@ body.landing-page .landing-anon-nick-row {
     align-items: stretch;
 }
 
-body.landing-page .landing-anon-nick-reroll {
-    width: 2.5rem;
-    min-width: 2.5rem;
-    padding: 0;
-    border-radius: var(--r-md);
-    border: 1px solid rgba(148, 163, 184, 0.24);
-    background: rgba(255, 255, 255, 0.92);
-    color: var(--text-muted);
-    font-size: 1rem;
-    line-height: 1;
-}
 
 body.landing-page .landing-anon-identity-label {
     margin: 0;
@@ -1890,12 +1873,6 @@ body.landing-page .active-rooms-empty-icon {
     }
 }
 
-button.nick-reroll--dice {
-    min-width: var(--tap);
-    padding: 0;
-    font-size: 1.25rem;
-    line-height: 1;
-}
 
 body.landing-page .landing-quick-join {
     display: flex;
@@ -2185,12 +2162,6 @@ body.landing-page .site-footer-meta {
     }
 
     body.landing-page .landing-anon-avatar-reroll,
-    body.landing-page .landing-anon-nick-reroll {
-        width: 2.85rem;
-        min-width: 2.85rem;
-        min-height: 2.85rem;
-        font-size: 1.1rem;
-    }
 
     body.landing-page .landing-anon-identity {
         padding: clamp(var(--space-4), 1.8vw, var(--space-5));
@@ -2696,14 +2667,6 @@ body.landing-page .site-footer-meta {
     align-items: stretch;
 }
 
-button.nick-reroll {
-    width: auto;
-    min-width: 5.5rem;
-    min-height: var(--tap);
-    padding: 0.65rem 0.9rem;
-    text-transform: none;
-    letter-spacing: 0;
-}
 
 /* ---------- Rooms table ---------- */
 .table-container {
@@ -3366,14 +3329,6 @@ body.room-page .room-postgame .restart-card {
     }
 }
 
-.game-over-share-actions .btn-secondary {
-    text-align: center;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: var(--tap);
-}
 
 .sidebar {
     background: transparent;

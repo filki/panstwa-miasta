@@ -6,6 +6,12 @@
     --color-3: #eca67c;
     --color-4: #68a3bf;
     --color-5: #317e9d;
+
+    --r-sm: 10px;
+    --r-md: 14px;
+    --r-lg: 20px;
+    --r-xl: 28px;
+    --tap: 44px;
 }
 
 @layer base {
@@ -34,6 +40,36 @@
     h4 {
         font-family: "Outfit", sans-serif;
     }
+}
+
+/* Button component utilities */
+@utility btn {
+    min-height: var(--tap);
+    width: 100%;
+    border: 0;
+    border-radius: var(--r-md);
+    padding: 0.85rem 1.1rem;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition:
+        transform 0.15s ease,
+        filter 0.15s ease,
+        box-shadow 0.15s ease,
+        background 0.15s ease;
+}
+
+@utility btn-primary {
+    background: linear-gradient(135deg, var(--brand-1), var(--brand-5));
+    color: #fff;
+}
+
+@utility btn-secondary {
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
 }
 
 /* Safe area utilities for Capacitor */
