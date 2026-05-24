@@ -4,6 +4,10 @@ let isLeaving = false; // flag to suppress auto-reconnect on manual leave
 let leftByUser = false; // distinguish "user navigated away" from "room dissolved"
 let pmHadRoundStarted = false;
 let pmWsGeneration = 0;
+var PM_SERVER_ORIGIN =
+  typeof window !== "undefined" && (window.Capacitor || window._cordovaNative)
+    ? "https://panstwamiasta.com.pl"
+    : null;
 
 function sendJson(obj) {
   if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
