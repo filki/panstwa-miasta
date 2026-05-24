@@ -112,46 +112,43 @@
 
                     <div class="landing-grid">
                         <section id="lobby" class="landing-actions">
-                            <div id="join-section" class="join-card landing-join-card">
+                            <div
+                                id="join-section"
+                                class="join-card landing-join-card"
+                            >
                                 <div
                                     class="landing-access-panel"
                                     role="tabpanel"
-                                    aria-labelledby="landing-access-tab-anon"
                                 >
                                     <div
                                         class="landing-anon-stage"
                                         id="landing-anon-start"
                                     >
-                                        <div class="landing-anon-profile">
-                                            <div class="landing-anon-identity">
-                                                <div
-                                                    class="landing-anon-nick-row"
+                                        <div class="landing-anon-identity">
+                                            <div class="landing-anon-nick-row">
+                                                <input
+                                                    type="text"
+                                                    class="landing-anon-nickname w-full"
+                                                    id="landing_nickname"
+                                                    maxlength="16"
+                                                    autocomplete="nickname"
+                                                    inputmode="text"
+                                                    placeholder="Twój pseudonim"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    class="btn-secondary !w-[2.5rem] min-w-[2.5rem] p-0 rounded-[var(--r-md)] border border-[rgba(148,163,184,0.24)] bg-white/92 text-muted text-base leading-none"
+                                                    style="
+                                                        text-transform: none;
+                                                        letter-spacing: 0;
+                                                    "
+                                                    onclick="
+                                                        rerollPlayerNickname()
+                                                    "
+                                                    aria-label="Losuj inny pseudonim"
                                                 >
-                                                    <input
-                                                        type="text"
-                                                        class="landing-anon-nickname w-full"
-                                                        id="landing_nickname"
-                                                        maxlength="16"
-                                                        autocomplete="nickname"
-                                                        inputmode="text"
-                                                        placeholder="Twój pseudonim"
-                                                        aria-labelledby="landing-anon-identity-label"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        class="btn-secondary !w-[2.5rem] min-w-[2.5rem] p-0 rounded-[var(--r-md)] border border-[rgba(148,163,184,0.24)] bg-white/92 text-muted text-base leading-none"
-                                                        style="
-                                                            text-transform: none;
-                                                            letter-spacing: 0;
-                                                        "
-                                                        onclick="
-                                                            rerollPlayerNickname()
-                                                        "
-                                                        aria-label="Losuj inny pseudonim"
-                                                    >
-                                                        🎲
-                                                    </button>
-                                                </div>
+                                                    🎲
+                                                </button>
                                             </div>
                                         </div>
 
