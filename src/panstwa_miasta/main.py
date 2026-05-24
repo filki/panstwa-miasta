@@ -10,6 +10,7 @@ from typing import Annotated, Literal, cast
 import aiofiles
 import aiosqlite
 from fastapi import FastAPI, Header, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
@@ -111,6 +112,22 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Państwa-Miasta Engine", lifespan=lifespan)
+
+# Zezwalaj Capacitor WebView (Android: http://localhost, iOS: capacitor://localhost)
+# oraz produkcję https://panstwamiasta.com.pl i local dev
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost",
+        "http://localhost:*",
+        "capacitor://localhost",
+        "https://panstwamiasta.com.pl",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(words_router)
 app.include_router(dictionary_router)
 app.include_router(words_worker_router)
