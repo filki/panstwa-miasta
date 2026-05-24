@@ -10,39 +10,39 @@
 
 :root {
     /* Brand — 5-color palette */
-    --brand-1: #ae601e;
-    --brand-2: #b68354;
-    --brand-3: #eca67c;
-    --brand-4: #68a3bf;
-    --brand-5: #317e9d;
+    --brand-1: #3e140f;
+    --brand-2: #74371f;
+    --brand-3: #d58f23;
+    --brand-4: #eee08f;
+    --brand-5: #efefd2;
 
-    --primary: var(--brand-1);
-    --primary-dark: var(--brand-5);
-    --accent: var(--brand-4);
-    --accent-2: var(--brand-2);
+    --primary: var(--brand-3);
+    --primary-dark: var(--brand-2);
+    --accent: var(--brand-3);
+    --accent-2: var(--brand-4);
     --accent-3: var(--brand-5);
 
     /* Surface */
-    --background: #fdf8f5;
+    --background: #f5f0e8;
     --surface-0: #ffffff;
-    --surface-1: #fef6f0;
-    --surface-2: #fef0e8;
-    --border: rgba(174, 96, 30, 0.08);
-    --border-strong: rgba(174, 96, 30, 0.16);
+    --surface-1: #fcf9f0;
+    --surface-2: #f7f0de;
+    --border: rgba(62, 20, 15, 0.08);
+    --border-strong: rgba(62, 20, 15, 0.16);
 
     /* Text */
-    --text: #1a0f08;
-    --text-muted: #8b6b5a;
+    --text: #1a0a06;
+    --text-muted: #7a5540;
 
     /* State */
-    --success: var(--brand-5);
+    --success: var(--brand-3);
     --danger: var(--brand-1);
     --warning: var(--brand-3);
 
     /* Scoring */
-    --pts-15: var(--brand-5);
-    --pts-10: var(--brand-2);
-    --pts-5: var(--brand-3);
+    --pts-15: var(--brand-3);
+    --pts-10: var(--brand-4);
+    --pts-5: var(--brand-2);
 
     /* Spacing scale */
     --space-1: 0.25rem;
@@ -73,9 +73,9 @@
     --landing-inset: clamp(var(--space-7), 5vw, var(--space-12));
     --landing-shell-pad-top: clamp(var(--space-7), 4vw, var(--space-11));
     --landing-shell-pad-bottom: clamp(var(--space-10), 5.5vw, var(--space-14));
-    --landing-tint-join: 174, 96, 30;
-    --landing-tint-guide: 104, 163, 191;
-    --landing-tint-rooms: 49, 126, 157;
+    --landing-tint-join: 213, 143, 35;
+    --landing-tint-guide: 62, 20, 15;
+    --landing-tint-rooms: 116, 55, 31;
     --landing-opacity-join: 0.16;
     --landing-opacity-panel: 0.34;
     --landing-opacity-guide: 0.14;
@@ -93,8 +93,8 @@
     --fs-xs: 0.75rem;
 
     /* Effects */
-    --shadow-md: 0 10px 30px -10px rgba(174, 96, 30, 0.14);
-    --shadow-lg: 0 25px 50px -12px rgba(174, 96, 30, 0.18);
+    --shadow-md: 0 10px 30px -10px rgba(62, 20, 15, 0.14);
+    --shadow-lg: 0 25px 50px -12px rgba(62, 20, 15, 0.18);
 
     /* Touch */
     --tap: 44px;
@@ -462,7 +462,7 @@ label {
     background:
         radial-gradient(
             80% 60% at 50% 0%,
-            rgba(174, 96, 30, 0.14),
+            rgba(62, 20, 15, 0.14),
             transparent 60%
         ),
         radial-gradient(
@@ -1284,7 +1284,7 @@ body.landing-page .landing-anon-cta {
     font-weight: 700;
     letter-spacing: 0;
     text-transform: none;
-    box-shadow: 0 8px 18px -16px rgba(174, 96, 30, 0.18);
+    box-shadow: 0 8px 18px -16px rgba(62, 20, 15, 0.18);
 }
 
 body.landing-page .landing-anon-cta--create {
@@ -2269,7 +2269,7 @@ body.landing-page .site-footer-meta {
         letter-spacing: 0.1em;
         text-align: left;
         text-transform: uppercase;
-        border-color: rgba(174, 96, 30, 0.18);
+        border-color: rgba(62, 20, 15, 0.18);
         background: rgba(255, 255, 255, 0.92);
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }

@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 @theme {
-    --color-1: #ae601e;
-    --color-2: #b68354;
-    --color-3: #eca67c;
-    --color-4: #68a3bf;
-    --color-5: #317e9d;
+    --color-1: #3e140f;
+    --color-2: #74371f;
+    --color-3: #d58f23;
+    --color-4: #eee08f;
+    --color-5: #efefd2;
 
     --r-sm: 10px;
     --r-md: 14px;
@@ -16,11 +16,11 @@
 
 @layer base {
     :root {
-        --brand-1: #ae601e;
-        --brand-2: #b68354;
-        --brand-3: #eca67c;
-        --brand-4: #68a3bf;
-        --brand-5: #317e9d;
+        --brand-1: #3e140f;
+        --brand-2: #74371f;
+        --brand-3: #d58f23;
+        --brand-4: #eee08f;
+        --brand-5: #efefd2;
     }
 
     html {
@@ -62,7 +62,7 @@
 }
 
 @utility btn-primary {
-    background: linear-gradient(135deg, var(--brand-1), var(--brand-5));
+    background: linear-gradient(135deg, var(--brand-3), var(--brand-2));
     color: #fff;
 }
 

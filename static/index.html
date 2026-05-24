@@ -197,7 +197,11 @@
                                                     />
                                                     <button
                                                         type="button"
-                                                        class="btn-secondary !w-[2.5rem] min-w-[2.5rem] p-0 rounded-[var(--r-md)] border border-[rgba(148,163,184,0.24)] bg-white/92 text-muted text-base leading-none" style="text-transform:none;letter-spacing:0"
+                                                        class="btn-secondary !w-[2.5rem] min-w-[2.5rem] p-0 rounded-[var(--r-md)] border border-[rgba(148,163,184,0.24)] bg-white/92 text-muted text-base leading-none"
+                                                        style="
+                                                            text-transform: none;
+                                                            letter-spacing: 0;
+                                                        "
                                                         onclick="
                                                             rerollPlayerNickname()
                                                         "
@@ -248,7 +252,10 @@
                                             <button
                                                 type="button"
                                                 class="btn !w-auto !min-h-0 bg-transparent border-0 px-[0.35rem] py-[0.55rem] text-muted text-sm no-underline cursor-pointer text-left hover:text-accent"
-                                                style="text-transform:none;letter-spacing:0"
+                                                style="
+                                                    text-transform: none;
+                                                    letter-spacing: 0;
+                                                "
                                                 onclick="showLandingStartMode()"
                                             >
                                                 ‹ Wróć
@@ -647,7 +654,8 @@
                         />
                         <button
                             type="button"
-                            class="nick-reroll btn-secondary !w-auto !min-w-[5.5rem] !min-h-[var(--tap)] px-[0.9rem] py-[0.65rem]" style="text-transform:none;letter-spacing:0"
+                            class="nick-reroll btn-secondary !w-auto !min-w-[5.5rem] !min-h-[var(--tap)] px-[0.9rem] py-[0.65rem]"
+                            style="text-transform: none; letter-spacing: 0"
                             onclick="rerollPlayerNickname()"
                             aria-label="Losuj inny pseudonim"
                         >
@@ -668,10 +676,15 @@
                     />
                 </div>
                 <div class="modal-btns">
-                    <button class="btn btn-secondary !w-auto !min-w-28" onclick="hideModals()">
+                    <button
+                        class="btn btn-secondary !w-auto !min-w-28"
+                        onclick="hideModals()"
+                    >
                         Anuluj
                     </button>
-                    <button class="btn btn-primary" onclick="connect()">Start</button>
+                    <button class="btn btn-primary" onclick="connect()">
+                        Start
+                    </button>
                 </div>
             </div>
         </div>
@@ -717,10 +730,16 @@
                     </div>
                 </div>
                 <div class="modal-btns">
-                    <button class="btn btn-secondary !w-auto !min-w-28" onclick="hideModals()">
+                    <button
+                        class="btn btn-secondary !w-auto !min-w-28"
+                        onclick="hideModals()"
+                    >
                         Anuluj
                     </button>
-                    <button class="btn btn-primary" onclick="createRoomAndEnter()">
+                    <button
+                        class="btn btn-primary"
+                        onclick="createRoomAndEnter()"
+                    >
                         Stwórz i wejdź
                     </button>
                 </div>
@@ -747,7 +766,10 @@
             id="btn-leave"
             onclick="location.href = '/'"
             class="btn btn-primary"
-            style="display:none;background:linear-gradient(135deg,var(--brand-1),#991b1b)"
+            style="
+                display: none;
+                background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
+            "
         >
             Wyjdź
         </button>
