@@ -1004,7 +1004,7 @@ button {
     margin: 0;
     max-width: 28ch;
     line-height: 1.45;
-    text-align: justify;
+    text-align: left;
 }
 @utility landing-guide-carousel-footer {
     display: flex;
