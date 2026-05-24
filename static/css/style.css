@@ -864,6 +864,7 @@ body.landing-page {
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
+    --nav-h: 60px;
     --landing-shell-w: 100%;
     --landing-inset: var(--space-4);
     --landing-shell-pad-top: var(--space-4);
