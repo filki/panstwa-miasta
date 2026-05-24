@@ -20,7 +20,7 @@ def test_read_root():
     assert "site-footer" in response.text
     assert "/polityka-prywatnosci" in response.text
     assert "buycoffee.to/filki" in response.text
-    assert "landing-anon-cta--support" in response.text
+    assert "landing-anon-support-row" in response.text
     assert "landing-anon-action-col" not in response.text
 
 
