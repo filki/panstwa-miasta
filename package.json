@@ -6,7 +6,10 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "jest --coverage"
+    "test": "jest --coverage",
+    "cap:sync": "npx cap sync",
+    "cap:android": "npx cap sync android && npx cap open android",
+    "cap:build": "npx cap sync android"
   },
   "jest": {
     "testEnvironment": "jsdom",

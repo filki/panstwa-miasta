@@ -1,0 +1,21 @@
+{
+  "appId": "pl.panstwamiasta.app",
+  "appName": "Państwa-Miasta",
+  "webDir": "static",
+  "bundledWebRuntime": false,
+  "server": {
+    "hostname": "localhost",
+    "androidScheme": "http",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 800,
+      "backgroundColor": "#f2f6ff",
+      "androidScaleType": "CENTER_CROP"
+    }
+  }
+}
