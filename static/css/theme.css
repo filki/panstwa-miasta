@@ -34,6 +34,13 @@ body {
     -webkit-user-select: none;
 }
 
+/* Body flex column layout — required for flex-1 on main to work */
+@utility landing-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+}
+
 h1,
 h2,
 h3,
