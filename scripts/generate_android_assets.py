@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Generate Android icon & splash assets from static/icons/icon.svg."""
 
-import json
 import pathlib
 import subprocess
 
@@ -109,7 +108,7 @@ def generate_splash():
                 MAGICK,
                 "-size",
                 f"{w}x{h}",
-                f"xc:#f2f6ff",
+                "xc:#f2f6ff",
                 "-gravity",
                 "center",
                 str(SVG_ICON),
