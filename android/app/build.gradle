@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
-// Load keystore properties for release signing
-def keystorePropertiesFile = rootProject.file("keystore.properties")
+// Load keystore properties for release signing (from safe location outside repo)
+def keystorePropertiesFile = file("${System.properties['user.home']}/panstwa-miasta-keystore.properties")
 def keystoreProperties = new Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
@@ -14,7 +14,7 @@ android {
     if (keystoreProperties.containsKey('storeFile')) {
         signingConfigs {
             release {
-                storeFile rootProject.file(keystoreProperties['storeFile'])
+                storeFile file("${System.properties['user.home']}/${keystoreProperties['storeFile']}")
                 storePassword keystoreProperties['storePassword']
                 keyAlias keystoreProperties['keyAlias']
                 keyPassword keystoreProperties['keyPassword']
