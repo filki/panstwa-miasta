@@ -174,6 +174,7 @@ MANIFEST_PATH = static_path / "manifest.json"
 POLITYKA_PATH = static_path / "polityka-prywatnosci.html"
 COOKIES_LEGAL_PATH = static_path / "cookies.html"
 REGULAMIN_PATH = static_path / "regulamin.html"
+SLOWNIK_PATH = static_path / "slownik.html"
 FOOTER_PARTIAL_PATH = static_path / "partials" / "site-footer.html"
 FOOTER_HTML = FOOTER_PARTIAL_PATH.read_text(encoding="utf-8")
 SITE_PUBLIC_ORIGIN = "https://panstwamiasta.com.pl"
@@ -324,6 +325,11 @@ async def get_regulamin() -> HTMLResponse:
     return await _html_with_injected_footer(REGULAMIN_PATH)
 
 
+@app.get("/slownik")
+async def get_slownik() -> HTMLResponse:
+    return await _html_with_injected_footer(SLOWNIK_PATH)
+
+
 @app.get("/robots.txt", response_class=PlainTextResponse)
 async def get_robots_txt() -> PlainTextResponse:
     body = (
@@ -341,7 +347,7 @@ async def get_robots_txt() -> PlainTextResponse:
 async def get_sitemap_xml() -> Response:
     lastmod = _sitemap_lastmod()
     # Statyczne strony
-    paths = ["/", "/polityka-prywatnosci", "/cookies", "/regulamin"]
+    paths = ["/", "/polityka-prywatnosci", "/cookies", "/regulamin", "/slownik"]
     urls = "".join(
         f"<url><loc>{SITE_PUBLIC_ORIGIN}{path}</loc><lastmod>{lastmod}</lastmod></url>\n"
         for path in paths
