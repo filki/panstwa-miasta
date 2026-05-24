@@ -1524,6 +1524,9 @@ button {
 
 /* ── Room page body ── */
 @utility room-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
     font-family: "Inter", system-ui, sans-serif;
     background-color: var(--background);
     background-image:
