@@ -3337,6 +3337,7 @@ body.landing-page .site-footer-meta {
         padding: var(--landing-shell-pad-top) var(--landing-inset)
             var(--landing-shell-pad-bottom);
         flex: 1 1 auto;
+        justify-content: stretch;
         gap: clamp(var(--space-6), 2.5vw, var(--space-10));
     }
 
@@ -3384,7 +3385,6 @@ body.landing-page .site-footer-meta {
         flex: 1 1 auto;
         min-height: 0;
         justify-content: center;
-        align-items: center;
         padding: clamp(var(--space-5), 2.2vw, var(--space-7));
     }
 
@@ -3395,7 +3395,7 @@ body.landing-page .site-footer-meta {
     }
 
     body.landing-page .landing-anon-profile {
-        grid-template-columns: minmax(8.25rem, 9.75rem) minmax(0, 1fr);
+        grid-template-columns: 1fr;
         gap: clamp(var(--space-5), 2.2vw, var(--space-7));
         align-items: center;
     }
