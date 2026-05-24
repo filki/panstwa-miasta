@@ -19,6 +19,10 @@ fi
 # Git 2.35+ (inny użytkownik niż właściciel katalogu) — bezpieczny katalog roboczy
 git config --global --add safe.directory "$APP_DIR" 2>/dev/null || true
 
+# Discard any locally-built CSS — the pull must be clean
+git checkout -- static/css/dist.css 2>/dev/null || true
+git checkout -- static/css/theme.css 2>/dev/null || true
+
 git fetch origin
 git checkout main
 git pull --ff-only origin main
