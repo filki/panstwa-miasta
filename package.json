@@ -7,6 +7,8 @@
   },
   "scripts": {
     "test": "jest --coverage",
+    "css:dev": "npx @tailwindcss/cli -i static/css/theme.css -o static/css/dist.css --watch",
+    "css:build": "npx @tailwindcss/cli -i static/css/theme.css -o static/css/dist.css --minify",
     "cap:sync": "npx cap sync",
     "cap:android": "npx cap sync android && npx cap open android",
     "cap:build": "npx cap sync android"
@@ -25,8 +27,10 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@tailwindcss/cli": "^4.3.0",
     "jest": "^30.4.2",
-    "jest-environment-jsdom": "^30.4.1"
+    "jest-environment-jsdom": "^30.4.1",
+    "tailwindcss": "^4.3.0"
   },
   "dependencies": {
     "@capacitor/cli": "^8.3.3",

@@ -7,8 +7,8 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f2f6ff",
-  "theme_color": "#f2f6ff",
+  "background_color": "#fdf8f5",
+  "theme_color": "#fdf8f5",
   "lang": "pl",
   "categories": ["games", "social"],
   "icons": [
