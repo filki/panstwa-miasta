@@ -72,6 +72,36 @@
         <link rel="stylesheet" href="/static/css/site-footer.css" />
     </head>
     <body class="landing-page">
+        <nav
+            class="navbar"
+            style="
+                background: rgba(255, 255, 255, 0.88);
+                backdrop-filter: blur(12px);
+                border-bottom: 1px solid var(--border);
+                padding-top: env(safe-area-inset-top, 0);
+                position: fixed;
+                inset: 0 0 auto 0;
+                height: var(--nav-h);
+                z-index: 1000;
+            "
+        >
+            <div class="nav-container">
+                <a
+                    href="/"
+                    class="logo"
+                    style="
+                        text-decoration: none;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.35rem;
+                    "
+                    >Państwa<span>Miasta</span></a
+                >
+                <div class="nav-links">
+                    <a href="/slownik" class="nav-link-extra">Słownik</a>
+                </div>
+            </div>
+        </nav>
         <main class="page-wrapper">
             <header class="hero">
                 <div class="landing-shell">
