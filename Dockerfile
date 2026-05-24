@@ -8,13 +8,21 @@ WORKDIR /app
 ENV UV_PROJECT_ENVIRONMENT=/opt/venv \
     PATH="/opt/venv/bin:${PATH}"
 
-RUN uv venv /opt/venv
+# --- JS deps (cache layer: rarely changes) ---
+COPY package.json package-lock.json ./
+RUN npm ci
 
+# --- Python deps (cache layer: rarely changes) ---
+RUN uv venv /opt/venv
 COPY pyproject.toml uv.lock README.md ./
+RUN uv sync --frozen
+
+# --- App source + static ---
 COPY src ./src
 COPY static ./static
 
-RUN uv sync --frozen
+# --- Build Tailwind CSS ---
+RUN npm run css:build
 
 EXPOSE 8000
 
