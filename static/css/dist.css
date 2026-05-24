@@ -939,6 +939,14 @@
       font-size: 0.9rem;
     }
   }
+  .room-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    font-family: "Inter", system-ui, sans-serif;
+    background-color: var(--background);
+    background-image: radial-gradient( circle at 12% 18%, rgba(121, 24, 239, 0.12), transparent 42% ), radial-gradient( circle at 88% 12%, rgba(236, 166, 124, 0.12), transparent 38% ), radial-gradient( circle at 50% 100%, rgba(201, 48, 249, 0.08), transparent 48% ), linear-gradient(180deg, #f5f0f9 0%, #f9f6fc 100%);
+  }
   .landing-page {
     display: flex;
     flex-direction: column;
@@ -1644,6 +1652,9 @@
   .flex-col {
     flex-direction: column;
   }
+  .flex-wrap {
+    flex-wrap: wrap;
+  }
   .items-center {
     align-items: center;
   }
@@ -1711,11 +1722,6 @@
   }
   .border-\[var\(--border\)\] {
     border-color: var(--border);
-  }
-  .room-page {
-    font-family: "Inter", system-ui, sans-serif;
-    background-color: var(--background);
-    background-image: radial-gradient( circle at 12% 18%, rgba(121, 24, 239, 0.12), transparent 42% ), radial-gradient( circle at 88% 12%, rgba(236, 166, 124, 0.12), transparent 38% ), radial-gradient( circle at 50% 100%, rgba(201, 48, 249, 0.08), transparent 48% ), linear-gradient(180deg, #f5f0f9 0%, #f9f6fc 100%);
   }
   .bg-5\/96 {
     background-color: color-mix(in srgb, #efefd2 96%, transparent);
