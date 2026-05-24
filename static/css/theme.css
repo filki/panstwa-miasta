@@ -86,8 +86,8 @@ button {
     padding-bottom: var(--landing-shell-pad-bottom);
     padding-inline: var(--landing-inset);
     border-radius: calc(var(--r-xl) + 2px);
-    border: 1px solid rgba(62, 20, 15, 0.05);
-    background: #fff;
+    border: 1px solid var(--border);
+    background: var(--surface-1);
     box-shadow: 0 14px 34px rgba(62, 20, 15, 0.06);
     box-sizing: border-box;
 }
@@ -461,6 +461,7 @@ button {
 
 @utility landing-anon-nickname {
     flex: 1;
+    width: 100%;
     min-height: 44px;
     padding: 0.75rem 1rem;
     border-radius: 14px;
@@ -469,7 +470,6 @@ button {
     font-weight: 600;
     font-size: 1rem;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-
     &::placeholder {
         color: var(--text-muted);
     }
@@ -512,6 +512,7 @@ button {
 
 @utility landing-anon-room-code {
     flex: 1;
+    width: 100%;
     min-height: 44px;
     padding: 0.75rem 1rem;
     border-radius: 14px;
@@ -2179,8 +2180,8 @@ body.landing-page .landing-shell {
     padding: var(--landing-shell-pad-top) var(--landing-inset)
         var(--landing-shell-pad-bottom);
     border-radius: calc(var(--r-xl) + 2px);
-    border: 1px solid rgba(174, 96, 30, 0.05);
-    background: #fff;
+    border: 1px solid var(--border);
+    background: var(--surface-1);
     box-shadow: 0 14px 34px rgba(174, 96, 30, 0.06);
     box-sizing: border-box;
 }
