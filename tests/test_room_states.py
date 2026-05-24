@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from panstwa_miasta.manager import ConnectionManager, Room
+from panstwa_miasta.manager import ConnectionManager
 
 
 @pytest.fixture(autouse=True)
