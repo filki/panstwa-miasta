@@ -93,8 +93,8 @@
                 </div>
             </div>
         </nav>
-        <main class="page-wrapper">
-            <header class="hero">
+        <main class="flex-1">
+            <header>
                 <div class="landing-shell">
                     <header class="landing-shell-header">
                         <div class="landing-shell-title-row">
@@ -123,14 +123,8 @@
                     </header>
 
                     <div class="landing-grid">
-                        <section
-                            id="lobby"
-                            class="lobby-section start-panel landing-actions"
-                        >
-                            <div
-                                id="join-section"
-                                class="join-card landing-join-card"
-                            >
+                        <section id="lobby" class="landing-actions">
+                            <div id="join-section" class="join-card">
                                 <div
                                     class="landing-access-tabs"
                                     role="tablist"
@@ -768,7 +762,11 @@
             class="btn btn-primary"
             style="
                 display: none;
-                background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
+                background: linear-gradient(
+                    135deg,
+                    var(--brand-1),
+                    var(--brand-2)
+                );
             "
         >
             Wyjdź

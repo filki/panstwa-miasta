@@ -202,13 +202,6 @@ body::after {
 }
 
 /* ---------- Layout primitives ---------- */
-.page-wrapper {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    min-height: 100svh;
-    padding-top: var(--nav-h);
-}
 
 .container {
     width: 100%;
@@ -574,10 +567,7 @@ label {
 }
 
 /* ---------- Sections ---------- */
-.section-header {
-    text-align: center;
-    margin-bottom: var(--space-8);
-}
+
 
 /* ---------- Lobby ---------- */
 .lobby-section {
@@ -590,13 +580,7 @@ label {
     margin: 0 auto;
 }
 
-.join-card {
-    background: var(--surface-0);
-    border: 1px solid var(--border);
-    border-radius: var(--r-xl);
-    padding: var(--space-6);
-    box-shadow: var(--shadow-md);
-}
+
 
 .start-nickname {
     max-width: 420px;
