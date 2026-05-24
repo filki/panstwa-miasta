@@ -6,6 +6,7 @@
             name="viewport"
             content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
+        <base href="https://panstwamiasta.com.pl/" />
         <meta name="theme-color" content="#f2f6ff" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -23,6 +24,14 @@
         />
         <link rel="stylesheet" href="/static/css/style.css" />
         <link rel="stylesheet" href="/static/css/site-footer.css" />
+        <style>
+            body {
+                background: #0ea5e9 !important;
+            }
+            body.loaded {
+                background: var(--background) !important;
+            }
+        </style>
     </head>
     <body class="room-page">
         <nav class="navbar">

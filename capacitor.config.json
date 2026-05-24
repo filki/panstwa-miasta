@@ -3,6 +3,9 @@
   "appName": "Państwa-Miasta",
   "webDir": "static",
   "bundledWebRuntime": false,
+  "server": {
+    "url": "https://panstwamiasta.com.pl"
+  },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 800,
