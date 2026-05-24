@@ -4356,6 +4356,21 @@ body.share-page {
    Capacitor / Mobile / Desktop — dedykowane widoki
    ========================================================= */
 
+/* Mobile (< 1024px) — przywroc scroll na landing page */
+@media (max-width: 1023px) {
+    body.landing-page {
+        min-height: auto;
+    }
+    body.landing-page .page-wrapper {
+        min-height: auto;
+        flex: 0 0 auto;
+    }
+    body.landing-page .hero {
+        flex: 0 0 auto;
+        min-height: auto;
+    }
+}
+
 /* Capacitor APK — ukryj elementy przegladarkowe */
 .is-capacitor .nav-links a[href="/polityka-prywatnosci"],
 .is-capacitor .nav-links a[href="/regulamin"],
