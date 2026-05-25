@@ -121,6 +121,8 @@ async def _start_next_round(room: Room, room_id: str, timeout_coro) -> None:
                 "current_round": room.current_round,
                 "max_rounds": room.max_rounds,
                 "time_limit": room.time_limit,
+                "categories": list(room.categories),
+                "custom_categories": dict(room.custom_categories),
             }
         )
     )
@@ -268,6 +270,8 @@ async def handle_ready(room: Room, room_id: str, client_name: str, timeout_coro)
                     "current_round": room.current_round,
                     "max_rounds": room.max_rounds,
                     "time_limit": room.time_limit,
+                    "categories": list(room.categories),
+                    "custom_categories": dict(room.custom_categories),
                 }
             )
         )

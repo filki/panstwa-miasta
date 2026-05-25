@@ -587,6 +587,8 @@ function onRoundStarted(msg) {
   hideRoundResultsOverlay();
   provisionalRoundResultsMsg = null;
   globalThis.currentLetter = msg.letter;
+  globalThis.pmRoundCategories = msg.categories || null;
+  globalThis.pmRoundCustomCategories = msg.custom_categories || null;
   pmHadRoundStarted = true;
   if (typeof setRoomPhase === "function") setRoomPhase("playing");
   if (msg.resume) {

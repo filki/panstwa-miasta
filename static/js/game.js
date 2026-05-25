@@ -47,20 +47,20 @@ function dissolveRoom() {
 function enableInputs() {
   if (globalThis.currentCountdown) clearInterval(globalThis.currentCountdown);
 
-  // Ktore kategorie sa aktywne? (z configu lobby)
-  // Sprawdzamy BEZPOSREDNIO w DOM lobby — kategoria jest aktywna jesli
-  // checkbox .cat-checkbox[value=X] jest :checked.
-  // Fallback: jesli lobby nie ma checkboxow (reconnect), wszystkie wlaczone.
+  var activeCats = globalThis.pmRoundCategories;
+  var activeCustomCats = globalThis.pmRoundCustomCategories;
+
   var inputs = document.querySelectorAll("#categories input");
   inputs.forEach(function (inp) {
     var cat = inp.getAttribute("data-category") || "";
     var field = inp.closest(".game-field");
-    // Szukamy checkboxa w lobby (mozliwe ze ukryty jesli nie ma lobby)
-    var lobbyCb = document.querySelector(
-      '.cat-checkbox[value="' + cat.replace(/"/g, "&quot;") + '"]',
-    );
+    // Aktywne jesli: brak danych = wszystkie wlaczone (fallback),
+    // albo kategoria jest w liscie z backendu, albo custom kategoria
     var isActive =
-      !lobbyCb || lobbyCb.checked || globalThis.currentLetter === undefined;
+      globalThis.currentLetter === undefined ||
+      !activeCats ||
+      activeCats.indexOf(cat) !== -1 ||
+      (activeCustomCats && activeCustomCats[cat] !== undefined);
 
     if (isActive) {
       inp.disabled = false;
