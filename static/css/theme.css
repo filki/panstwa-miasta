@@ -1735,6 +1735,69 @@ button {
     max-width: 28rem;
 }
 
+/* Game over scoreboard */
+.game-over-scoreboard {
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(213, 143, 35, 0.18);
+    border-radius: 20px;
+    padding: var(--space-4);
+}
+.share-score-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.game-over-score-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 0.65rem 0.85rem;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(62, 20, 15, 0.08);
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: border-color 0.15s;
+}
+.game-over-score-row--me {
+    border-color: rgba(213, 143, 35, 0.3);
+    background: rgba(213, 143, 35, 0.06);
+}
+.share-score-pts {
+    font-family: "Outfit", system-ui, sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--accent-text);
+    flex-shrink: 0;
+}
+
+/* Game over round breakdown */
+.game-over-details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+.game-over-details-title {
+    font-family: "Outfit", system-ui, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text);
+    margin: var(--space-4) 0 var(--space-2);
+}
+.game-over-round-title {
+    font-family: "Outfit", system-ui, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin: var(--space-4) 0 var(--space-2);
+    padding-bottom: var(--space-1);
+    border-bottom: 1px solid rgba(213, 143, 35, 0.12);
+}
+
 /* Misc */
 @utility rooms-table {
     width: 100%;
