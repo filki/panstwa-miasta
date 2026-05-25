@@ -848,6 +848,15 @@ function updateLobbyConfigUI(data) {
   if (countBarEl && data.player_count != null)
     countBarEl.textContent = data.player_count;
 
+  // Zapisz aktywny config dla game.js (filtrowanie kategorii podczas rundy)
+  globalThis.pmActiveCategories = Array.isArray(data.categories)
+    ? data.categories
+    : [];
+  globalThis.pmCustomCategories =
+    data.custom_categories && typeof data.custom_categories === "object"
+      ? data.custom_categories
+      : {};
+
   // Update category checkboxes
   if (Array.isArray(data.categories)) {
     document.querySelectorAll(".cat-checkbox").forEach(function (cb) {
