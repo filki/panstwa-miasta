@@ -47,9 +47,13 @@ function dissolveRoom() {
 function enableInputs() {
   if (globalThis.currentCountdown) clearInterval(globalThis.currentCountdown);
 
-  // Category filter: use last known config from lobby
+  // Read active categories directly from lobby checkboxes (always in sync)
+  var checkedCats = [];
+  document.querySelectorAll(".cat-checkbox:checked").forEach(function (cb) {
+    checkedCats.push(cb.value);
+  });
+  // Custom categories from last config
   var config = globalThis.pmLastConfig || {};
-  var activeCats = Array.isArray(config.categories) ? config.categories : [];
   var customCats = config.custom_categories || {};
 
   var catContainer = document.getElementById("categories");
@@ -61,7 +65,7 @@ function enableInputs() {
     var inp = field.querySelector("input");
     if (!inp) return;
     var cat = inp.getAttribute("data-category") || "";
-    if (activeCats.indexOf(cat) !== -1) {
+    if (checkedCats.indexOf(cat) !== -1) {
       field.style.display = "";
       inp.disabled = false;
       inp.value = "";
@@ -135,9 +139,12 @@ function enableInputs() {
 }
 
 function checkAllFilled() {
-  const inputs = Array.from(document.querySelectorAll("#categories input"));
-  const allFilled = inputs.every((inp) => inp.value.trim().length > 0);
-  const stopBtn = document.getElementById("btn-stop");
+  var inputs = document.querySelectorAll("#categories input:not([disabled])");
+  var allFilled = true;
+  inputs.forEach(function (inp) {
+    if (inp.value.trim().length === 0) allFilled = false;
+  });
+  var stopBtn = document.getElementById("btn-stop");
 
   if (allFilled && !("stopped" in stopBtn.dataset)) {
     stopBtn.disabled = false;
@@ -191,9 +198,9 @@ function validateFirstLetter(inp) {
 }
 
 function disableAndSubmit() {
-  const inputs = document.querySelectorAll("#categories input");
-  let answers = {};
-  inputs.forEach((inp) => {
+  var inputs = document.querySelectorAll("#categories input:not([disabled])");
+  var answers = {};
+  inputs.forEach(function (inp) {
     answers[inp.dataset.category] = inp.value.trim();
     inp.disabled = true;
   });
