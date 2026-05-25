@@ -309,6 +309,8 @@ button {
     display: flex;
     flex-direction: column;
     gap: var(--space-5);
+    flex: 1;
+    min-height: 0;
 }
 
 @utility room-lobby {
@@ -316,6 +318,7 @@ button {
     flex-direction: column;
     gap: var(--space-5);
     padding: clamp(1rem, 2.5vw, 1.25rem);
+    flex: 1;
 }
 
 @utility room-lobby-bar {
@@ -2101,7 +2104,7 @@ button {
     --r-lg: 20px;
     --r-xl: 28px;
     --room-radius: 24px;
-    --nav-h: 56px;
+    --nav-h: 64px;
     --container-w: 1200px;
     --landing-shell-w: min(94%, 78rem);
     --landing-inset: clamp(var(--space-7), 5vw, var(--space-12));
@@ -2392,6 +2395,14 @@ button {
     max-width: var(--container-w);
     margin-inline: auto;
     padding-inline: var(--safe-pad-x);
+}
+
+/* ── Container inside page-wrapper — flex to stretch room-stage ── */
+.page-wrapper > .container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
 }
 
 /* ── Page wrapper ── */
