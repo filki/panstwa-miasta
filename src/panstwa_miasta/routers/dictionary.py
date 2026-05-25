@@ -44,6 +44,24 @@ STRUCTURED_TABLES = {
         "where_col": "nazwa_norm",
         "order": "nazwa ASC",
     },
+    "zawody": {
+        "table": "jobs",
+        "columns": "opis AS name, kod AS code",
+        "where_col": "opis_norm",
+        "order": "opis ASC",
+    },
+    "rosliny": {
+        "table": "plant_norms",
+        "columns": "norm AS name",
+        "where_col": "norm",
+        "order": "norm ASC",
+    },
+    "zwierzeta": {
+        "table": "animal_norms",
+        "columns": "norm AS name",
+        "where_col": "norm",
+        "order": "norm ASC",
+    },
 }
 
 

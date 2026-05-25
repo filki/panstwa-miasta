@@ -589,6 +589,19 @@
                         tdClass: "slownik-td-gender",
                     },
                 ],
+                zawody: [
+                    {
+                        key: "name",
+                        label: "Zawód",
+                        tdClass: "slownik-td-name",
+                    },
+                    {
+                        key: "code",
+                        label: "Kod PKD",
+                        tdClass: "slownik-td-gender",
+                        format: (v) => v || "—",
+                    },
+                ],
             };
 
             function renderStructuredTable(data, columns) {
