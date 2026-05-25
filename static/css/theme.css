@@ -1008,8 +1008,7 @@ button {
 
 /* Daily stats widget */
 @utility daily-stats-card {
-    width: min(100%, var(--landing-shell-w));
-    margin-inline: auto;
+    width: 100%;
     padding: var(--space-3) var(--space-4);
     border-radius: calc(var(--r-lg) + 4px);
     border: 1px solid rgba(var(--landing-tint-rooms), 0.2);
