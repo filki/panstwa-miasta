@@ -182,6 +182,35 @@
                         </div>
                     </header>
 
+                    <section class="daily-stats-card">
+                        <div class="daily-stats-header">
+                            <h3
+                                class="daily-stats-title"
+                                id="daily-stats-title"
+                            >
+                                Najczęstsze państwo
+                            </h3>
+                            <span
+                                class="daily-stats-badge"
+                                id="daily-stats-badge"
+                            ></span>
+                        </div>
+                        <div id="daily-stats-body" class="daily-stats-body">
+                            <div
+                                class="daily-stats-loading"
+                                id="daily-stats-loading"
+                            >
+                                Ładowanie…
+                            </div>
+                            <canvas
+                                id="daily-stats-chart"
+                                width="400"
+                                height="120"
+                                style="display: none"
+                            ></canvas>
+                        </div>
+                    </section>
+
                     <div class="landing-grid">
                         <section id="lobby" class="landing-actions">
                             <div
@@ -605,30 +634,6 @@
                         </button>
                     </section>
 
-                    <section class="daily-stats-card">
-                        <h3 class="daily-stats-title" id="daily-stats-title">
-                            📊 Najczęstsze państwo
-                        </h3>
-                        <p
-                            class="daily-stats-subtitle"
-                            id="daily-stats-subtitle"
-                        ></p>
-                        <div id="daily-stats-body" class="daily-stats-body">
-                            <div
-                                class="daily-stats-loading"
-                                id="daily-stats-loading"
-                            >
-                                Ładowanie…
-                            </div>
-                            <canvas
-                                id="daily-stats-chart"
-                                width="400"
-                                height="220"
-                                style="display: none"
-                            ></canvas>
-                        </div>
-                    </section>
-
                     <div id="active-rooms-section" class="active-rooms-block">
                         <h3 class="active-rooms-title">Aktywne pokoje</h3>
                         <div id="active-rooms-empty" class="active-rooms-empty">
@@ -917,11 +922,8 @@
                         ).textContent =
                             "Najczęstsze państwo na literę " + data.letter;
                         document.getElementById(
-                            "daily-stats-subtitle",
-                        ).textContent =
-                            "na podstawie " +
-                            data.total_games +
-                            " gier w ostatnich 30 dniach";
+                            "daily-stats-badge",
+                        ).textContent = data.total_games + " gier";
                         var labels = data.top.map(function (i) {
                             return i.name;
                         });
