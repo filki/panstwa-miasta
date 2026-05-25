@@ -19,6 +19,7 @@ from pydantic import ValidationError
 from .analytics_snippet import inject_before_head_close, public_head_snippets
 from .api_models import (
     ActiveRoomRow,
+    AppealIn,
     AppealOut,
     ClientNamePath,
     CreateRoomIn,
