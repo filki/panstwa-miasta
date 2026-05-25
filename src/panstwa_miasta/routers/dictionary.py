@@ -57,6 +57,33 @@ async def get_slownik_categories():
     }
 
 
+@router.get("/slownik/search")
+async def search_slownik(q: str = "", category: str = "rosliny", limit: int = 50):
+    """Wyszukiwarka bezpośrednia — zwraca słowa pasujące do prefixu `q`."""
+    cat_map = {
+        "miasta": MIASTA,
+        "rosliny": ROSLINY,
+        "zwierzeta": ZWIERZETA,
+        "zawody": JOBS,
+        "imiona": NAMES,
+        "rzeczy": THINGS,
+    }
+    words = cat_map.get(category)
+    if words is None:
+        raise HTTPException(404, f"Nieznana kategoria: {category}")
+    q = q.strip().lower()
+    if not q or len(q) < 1:
+        return {"category": category, "query": q, "words": []}
+    # Najpierw direct match (pełna nazwa), potem prefix match, potem substring
+    direct = sorted(w for w in words if w.lower() == q)
+    prefix = sorted(w for w in words if w.lower().startswith(q) and w.lower() != q)
+    substring = sorted(
+        w for w in words if q in w.lower() and w.lower() not in direct and w.lower() not in prefix
+    )
+    results = (direct + prefix + substring)[:limit]
+    return {"category": category, "query": q, "words": results}
+
+
 @router.post("/suggestions")
 async def post_dictionary_suggestion(body: WordReportIn) -> WordReportOut:
     result = await submit_dictionary_intake(

@@ -243,6 +243,71 @@
                 padding: 2rem;
                 color: var(--text-muted);
             }
+
+            /* --- Wyszukiwarka --- */
+            .slownik-search {
+                max-width: 560px;
+                margin: 0 auto 2rem;
+                padding: 0 1rem;
+            }
+            .slownik-search-row {
+                display: flex;
+                gap: 0.5rem;
+                align-items: stretch;
+                background: var(--surface-0);
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 0.35rem;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+                transition: border-color 0.15s;
+            }
+            .slownik-search-row:focus-within {
+                border-color: var(--accent);
+            }
+            .slownik-search-select {
+                border: 0;
+                background: transparent;
+                font-size: 0.85rem;
+                padding: 0.35rem 0.5rem;
+                border-radius: 10px;
+                color: var(--text);
+                cursor: pointer;
+                outline: none;
+                min-width: 100px;
+            }
+            .slownik-search-input {
+                flex: 1;
+                border: 0;
+                background: transparent;
+                font-size: 0.95rem;
+                padding: 0.4rem 0.25rem;
+                outline: none;
+                color: var(--text);
+                min-width: 0;
+            }
+            .slownik-search-input::placeholder {
+                color: var(--text-muted);
+                opacity: 0.7;
+            }
+            .slownik-search-clear {
+                border: 0;
+                background: transparent;
+                font-size: 1.2rem;
+                cursor: pointer;
+                color: var(--text-muted);
+                padding: 0 0.5rem;
+                display: flex;
+                align-items: center;
+            }
+            .slownik-search-clear:hover {
+                color: var(--text);
+            }
+            .slownik-search-results {
+                margin-top: 0.75rem;
+            }
+            .slownik-search-results .words-grid {
+                margin-top: 0;
+            }
             @media (max-width: 480px) {
                 .category-grid {
                     grid-template-columns: repeat(3, 1fr);
@@ -270,8 +335,43 @@
                 <h1>Słownik</h1>
                 <p>
                     Tysiące słów do gry Państwa-Miasta. Wybierz kategorię i
-                    literę, żeby zobaczyć pasujące słowa.
+                    literę, albo wyszukaj bezpośrednio.
                 </p>
+            </div>
+
+            <div class="slownik-search" id="slownik-search-section">
+                <div class="slownik-search-row">
+                    <select
+                        id="search-category"
+                        class="slownik-search-select"
+                        aria-label="Kategoria"
+                    >
+                        <option value="rosliny">🌿 Rośliny</option>
+                        <option value="zwierzeta">🐾 Zwierzęta</option>
+                        <option value="miasta">🏙️ Miasta</option>
+                        <option value="zawody">💼 Zawody</option>
+                        <option value="imiona">👤 Imiona</option>
+                        <option value="rzeczy">📦 Rzeczy</option>
+                    </select>
+                    <input
+                        type="text"
+                        id="search-input"
+                        class="slownik-search-input"
+                        placeholder="Wpisz nazwę… np. róża, jabłoń, sosna"
+                        autocomplete="off"
+                        aria-label="Szukaj w słowniku"
+                    />
+                    <button
+                        type="button"
+                        id="search-clear-btn"
+                        class="slownik-search-clear"
+                        style="display: none"
+                        aria-label="Wyczyść"
+                    >
+                        ×
+                    </button>
+                </div>
+                <div class="slownik-search-results" id="search-results"></div>
             </div>
 
             <div class="category-grid" id="categories"></div>
@@ -336,6 +436,62 @@
             const LETTERS = "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ".split("");
             let activeCategory = null;
             let activeLetter = null;
+            let searchTimer = null;
+
+            /* --- Wyszukiwarka --- */
+            const searchInput = document.getElementById("search-input");
+            const searchCategory = document.getElementById("search-category");
+            const searchResults = document.getElementById("search-results");
+            const searchClear = document.getElementById("search-clear-btn");
+
+            async function doSearch() {
+                const q = searchInput.value.trim();
+                if (!q || q.length < 2) {
+                    searchResults.innerHTML = "";
+                    searchClear.style.display = "none";
+                    return;
+                }
+                searchClear.style.display = "";
+                searchResults.innerHTML =
+                    '<p class="loading" style="padding:0.75rem">Szukanie…</p>';
+                const cat = searchCategory.value;
+                try {
+                    const resp = await fetch(
+                        `/api/dictionary/slownik/search?q=${encodeURIComponent(q)}&category=${encodeURIComponent(cat)}&limit=50`,
+                    );
+                    const data = await resp.json();
+                    if (data.words.length === 0) {
+                        searchResults.innerHTML =
+                            '<p class="empty-state" style="padding:0.75rem;font-size:0.9rem">Brak wyników</p>';
+                    } else {
+                        searchResults.innerHTML =
+                            '<div class="words-grid">' +
+                            data.words
+                                .map(
+                                    (w) =>
+                                        `<span class="word-chip">${w}</span>`,
+                                )
+                                .join("") +
+                            "</div>";
+                    }
+                } catch (e) {
+                    searchResults.innerHTML =
+                        '<p class="empty-state" style="padding:0.75rem;font-size:0.9rem">Błąd wyszukiwania</p>';
+                }
+            }
+
+            searchInput.addEventListener("input", function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(doSearch, 200);
+            });
+            searchInput.addEventListener("search", doSearch);
+            searchCategory.addEventListener("change", doSearch);
+            searchClear.addEventListener("click", function () {
+                searchInput.value = "";
+                searchResults.innerHTML = "";
+                searchClear.style.display = "none";
+                searchInput.focus();
+            });
 
             async function loadCategories() {
                 const grid = document.getElementById("categories");
