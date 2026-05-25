@@ -1099,9 +1099,9 @@ function handleRoomRouteOnLoad(savedNick) {
   }
 
   applyRoomSettingsFromUrl();
-  const allowAutoJoin = consumeRoomAutoJoinIntent();
-  prepareRoomInviteNickname(allowAutoJoin);
-  const autoJoined = allowAutoJoin && tryAutoJoin(savedNick, roomId);
+  consumeRoomAutoJoinIntent(); // clear flag from redirect
+  prepareRoomInviteNickname(true);
+  const autoJoined = tryAutoJoin(savedNick, roomId);
   if (!autoJoined) setRoomJoinVisible(true);
   return isRoomRoute;
 }
