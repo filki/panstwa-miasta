@@ -8,7 +8,7 @@ import aiosqlite
 from fastapi import APIRouter, HTTPException
 
 from ..api_models import WordReportIn, WordReportOut
-from ..data import JOBS, MIASTA, NAMES, ROSLINY, THINGS, ZWIERZETA
+from ..data import COUNTRIES, JOBS, MIASTA, NAMES, ROSLINY, THINGS, ZWIERZETA
 from ..db_backend import _db_path
 from ..word_queue import submit_dictionary_intake
 
@@ -21,6 +21,29 @@ CAT_MAP = {
     "zawody": JOBS,
     "imiona": NAMES,
     "rzeczy": THINGS,
+    "panstwa": COUNTRIES,
+}
+
+# Mapowanie kategorii na tabele SQL z danymi strukturalnymi
+STRUCTURED_TABLES = {
+    "imiona": {
+        "table": "names",
+        "columns": "imie AS name, plec AS gender, liczebnosc AS count",
+        "where_col": "imie_norm",
+        "order": "liczebnosc DESC, imie ASC",
+    },
+    "panstwa": {
+        "table": "countries",
+        "columns": "name, continent, capital, population, area_km2, density",
+        "where_col": "name_norm",
+        "order": "population DESC, name ASC",
+    },
+    "miasta": {
+        "table": "cities",
+        "columns": "nazwa AS name, kraj AS country",
+        "where_col": "nazwa_norm",
+        "order": "nazwa ASC",
+    },
 }
 
 
@@ -28,12 +51,14 @@ CAT_MAP = {
 async def get_slownik_words(category: str, letter: str, limit: int = 200):
     """Zwraca slowa dla kategorii + litery z pamieci (ladowanej przy starcie)."""
     words = CAT_MAP.get(category)
-    if words is None:
+    if words is None and category not in STRUCTURED_TABLES:
         raise HTTPException(404, f"Nieznana kategoria: {category}")
+    if category in STRUCTURED_TABLES:
+        # Dla strukturalnych — deleguj do search
+        return await search_slownik(q=letter, category=category, page=1, per_page=limit)
     letter_upper = letter.strip().upper()
     if len(letter_upper) != 1:
         raise HTTPException(400, "Podaj pojedyncza litere")
-
     filtered = [w for w in words if w.upper().startswith(letter_upper)]
     filtered.sort()
     return {"category": category, "letter": letter_upper, "words": filtered[:limit]}
@@ -42,14 +67,22 @@ async def get_slownik_words(category: str, letter: str, limit: int = 200):
 @router.get("/slownik/categories")
 async def get_slownik_categories():
     """Zwraca liste kategorii z liczba slow."""
-    return {
+    counts = {
         "miasta": len(MIASTA),
         "rosliny": len(ROSLINY),
         "zwierzeta": len(ZWIERZETA),
         "zawody": len(JOBS),
         "imiona": len(NAMES),
         "rzeczy": len(THINGS),
+        "panstwa": len(COUNTRIES),
     }
+    # Dla kategorii strukturalnych dolicz z DB
+    async with aiosqlite.connect(_db_path()) as db:
+        for cat, info in STRUCTURED_TABLES.items():
+            async with db.execute(f"SELECT COUNT(*) as cnt FROM {info['table']}") as cur:
+                row = await cur.fetchone()
+                counts[cat] = row["cnt"] if row else counts.get(cat, 0)
+    return counts
 
 
 @router.get("/slownik/search")
@@ -61,40 +94,40 @@ async def search_slownik(
 ):
     """Wyszukiwarka słownikowa z paginacją.
 
-    Dla kategorii ``imiona`` zwraca strukturę ``{imie, plec, liczebnosc}``
-    z tabeli ``names`` w SQLite. Dla pozostałych kategorii zwraca listę
-    słów z pamięci.
+    Kategorie strukturalne (imiona, panstwa, miasta) zwracają dane z SQLite.
+    Pozostałe — listę słów z pamięci.
     """
     page = max(1, page)
     per_page = max(1, min(50, per_page))
     q = q.strip().lower()
 
-    # --- Imiona: strukturalne zapytanie do SQLite ---
-    if category == "imiona":
+    # --- Kategorie strukturalne: zapytanie do SQLite ---
+    if category in STRUCTURED_TABLES:
+        info = STRUCTURED_TABLES[category]
         async with aiosqlite.connect(_db_path()) as db:
             db.row_factory = aiosqlite.Row
             where = ""
             params: list[str] = []
             if q:
-                where = "WHERE imie_norm LIKE ?"
+                where = f"WHERE {info['where_col']} LIKE ?"
                 params = [q + "%"]
             # count
-            async with db.execute(f"SELECT COUNT(*) as cnt FROM names {where}", params) as cur:
+            async with db.execute(
+                f"SELECT COUNT(*) as cnt FROM {info['table']} {where}", params
+            ) as cur:
                 cnt_row = await cur.fetchone()
                 total = cnt_row["cnt"] if cnt_row else 0
             # data
             offset = (page - 1) * per_page
             async with db.execute(
-                f"SELECT imie, plec, liczebnosc FROM names {where} ORDER BY liczebnosc DESC, imie ASC LIMIT ? OFFSET ?",
+                f"SELECT {info['columns']} FROM {info['table']} {where} ORDER BY {info['order']} LIMIT ? OFFSET ?",
                 params + [per_page, offset],
             ) as cur:
                 rows = await cur.fetchall()
-            words = [
-                {"name": r["imie"], "gender": r["plec"], "count": r["liczebnosc"]} for r in rows
-            ]
+            words = [dict(r) for r in rows]
         pages = max(1, math.ceil(total / per_page))
         return {
-            "category": "imiona",
+            "category": category,
             "query": q,
             "words": words,
             "total": total,

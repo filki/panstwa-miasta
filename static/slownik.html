@@ -493,10 +493,11 @@
         <script>
             const CATEGORIES = [
                 { id: "miasta", name: "Miasta", icon: "🏙️" },
+                { id: "panstwa", name: "Państwa", icon: "🌍" },
                 { id: "rosliny", name: "Rośliny", icon: "🌿" },
                 { id: "zwierzeta", name: "Zwierzęta", icon: "🐾" },
-                { id: "zawody", name: "Zawody", icon: "💼" },
                 { id: "imiona", name: "Imiona", icon: "👤" },
+                { id: "zawody", name: "Zawody", icon: "💼" },
                 { id: "rzeczy", name: "Rzeczy", icon: "📦" },
             ];
             const LETTERS = "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ".split("");
@@ -522,6 +523,7 @@
 
             const CATEGORY_ICONS = {
                 miasta: "🏙️",
+                panstwa: "🌍",
                 rosliny: "🌿",
                 zwierzeta: "🐾",
                 zawody: "💼",
@@ -529,29 +531,88 @@
                 rzeczy: "📦",
             };
 
-            function genderLabel(g) {
-                return g === "M" ? "Mężczyzna" : g === "K" ? "Kobieta" : g;
-            }
+            const TABLE_COLUMNS = {
+                imiona: [
+                    { key: "name", label: "Imię", tdClass: "slownik-td-name" },
+                    {
+                        key: "gender",
+                        label: "Płeć",
+                        tdClass: "slownik-td-gender",
+                        format: (v) =>
+                            v === "M" ? "Mężczyzna" : v === "K" ? "Kobieta" : v,
+                    },
+                    {
+                        key: "count",
+                        label: "Liczba wystąpień",
+                        tdClass: "slownik-td-count",
+                        format: (v) => Number(v).toLocaleString(),
+                    },
+                ],
+                panstwa: [
+                    {
+                        key: "name",
+                        label: "Państwo",
+                        tdClass: "slownik-td-name",
+                    },
+                    {
+                        key: "continent",
+                        label: "Kontynent",
+                        tdClass: "slownik-td-gender",
+                    },
+                    {
+                        key: "capital",
+                        label: "Stolica",
+                        tdClass: "slownik-td-gender",
+                    },
+                    {
+                        key: "population",
+                        label: "Populacja",
+                        tdClass: "slownik-td-count",
+                        format: (v) => (v ? Number(v).toLocaleString() : "—"),
+                    },
+                    {
+                        key: "area_km2",
+                        label: "Pow. km²",
+                        tdClass: "slownik-td-count",
+                        format: (v) => (v ? Number(v).toLocaleString() : "—"),
+                    },
+                ],
+                miasta: [
+                    {
+                        key: "name",
+                        label: "Miasto",
+                        tdClass: "slownik-td-name",
+                    },
+                    {
+                        key: "country",
+                        label: "Kraj",
+                        tdClass: "slownik-td-gender",
+                    },
+                ],
+            };
 
-            function renderSearchTable(data) {
+            function renderStructuredTable(data, columns) {
                 var html =
                     '<div class="slownik-table-wrap">' +
                     '<table class="slownik-table">' +
-                    "<thead><tr><th>Imię</th><th>Płeć</th><th>Liczba wystąpień</th></tr></thead>" +
-                    "<tbody>";
+                    "<thead><tr>";
+                columns.forEach(function (col) {
+                    html += "<th>" + col.label + "</th>";
+                });
+                html += "</tr></thead><tbody>";
                 data.words.forEach(function (w) {
-                    html +=
-                        "<tr>" +
-                        "<td class='slownik-td-name'>" +
-                        w.name +
-                        "</td>" +
-                        "<td class='slownik-td-gender'>" +
-                        genderLabel(w.gender) +
-                        "</td>" +
-                        "<td class='slownik-td-count'>" +
-                        w.count.toLocaleString() +
-                        "</td>" +
-                        "</tr>";
+                    html += "<tr>";
+                    columns.forEach(function (col) {
+                        var val = w[col.key];
+                        if (col.format) val = col.format(val);
+                        html +=
+                            '<td class="' +
+                            (col.tdClass || "") +
+                            '">' +
+                            escapeHtml(String(val ?? "")) +
+                            "</td>";
+                    });
+                    html += "</tr>";
                 });
                 html += "</tbody></table></div>";
                 html += renderPagination(data);
@@ -623,7 +684,10 @@
                             escapeHtml(q) +
                             "</strong></p>";
                     } else if (data.structured) {
-                        searchResults.innerHTML = renderSearchTable(data);
+                        var cols = TABLE_COLUMNS[data.category];
+                        searchResults.innerHTML = cols
+                            ? renderStructuredTable(data, cols)
+                            : renderSearchChips(data);
                     } else {
                         searchResults.innerHTML = renderSearchChips(data);
                     }
@@ -680,6 +744,8 @@
 
             var CATEGORY_DESCRIPTIONS = {
                 miasta: "Miasta to jedna z najbogatszych kategorii — w bazie znajduje się ponad 32 tysiące miejscowości z Polski i świata, od małych wsi po wielkie metropolie. Wystarczy, że nazwa zaczyna się na wylosowaną literę.",
+                panstwa:
+                    "Państwa to 205 krajów i terytoriów z całego świata. Dla każdego znajdziesz kontynent, stolicę, populację i powierzchnię.",
                 rosliny:
                     "Rośliny obejmują kwiaty, drzewa, krzewy, owoce, warzywa, zioła i grzyby. Baza zawiera około 19 tysięcy haseł — od popularnych gatunków po egzotyczne okazy.",
                 zwierzeta:
