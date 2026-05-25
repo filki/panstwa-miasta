@@ -866,8 +866,8 @@ async def websocket_endpoint(
         if not manager.disconnect(room_id, client_name, websocket):
             return
         if room_id not in manager.rooms:
-            # Pusty pokój: `disconnect` już zaplanował opóźnione `delete_room`.
             return
+        was_host = room.host_name == client_name
         await manager.cleanup_player_after_disconnect(room_id, client_name)
         if room_id not in manager.rooms:
             return
@@ -875,5 +875,7 @@ async def websocket_endpoint(
         await room.broadcast(
             json.dumps({"type": "system", "message": f"{client_name} opuścił grę"})
         )
+        if was_host:
+            manager._schedule_host_reassign(room, room_id, client_name)
         await room.broadcast(json.dumps(score_update_payload(room)))
         logger.info(f"Notified room {room_id} about departure of '{client_name}'")
