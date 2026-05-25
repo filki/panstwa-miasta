@@ -629,45 +629,51 @@
                                     aria-live="polite"
                                 ></div>
                             </div>
-                            <h3 class="restart-heading">Koniec gry</h3>
                             <div class="restart-actions">
-                                <button
-                                    type="button"
-                                    id="btn-restart-game"
-                                    onclick="requestRestart()"
-                                    class="restart-btn--primary"
-                                    style="display: none"
-                                >
-                                    Zagraj ponownie
-                                </button>
-                                <p class="restart-action-desc">
-                                    Nowa runda z tymi samymi graczami i
-                                    ustawieniami
-                                </p>
-                                <button
-                                    type="button"
-                                    id="btn-restart-defaults"
-                                    onclick="requestRestart()"
-                                    class="restart-btn--secondary"
-                                    style="display: none"
-                                >
-                                    Nowa gra
-                                </button>
-                                <p class="restart-action-desc">
-                                    Rozpocznij od nowa z domyślnymi ustawieniami
-                                </p>
-                                <button
-                                    type="button"
-                                    id="btn-leave-room"
-                                    onclick="leaveRoom()"
-                                    class="restart-btn--danger"
-                                >
-                                    Wyjdź z pokoju
-                                </button>
-                                <p class="restart-action-desc">
-                                    Opuść pokój — jeśli jesteś hostem,
-                                    prowadzenie przejmie następny gracz
-                                </p>
+                                <div class="restart-action-group">
+                                    <button
+                                        type="button"
+                                        id="btn-restart-game"
+                                        onclick="requestRestart()"
+                                        class="restart-btn--primary"
+                                        style="display: none"
+                                    >
+                                        Zagraj ponownie
+                                    </button>
+                                    <p class="restart-action-desc">
+                                        Nowa runda z tymi samymi graczami i
+                                        ustawieniami
+                                    </p>
+                                </div>
+                                <div class="restart-action-group">
+                                    <button
+                                        type="button"
+                                        id="btn-restart-defaults"
+                                        onclick="requestRestart()"
+                                        class="restart-btn--secondary"
+                                        style="display: none"
+                                    >
+                                        Nowa gra
+                                    </button>
+                                    <p class="restart-action-desc">
+                                        Rozpocznij od nowa z domyślnymi
+                                        ustawieniami
+                                    </p>
+                                </div>
+                                <div class="restart-action-group">
+                                    <button
+                                        type="button"
+                                        id="btn-leave-room"
+                                        onclick="leaveRoom()"
+                                        class="restart-btn--danger"
+                                    >
+                                        Wyjdź z pokoju
+                                    </button>
+                                    <p class="restart-action-desc">
+                                        Opuść pokój — jeśli jesteś hostem,
+                                        prowadzenie przejmie następny gracz
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </section>
