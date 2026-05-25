@@ -806,7 +806,7 @@ async def websocket_endpoint(
     await _send_initial_state(websocket, room, client_name)
     try:
         await _handle_ws_messages(websocket, room_id, room, client_name)
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, RuntimeError):
         logger.info(f"WebSocketDisconnect: '{client_name}' left room {room_id}")
         if not manager.disconnect(room_id, client_name, websocket):
             return
