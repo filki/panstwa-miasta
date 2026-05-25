@@ -417,24 +417,21 @@
                             <div class="game-dashboard">
                                 <section class="flex-1" id="game-main-area">
                                     <header class="game-header">
-                                        <div
-                                            class="flex flex-col gap-1"
-                                            aria-hidden="true"
-                                        >
-                                            <span class="header-label"
+                                        <div class="game-hud-block">
+                                            <span class="game-hud-label"
                                                 >Pokój</span
                                             >
-                                            <div
+                                            <span
                                                 id="current-room"
                                                 class="game-hud-room"
                                             >
                                                 —
-                                            </div>
+                                            </span>
                                         </div>
                                         <div
-                                            class="flex flex-col gap-1 items-center"
+                                            class="game-hud-block game-hud-center"
                                         >
-                                            <span class="header-label"
+                                            <span class="game-hud-label"
                                                 >Litera</span
                                             >
                                             <div
@@ -445,17 +442,17 @@
                                             </div>
                                         </div>
                                         <div
-                                            class="flex flex-col gap-1 items-end"
+                                            class="game-hud-block game-hud-right"
                                         >
-                                            <span class="header-label"
+                                            <span class="game-hud-label"
                                                 >Czas</span
                                             >
-                                            <div
+                                            <span
                                                 id="round-timer"
-                                                class="game-hud-timer-value hidden font-black text-[1.75rem] leading-none"
+                                                class="game-hud-time hidden"
                                             >
-                                                --
-                                            </div>
+                                                —
+                                            </span>
                                         </div>
                                     </header>
 
@@ -548,7 +545,7 @@
                                             type="button"
                                             id="btn-stop"
                                             onclick="stopGame()"
-                                            class="danger game-stop-btn"
+                                            class="btn btn-danger game-stop-btn"
                                             disabled
                                         >
                                             🛑 STOP!
@@ -572,14 +569,15 @@
                                             type="text"
                                             class="game-input game-chat-input"
                                             id="message-input"
-                                            placeholder="Wiadomość..."
+                                            placeholder="Napisz wiadomość..."
                                         />
                                         <button
                                             type="button"
-                                            class="game-chat-send"
+                                            class="btn game-chat-send"
                                             onclick="sendChat()"
+                                            title="Wyślij"
                                         >
-                                            Wyślij
+                                            →
                                         </button>
                                     </div>
                                 </aside>
