@@ -96,6 +96,7 @@ async def get_slownik_categories():
     }
     # Dla kategorii strukturalnych dolicz z DB
     async with aiosqlite.connect(_db_path()) as db:
+        db.row_factory = aiosqlite.Row
         for cat, info in STRUCTURED_TABLES.items():
             async with db.execute(f"SELECT COUNT(*) as cnt FROM {info['table']}") as cur:
                 row = await cur.fetchone()
