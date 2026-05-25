@@ -107,7 +107,7 @@ function showLeaveConfirmModal() {
 
   card.innerHTML =
     '<h3 style="margin:0 0 .35rem;font-size:1.15rem;font-weight:800;color:#1a0a06;">Opuścić grę?</h3>' +
-    '<p style="margin:0 0 1.25rem;color:#7a5540;font-size:.875rem;line-height:1.45;">Możesz wrócić do pokoju w ciągu 2 minut. Postępy zostaną zachowane.</p>' +
+    '<p style="margin:0 0 1.25rem;color:#7a5540;font-size:.875rem;line-height:1.45;">Grasz albo wszystko tracisz. Po wyjściu nie ma powrotu — pokój i postępy zostaną usunięte.</p>' +
     '<button id="leave-confirm-stay" style="width:100%;margin-bottom:.5rem;min-height:44px;border-radius:12px;border:0;background:linear-gradient(135deg,#d58f23,#74371f);color:#fff;font-weight:700;font-size:1rem;cursor:pointer;">🔗 Zostań w grze</button>' +
     '<button id="leave-confirm-leave" style="width:100%;min-height:44px;border-radius:12px;border:1px solid #3e140f29;background:#f7f0de;color:#3e140f;font-weight:600;font-size:.9rem;cursor:pointer;">🚪 Opuść grę</button>';
 

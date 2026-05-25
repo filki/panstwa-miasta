@@ -320,12 +320,16 @@ async def handle_dissolve_room(room: Room, room_id: str, client_name: str, delet
             }
         )
     )
-    # Snapshot: each close() triggers WebSocketDisconnect → disconnect(), which
-    # removes that client from room.connections — mutating the dict mid-iterate
-    # raises RuntimeError. Close other clients before the host so we do not
-    # close the requester's socket while still handling their dissolve message.
-    for _name, conn in sorted(room.connections.items(), key=lambda nc: nc[0] == client_name):
-        await conn.close()
+    # Zamknij sockety WSZYSTKICH innych graczy — hosta nie zamykamy, bo
+    # wciąż jesteśmy w jego pętli _handle_ws_messages. Host poczeka na
+    # WebSocketDisconnect które ASGI dostarczy po powrocie z handlera.
+    for _name, conn in list(room.connections.items()):
+        if _name == client_name:
+            continue
+        try:
+            await conn.close()
+        except Exception as exc:
+            logger.warning("dissolve: close socket for %r failed: %s", _name, exc)
     await delete_room_fn(room_id)
     logger.info(f"Room {room_id} dissolved by '{client_name}'")
 
