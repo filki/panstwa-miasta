@@ -84,12 +84,67 @@ function stopCelebrationEffects() {
 }
 
 function leaveRoom() {
-  if (
-    pmHadRoundStarted &&
-    !confirm(
-      "Czy na pewno chcesz wyjść? Możesz wrócić do pokoju w ciągu 2 minut.",
-    )
-  ) {
+  // Jesli gra sie nie zaczela — wychodzimy bez pytania
+  if (!pmHadRoundStarted) {
+    doLeaveRoom(false);
+    return;
+  }
+  showLeaveConfirmModal();
+}
+
+function showLeaveConfirmModal() {
+  var existing = document.getElementById("leave-confirm-overlay");
+  if (existing) existing.remove();
+
+  var overlay = document.createElement("div");
+  overlay.id = "leave-confirm-overlay";
+  overlay.style.cssText =
+    "position:fixed;inset:0;z-index:2500;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);padding:1rem;";
+
+  var card = document.createElement("div");
+  card.style.cssText =
+    "background:#fff;border-radius:20px;padding:1.5rem;max-width:320px;width:100%;text-align:center;box-shadow:0 25px 50px -12px rgba(0,0,0,0.18);font-family:Inter,system-ui,sans-serif;";
+
+  var isHost =
+    globalThis.myNick ===
+    (typeof lastLobbyRosterState !== "undefined"
+      ? lastLobbyRosterState.hostName
+      : "");
+  var isAlone = isHost && pmHadRoundStarted;
+
+  card.innerHTML =
+    '<h3 style="margin:0 0 .35rem;font-size:1.15rem;font-weight:800;color:#1a0a06;">Opuścić grę?</h3>' +
+    '<p style="margin:0 0 1.25rem;color:#7a5540;font-size:.875rem;line-height:1.45;">' +
+    (isAlone
+      ? "Jesteś jedynym graczem. Pokój zostanie rozwiązany, a postępy stracą ważność."
+      : "Możesz wrócić do pokoju w ciągu 2 minut. Postępy zostaną zachowane.") +
+    "</p>" +
+    '<button id="leave-confirm-stay" style="width:100%;margin-bottom:.5rem;min-height:44px;border-radius:12px;border:0;background:linear-gradient(135deg,#d58f23,#74371f);color:#fff;font-weight:700;font-size:1rem;cursor:pointer;">🔗 Zostań w grze</button>' +
+    '<button id="leave-confirm-leave" style="width:100%;min-height:44px;border-radius:12px;border:1px solid #3e140f29;background:#f7f0de;color:#3e140f;font-weight:600;font-size:.9rem;cursor:pointer;">' +
+    (isAlone ? "💥 Rozwiąż pokój" : "🚪 Wyjdź z pokoju") +
+    "</button>";
+
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+
+  document.getElementById("leave-confirm-stay").onclick = function () {
+    overlay.remove();
+  };
+
+  document.getElementById("leave-confirm-leave").onclick = function () {
+    overlay.remove();
+    doLeaveRoom(isAlone);
+  };
+}
+
+function doLeaveRoom(dissolve) {
+  // Jesli jestem sam w pokoju i runda sie zaczela — rozwiaz przez serwer
+  if (dissolve && ws && ws.readyState === WebSocket.OPEN) {
+    sendJson({ type: "dissolve_room" });
+    // Serwer rozwiąże pokój i zamknie WS — my tylko czyścimy UI
+    localStorage.removeItem("pm_active_room");
+    localStorage.removeItem("pm_active_nick");
+    setTimeout(safeNavigateHome, 300);
     return;
   }
   leftByUser = true;
