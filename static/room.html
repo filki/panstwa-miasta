@@ -44,6 +44,15 @@
             />
         </noscript>
         <link rel="stylesheet" href="/static/css/dist.css" />
+        <style>
+            .config-cats-separator {
+                display: block;
+                width: 100%;
+                height: 1px;
+                background: var(--border);
+                margin: var(--space-1) 0;
+            }
+        </style>
     </head>
     <body class="room-page">
         <nav
@@ -303,6 +312,68 @@
                                         />
                                         <span>Zawód</span>
                                     </label>
+                                    <span class="config-cats-separator"></span>
+                                    <div
+                                        id="custom-cats-container"
+                                        class="config-inline-row"
+                                        style="
+                                            flex-wrap: wrap;
+                                            gap: var(--space-1);
+                                            margin-top: var(--space-1);
+                                        "
+                                    >
+                                        <!-- custom category checkboxes will be injected by JS -->
+                                    </div>
+                                    <div
+                                        class="config-inline-row"
+                                        id="add-cat-row"
+                                        style="
+                                            margin-top: var(--space-1);
+                                            gap: var(--space-2);
+                                        "
+                                    >
+                                        <input
+                                            type="text"
+                                            id="add-cat-input"
+                                            placeholder="Własna kategoria..."
+                                            style="
+                                                min-height: 2rem;
+                                                padding: 0.2rem 0.5rem;
+                                                border-radius: var(--r-sm);
+                                                border: 1px solid var(--border);
+                                                font-size: 0.8rem;
+                                                width: 10rem;
+                                                background: rgba(
+                                                    255,
+                                                    255,
+                                                    255,
+                                                    0.85
+                                                );
+                                            "
+                                            maxlength="20"
+                                        />
+                                        <button
+                                            type="button"
+                                            id="add-cat-btn"
+                                            class="btn btn-primary"
+                                            style="
+                                                min-height: 2rem;
+                                                padding: 0.25rem 0.7rem;
+                                                font-size: 0.75rem;
+                                                width: auto;
+                                            "
+                                        >
+                                            + Dodaj
+                                        </button>
+                                        <span
+                                            style="
+                                                font-size: 0.6rem;
+                                                color: var(--text-muted);
+                                            "
+                                            >Własna kategoria (min. 2 znaki, max
+                                            20). Veto włączone.</span
+                                        >
+                                    </div>
                                 </div>
                             </div>
                         </header>

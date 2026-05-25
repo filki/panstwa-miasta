@@ -65,6 +65,7 @@ def lobby_state_payload(room: Room) -> dict:
             "visibility_label": "Publiczny" if room.visibility == "public" else "Prywatny",
             "stop_mechanism": room.stop_mechanism,
             "categories": room.categories,
+            "custom_categories": dict(room.custom_categories),
         },
     }
 
@@ -438,6 +439,18 @@ async def handle_lobby_config_update(
     room.stop_mechanism = stop_mechanism
     room.categories = categories
 
+    custom_cats = data.get("custom_categories")
+    if custom_cats is not None:
+        if not isinstance(custom_cats, dict):
+            return
+        cleaned = {}
+        for name, veto in custom_cats.items():
+            name_clean = name.strip()
+            if len(name_clean) < 2 or len(name_clean) > 20:
+                continue
+            cleaned[name_clean] = bool(veto)
+        room.custom_categories = cleaned
+
     await save_room(
         room_id,
         rounds,
@@ -458,6 +471,62 @@ async def handle_lobby_config_update(
                 "visibility_label": "Publiczny" if visibility == "public" else "Prywatny",
                 "stop_mechanism": stop_mechanism,
                 "categories": categories,
+                "custom_categories": dict(room.custom_categories),
+            }
+        )
+    )
+
+
+async def handle_add_custom_category(
+    room: Room, room_id: str, data: dict, client_name: str
+) -> None:
+    if room.host_name != client_name:
+        return
+    if room.is_playing or room.current_round > 0:
+        return
+    name = str(data.get("name", "")).strip()
+    if len(name) < 2 or len(name) > 20:
+        return
+    if name in room.categories or name in room.custom_categories:
+        return
+    veto = bool(data.get("veto", True))
+    room.custom_categories[name] = veto
+    await room.broadcast(
+        json.dumps(
+            {
+                "type": "lobby_config_update",
+                "rounds": room.max_rounds,
+                "limit": room.time_limit,
+                "visibility": room.visibility,
+                "visibility_label": "Publiczny" if room.visibility == "public" else "Prywatny",
+                "stop_mechanism": room.stop_mechanism,
+                "categories": room.categories,
+                "custom_categories": dict(room.custom_categories),
+            }
+        )
+    )
+
+
+async def handle_remove_custom_category(
+    room: Room, room_id: str, data: dict, client_name: str
+) -> None:
+    if room.host_name != client_name:
+        return
+    if room.is_playing or room.current_round > 0:
+        return
+    name = str(data.get("name", "")).strip()
+    room.custom_categories.pop(name, None)
+    await room.broadcast(
+        json.dumps(
+            {
+                "type": "lobby_config_update",
+                "rounds": room.max_rounds,
+                "limit": room.time_limit,
+                "visibility": room.visibility,
+                "visibility_label": "Publiczny" if room.visibility == "public" else "Prywatny",
+                "stop_mechanism": room.stop_mechanism,
+                "categories": room.categories,
+                "custom_categories": dict(room.custom_categories),
             }
         )
     )
@@ -517,5 +586,7 @@ HANDLERS = {
     "answers": handle_answers,
     "veto_vote": handle_veto_vote,
     "lobby_config_update": handle_lobby_config_update,
+    "add_custom_category": handle_add_custom_category,
+    "remove_custom_category": handle_remove_custom_category,
     "lobby_chat_msg": handle_lobby_chat,
 }

@@ -215,6 +215,19 @@ async def init_db():
         await _ensure_rooms_visibility_column(db)
         await _ensure_rooms_stop_mechanism_column(db)
         await db.execute("""
+            CREATE TABLE IF NOT EXISTS custom_category_entries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                category TEXT NOT NULL,
+                entry TEXT NOT NULL,
+                entry_norm TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                room_id TEXT NOT NULL
+            )
+        """)
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_custom_cat_entries ON custom_category_entries(category, entry_norm)"
+        )
+        await db.execute("""
             CREATE TABLE IF NOT EXISTS players (
                 room_id TEXT,
                 player_name TEXT,
@@ -453,6 +466,17 @@ async def save_player_score(room_id, player_name, score):
             ON CONFLICT(room_id, player_name) DO UPDATE SET score=excluded.score
         """,
             (room_id, player_name, score),
+        )
+        await db.commit()
+
+
+async def save_custom_category_entry(
+    room_id: str, category: str, entry: str, entry_norm: str
+) -> None:
+    async with connect() as db:
+        await db.execute(
+            "INSERT OR IGNORE INTO custom_category_entries (category, entry, entry_norm, created_at, room_id) VALUES (?, ?, ?, ?, ?)",
+            (category, entry, entry_norm, int(time.time()), room_id),
         )
         await db.commit()
 

@@ -855,6 +855,49 @@ function updateLobbyConfigUI(data) {
     });
   }
 
+  // Render custom categories
+  var customContainer = document.getElementById("custom-cats-container");
+  if (customContainer) {
+    customContainer.innerHTML = "";
+    if (data.custom_categories && typeof data.custom_categories === "object") {
+      var names = Object.keys(data.custom_categories);
+      names.forEach(function (name) {
+        var label = document.createElement("label");
+        label.className = "config-cat-toggle";
+        label.dataset.custom = "1";
+        label.dataset.catName = name;
+
+        var cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.className = "cat-checkbox";
+        cb.value = name;
+        cb.checked = true;
+        cb.dataset.custom = "1";
+        label.appendChild(cb);
+
+        var span = document.createElement("span");
+        span.textContent = name;
+        label.appendChild(span);
+
+        // Remove button (host only)
+        var removeBtn = document.createElement("button");
+        removeBtn.textContent = "\u2715";
+        removeBtn.style.cssText =
+          "background:none;border:0;cursor:pointer;font-size:0.6rem;color:var(--text-muted);padding:0;margin-left:0.2rem;line-height:1";
+        removeBtn.title = "Usu\u0144 kategori\u0119";
+        removeBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          if (typeof sendJson === "function") {
+            sendJson({ type: "remove_custom_category", name: name });
+          }
+        });
+        label.appendChild(removeBtn);
+
+        customContainer.appendChild(label);
+      });
+    }
+  }
+
   // Host vs non-host: host edytuje, non-host widzi readonly
   const configBar = document.getElementById("lobby-config-bar");
   const isHost = globalThis.myNick === lastLobbyRosterState.hostName;
@@ -1195,6 +1238,27 @@ function bindLobbyConfigEvents() {
   const chatSendBtn = document.getElementById("btn-chat-send");
   if (chatSendBtn) {
     chatSendBtn.addEventListener("click", sendLobbyChat);
+  }
+
+  // Add custom category button
+  var addBtn = document.getElementById("add-cat-btn");
+  var addInput = document.getElementById("add-cat-input");
+  if (addBtn && addInput) {
+    if (!addBtn.dataset.pmAddCatBound) {
+      addBtn.dataset.pmAddCatBound = "1";
+      var doAddCat = function () {
+        var name = addInput.value.trim();
+        if (name.length < 2) return;
+        addInput.value = "";
+        if (typeof sendJson === "function") {
+          sendJson({ type: "add_custom_category", name: name, veto: true });
+        }
+      };
+      addBtn.addEventListener("click", doAddCat);
+      addInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") doAddCat();
+      });
+    }
   }
 }
 

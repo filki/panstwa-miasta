@@ -25,6 +25,7 @@ from .db import (
     get_active_rooms,
     remove_player,
     room_id_exists,
+    save_custom_category_entry,
     save_player_score,
     save_room,
 )
@@ -109,6 +110,7 @@ class Room:
         self.visibility = normalize_room_visibility(visibility)
         self.stop_mechanism = stop_mechanism
         self.categories: list[str] = list(GAME_CATEGORIES)
+        self.custom_categories: dict[str, bool] = {}
         self.connections: dict[str, WebSocket] = {}
         self.scores: dict[str, int] = {}
         self.host_name = ""
@@ -346,6 +348,31 @@ class Room:
                 round_scores[player]["details"][category] = pts
                 round_scores[player]["total"] += pts
 
+        # Custom categories: same 15/10/5 points logic
+        for cat_name in self.custom_categories:
+            valid_answers = {}
+            players_with_valid = []
+
+            for player in self.answers_received:
+                if round_scores[player]["details"].get(cat_name) == -1:
+                    ans = normalize_text(self.answers_received[player].get(cat_name, ""))
+                    valid_answers[ans] = valid_answers.get(ans, 0) + 1
+                    players_with_valid.append(player)
+
+            num_valid = len(players_with_valid)
+
+            for player in players_with_valid:
+                ans = normalize_text(self.answers_received[player].get(cat_name, ""))
+                if num_valid == 1:
+                    pts = 15
+                elif valid_answers[ans] == 1:
+                    pts = 10
+                else:
+                    pts = 5
+
+                round_scores[player]["details"][cat_name] = pts
+                round_scores[player]["total"] += pts
+
     def _fill_base_scores(self, round_scores: dict[str, dict]) -> None:
         """Wypełnia ``round_scores[*][details][kategoria]`` wstępnymi 0 lub -1 (poprawna odpowiedź)."""
         for category in self.categories:
@@ -364,6 +391,22 @@ class Room:
 
                 res = self._calculate_base_category_score(category, normalize_text(ans_raw))
                 round_scores[player]["details"][category] = res
+
+        # Custom categories: accept anything matching the letter
+        for cat_name in self.custom_categories:
+            for player, answers in self.answers_received.items():
+                ans_raw = answers.get(cat_name, "").strip().lower()
+                if not (
+                    _answer_first_letter_matches_round(ans_raw, self.current_letter)
+                    and ans_raw != ""
+                ):
+                    round_scores[player]["details"][cat_name] = 0
+                    continue
+                if len(normalize_text(ans_raw)) < 2:
+                    round_scores[player]["details"][cat_name] = 0
+                    continue
+                # Custom categories always valid (-1)
+                round_scores[player]["details"][cat_name] = -1
 
     async def _update_global_scores_and_save(self, round_scores: dict[str, dict]):
         """Updates global scores in memory and persists to database."""

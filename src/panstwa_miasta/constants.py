@@ -13,6 +13,7 @@ GAME_CATEGORIES: list[str] = [
     "Imię",
     "Zawód",
 ]
+CUSTOM_CATEGORY_PREFIX: str = "!"
 VETO_CATEGORY: str = "Rzecz"
 RESULTS_PHASE_SECONDS: int = 30
 STOP_SUBMIT_SECONDS: int = 10
