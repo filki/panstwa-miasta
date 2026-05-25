@@ -264,17 +264,6 @@
             .slownik-search-row:focus-within {
                 border-color: var(--accent);
             }
-            .slownik-search-select {
-                border: 0;
-                background: transparent;
-                font-size: 0.85rem;
-                padding: 0.35rem 0.5rem;
-                border-radius: 10px;
-                color: var(--text);
-                cursor: pointer;
-                outline: none;
-                min-width: 100px;
-            }
             .slownik-search-input {
                 flex: 1;
                 border: 0;
@@ -301,6 +290,12 @@
             }
             .slownik-search-clear:hover {
                 color: var(--text);
+            }
+            .slownik-search-cat-label {
+                font-size: 1.15rem;
+                display: flex;
+                align-items: center;
+                padding: 0 0.25rem 0 0.5rem;
             }
             .slownik-search-results {
                 margin-top: 0.75rem;
@@ -407,43 +402,8 @@
                 <h1>Słownik</h1>
                 <p>
                     Tysiące słów do gry Państwa-Miasta. Wybierz kategorię i
-                    literę, albo wyszukaj bezpośrednio.
+                    literę, albo skorzystaj z wyszukiwarki poniżej.
                 </p>
-            </div>
-
-            <div class="slownik-search" id="slownik-search-section">
-                <div class="slownik-search-row">
-                    <select
-                        id="search-category"
-                        class="slownik-search-select"
-                        aria-label="Kategoria"
-                    >
-                        <option value="rosliny">🌿 Rośliny</option>
-                        <option value="zwierzeta">🐾 Zwierzęta</option>
-                        <option value="miasta">🏙️ Miasta</option>
-                        <option value="zawody">💼 Zawody</option>
-                        <option value="imiona">👤 Imiona</option>
-                        <option value="rzeczy">📦 Rzeczy</option>
-                    </select>
-                    <input
-                        type="text"
-                        id="search-input"
-                        class="slownik-search-input"
-                        placeholder="Wpisz nazwę… np. róża, jabłoń, sosna"
-                        autocomplete="off"
-                        aria-label="Szukaj w słowniku"
-                    />
-                    <button
-                        type="button"
-                        id="search-clear-btn"
-                        class="slownik-search-clear"
-                        style="display: none"
-                        aria-label="Wyczyść"
-                    >
-                        ×
-                    </button>
-                </div>
-                <div class="slownik-search-results" id="search-results"></div>
             </div>
 
             <div class="category-grid" id="categories"></div>
@@ -460,6 +420,40 @@
 
             <div class="words-container" id="words-container">
                 <p class="empty-state">👆 Wybierz kategorię i literę powyżej</p>
+            </div>
+
+            <div
+                class="slownik-search"
+                id="slownik-search-section"
+                style="display: none"
+            >
+                <div class="slownik-search-row">
+                    <span class="slownik-search-cat-label" id="search-cat-label"
+                        >🌿</span
+                    >
+                    <input
+                        type="text"
+                        id="search-input"
+                        class="slownik-search-input"
+                        placeholder="Wpisz nazwę…"
+                        autocomplete="off"
+                        aria-label="Szukaj w słowniku"
+                    />
+                    <button
+                        type="button"
+                        id="search-clear-btn"
+                        class="slownik-search-clear"
+                        style="display: none"
+                        aria-label="Wyczyść"
+                    >
+                        ×
+                    </button>
+                </div>
+                <div class="slownik-search-results" id="search-results">
+                    <p class="empty-state">
+                        👆 Wybierz kategorię i literę, albo wpisz szukaną frazę
+                    </p>
+                </div>
             </div>
         </main>
 
@@ -519,9 +513,21 @@
 
             /* --- Wyszukiwarka --- */
             const searchInput = document.getElementById("search-input");
-            const searchCategory = document.getElementById("search-category");
+            const searchCatLabel = document.getElementById("search-cat-label");
+            const searchSection = document.getElementById(
+                "slownik-search-section",
+            );
             const searchResults = document.getElementById("search-results");
             const searchClear = document.getElementById("search-clear-btn");
+
+            const CATEGORY_ICONS = {
+                miasta: "🏙️",
+                rosliny: "🌿",
+                zwierzeta: "🐾",
+                zawody: "💼",
+                imiona: "👤",
+                rzeczy: "📦",
+            };
 
             function genderLabel(g) {
                 return g === "M" ? "Mężczyzna" : g === "K" ? "Kobieta" : g;
@@ -597,7 +603,7 @@
 
             async function doSearch() {
                 const q = searchInput.value.trim();
-                if (!q || q.length < 1) {
+                if (!q || q.length < 1 || !activeCategory) {
                     searchResults.innerHTML =
                         '<p class="empty-state">👆 Wybierz kategorię i literę, albo wpisz szukaną frazę</p>';
                     searchClear.style.display = "none";
@@ -606,10 +612,9 @@
                 searchClear.style.display = "";
                 searchResults.innerHTML =
                     '<p class="loading" style="padding:0.75rem">Szukanie…</p>';
-                const cat = searchCategory.value;
                 try {
                     const resp = await fetch(
-                        `/api/dictionary/slownik/search?q=${encodeURIComponent(q)}&category=${encodeURIComponent(cat)}&page=${currentPage}&per_page=10`,
+                        `/api/dictionary/slownik/search?q=${encodeURIComponent(q)}&category=${encodeURIComponent(activeCategory)}&page=${currentPage}&per_page=10`,
                     );
                     const data = await resp.json();
                     if (data.words.length === 0) {
@@ -634,10 +639,6 @@
                 searchTimer = setTimeout(doSearch, 200);
             });
             searchInput.addEventListener("search", function () {
-                currentPage = 1;
-                doSearch();
-            });
-            searchCategory.addEventListener("change", function () {
                 currentPage = 1;
                 doSearch();
             });
@@ -720,11 +721,23 @@
                 document
                     .querySelectorAll(".letter-btn")
                     .forEach((b) => b.classList.remove("active"));
-                // Ustaw kategorie w wyszukiwarce
-                searchCategory.value = cat;
+                // Pokaż wyszukiwarkę z ikoną kategorii
+                searchSection.style.display = "";
+                searchCatLabel.textContent = CATEGORY_ICONS[cat] || "🌿";
+                searchInput.placeholder =
+                    "Wpisz nazwę " +
+                    (
+                        CATEGORIES.find((c) => c.id === cat)?.name || ""
+                    ).toLowerCase() +
+                    "…";
                 renderLetters();
-                // Nie czysc wyniku — user moze dalej szukac
                 showCategoryDescription(cat);
+                // Czyścimy poprzednie wyniki
+                searchResults.innerHTML =
+                    '<p class="empty-state">👆 Wybierz literę albo wpisz szukaną frazę</p>';
+                searchInput.value = "";
+                searchClear.style.display = "none";
+                searchInput.focus();
             }
 
             async function selectLetter(letter) {
@@ -737,10 +750,7 @@
                             b.dataset.letter === letter,
                         ),
                     );
-                // Ustaw kategorie + litere w wyszukiwarce i odpal szukanie
-                if (activeCategory) {
-                    searchCategory.value = activeCategory;
-                }
+                // Ustaw litere w wyszukiwarce i odpal szukanie
                 searchInput.value = letter;
                 currentPage = 1;
                 await doSearch();
@@ -749,8 +759,6 @@
 
             loadCategories();
             renderLetters();
-            // Domyślna kategoria wyszukiwarki
-            searchCategory.value = "rosliny";
         </script>
     </body>
 </html>
