@@ -518,6 +518,24 @@ async def get_active_rooms() -> list[ActiveRoomRow]:
     ]
 
 
+@app.get("/api/debug/rooms")
+async def debug_rooms() -> dict:
+    """Debug: pokazuje stan wewnętrzny wszystkich pokoi w RAM."""
+    result = {}
+    for r_id, room in manager.rooms.items():
+        result[r_id] = {
+            "connections": list(room.connections.keys()),
+            "host": room.host_name,
+            "current_round": room.current_round,
+            "is_playing": room.is_playing,
+            "game_over": room.game_over,
+            "scores": dict(room.scores),
+            "disconnected_players": dict(room.disconnected_players),
+            "has_ws": [str(type(ws)) for ws in room.connections.values()],
+        }
+    return {"total": len(manager.rooms), "rooms": result}
+
+
 @app.post("/api/quick-join")
 async def post_quick_join() -> QuickJoinOut:
     room_id, created, max_rounds, time_limit = await manager.pick_quick_join_room()
@@ -770,7 +788,7 @@ async def _handle_ws_messages(
             except Exception as exc:
                 logger.exception(f"Error handling message from '{client_name}': {exc}")
     except WebSocketDisconnect:
-        pass
+        raise
 
 
 @app.websocket("/ws/{room_id}/{client_name}")
