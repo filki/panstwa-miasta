@@ -1157,11 +1157,12 @@ button {
     overflow: visible;
 }
 @utility landing-guide-carousel-step-num {
-    font-size: var(--fs-sm);
+    font-size: var(--fs-body);
     font-weight: 800;
     color: var(--accent-text);
     margin: 0 0 var(--space-1);
     letter-spacing: 0.04em;
+    line-height: 1;
 }
 @utility landing-guide-carousel-slide-title {
     font-size: clamp(1rem, 3.8vw, 1.25rem);
@@ -1198,8 +1199,8 @@ button {
     max-width: 100%;
 }
 @utility landing-guide-carousel-nav {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1207,13 +1208,13 @@ button {
     border: 1px solid rgba(174, 96, 30, 0.22);
     background: rgba(255, 255, 255, 0.92);
     color: rgba(174, 96, 30, 0.62);
-    font-size: 1rem;
+    font-size: 1.25rem;
     font-weight: 800;
     cursor: pointer;
     transition: all 0.12s ease;
     flex: 0 0 auto;
-    min-width: 1.5rem;
-    min-height: 1.5rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
     padding: 0;
     line-height: 1;
     box-sizing: border-box;
