@@ -2530,3 +2530,36 @@ body.room-phase-playing .game-header-room {
     background: rgba(213, 143, 35, 0.06);
     border-radius: 0 var(--r-sm) var(--r-sm) 0;
 }
+
+/* Toggle switch component */
+@utility toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 3rem;
+    height: 1.6rem;
+}
+@utility toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: var(--border-strong);
+    border-radius: 999px;
+    transition: background 0.2s;
+    &::before {
+        content: "";
+        position: absolute;
+        height: 1.2rem;
+        width: 1.2rem;
+        left: 0.2rem;
+        bottom: 0.2rem;
+        background: #fff;
+        border-radius: 50%;
+        transition: transform 0.2s;
+    }
+}
+.toggle-switch input:checked + .toggle-slider {
+    background: var(--brand-3);
+}
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(1.4rem);
+}

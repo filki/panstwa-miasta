@@ -78,6 +78,18 @@ async def _ensure_rooms_visibility_column(db) -> None:
     await db.execute("ALTER TABLE rooms ADD COLUMN visibility TEXT NOT NULL DEFAULT 'public'")
 
 
+async def _ensure_rooms_stop_mechanism_column(db) -> None:
+    """Migracja: kolumna stop_mechanism (głosowanie Stop)."""
+    async with db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rooms'") as cur:
+        if not await cur.fetchone():
+            return
+    async with db.execute("PRAGMA table_info(rooms)") as cur:
+        rows = await cur.fetchall()
+    if any(row[1] == "stop_mechanism" for row in rows):
+        return
+    await db.execute("ALTER TABLE rooms ADD COLUMN stop_mechanism INTEGER NOT NULL DEFAULT 1")
+
+
 def _name_norm(name: str) -> str:
     """Normalisation kept in sync with ``manager.normalize_text``."""
     return name.strip().lower().replace("-", " ").replace("  ", " ")
@@ -201,6 +213,7 @@ async def init_db():
             )
         """)
         await _ensure_rooms_visibility_column(db)
+        await _ensure_rooms_stop_mechanism_column(db)
         await db.execute("""
             CREATE TABLE IF NOT EXISTS players (
                 room_id TEXT,
@@ -390,25 +403,40 @@ async def deactivate_room(room_id: str) -> None:
 
 
 async def save_room(
-    room_id, max_rounds, time_limit, current_round, host_name, visibility: str = "public"
+    room_id,
+    max_rounds,
+    time_limit,
+    current_round,
+    host_name,
+    visibility: str = "public",
+    stop_mechanism: int = 1,
 ):
     if redis_configured():
-        await redis_save_room(room_id, max_rounds, time_limit, current_round, host_name, visibility)
+        await redis_save_room(
+            room_id,
+            max_rounds,
+            time_limit,
+            current_round,
+            host_name,
+            visibility,
+            stop_mechanism=stop_mechanism,
+        )
         return
     async with connect() as db:
         await db.execute(
             """
-            INSERT INTO rooms (room_id, max_rounds, time_limit, current_round, host_name, visibility)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO rooms (room_id, max_rounds, time_limit, current_round, host_name, visibility, stop_mechanism)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(room_id) DO UPDATE SET
                 max_rounds=excluded.max_rounds,
                 time_limit=excluded.time_limit,
                 current_round=excluded.current_round,
                 host_name=excluded.host_name,
                 is_active=1,
-                visibility=excluded.visibility
+                visibility=excluded.visibility,
+                stop_mechanism=excluded.stop_mechanism
         """,
-            (room_id, max_rounds, time_limit, current_round, host_name, visibility),
+            (room_id, max_rounds, time_limit, current_round, host_name, visibility, stop_mechanism),
         )
         await db.commit()
 

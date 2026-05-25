@@ -11,7 +11,7 @@ import time
 
 from .appeal_tokens import issue_appeal_token
 from .constants import RESULTS_PHASE_SECONDS, VETO_CATEGORY
-from .db import deactivate_room, save_game_transcript
+from .db import deactivate_room, save_game_transcript, save_room
 from .logger import get_logger
 from .manager import ConnectionManager, Room
 from .share_store import record_finished_game
@@ -58,6 +58,13 @@ def lobby_state_payload(room: Room) -> dict:
         "host_name": room.host_name,
         "player_count": len(connected) + len(disconnected),
         "max_players": 8,
+        "config": {
+            "rounds": room.max_rounds,
+            "limit": room.time_limit,
+            "visibility": room.visibility,
+            "visibility_label": "Publiczny" if room.visibility == "public" else "Prywatny",
+            "stop_mechanism": room.stop_mechanism,
+        },
     }
 
 
@@ -384,6 +391,76 @@ async def handle_veto_vote(room: Room, client_name: str, msg: dict) -> None:
     )
 
 
+async def handle_lobby_config_update(
+    room: Room, room_id: str, data: dict, client_name: str
+) -> None:
+    """Host aktualizuje konfigurację gry w lobby przez WebSocket."""
+    if room.host_name != client_name:
+        await room.broadcast(
+            json.dumps({"type": "error", "message": "Tylko host może zmienić ustawienia."})
+        )
+        return
+    if room.is_playing or room.current_round > 0:
+        await room.broadcast(json.dumps({"type": "error", "message": "Gra już trwa."}))
+        return
+
+    rounds = int(data.get("rounds", 5))
+    limit = int(data.get("limit", 90))
+    visibility = data.get("visibility", "public")
+    stop_mechanism = bool(data.get("stop_mechanism", True))
+
+    if not (1 <= rounds <= 50):
+        return
+    if not (10 <= limit <= 600):
+        return
+    if visibility not in ("public", "private"):
+        return
+
+    room.max_rounds = rounds
+    room.time_limit = limit
+    room.visibility = visibility
+    room.stop_mechanism = stop_mechanism
+
+    await save_room(
+        room_id,
+        rounds,
+        limit,
+        room.current_round,
+        room.host_name,
+        visibility,
+        stop_mechanism=1 if stop_mechanism else 0,
+    )
+
+    await room.broadcast(
+        json.dumps(
+            {
+                "type": "lobby_config_update",
+                "rounds": rounds,
+                "limit": limit,
+                "visibility": visibility,
+                "visibility_label": "Publiczny" if visibility == "public" else "Prywatny",
+                "stop_mechanism": stop_mechanism,
+            }
+        )
+    )
+
+
+async def handle_lobby_chat(room: Room, client_name: str, data: dict) -> None:
+    """Wiadomość czatu w lobby."""
+    text = str(data.get("text", "")).strip()
+    if not text or len(text) > 500:
+        return
+    await room.broadcast(
+        json.dumps(
+            {
+                "type": "lobby_chat",
+                "from": client_name,
+                "text": text,
+            }
+        )
+    )
+
+
 KICK_DENIED_MESSAGES = {
     "no_room": "Pokój nie istnieje.",
     "not_host": "Tylko host może wyrzucać graczy.",
@@ -421,4 +498,6 @@ HANDLERS = {
     "stop": handle_stop,
     "answers": handle_answers,
     "veto_vote": handle_veto_vote,
+    "lobby_config_update": handle_lobby_config_update,
+    "lobby_chat_msg": handle_lobby_chat,
 }

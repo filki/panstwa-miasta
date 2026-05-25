@@ -101,11 +101,13 @@ class Room:
         time_limit: int = 90,
         *,
         visibility: str = "public",
+        stop_mechanism: bool = True,
     ):
         self.room_id = room_id
         self.max_rounds = max_rounds
         self.time_limit = time_limit
         self.visibility = normalize_room_visibility(visibility)
+        self.stop_mechanism = stop_mechanism
         self.connections: dict[str, WebSocket] = {}
         self.scores: dict[str, int] = {}
         self.host_name = ""
@@ -597,9 +599,7 @@ class ConnectionManager:
             QUICK_JOIN_DEFAULT_TIME_LIMIT,
         )
 
-    async def _ensure_room(
-        self, room_id: str, max_rounds: int, time_limit: int, visibility: str
-    ) -> None:
+    async def _ensure_room(self, room_id: str, stop_mechanism: bool = True) -> None:
         """Create room from DB snapshot or make a new one if it doesn't exist."""
         if room_id in self.rooms:
             return
@@ -607,11 +607,13 @@ class ConnectionManager:
         if snap is not None:
             snap_any = cast(dict[str, Any], snap)
             vis = normalize_room_visibility(str(snap_any.get("visibility", "public")))
+            stop = bool(int(snap_any.get("stop_mechanism", 1)))
             room = Room(
                 room_id,
                 int(snap_any["max_rounds"]),
                 int(snap_any["time_limit"]),
                 visibility=vis,
+                stop_mechanism=stop,
             )
             room.current_round = int(snap_any.get("current_round") or 0)
             room.host_name = str(snap_any.get("host_name") or "")
@@ -624,18 +626,8 @@ class ConnectionManager:
             self.rooms[room_id] = room
             logger.info("Restored room %s from DB (scores=%s)", room_id, len(room.scores))
         else:
-            self.rooms[room_id] = Room(
-                room_id,
-                max_rounds,
-                time_limit,
-                visibility=normalize_room_visibility(visibility),
-            )
-            logger.info(
-                "Created new room: %s (rounds=%s, limit=%s)",
-                room_id,
-                max_rounds,
-                time_limit,
-            )
+            self.rooms[room_id] = Room(room_id, stop_mechanism=stop_mechanism)
+            logger.info("Created new room: %s (default config)", room_id)
 
     async def _validate_connect(
         self, room_id: str, client_name: str, client_ip: str
@@ -716,15 +708,9 @@ class ConnectionManager:
         websocket: WebSocket,
         room_id: str,
         client_name: str,
-        max_rounds: int,
-        time_limit: int,
-        visibility: str = "public",
         client_ip: str = "unknown",
     ) -> tuple[bool, str | None]:
-        logger.info(
-            f"Attempting connection: room_id={room_id}, client_name={client_name}, "
-            f"max_rounds={max_rounds}, time_limit={time_limit}, visibility={visibility}"
-        )
+        logger.info(f"Attempting connection: room_id={room_id}, client_name={client_name}")
 
         ok, reason = await self._validate_connect(room_id, client_name, client_ip)
         if not ok:
@@ -732,7 +718,7 @@ class ConnectionManager:
 
         is_new_room = room_id not in self.rooms
         self.cancel_delayed_room_delete(room_id)
-        await self._ensure_room(room_id, max_rounds, time_limit, visibility)
+        await self._ensure_room(room_id)
 
         room = self.rooms[room_id]
 
@@ -762,6 +748,7 @@ class ConnectionManager:
             room.current_round,
             room.host_name,
             room.visibility,
+            stop_mechanism=int(room.stop_mechanism),
         )
         await save_player_score(room_id, client_name, room.scores[client_name])
         logger.debug(f"Persisted room {room_id} and player {client_name} to DB")
@@ -779,11 +766,13 @@ class ConnectionManager:
         active_rooms = await get_active_rooms()
         for r_data in active_rooms:
             vis = normalize_room_visibility(str(r_data.get("visibility", "public")))
+            stop = bool(int(r_data.get("stop_mechanism", 1)))
             room = Room(
                 r_data["room_id"],
                 r_data["max_rounds"],
                 r_data["time_limit"],
                 visibility=vis,
+                stop_mechanism=stop,
             )
             room.current_round = r_data["current_round"]
             room.host_name = r_data["host_name"]

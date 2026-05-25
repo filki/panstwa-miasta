@@ -145,28 +145,23 @@ beforeEach(() => {
 const loadSocket = () => require("../static/js/socket.js");
 
 describe("connect()", () => {
-  test("opens a WebSocket to /ws/<roomId>/<nick> with rounds & limit from selects", () => {
+  test("opens a WebSocket to /ws/<roomId>/<nick> without query params", () => {
     const { connect } = loadSocket();
     connect();
     expect(global.WebSocket).toHaveBeenCalledTimes(1);
     const url = lastWs.url;
-    expect(url).toMatch(/^ws:\/\/localhost\/ws\/1234\/TestUser\?/);
-    expect(url).toContain("rounds=10");
-    expect(url).toContain("limit=60");
-    expect(url).toContain("visibility=public");
+    expect(url).toBe("ws://localhost/ws/1234/TestUser");
     expect(window.history.replaceState).toHaveBeenCalledWith(
       null,
       "",
-      "/room/1234?rounds=10&limit=60&visibility=public",
+      "/room/1234",
     );
   });
 
-  test("uses visibility=private from create modal when connecting", () => {
-    document.getElementById("create-modal").style.display = "flex";
-    document.getElementById("room_visibility").value = "private";
+  test("connects without config params in URL", () => {
     const { connect } = loadSocket();
     connect();
-    expect(lastWs.url).toContain("visibility=private");
+    expect(lastWs.url).toBe("ws://localhost/ws/1234/TestUser");
   });
 
   test("assigns a generated nickname when the input is empty", () => {

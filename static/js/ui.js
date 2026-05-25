@@ -106,13 +106,10 @@ async function quickJoinFromLanding() {
     let data = await requestQuickJoin();
     const roomId = String(data.room_id || "").trim();
     if (!roomId) throw new Error("quick-join missing room_id");
-    const maxRounds = data.max_rounds || 5;
-    const timeLimit = data.time_limit || 90;
-    syncRoomCodeInputs(roomId);
     const landingCode = document.getElementById("landing_room_code");
     if (landingCode) landingCode.value = roomId;
     markRoomAutoJoinIntent();
-    globalThis.location.href = `/room/${encodeURIComponent(roomId)}?rounds=${encodeURIComponent(String(maxRounds))}&limit=${encodeURIComponent(String(timeLimit))}&visibility=public`;
+    globalThis.location.href = `/room/${encodeURIComponent(roomId)}`;
   } catch (err) {
     console.error("quickJoinFromLanding failed:", err);
     alert("Nie udało się znaleźć pokoju. Spróbuj ponownie.");
@@ -130,32 +127,17 @@ async function createRoomAndEnter() {
   }
   persistNickname(nick);
 
-  const maxRounds = Number(document.getElementById("max_rounds")?.value || 5);
-  const timeLimit = Number(document.getElementById("time_limit")?.value || 90);
-  const visibility =
-    document.getElementById("room_visibility")?.value === "private"
-      ? "private"
-      : "public";
-
   try {
-    const resp = await fetch("/api/rooms", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rounds: maxRounds, limit: timeLimit, visibility }),
-    });
+    const resp = await fetch("/api/rooms", { method: "POST" });
     if (!resp.ok) {
       throw new Error(`create-room failed: ${resp.status}`);
     }
     const data = await resp.json();
     const roomId = String(data.room_id || "").trim();
     if (!roomId) throw new Error("create-room missing room_id");
-    const rounds = data.max_rounds || maxRounds;
-    const limit = data.time_limit || timeLimit;
-    const vis = data.visibility === "private" ? "private" : "public";
-    syncRoomCodeInputs(roomId);
     hideModals();
     markRoomAutoJoinIntent();
-    globalThis.location.href = `/room/${encodeURIComponent(roomId)}?rounds=${encodeURIComponent(String(rounds))}&limit=${encodeURIComponent(String(limit))}&visibility=${encodeURIComponent(vis)}`;
+    globalThis.location.href = `/room/${encodeURIComponent(roomId)}`;
   } catch (err) {
     console.error("createRoomAndEnter failed:", err);
     alert("Nie udało się utworzyć pokoju. Spróbuj ponownie.");
@@ -765,38 +747,104 @@ function setRoomPhase(phase) {
       viewerNick,
       connectedPlayers,
     );
+
+    // Host vs non-host panel visibility
+    const configPanel = document.getElementById("lobby-config-panel");
+    const configInfo = document.getElementById("lobby-config-info");
+    const startBtn = document.getElementById("lobby-start-game");
+    const isHost = globalThis.myNick === hostName;
+    if (configPanel) configPanel.style.display = isHost ? "" : "none";
+    if (configInfo) configInfo.style.display = isHost ? "none" : "";
+    if (startBtn) startBtn.style.display = isHost ? "" : "none";
+
+    // Swap chat send button to use lobby chat
+    const sendBtn = document.querySelector(".game-chat-send");
+    if (sendBtn) {
+      sendBtn.onclick = sendLobbyChat;
+    }
+  } else {
+    // Restore game chat send
+    const sendBtn = document.querySelector(".game-chat-send");
+    if (sendBtn) {
+      sendBtn.onclick = sendChat;
+    }
   }
 }
 
 function readRoomSettingsFromUrl() {
-  const params = new URLSearchParams(globalThis.location.search);
-  const rounds = params.get("rounds") || "5";
-  const limit = params.get("limit") || "90";
-  const visibility =
-    params.get("visibility") === "private" ? "Prywatny" : "Publiczny";
-  return { rounds, limit, visibility };
+  // Deprecated: settings are no longer passed via URL
+  return { rounds: "5", limit: "90", visibility: "Publiczny" };
 }
 
 function syncRoomLobbySettings(roomId = "") {
-  const settings = readRoomSettingsFromUrl();
   const codeEl = document.getElementById("lobby-room-code");
   const roundsEl = document.getElementById("lobby-room-rounds");
   const limitEl = document.getElementById("lobby-room-limit");
   const visEl = document.getElementById("lobby-room-visibility");
   if (codeEl) codeEl.textContent = roomId || "—";
-  if (roundsEl) roundsEl.textContent = settings.rounds;
-  if (limitEl) limitEl.textContent = `${settings.limit}s`;
-  if (visEl) visEl.textContent = settings.visibility;
+  if (roundsEl) roundsEl.textContent = "5";
+  if (limitEl) limitEl.textContent = "90s";
+  if (visEl) visEl.textContent = "Publiczny";
+  if (typeof bindLobbyConfigEvents === "function") {
+    bindLobbyConfigEvents();
+  }
+}
+
+function updateLobbyConfig() {
+  const rounds = Number(document.getElementById("lobby_rounds")?.value || 5);
+  const limit = Number(
+    document.getElementById("lobby_time_limit")?.value || 90,
+  );
+  const visibility =
+    document.getElementById("lobby_visibility")?.value || "public";
+  const stopEnabled =
+    document.getElementById("lobby_stop_mechanism")?.checked || false;
+
+  if (typeof sendJson === "function") {
+    sendJson({
+      type: "lobby_config_update",
+      rounds,
+      limit,
+      visibility,
+      stop_mechanism: stopEnabled,
+    });
+    addLog("<em>Ustawienia zapisane.</em>", "system-msg");
+  }
+}
+
+function updateLobbyConfigUI(data) {
+  const roundsEl = document.getElementById("lobby_rounds");
+  const limitEl = document.getElementById("lobby_time_limit");
+  const visibilityEl = document.getElementById("lobby_visibility");
+  const stopEl = document.getElementById("lobby_stop_mechanism");
+  const roundsDetail = document.getElementById("lobby-room-rounds");
+  const limitDetail = document.getElementById("lobby-room-limit");
+  const visDetail = document.getElementById("lobby-room-visibility");
+
+  if (roundsEl) roundsEl.value = String(data.rounds ?? 5);
+  if (limitEl) limitEl.value = String(data.limit ?? 90);
+  if (visibilityEl) visibilityEl.value = data.visibility ?? "public";
+  if (stopEl) stopEl.checked = data.stop_mechanism ?? true;
+
+  if (roundsDetail) roundsDetail.textContent = String(data.rounds ?? 5);
+  if (limitDetail) limitDetail.textContent = `${data.limit ?? 90}s`;
+  if (visDetail)
+    visDetail.textContent =
+      data.visibility === "private" ? "Prywatny" : "Publiczny";
+
+  // Host vs non-host panel visibility
+  const configPanel = document.getElementById("lobby-config-panel");
+  const configInfo = document.getElementById("lobby-config-info");
+  const isHost = globalThis.myNick === lastLobbyRosterState.hostName;
+  if (configPanel) configPanel.style.display = isHost ? "" : "none";
+  if (configInfo) configInfo.style.display = isHost ? "none" : "";
 }
 
 async function copyRoomInviteLink() {
   const roomId =
     document.getElementById("current-room")?.textContent?.trim() || "";
   if (!roomId) return;
-  const params = new URLSearchParams(globalThis.location.search);
-  const visibility =
-    params.get("visibility") === "private" ? "private" : "public";
-  const url = `${globalThis.location.origin}/room/${encodeURIComponent(roomId)}?visibility=${visibility}`;
+  const url = `${globalThis.location.origin}/room/${encodeURIComponent(roomId)}`;
   try {
     await globalThis.navigator.clipboard.writeText(url);
     addLog("<em>Skopiowano link do pokoju.</em>", "system-msg");
@@ -824,6 +872,29 @@ function sendChat() {
       globalThis.stopCelebrationEffects();
     }
   }
+}
+
+function sendLobbyChat() {
+  const input = document.getElementById("message-input");
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  if (typeof sendJson === "function") {
+    sendJson({ type: "lobby_chat_msg", text });
+  }
+}
+
+function appendChatMessage(sender, text) {
+  const container = document.createElement("div");
+  const senderDiv = document.createElement("div");
+  senderDiv.className = "sender";
+  senderDiv.textContent = sender;
+  const textDiv = document.createElement("div");
+  textDiv.textContent = text;
+  container.appendChild(senderDiv);
+  container.appendChild(textDiv);
+  addLog(container, "");
 }
 
 function escapeLandingText(text) {
@@ -938,16 +1009,7 @@ function restoreNickname() {
 }
 
 function applyRoomSettingsFromUrl() {
-  const params = new URLSearchParams(globalThis.location.search);
-  const rounds = params.get("rounds");
-  const limit = params.get("limit");
-  const roundsSel = document.getElementById("max_rounds");
-  const limitSel = document.getElementById("time_limit");
-  if (rounds && roundsSel) roundsSel.value = rounds;
-  if (limit && limitSel) limitSel.value = limit;
-  const vis = params.get("visibility");
-  const visSel = document.getElementById("room_visibility");
-  if (visSel && (vis === "public" || vis === "private")) visSel.value = vis;
+  // No-op: settings are no longer passed via URL
 }
 
 function shouldSkipRoomAutoJoin() {
@@ -1068,6 +1130,32 @@ function bindCategoryEnter() {
   });
 }
 
+function bindLobbyConfigEvents() {
+  const saveBtn = document.getElementById("lobby-save-config");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", updateLobbyConfig);
+  }
+  const startBtn = document.getElementById("lobby-start-game");
+  if (startBtn) {
+    startBtn.addEventListener("click", () => {
+      if (typeof sendJson === "function") {
+        sendJson({ type: "start_game" });
+      }
+    });
+  }
+  const chatSendBtn = document.getElementById("btn-chat-send");
+  if (chatSendBtn) {
+    chatSendBtn.addEventListener("click", sendLobbyChat);
+  }
+}
+
+globalThis.updateLobbyConfig = updateLobbyConfig;
+globalThis.updateLobbyConfigUI = updateLobbyConfigUI;
+globalThis.sendLobbyChat = sendLobbyChat;
+globalThis.bindLobbyConfigEvents = bindLobbyConfigEvents;
+globalThis.sendChat = sendChat;
+globalThis.appendChatMessage = appendChatMessage;
+
 function playLotterySpinHaptic() {
   if (typeof globalThis.navigator?.vibrate !== "function") return;
   globalThis.navigator.vibrate(12);
@@ -1100,6 +1188,7 @@ globalThis.window.onload = () => {
   }
   bindChatEnter();
   bindCategoryEnter();
+  bindLobbyConfigEvents();
 };
 
 // Eksport dla socket.js i innych
@@ -1134,6 +1223,8 @@ globalThis.clampNickname = clampNickname;
 globalThis.syncRoomLobbySettings = syncRoomLobbySettings;
 globalThis.copyRoomInviteLink = copyRoomInviteLink;
 globalThis.markRoomAutoJoinIntent = markRoomAutoJoinIntent;
+globalThis.updateLobbyConfigUI = updateLobbyConfigUI;
+globalThis.updateLobbyConfig = updateLobbyConfig;
 
 if (typeof module !== "undefined") {
   module.exports = {
@@ -1183,5 +1274,8 @@ if (typeof module !== "undefined") {
     playLotterySpinHaptic,
     playLotteryRevealHaptic,
     playCountdownHaptic,
+    updateLobbyConfig,
+    updateLobbyConfigUI,
+    bindLobbyConfigEvents,
   };
 }

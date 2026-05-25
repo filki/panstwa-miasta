@@ -60,13 +60,9 @@ class QuickJoinOut(BaseModel):
 
 
 class CreateRoomIn(BaseModel):
-    """Parametry nowego pokoju (identyfikator wydaje serwer)."""
+    """Parametry nowego pokoju — puste, gracz nie wybiera nic przy create."""
 
     model_config = ConfigDict(extra="forbid")
-
-    rounds: int = Field(5, ge=1, le=50)
-    limit: int = Field(90, ge=10, le=600)
-    visibility: Literal["public", "private"] = "public"
 
 
 class CreateRoomOut(BaseModel):
@@ -75,9 +71,17 @@ class CreateRoomOut(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     room_id: str = Field(..., max_length=64)
-    max_rounds: int = Field(..., ge=1, le=50)
-    time_limit: int = Field(..., ge=10, le=600)
-    visibility: Literal["public", "private"]
+
+
+class LobbyConfigIn(BaseModel):
+    """Host aktualizuje konfigurację pokoju w lobby."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    rounds: int = Field(5, ge=1, le=50)
+    limit: int = Field(90, ge=10, le=600)
+    visibility: Literal["public", "private"] = "public"
+    stop_mechanism: bool = True
 
 
 class AppealIn(BaseModel):

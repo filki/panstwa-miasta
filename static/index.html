@@ -522,43 +522,16 @@
         <div id="create-modal" class="modal-overlay" style="display: none">
             <div class="modal-content">
                 <h3>Nowy pokój</h3>
-                <div class="settings-grid">
-                    <div class="form-group" style="grid-column: 1 / -1">
-                        <label for="room_game_mode">Tryb gry</label>
-                        <select id="room_game_mode">
-                            <option value="standard" selected>Standard</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="max_rounds">Rundy</label>
-                        <select id="max_rounds">
-                            <option value="1">1</option>
-                            <option value="3">3</option>
-                            <option value="5" selected>5</option>
-                            <option value="10">10</option>
-                            <option value="22">22 — każda litera raz</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="time_limit">Czas (s)</label>
-                        <select id="time_limit">
-                            <option value="60">60</option>
-                            <option value="90" selected>90</option>
-                            <option value="120">120</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="grid-column: 1 / -1">
-                        <label for="room_visibility">Widoczność w lobby</label>
-                        <select id="room_visibility">
-                            <option value="public" selected>
-                                Publiczny — widać na liście aktywnych pokoi
-                            </option>
-                            <option value="private">
-                                Prywatny — tylko z linku / kodu
-                            </option>
-                        </select>
-                    </div>
-                </div>
+                <p
+                    style="
+                        color: var(--text-muted);
+                        font-size: var(--fs-sm);
+                        margin-bottom: var(--space-3);
+                    "
+                >
+                    Pokój zostanie utworzony z domyślnymi ustawieniami.
+                    Gospodarz będzie mógł je zmienić w lobby.
+                </p>
                 <div class="modal-btns">
                     <button
                         class="btn btn-secondary !w-auto !min-w-28"

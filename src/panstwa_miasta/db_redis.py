@@ -78,6 +78,7 @@ async def redis_save_room(
     current_round: int,
     host_name: str,
     visibility: str = "public",
+    stop_mechanism: int = 1,
 ) -> None:
     """Save/update room state in Redis."""
     r = await connect_redis()
@@ -93,6 +94,7 @@ async def redis_save_room(
             "current_round": current_round,
             "host_name": host_name,
             "visibility": visibility,
+            "stop_mechanism": stop_mechanism,
         },
     )
     pipe.sadd(_active_key(), room_id)
@@ -117,6 +119,7 @@ async def redis_fetch_room_snapshot(room_id: str) -> dict[str, object] | None:
         "current_round": int(room_data.get("current_round", 0)),
         "host_name": room_data.get("host_name", ""),
         "visibility": room_data.get("visibility", "public"),
+        "stop_mechanism": int(room_data.get("stop_mechanism", 1)),
         "players": {k: int(v) for k, v in scores.items()} if scores else {},
     }
     return out

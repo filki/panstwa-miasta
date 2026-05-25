@@ -202,21 +202,10 @@ function _resolveConnectionSettings() {
     alert("Proszę podać kod pokoju lub wybrać opcję stworzenia nowego.");
     return null;
   }
-  const maxRounds = document.getElementById("max_rounds").value || 5;
-  const timeLimit = document.getElementById("time_limit").value || 90;
-  const isCreating =
-    document.getElementById("create-modal").style.display !== "none";
-  const urlParams = new URLSearchParams(globalThis.location.search);
-  let visibility =
-    urlParams.get("visibility") === "private" ? "private" : "public";
-  if (isCreating) {
-    const v = document.getElementById("room_visibility")?.value;
-    if (v === "private" || v === "public") visibility = v;
-  }
-  return { roomId, maxRounds, timeLimit, visibility };
+  return { roomId };
 }
 
-function _buildWsUrl(roomId, maxRounds, timeLimit, visibility) {
+function _buildWsUrl(roomId) {
   var baseHost = globalThis.location.host;
   var protocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
   // W Capacitor WebView laczymy sie z serwerem produkcyjnym
@@ -225,7 +214,7 @@ function _buildWsUrl(roomId, maxRounds, timeLimit, visibility) {
     baseHost = url.host;
   }
   const encNick = encodeURIComponent(myNick);
-  return `${protocol}//${baseHost}/ws/${roomId}/${encNick}?rounds=${maxRounds}&limit=${timeLimit}&visibility=${visibility}`;
+  return `${protocol}//${baseHost}/ws/${roomId}/${encNick}`;
 }
 
 function _teardownPrevSocket() {
@@ -249,11 +238,12 @@ function connect() {
   leftByUser = false;
   initAudio();
   myNick = _resolveNickname();
+  globalThis.myNick = myNick;
   if (!myNick) return alert("Nie udało się nadać nicku — odśwież stronę.");
 
   const settings = _resolveConnectionSettings();
   if (!settings) return;
-  const { roomId, maxRounds, timeLimit, visibility } = settings;
+  const { roomId } = settings;
 
   if (typeof persistNickname === "function") {
     persistNickname(myNick);
@@ -265,17 +255,13 @@ function connect() {
     if (typeof markRoomAutoJoinIntent === "function") {
       markRoomAutoJoinIntent();
     }
-    globalThis.location.href = `/room/${roomId}?rounds=${maxRounds}&limit=${timeLimit}&visibility=${visibility}`;
+    globalThis.location.href = `/room/${roomId}`;
     return;
   }
 
-  globalThis.history.replaceState(
-    null,
-    "",
-    `/room/${roomId}?rounds=${encodeURIComponent(String(maxRounds))}&limit=${encodeURIComponent(String(timeLimit))}&visibility=${encodeURIComponent(visibility)}`,
-  );
+  globalThis.history.replaceState(null, "", `/room/${roomId}`);
 
-  const wsUrl = _buildWsUrl(roomId, maxRounds, timeLimit, visibility);
+  const wsUrl = _buildWsUrl(roomId);
 
   pmWsGeneration += 1;
   const socketGeneration = pmWsGeneration;
@@ -439,6 +425,16 @@ const MESSAGE_HANDLERS = {
   kick_denied: onKickDenied,
   appeal_token: onAppealToken,
   lobby_state: onLobbyState,
+  lobby_config_update: (data) => {
+    if (typeof updateLobbyConfigUI === "function") {
+      updateLobbyConfigUI(data);
+    }
+  },
+  lobby_chat: (data) => {
+    if (typeof appendChatMessage === "function") {
+      appendChatMessage(data.from, data.text);
+    }
+  },
 };
 
 function onRoundStartedResume(msg) {

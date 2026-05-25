@@ -181,6 +181,112 @@
                                     aria-live="polite"
                                 ></div>
                             </div>
+                            <div
+                                id="lobby-config-info"
+                                class="room-lobby-panel"
+                                style="display: none"
+                            >
+                                <p class="room-lobby-panel-title">
+                                    Ustawienia gry
+                                </p>
+                                <p
+                                    style="
+                                        color: var(--text-muted);
+                                        font-size: 0.875rem;
+                                    "
+                                >
+                                    Host konfiguruje grę...
+                                </p>
+                            </div>
+                            <div
+                                id="lobby-config-panel"
+                                class="room-lobby-panel"
+                            >
+                                <p class="room-lobby-panel-title">
+                                    Ustawienia gry
+                                </p>
+                                <div
+                                    class="settings-grid"
+                                    style="
+                                        grid-template-columns: 1fr 1fr;
+                                        gap: var(--space-3);
+                                    "
+                                >
+                                    <div class="form-group">
+                                        <label for="lobby_rounds">Rundy</label>
+                                        <select id="lobby_rounds">
+                                            <option value="1">1</option>
+                                            <option value="3">3</option>
+                                            <option value="5" selected>
+                                                5
+                                            </option>
+                                            <option value="10">10</option>
+                                            <option value="22">
+                                                22 — każda litera raz
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="lobby_time_limit"
+                                            >Czas (s)</label
+                                        >
+                                        <select id="lobby_time_limit">
+                                            <option value="60">60</option>
+                                            <option value="90" selected>
+                                                90
+                                            </option>
+                                            <option value="120">120</option>
+                                            <option value="180">180</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="lobby_visibility"
+                                            >Widoczność</label
+                                        >
+                                        <select id="lobby_visibility">
+                                            <option value="public" selected>
+                                                Publiczny
+                                            </option>
+                                            <option value="private">
+                                                Prywatny
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Mechanika STOP</label>
+                                        <label class="toggle-switch">
+                                            <input
+                                                type="checkbox"
+                                                id="lobby_stop_mechanism"
+                                                checked
+                                            />
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div
+                                    style="
+                                        display: flex;
+                                        gap: var(--space-2);
+                                        margin-top: var(--space-3);
+                                    "
+                                >
+                                    <button
+                                        type="button"
+                                        class="btn btn-primary"
+                                        id="lobby-start-game"
+                                    >
+                                        ▶ Rozpocznij grę
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="btn btn-secondary"
+                                        id="lobby-save-config"
+                                    >
+                                        💾 Zapisz ustawienia
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         <div class="room-lobby-actions">
                             <button
@@ -568,27 +674,7 @@
             </div>
         </div>
         <div id="create-modal" class="modal-overlay" style="display: none">
-            <div class="modal-content">
-                <select id="room_game_mode">
-                    <option value="standard" selected>standard</option>
-                </select>
-                <select id="max_rounds">
-                    <option value="1">1</option>
-                    <option value="3">3</option>
-                    <option value="5" selected>5</option>
-                    <option value="10">10</option>
-                    <option value="22">22</option>
-                </select>
-                <select id="time_limit">
-                    <option value="60">60</option>
-                    <option value="90" selected>90</option>
-                    <option value="120">120</option>
-                </select>
-                <select id="room_visibility">
-                    <option value="public" selected>public</option>
-                    <option value="private">private</option>
-                </select>
-            </div>
+            <div class="modal-content"></div>
         </div>
         <div id="lottery-modal" class="modal-overlay" style="display: none">
             <div class="modal-content text-center">

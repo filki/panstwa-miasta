@@ -23,6 +23,7 @@ from .api_models import (
     ClientNamePath,
     CreateRoomIn,
     CreateRoomOut,
+    LobbyConfigIn,
     QuickJoinOut,
     RoomIdPath,
     ShareSnapshotOut,
@@ -39,7 +40,7 @@ from .data import (
     reload_things,
     reload_zwierzeta,
 )
-from .db import delete_room, fetch_game_transcript, fetch_room_snapshot, init_db
+from .db import delete_room, fetch_game_transcript, fetch_room_snapshot, init_db, save_room
 from .db_backend import connect
 from .db_redis import close_redis, connect_redis, redis_configured, redis_ping
 from .handlers import (
@@ -48,6 +49,8 @@ from .handlers import (
     handle_chat,
     handle_dissolve_room,
     handle_kick_player,
+    handle_lobby_chat,
+    handle_lobby_config_update,
     handle_not_ready,
     handle_ready,
     handle_restart_game,
@@ -527,14 +530,52 @@ async def post_quick_join() -> QuickJoinOut:
 
 
 @app.post("/api/rooms")
-async def post_create_room(body: CreateRoomIn) -> CreateRoomOut:
+async def post_create_room() -> CreateRoomOut:
     room_id = await manager.allocate_room_id()
-    return CreateRoomOut(
-        room_id=room_id,
-        max_rounds=body.rounds,
-        time_limit=body.limit,
-        visibility=body.visibility,
+    return CreateRoomOut(room_id=room_id)
+
+
+@app.patch("/api/rooms/{room_id}/config")
+async def patch_room_config(
+    room_id: RoomIdPath,
+    body: LobbyConfigIn,
+    x_player_name: Annotated[str | None, Header()] = None,
+) -> dict[str, str]:
+    if room_id not in manager.rooms:
+        raise HTTPException(status_code=404, detail="Room not found")
+    room = manager.rooms[room_id]
+    if not x_player_name or x_player_name != room.host_name:
+        raise HTTPException(status_code=403, detail="Only host can change config")
+    if room.is_playing or room.current_round > 0:
+        raise HTTPException(status_code=409, detail="Cannot change config during game")
+
+    room.max_rounds = body.rounds
+    room.time_limit = body.limit
+    room.visibility = body.visibility
+    room.stop_mechanism = body.stop_mechanism
+
+    await save_room(
+        room_id,
+        room.max_rounds,
+        room.time_limit,
+        room.current_round,
+        room.host_name,
+        room.visibility,
+        stop_mechanism=int(room.stop_mechanism),
     )
+
+    await room.broadcast(
+        json.dumps(
+            {
+                "type": "lobby_config_update",
+                "max_rounds": room.max_rounds,
+                "time_limit": room.time_limit,
+                "visibility": room.visibility,
+                "stop_mechanism": room.stop_mechanism,
+            }
+        )
+    )
+    return {"status": "ok"}
 
 
 def _appeal_bearer_token(authorization: str | None) -> str:
@@ -681,6 +722,10 @@ async def _dispatch(msg: dict, room, room_id: str, client_name: str) -> None:
         await handle_veto_vote(room, client_name, msg)
     elif msg_type == "kick_player":
         await handle_kick_player(room, room_id, client_name, msg, manager)
+    elif msg_type == "lobby_config_update":
+        await handle_lobby_config_update(room, room_id, msg, client_name)
+    elif msg_type == "lobby_chat_msg":
+        await handle_lobby_chat(room, client_name, msg)
     elif msg_type is not None:
         logger.warning(f"Unknown message type '{msg_type}' from '{client_name}'")
 
@@ -733,17 +778,11 @@ async def websocket_endpoint(
     websocket: WebSocket,
     room_id: RoomIdPath,
     client_name: ClientNamePath,
-    rounds: Annotated[int, Query(ge=1, le=50)] = 5,
-    limit: Annotated[int, Query(ge=10, le=600)] = 90,
-    visibility: Annotated[Literal["public", "private"], Query()] = "public",
 ) -> None:
-    logger.info(
-        f"WebSocket attempt: room={room_id}, client={client_name}, "
-        f"rounds={rounds}, limit={limit}, visibility={visibility}"
-    )
+    logger.info(f"WebSocket attempt: room={room_id}, client={client_name}")
     client_ip = client_ip_from_websocket(websocket)
     success, reject_reason = await manager.connect(
-        websocket, room_id, client_name, rounds, limit, visibility, client_ip=client_ip
+        websocket, room_id, client_name, client_ip=client_ip
     )
     if not success:
         logger.warning(

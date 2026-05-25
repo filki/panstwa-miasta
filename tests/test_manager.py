@@ -141,7 +141,7 @@ async def test_manager_connect():
     panstwa_miasta.manager.save_room = AsyncMock()
     panstwa_miasta.manager.save_player_score = AsyncMock()
 
-    success, reason = await manager.connect(ws, "room1", "player1", 5, 90)
+    success, reason = await manager.connect(ws, "room1", "player1")
     assert success is True
     assert reason is None
     assert "room1" in manager.rooms
@@ -159,11 +159,11 @@ async def test_manager_connect_visibility_only_on_first_join():
     panstwa_miasta.manager.save_player_score = AsyncMock()
 
     ws1 = AsyncMock(spec=WebSocket)
-    await manager.connect(ws1, "r_vis", "p1", 5, 90, "private")
+    await manager.connect(ws1, "r_vis", "p1", "private")
     assert manager.rooms["r_vis"].visibility == "private"
 
     ws2 = AsyncMock(spec=WebSocket)
-    await manager.connect(ws2, "r_vis", "p2", 5, 90, "public")
+    await manager.connect(ws2, "r_vis", "p2", "public")
     assert manager.rooms["r_vis"].visibility == "private"
 
 
@@ -203,8 +203,8 @@ async def test_host_reconnect_preserves_host_on_refresh(monkeypatch):
     manager = ConnectionManager()
     ws_host = AsyncMock(spec=WebSocket)
     ws_guest = AsyncMock(spec=WebSocket)
-    await manager.connect(ws_host, "room_host", "Filipino", 5, 90)
-    await manager.connect(ws_guest, "room_host", "Julka", 5, 90)
+    await manager.connect(ws_host, "room_host", "Filipino")
+    await manager.connect(ws_guest, "room_host", "Julka")
     room = manager.rooms["room_host"]
     assert room.host_name == "Filipino"
 
@@ -212,7 +212,7 @@ async def test_host_reconnect_preserves_host_on_refresh(monkeypatch):
     assert room.host_name == "Filipino"
 
     ws_host_rejoin = AsyncMock(spec=WebSocket)
-    await manager.connect(ws_host_rejoin, "room_host", "Filipino", 5, 90)
+    await manager.connect(ws_host_rejoin, "room_host", "Filipino")
     assert room.host_name == "Filipino"
 
     await asyncio.sleep(0.3)
@@ -248,8 +248,8 @@ async def test_connect_resyncs_expected_answers_mid_round_reconnect(monkeypatch)
     manager = ConnectionManager()
     ws_a = AsyncMock(spec=WebSocket)
     ws_b = AsyncMock(spec=WebSocket)
-    await manager.connect(ws_a, "rx_exp", "A", 3, 60)
-    await manager.connect(ws_b, "rx_exp", "B", 3, 60)
+    await manager.connect(ws_a, "rx_exp", "A")
+    await manager.connect(ws_b, "rx_exp", "B")
     room = manager.rooms["rx_exp"]
     room.start_round()
     assert room.expected_answers == 2
@@ -258,7 +258,7 @@ async def test_connect_resyncs_expected_answers_mid_round_reconnect(monkeypatch)
     assert room.expected_answers == 1
 
     ws_b2 = AsyncMock(spec=WebSocket)
-    await manager.connect(ws_b2, "rx_exp", "B", 3, 60)
+    await manager.connect(ws_b2, "rx_exp", "B")
     assert room.expected_answers == 2
 
 
@@ -273,8 +273,8 @@ async def test_reconnect_mid_round_keeps_answers(monkeypatch):
     manager = ConnectionManager()
     ws_a = AsyncMock(spec=WebSocket)
     ws_b = AsyncMock(spec=WebSocket)
-    await manager.connect(ws_a, "rx_ans", "A", 3, 60)
-    await manager.connect(ws_b, "rx_ans", "B", 3, 60)
+    await manager.connect(ws_a, "rx_ans", "A")
+    await manager.connect(ws_b, "rx_ans", "B")
     room = manager.rooms["rx_ans"]
     room.start_round()
     room.answers_received["B"] = {"Państwo": "polska"}
@@ -285,7 +285,7 @@ async def test_reconnect_mid_round_keeps_answers(monkeypatch):
     assert room.answers_received["B"] == {"Państwo": "polska"}
 
     ws_b2 = AsyncMock(spec=WebSocket)
-    await manager.connect(ws_b2, "rx_ans", "B", 3, 60)
+    await manager.connect(ws_b2, "rx_ans", "B")
     # odpowiedzi wciąż tam są po reconnect
     assert "B" in room.answers_received
     assert room.answers_received["B"] == {"Państwo": "polska"}
@@ -308,7 +308,7 @@ async def test_connect_restores_room_snapshot_from_sqlite(monkeypatch):
 
     manager = ConnectionManager()
     ws = AsyncMock(spec=WebSocket)
-    ok, reason = await manager.connect(ws, rid, "A", 5, 90, "public")
+    ok, reason = await manager.connect(ws, rid, "A", "public")
     assert ok is True
     assert reason is None
     room = manager.rooms[rid]
@@ -336,7 +336,7 @@ async def test_delayed_delete_removes_room_from_sqlite(monkeypatch):
     manager = ConnectionManager()
     ws = AsyncMock(spec=WebSocket)
     rid = "droom_grace"
-    await manager.connect(ws, rid, "solo", 3, 60)
+    await manager.connect(ws, rid, "solo")
 
     manager.disconnect(rid, "solo", ws)
     assert rid not in manager.rooms
@@ -534,8 +534,8 @@ async def test_lobby_idle_dissolves_public_lobby(monkeypatch):
     ws_host = AsyncMock(spec=WebSocket)
     ws_guest = AsyncMock(spec=WebSocket)
     rid = "idle_lobby"
-    await manager.connect(ws_host, rid, "Host", 5, 90)
-    await manager.connect(ws_guest, rid, "Guest", 5, 90)
+    await manager.connect(ws_host, rid, "Host")
+    await manager.connect(ws_guest, rid, "Guest")
 
     assert rid in manager.rooms
     await asyncio.sleep(0.2)
@@ -558,7 +558,7 @@ async def test_lobby_idle_timer_resets_on_ready(monkeypatch):
     manager = ConnectionManager()
     ws = AsyncMock(spec=WebSocket)
     rid = "idle_ready"
-    await manager.connect(ws, rid, "solo", 5, 90)
+    await manager.connect(ws, rid, "solo")
     await asyncio.sleep(0.06)
     manager.touch_lobby_idle(manager.rooms[rid], reset=True)
     await asyncio.sleep(0.08)
@@ -580,7 +580,7 @@ async def test_lobby_idle_canceled_when_round_starts(monkeypatch):
     manager = ConnectionManager()
     ws = AsyncMock(spec=WebSocket)
     rid = "idle_play"
-    await manager.connect(ws, rid, "solo", 5, 90)
+    await manager.connect(ws, rid, "solo")
     manager.rooms[rid].start_round()
     manager.cancel_lobby_idle(manager.rooms[rid])
     await asyncio.sleep(0.2)
@@ -600,12 +600,12 @@ async def test_connect_rejects_ninth_player(monkeypatch):
     rid = "room_full"
     for i in range(8):
         ws = AsyncMock(spec=WebSocket)
-        ok, reason = await manager.connect(ws, rid, f"p{i}", 5, 90)
+        ok, reason = await manager.connect(ws, rid, f"p{i}")
         assert ok is True
         assert reason is None
 
     ws9 = AsyncMock(spec=WebSocket)
-    ok9, reason9 = await manager.connect(ws9, rid, "p9", 5, 90)
+    ok9, reason9 = await manager.connect(ws9, rid, "p9")
     assert ok9 is False
     assert reason9 == "room_full"
 
@@ -621,10 +621,10 @@ async def test_connect_reconnect_same_nick_when_room_full(monkeypatch):
     rid = "room_rejoin_full"
     for i in range(8):
         ws = AsyncMock(spec=WebSocket)
-        await manager.connect(ws, rid, f"p{i}", 5, 90)
+        await manager.connect(ws, rid, f"p{i}")
 
     ws_rejoin = AsyncMock(spec=WebSocket)
-    ok, reason = await manager.connect(ws_rejoin, rid, "p3", 5, 90)
+    ok, reason = await manager.connect(ws_rejoin, rid, "p3")
     assert ok is True
     assert reason is None
 
