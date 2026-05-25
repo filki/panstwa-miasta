@@ -620,22 +620,10 @@ function updateScoreboard(
 }
 
 function createLobbyAvatar(name, viewerNick = "") {
-  const img = document.createElement("img");
-  img.className = "lobby-roster-avatar";
-  const resolveId =
-    typeof globalThis.avatarIdForPlayer === "function"
-      ? globalThis.avatarIdForPlayer(name, viewerNick)
-      : 0;
-  const src =
-    typeof globalThis.getAvatarSrc === "function"
-      ? globalThis.getAvatarSrc(resolveId)
-      : "/static/img/avatars/avatar-01.png";
-  img.src = src;
-  img.alt = "";
-  img.width = 40;
-  img.height = 40;
-  img.decoding = "async";
-  return img;
+  const el = document.createElement("span");
+  el.className = "lobby-roster-avatar";
+  el.textContent = ((name && name.trim()[0]) || "?").toUpperCase();
+  return el;
 }
 
 const MAX_LOBBY_SLOTS = 8;
@@ -1107,7 +1095,6 @@ globalThis.window.onload = () => {
     initLandingGuideCarousel();
     initLandingGuideMobileSheet();
     preparePlayNickname();
-    if (typeof initAvatarSelection === "function") initAvatarSelection();
   }
   bindChatEnter();
   bindCategoryEnter();

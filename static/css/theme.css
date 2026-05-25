@@ -1743,24 +1743,7 @@ button {
     flex-direction: column;
     min-height: 100dvh;
     font-family: "Inter", system-ui, sans-serif;
-    background-color: var(--background);
-    background-image:
-        radial-gradient(
-            circle at 12% 18%,
-            rgba(121, 24, 239, 0.12),
-            transparent 42%
-        ),
-        radial-gradient(
-            circle at 88% 12%,
-            rgba(236, 166, 124, 0.12),
-            transparent 38%
-        ),
-        radial-gradient(
-            circle at 50% 100%,
-            rgba(201, 48, 249, 0.08),
-            transparent 48%
-        ),
-        linear-gradient(180deg, #f5f0f9 0%, #f9f6fc 100%);
+    background-color: var(--brand-5);
 }
 
 /* ── Navbar extras ── */
@@ -1836,8 +1819,15 @@ button {
     width: 2.75rem;
     height: 2.75rem;
     border-radius: 50%;
-    object-fit: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--brand-1);
+    background: var(--brand-4);
     flex-shrink: 0;
+    line-height: 1;
 }
 
 @utility lobby-roster-name {
