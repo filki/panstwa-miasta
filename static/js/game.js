@@ -47,83 +47,87 @@ function dissolveRoom() {
 function enableInputs() {
   if (globalThis.currentCountdown) clearInterval(globalThis.currentCountdown);
 
-  // Filter categories based on game config
-  var activeCats = globalThis.pmActiveCategories || [];
-  var customCats = globalThis.pmCustomCategories || {};
+  // Category filter: use last known config from lobby
+  var config = globalThis.pmLastConfig || {};
+  var activeCats = Array.isArray(config.categories) ? config.categories : [];
+  var customCats = config.custom_categories || {};
 
-  // Built-in category fields
   var catContainer = document.getElementById("categories");
-  if (catContainer) {
-    var fields = catContainer.querySelectorAll(".game-field");
-    fields.forEach(function (field) {
-      var inp = field.querySelector("input");
-      if (!inp) return;
-      var cat = inp.getAttribute("data-category") || "";
-      if (activeCats.indexOf(cat) !== -1) {
-        field.style.display = "";
-        inp.disabled = false;
-        inp.value = "";
-        inp.classList.remove("error", "success-10", "warning-5", "error-0");
-        inp.style.borderColor = "";
-        var clone = inp.cloneNode(true);
-        inp.parentNode.replaceChild(clone, inp);
-      } else {
-        field.style.display = "none";
-        inp.disabled = true;
-      }
-    });
+  if (!catContainer) return;
 
-    // Remove old custom category fields
-    catContainer.querySelectorAll(".game-field--custom").forEach(function (el) {
-      el.remove();
-    });
-
-    // Add custom category fields
-    Object.keys(customCats).forEach(function (name) {
-      var div = document.createElement("div");
-      div.className = "form-group game-field game-field--custom";
-      var label = document.createElement("label");
-      label.setAttribute("for", "cat-custom-" + name);
-      label.textContent = "🔶 " + name;
-      var input = document.createElement("input");
-      input.type = "text";
-      input.className = "game-input";
-      input.id = "cat-custom-" + name;
-      input.setAttribute("data-category", name);
-      input.disabled = false;
-      input.value = "";
-      div.appendChild(label);
-      div.appendChild(input);
-      catContainer.appendChild(div);
-    });
-  }
-
-  // Ponownie łapiemy, bo zrobiliśmy cloneNode
-  const newInputs = document.querySelectorAll("#categories input");
-  newInputs.forEach((inp, i) => {
-    inp.addEventListener("input", (e) => {
-      checkAllFilled();
-      validateFirstLetter(e.target);
-    });
-
-    // Zgłaszaj odpowiedzi Enterem
-    inp.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        if (i < newInputs.length - 1) newInputs[i + 1].focus();
-        else {
-          const stopBtn = document.getElementById("btn-stop");
-          if (!stopBtn.disabled) stopGame(); // Ostatni input i enter = STOP!
-        }
-      }
-    });
+  // Show/hide built-in category fields
+  var fields = catContainer.querySelectorAll(".game-field");
+  fields.forEach(function (field) {
+    var inp = field.querySelector("input");
+    if (!inp) return;
+    var cat = inp.getAttribute("data-category") || "";
+    if (activeCats.indexOf(cat) !== -1) {
+      field.style.display = "";
+      inp.disabled = false;
+      inp.value = "";
+      inp.classList.remove("error", "success-10", "warning-5", "error-0");
+      inp.style.borderColor = "";
+    } else {
+      field.style.display = "none";
+      inp.disabled = true;
+    }
   });
 
-  const btnStop = document.getElementById("btn-stop");
+  // Remove old custom fields
+  catContainer.querySelectorAll(".game-field--custom").forEach(function (el) {
+    el.remove();
+  });
+
+  // Add custom category fields
+  Object.keys(customCats).forEach(function (name) {
+    var div = document.createElement("div");
+    div.className = "form-group game-field game-field--custom";
+    var label = document.createElement("label");
+    label.setAttribute("for", "cat-custom-" + name);
+    label.textContent = "🔶 " + name;
+    var input = document.createElement("input");
+    input.type = "text";
+    input.className = "game-input";
+    input.id = "cat-custom-" + name;
+    input.setAttribute("data-category", name);
+    input.disabled = false;
+    input.value = "";
+    div.appendChild(label);
+    div.appendChild(input);
+    catContainer.appendChild(div);
+  });
+
+  // Attach event listeners to all enabled inputs
+  var allInputs = catContainer.querySelectorAll("input:not([disabled])");
+  allInputs.forEach(function (inp, i) {
+    ["input", "keydown"].forEach(function (evt) {
+      inp.removeEventListener(evt, inp._pmHandler);
+    });
+    var handler = function (e) {
+      if (e.type === "input") {
+        checkAllFilled();
+        validateFirstLetter(e.target);
+      } else if (e.key === "Enter") {
+        var siblings = catContainer.querySelectorAll("input:not([disabled])");
+        var idx = Array.prototype.indexOf.call(siblings, e.target);
+        if (idx < siblings.length - 1) {
+          siblings[idx + 1].focus();
+        } else {
+          var stopBtn = document.getElementById("btn-stop");
+          if (!stopBtn.disabled) stopGame();
+        }
+      }
+    };
+    inp._pmHandler = handler;
+    inp.addEventListener("input", handler);
+    inp.addEventListener("keydown", handler);
+  });
+
+  var btnStop = document.getElementById("btn-stop");
   btnStop.disabled = true;
   delete btnStop.dataset.stopped;
   btnStop.innerHTML = "🛑 STOP!";
 
-  // Przywracamy literę jeśli zniknęła
   if (globalThis.currentLetter) {
     document.getElementById("current-letter").innerHTML =
       globalThis.currentLetter;
