@@ -718,15 +718,15 @@ function setRoomPhase(phase) {
   const lobbyActions = document.querySelector(".room-lobby-actions");
   const gameActions = document.querySelector(".game-actions");
   const chatSection = document.getElementById("chat-section");
+  const gameLayout = document.getElementById("game-layout");
+  const postgame = document.getElementById("room-postgame");
 
   if (lobby) lobby.hidden = next !== "lobby";
   if (gameMain) gameMain.hidden = next === "lobby" || next === "round_results";
   if (chatSection) chatSection.hidden = next === "round_results";
-
-  const gameLayout = document.getElementById("game-layout");
-  const postgame = document.getElementById("room-postgame");
-  if (gameLayout)
-    gameLayout.hidden = next === "lobby" || next === "round_results";
+  if (gameLayout) gameLayout.hidden = false;
+  // W lobby game-layout jest widoczny ale game-main-area schowany —
+  // chat sidebar pozostaje widoczny.
   if (postgame && next !== "results") postgame.hidden = true;
 
   if (readyBtn && lobbyActions && gameActions) {
