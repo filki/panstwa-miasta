@@ -1553,18 +1553,20 @@ button {
     border-collapse: collapse;
     & th {
         text-align: left;
-        padding: 0.75rem 0.5rem;
-        font-size: 0.75rem;
-        font-weight: 700;
-        letter-spacing: 0.05em;
+        padding: 0.85rem 0.6rem;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
         color: var(--text-muted);
         border-bottom: 1px solid var(--border);
+        white-space: nowrap;
     }
     & td {
-        padding: 0.65rem 0.5rem;
+        padding: 0.7rem 0.6rem;
         font-size: 0.875rem;
         color: var(--text);
+        vertical-align: middle;
     }
 }
 @utility table-container {
@@ -1572,6 +1574,115 @@ button {
     overflow-x: auto;
     margin-bottom: var(--space-4);
 }
+
+/* Active rooms — missing classes (migration leftovers) */
+@utility btn-join-small {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2rem;
+    padding: 0.35rem 0.8rem;
+    border: 0;
+    border-radius: var(--r-sm);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--brand-3), var(--brand-2));
+    color: #fff;
+    white-space: nowrap;
+    transition: filter 0.15s ease;
+    &:hover {
+        filter: brightness(1.12);
+    }
+}
+
+@utility badge-rules {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: rgba(62, 20, 15, 0.07);
+    color: var(--text-muted);
+    white-space: nowrap;
+    line-height: 1.3;
+}
+
+@utility badge-mode {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: rgba(213, 143, 35, 0.14);
+    color: var(--accent-text);
+    white-space: nowrap;
+    line-height: 1.3;
+}
+
+@utility active-rooms-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--r-lg);
+    border: 1px solid rgba(116, 55, 31, 0.12);
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    list-style: none;
+}
+
+@utility active-rooms-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+@utility active-rooms-card-code {
+    font-family: "Outfit", system-ui, sans-serif;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: 0.04em;
+}
+
+@utility active-rooms-card-host {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+@utility active-rooms-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+@utility active-rooms-card-join {
+    align-self: flex-end;
+}
+
+/* Mobile: cards visible, table hidden */
+@media (max-width: 1023px) {
+    #active-rooms-table-wrap {
+        display: none !important;
+    }
+    #active-rooms-cards-wrap {
+        display: flex !important;
+        flex-direction: column;
+    }
+}
+
 @utility round-countdown-overlay {
     position: fixed;
     inset: 0;
