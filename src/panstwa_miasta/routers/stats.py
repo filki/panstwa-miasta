@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import time
 from datetime import date
 
 from fastapi import APIRouter
@@ -47,13 +48,21 @@ def _daily_letter() -> str:
 
 @router.get("/daily-top")
 async def get_daily_top() -> dict:
-    """Zwraca top 5 najczesciej podawanych panstw na dzisiejsza litere."""
+    """Zwraca top 5 najczesciej podawanych panstw na dzisiejsza litere.
+
+    Liczy odsetek gier (nie odpowiedzi) w ostatnich 30 dniach,
+    w ktorych padlo dane panstwo na litere dnia.
+    """
     letter = _daily_letter()
+    cutoff = int(time.time()) - 30 * 86400
+
     counts: dict[str, int] = {}
+    total_games_with_letter = 0
 
     async with connect() as db:
         async with db.execute(
-            "SELECT payload FROM game_transcripts ORDER BY finished_at DESC LIMIT 500"
+            "SELECT payload FROM game_transcripts WHERE finished_at >= ? ORDER BY finished_at DESC",
+            (cutoff,),
         ) as cursor:
             rows = await cursor.fetchall()
 
@@ -64,20 +73,40 @@ async def get_daily_top() -> dict:
         except (json.JSONDecodeError, TypeError):
             continue
         rounds = data.get("rounds", [])
+        found_letter = False
+        countries_in_game: set[str] = set()
+
         for rnd in rounds:
             if rnd.get("letter", "").upper() != letter:
                 continue
+            found_letter = True
             answers = rnd.get("answers", {})
             for player_answers in answers.values():
-                kraj = (player_answers.get("Państwo") or "").strip().lower()
-                if not kraj or not kraj.startswith(letter.lower()):
+                kraj = (player_answers.get("Państwo") or "").strip()
+                if not kraj or not kraj[0].upper() == letter:
                     continue
+                countries_in_game.add(kraj.capitalize())
+
+        if found_letter:
+            total_games_with_letter += 1
+            for kraj in countries_in_game:
                 counts[kraj] = counts.get(kraj, 0) + 1
 
-    top5 = sorted(counts.items(), key=lambda x: (-x[1], x[0]))[:5]
+    sorted_items = sorted(counts.items(), key=lambda x: (-x[1], x[0]))[:5]
+
+    total = total_games_with_letter or 1
+    top = [
+        {
+            "name": name,
+            "count": count,
+            "pct": round(count / total * 100, 1),
+        }
+        for name, count in sorted_items
+    ]
 
     return {
         "letter": letter,
         "date": date.today().isoformat(),
-        "top": [{"name": name.capitalize(), "count": count} for name, count in top5],
+        "total_games": total_games_with_letter,
+        "top": top,
     }

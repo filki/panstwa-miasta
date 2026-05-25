@@ -609,8 +609,23 @@
                         <h3 class="daily-stats-title" id="daily-stats-title">
                             📊 Najczęstsze państwo
                         </h3>
+                        <p
+                            class="daily-stats-subtitle"
+                            id="daily-stats-subtitle"
+                        ></p>
                         <div id="daily-stats-body" class="daily-stats-body">
-                            <div class="daily-stats-loading">Ładowanie…</div>
+                            <div
+                                class="daily-stats-loading"
+                                id="daily-stats-loading"
+                            >
+                                Ładowanie…
+                            </div>
+                            <canvas
+                                id="daily-stats-chart"
+                                width="400"
+                                height="220"
+                                style="display: none"
+                            ></canvas>
                         </div>
                     </section>
 
@@ -855,6 +870,7 @@
         <script src="/static/js/ui.js" defer></script>
         <script src="/static/js/game.js" defer></script>
         <script src="/static/js/socket.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
         <script>
             const isLocalDev =
                 ["localhost", "127.0.0.1"].includes(location.hostname) ||
@@ -884,48 +900,97 @@
                         return r.json();
                     })
                     .then(function (data) {
+                        document.getElementById(
+                            "daily-stats-loading",
+                        ).style.display = "none";
                         if (!data.top || data.top.length === 0) {
-                            body.innerHTML =
+                            document.getElementById(
+                                "daily-stats-body",
+                            ).innerHTML =
                                 '<div class="daily-stats-loading">Brak danych dla litery ' +
                                 data.letter +
                                 "</div>";
                             return;
                         }
-                        if (title)
-                            title.textContent =
-                                '📊 Najczęstsze państwo na "' +
-                                data.letter +
-                                '"';
-                        var maxCount = data.top[0].count;
-                        var html = "";
-                        data.top.forEach(function (item, i) {
-                            var pct =
-                                maxCount > 0
-                                    ? (item.count / maxCount) * 100
-                                    : 0;
-                            html += '<div class="daily-stats-row">';
-                            html +=
-                                '<span class="daily-stats-rank">' +
-                                (i + 1) +
-                                ".</span>";
-                            html +=
-                                '<span class="daily-stats-name">' +
-                                item.name +
-                                "</span>";
-                            html +=
-                                '<span class="daily-stats-bar" style="width: ' +
-                                pct +
-                                '%"></span>';
-                            html +=
-                                '<span class="daily-stats-count">' +
-                                item.count +
-                                "x</span>";
-                            html += "</div>";
+                        document.getElementById(
+                            "daily-stats-title",
+                        ).textContent =
+                            "Najczęstsze państwo na literę " + data.letter;
+                        document.getElementById(
+                            "daily-stats-subtitle",
+                        ).textContent =
+                            "na podstawie " +
+                            data.total_games +
+                            " gier w ostatnich 30 dniach";
+                        var labels = data.top.map(function (i) {
+                            return i.name;
                         });
-                        body.innerHTML = html;
+                        var vals = data.top.map(function (i) {
+                            return i.pct;
+                        });
+                        var canvas =
+                            document.getElementById("daily-stats-chart");
+                        canvas.style.display = "block";
+                        new Chart(canvas, {
+                            type: "bar",
+                            data: {
+                                labels: labels,
+                                datasets: [
+                                    {
+                                        data: vals,
+                                        backgroundColor: [
+                                            "#d58f23",
+                                            "#74371f",
+                                            "#eee08f",
+                                            "#3e140f",
+                                            "#a8642a",
+                                        ],
+                                        borderRadius: 4,
+                                        borderSkipped: false,
+                                    },
+                                ],
+                            },
+                            options: {
+                                indexAxis: "y",
+                                responsive: true,
+                                maintainAspectRatio: true,
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function (ctx) {
+                                                var item =
+                                                    data.top[ctx.dataIndex];
+                                                return (
+                                                    item.name +
+                                                    ": " +
+                                                    item.count +
+                                                    "x (" +
+                                                    item.pct +
+                                                    "%)"
+                                                );
+                                            },
+                                        },
+                                    },
+                                },
+                                scales: {
+                                    x: {
+                                        max: 100,
+                                        ticks: {
+                                            callback: function (v) {
+                                                return v + "%";
+                                            },
+                                        },
+                                    },
+                                    y: {
+                                        ticks: { font: { weight: "bold" } },
+                                    },
+                                },
+                            },
+                        });
                     })
                     .catch(function () {
-                        body.innerHTML =
+                        document.getElementById("daily-stats-body").innerHTML =
                             '<div class="daily-stats-loading">Nie udało się załadować statystyk</div>';
                     });
             })();
