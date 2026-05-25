@@ -468,6 +468,7 @@ const MESSAGE_HANDLERS = {
 };
 
 function onRoundStartedResume(msg) {
+  injectCustomCategoryFields();
   const letterEl = document.getElementById("current-letter");
   if (letterEl) letterEl.textContent = msg.letter;
   const btn = document.getElementById("btn-draw");
@@ -506,7 +507,58 @@ function onRoundStartedResume(msg) {
   }
 }
 
+function injectCustomCategoryFields() {
+  var config = globalThis.pmLastConfig;
+  if (!config || !config.custom_categories) return;
+  var names = Object.keys(config.custom_categories);
+  if (names.length === 0) return;
+  var container = document.getElementById("categories");
+  if (!container) return;
+  names.forEach(function (name) {
+    var safe = name
+      .replace(/[^a-zA-Z0-9\u00C0-\u024f\u0400-\u04FF]+/g, "-")
+      .toLowerCase();
+    var existing = document.getElementById("cat-custom-" + safe);
+    if (existing) return;
+    var div = document.createElement("div");
+    div.className = "form-group game-field";
+    var label = document.createElement("label");
+    label.textContent = "\u2728 " + name;
+    label.htmlFor = "cat-custom-" + safe;
+    div.appendChild(label);
+    var inp = document.createElement("input");
+    inp.type = "text";
+    inp.className = "game-input";
+    inp.id = "cat-custom-" + safe;
+    inp.dataset.category = name;
+    inp.disabled = true;
+    div.appendChild(inp);
+    container.appendChild(div);
+  });
+}
+
+function cleanupCustomCategoryFields() {
+  document.querySelectorAll("#categories .game-field").forEach(function (el) {
+    var inp = el.querySelector("input");
+    if (
+      inp &&
+      inp.dataset.category &&
+      globalThis.pmLastConfig &&
+      globalThis.pmLastConfig.custom_categories
+    ) {
+      if (
+        globalThis.pmLastConfig.custom_categories[inp.dataset.category] !==
+        undefined
+      ) {
+        el.remove();
+      }
+    }
+  });
+}
+
 function onRoundStartedFresh(msg) {
+  cleanupCustomCategoryFields();
+  injectCustomCategoryFields();
   const afterReveal = () => {
     const lotteryFunc = globalThis.runLetterLottery || runLetterLottery;
     lotteryFunc(msg.letter, () => {
@@ -662,12 +714,28 @@ function buildResultCell(
   roomId,
   roundLetter,
 ) {
+  let vetoKey = player;
+  if (ROUND_RESULT_CATEGORIES.indexOf(cat) === -1) {
+    vetoKey = player + "::" + cat;
+  }
   let cell = `<div class="round-results-cell"><span class="round-results-val">${hasAns ? escapeHtml(String(raw).trim()) : "—"}</span><span class="${roundResultsPtsClass(pts)}">${pts}</span>`;
   if (cat === "Rzecz" && !isFinal && player !== viewer && hasAns) {
     const tally = tallies[player] || {};
     const tak = typeof tally.tak === "number" ? tally.tak : 0;
     const nie = typeof tally.nie === "number" ? tally.nie : 0;
     cell += `<span class="round-results-veto-tally" aria-hidden="true">${tak}·${nie}</span><div class="round-results-veto-actions" data-veto-target="${escapeHtml(player)}"><button type="button" class="round-results-veto-btn round-results-veto-btn--up" data-target="${escapeHtml(player)}" data-vote="tak" aria-label="Zatwierdź odpowiedź">👍</button><button type="button" class="round-results-veto-btn round-results-veto-btn--down" data-target="${escapeHtml(player)}" data-vote="nie" aria-label="Odrzuć odpowiedź">👎</button></div>`;
+  }
+  // Custom category veto
+  if (
+    ROUND_RESULT_CATEGORIES.indexOf(cat) === -1 &&
+    !isFinal &&
+    player !== viewer &&
+    hasAns
+  ) {
+    var ctally = tallies[vetoKey] || {};
+    var cTak = typeof ctally.tak === "number" ? ctally.tak : 0;
+    var cNie = typeof ctally.nie === "number" ? ctally.nie : 0;
+    cell += `<span class="round-results-veto-tally" aria-hidden="true">${cTak}·${cNie}</span><div class="round-results-veto-actions"><button type="button" class="round-results-veto-btn round-results-veto-btn--up" data-target="${escapeHtml(player)}" data-cat="${escapeHtml(cat)}" data-vote="tak" aria-label="Zatwierdź">👍</button><button type="button" class="round-results-veto-btn round-results-veto-btn--down" data-target="${escapeHtml(player)}" data-cat="${escapeHtml(cat)}" data-vote="nie" aria-label="Odrzuć">👎</button></div>`;
   }
   if (
     allowAppeals &&
@@ -716,9 +784,29 @@ function buildRoundResultsHtml(msg, options = {}) {
     .toLowerCase();
   const players = sortRoundResultPlayers(scores, viewer);
 
+  // Detect custom categories from score details
+  var customCats = [];
+  for (var pi = 0; pi < players.length; pi++) {
+    var pdet = scores[players[pi]] && scores[players[pi]].details;
+    if (pdet) {
+      var keys = Object.keys(pdet);
+      for (var ki = 0; ki < keys.length; ki++) {
+        if (
+          ROUND_RESULT_CATEGORIES.indexOf(keys[ki]) === -1 &&
+          customCats.indexOf(keys[ki]) === -1
+        ) {
+          customCats.push(keys[ki]);
+        }
+      }
+    }
+  }
+
   let html = `<div class="round-results-block round-results-block--${variant}"><div class="round-results-table-wrap"><table class="round-results-table round-results-table--players"><thead><tr><th scope="col">Gracz</th>`;
   for (const cat of ROUND_RESULT_CATEGORIES) {
     html += `<th scope="col">${escapeHtml(cat)}</th>`;
+  }
+  for (var ci = 0; ci < customCats.length; ci++) {
+    html += `<th scope="col">${escapeHtml(customCats[ci])}</th>`;
   }
   html += `<th scope="col">Suma</th></tr></thead><tbody>`;
 
@@ -750,6 +838,29 @@ function buildRoundResultsHtml(msg, options = {}) {
         roundLetter,
       );
       html += `<td class="round-results-td">${cell}</td>`;
+    }
+    // Custom category columns
+    for (var cci = 0; cci < customCats.length; cci++) {
+      var ccat = customCats[cci];
+      var craw = answers[ccat];
+      var chasAns = craw != null && String(craw).trim() !== "";
+      var cptsRaw = rScore.details?.[ccat];
+      var cpts = typeof cptsRaw === "number" ? cptsRaw : 0;
+      var ccell = buildResultCell(
+        ccat,
+        chasAns,
+        craw,
+        cpts,
+        player,
+        viewer,
+        isFinal,
+        tallies,
+        allowAppeals,
+        roundNumber,
+        roomId,
+        roundLetter,
+      );
+      html += `<td class="round-results-td">${ccell}</td>`;
     }
     const total = typeof rScore.total === "number" ? rScore.total : 0;
     html += `<td class="round-results-td round-results-td--total"><span class="round-results-player-total">+${total} pkt</span></td></tr>`;
@@ -796,8 +907,11 @@ function bindRoundResultsVeto(root) {
     btn.addEventListener("click", () => {
       const target = btn.dataset.target;
       const vote = btn.dataset.vote;
+      const cat = btn.dataset.cat || "";
       if (!target || !vote) return;
-      sendJson({ type: "veto_vote", target, vote });
+      var payload = { type: "veto_vote", target: target, vote: vote };
+      if (cat) payload.cat = cat;
+      sendJson(payload);
       btn
         .closest(".round-results-veto-actions")
         ?.querySelectorAll(".round-results-veto-btn")
@@ -1283,6 +1397,7 @@ function onGameRestarted(msg) {
       "error-0",
     );
   });
+  cleanupCustomCategoryFields();
   addLog(
     `<em>Gospodarz <strong>${msg.sender}</strong> zrestartował grę z nowymi ustawieniami! Wyniki zostały wyzerowane.</em>`,
     "system-msg",

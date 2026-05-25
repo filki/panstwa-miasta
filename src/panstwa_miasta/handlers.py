@@ -172,6 +172,7 @@ async def _finalize_results_phase(room: Room, room_id: str, timeout_coro) -> Non
         )
     )
     room.veto_votes = {}
+    room.custom_veto_votes = {}
     room.provisional_round_scores = {}
     logger.info("Round results finalized for room %s. game_over=%s", room_id, is_game_over)
 
@@ -196,6 +197,7 @@ async def _begin_results_phase(room: Room, room_id: str, timeout_coro) -> None:
     room.round_started_at = None
     room.results_phase_active = True
     room.veto_votes = {}
+    room.custom_veto_votes = {}
     room.sync_results_roster()
     round_scores = await room.compute_round_scores(persist=False)
     room.provisional_round_scores = round_scores
@@ -378,14 +380,28 @@ async def handle_veto_vote(room: Room, client_name: str, msg: dict) -> None:
         return
     target = (msg.get("target") or "").strip()
     vote = (msg.get("vote") or "").strip().lower()
+    cat = (msg.get("cat") or "").strip()
     if vote not in ("tak", "nie"):
         return
     if not target or target == client_name or target not in room.answers_received:
         return
-    rzecz = room.answers_received[target].get(VETO_CATEGORY, "").strip()
-    if not rzecz:
-        return
-    room.veto_votes.setdefault(target, {})[client_name] = vote
+
+    if cat:
+        # Custom category veto
+        if cat not in room.custom_categories:
+            return
+        ans = room.answers_received[target].get(cat, "").strip()
+        if not ans:
+            return
+        key = f"{target}::{cat}"
+        room.custom_veto_votes.setdefault(key, {})[client_name] = vote
+    else:
+        # Regular Rzecz veto
+        rzecz = room.answers_received[target].get(VETO_CATEGORY, "").strip()
+        if not rzecz:
+            return
+        room.veto_votes.setdefault(target, {})[client_name] = vote
+
     await room.broadcast(
         json.dumps(
             {

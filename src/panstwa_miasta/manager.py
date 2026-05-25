@@ -25,7 +25,6 @@ from .db import (
     get_active_rooms,
     remove_player,
     room_id_exists,
-    save_custom_category_entry,
     save_player_score,
     save_room,
 )
@@ -122,6 +121,7 @@ class Room:
         self.current_letter = ""
         self.answers_received: dict[str, dict[str, str]] = {}
         self.expected_answers = 0
+        self.custom_veto_votes: dict[str, dict[str, str]] = {}  # key = player + "::" + cat
         self.game_over = False
         self.round_started_at: float | None = None
         self.stop_submit_ends_at: float | None = None
@@ -196,6 +196,11 @@ class Room:
     def veto_tallies(self) -> dict[str, dict[str, int]]:
         tallies: dict[str, dict[str, int]] = {}
         for target, votes in self.veto_votes.items():
+            tallies[target] = {
+                "tak": sum(1 for v in votes.values() if v == "tak"),
+                "nie": sum(1 for v in votes.values() if v == "nie"),
+            }
+        for target, votes in self.custom_veto_votes.items():
             tallies[target] = {
                 "tak": sum(1 for v in votes.values() if v == "tak"),
                 "nie": sum(1 for v in votes.values() if v == "nie"),
@@ -445,6 +450,17 @@ class Room:
         for player in rejected:
             if player in round_scores:
                 round_scores[player]["details"][VETO_CATEGORY] = 0
+
+        # Custom category vetoes: same logic per-answer
+        for key, votes in self.custom_veto_votes.items():
+            if "::" not in key:
+                continue
+            player, cat = key.split("::", 1)
+            if player in round_scores and cat in round_scores[player]["details"]:
+                tak = sum(1 for v in votes.values() if v == "tak")
+                nie = sum(1 for v in votes.values() if v == "nie")
+                if nie > tak:
+                    round_scores[player]["details"][cat] = 0
 
         self._assign_round_points(round_scores)
 
