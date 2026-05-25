@@ -45,6 +45,7 @@ from .db_backend import connect
 from .db_redis import close_redis, connect_redis, redis_configured, redis_ping
 from .handlers import (
     _begin_results_phase,
+    handle_add_custom_category,
     handle_answers,
     handle_chat,
     handle_dissolve_room,
@@ -53,6 +54,7 @@ from .handlers import (
     handle_lobby_config_update,
     handle_not_ready,
     handle_ready,
+    handle_remove_custom_category,
     handle_restart_game,
     handle_stop,
     handle_veto_vote,
@@ -742,6 +744,10 @@ async def _dispatch(msg: dict, room, room_id: str, client_name: str) -> None:
         await handle_kick_player(room, room_id, client_name, msg, manager)
     elif msg_type == "lobby_config_update":
         await handle_lobby_config_update(room, room_id, msg, client_name)
+    elif msg_type == "add_custom_category":
+        await handle_add_custom_category(room, room_id, msg, client_name)
+    elif msg_type == "remove_custom_category":
+        await handle_remove_custom_category(room, room_id, msg, client_name)
     elif msg_type == "lobby_chat_msg":
         await handle_lobby_chat(room, client_name, msg)
     elif msg_type is not None:
