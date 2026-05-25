@@ -175,7 +175,10 @@
                             <h1 class="landing-shell-title">
                                 Państwa<span>Miasta</span> — gra online
                             </h1>
-                            <p class="landing-hero-subtitle">
+                            <p
+                                class="landing-hero-subtitle"
+                                style="text-align: justify"
+                            >
                                 Graj ze znajomymi w przeglądarce. Stwórz pokój,
                                 dołącz kodem lub szybka gra bez konta.
                             </p>
@@ -205,7 +208,7 @@
                             <canvas
                                 id="daily-stats-chart"
                                 width="400"
-                                height="120"
+                                height="80"
                                 style="display: none"
                             ></canvas>
                         </div>
@@ -930,6 +933,7 @@
                         var canvas =
                             document.getElementById("daily-stats-chart");
                         canvas.style.display = "block";
+                        var maxPct = Math.max.apply(null, vals);
                         new Chart(canvas, {
                             type: "bar",
                             data: {
@@ -939,10 +943,10 @@
                                         data: vals,
                                         backgroundColor: [
                                             "#d58f23",
-                                            "#74371f",
-                                            "#eee08f",
-                                            "#3e140f",
-                                            "#a8642a",
+                                            "#d58f23",
+                                            "#d58f23",
+                                            "#d58f23",
+                                            "#d58f23",
                                         ],
                                         borderRadius: 4,
                                         borderSkipped: false,
@@ -975,17 +979,52 @@
                                 scales: {
                                     x: {
                                         max: 100,
+                                        grid: { display: false },
                                         ticks: {
-                                            callback: function (v) {
-                                                return v + "%";
-                                            },
+                                            display: false,
                                         },
                                     },
                                     y: {
-                                        ticks: { font: { weight: "bold" } },
+                                        grid: { display: false },
+                                        ticks: {
+                                            font: { weight: "bold", size: 11 },
+                                        },
                                     },
                                 },
                             },
+                            plugins: [
+                                {
+                                    id: "pctLabels",
+                                    afterDraw: function (chart) {
+                                        var ctx = chart.ctx;
+                                        chart.data.datasets.forEach(
+                                            function (ds, i) {
+                                                var meta =
+                                                    chart.getDatasetMeta(i);
+                                                meta.data.forEach(
+                                                    function (bar, j) {
+                                                        var val = ds.data[j];
+                                                        var x = bar.x + 4;
+                                                        var y = bar.y + 4;
+                                                        ctx.fillStyle =
+                                                            "#3e140f";
+                                                        ctx.font =
+                                                            "700 11px Inter, system-ui, sans-serif";
+                                                        ctx.textAlign = "left";
+                                                        ctx.textBaseline =
+                                                            "middle";
+                                                        ctx.fillText(
+                                                            val + "%",
+                                                            x,
+                                                            y,
+                                                        );
+                                                    },
+                                                );
+                                            },
+                                        );
+                                    },
+                                },
+                            ],
                         });
                     })
                     .catch(function () {
