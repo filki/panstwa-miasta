@@ -2122,16 +2122,25 @@ button {
 }
 .restart-actions {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3);
     width: 100%;
-    max-width: 24rem;
-    margin-inline: auto;
+}
+.restart-actions .restart-btn--primary,
+.restart-actions .restart-btn--secondary,
+.restart-actions .restart-btn--danger {
+    width: auto;
+    min-width: 10rem;
+    flex: 0 1 auto;
+}
+.restart-action-desc {
+    display: none;
 }
 .restart-btn--primary,
 .restart-btn--secondary,
 .restart-btn--danger {
-    width: 100%;
     min-height: var(--tap);
     padding: 0.75rem 1.4rem;
     border-radius: 14px;
@@ -2140,11 +2149,11 @@ button {
     letter-spacing: 0.5px;
     text-transform: uppercase;
     cursor: pointer;
+    text-align: center;
     transition:
         filter 0.15s,
         background 0.15s,
         border-color 0.15s;
-    text-align: center;
 }
 .restart-btn--primary {
     border: 0;
