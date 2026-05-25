@@ -749,11 +749,16 @@ function setRoomPhase(phase) {
       connectedPlayers,
     );
 
-    // Host vs non-host: config bar + start button
+    // Host vs non-host: host edytuje, non-host widzi readonly
     const configBar = document.getElementById("lobby-config-bar");
     const startBtn = document.getElementById("lobby-start-game");
     const isHost = globalThis.myNick === hostName;
-    if (configBar) configBar.style.display = isHost ? "" : "none";
+    if (configBar) {
+      configBar.style.display = "";
+      configBar.querySelectorAll("select, input").forEach((el) => {
+        el.disabled = !isHost;
+      });
+    }
     if (startBtn) startBtn.style.display = isHost ? "" : "none";
 
     // Swap chat send button to use lobby chat
@@ -820,11 +825,15 @@ function updateLobbyConfigUI(data) {
   if (countBarEl && data.player_count != null)
     countBarEl.textContent = data.player_count;
 
-  // Host vs non-host: config editable only for host
+  // Host vs non-host: host edytuje, non-host widzi readonly
   const configBar = document.getElementById("lobby-config-bar");
   const isHost = globalThis.myNick === lastLobbyRosterState.hostName;
   if (configBar) {
-    configBar.style.display = isHost ? "" : "none";
+    configBar.style.display = "";
+    // non-host: disable wszystkich selectow
+    configBar.querySelectorAll("select, input").forEach((el) => {
+      el.disabled = !isHost;
+    });
   }
 }
 
