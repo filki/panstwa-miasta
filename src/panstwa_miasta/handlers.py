@@ -93,6 +93,8 @@ def _round_results_payload(
         "host_name": room.host_name,
         "final": final,
         "veto_tallies": room.veto_tallies(),
+        "categories": list(room.categories),
+        "custom_categories": dict(room.custom_categories),
     }
     if not final and veto_ends_at is not None:
         payload["veto_ends_at"] = veto_ends_at
@@ -153,6 +155,8 @@ async def _finalize_results_phase(room: Room, room_id: str, timeout_coro) -> Non
             "round_scores": copy.deepcopy(round_scores),
             "veto_tallies": room.veto_tallies(),
             "veto_rejected": sorted(rejected),
+            "categories": list(room.categories),
+            "custom_categories": dict(room.custom_categories),
         }
     )
     is_game_over = room.current_round >= room.max_rounds

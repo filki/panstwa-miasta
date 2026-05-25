@@ -764,6 +764,13 @@ function buildResultCell(
 
 function buildRoundResultsHtml(msg, options = {}) {
   const variant = options.variant === "overlay" ? "overlay" : "sidebar";
+  // Active standard categories — fall back to full list if not provided
+  var activeCats =
+    msg.categories &&
+    msg.categories instanceof Array &&
+    msg.categories.length > 0
+      ? msg.categories
+      : ROUND_RESULT_CATEGORIES;
   const answersRoot =
     msg.answers && typeof msg.answers === "object" ? msg.answers : {};
   const viewer = globalThis.myNick || myNick || "";
@@ -804,7 +811,7 @@ function buildRoundResultsHtml(msg, options = {}) {
   }
 
   let html = `<div class="round-results-block round-results-block--${variant}"><div class="round-results-table-wrap"><table class="round-results-table round-results-table--players"><thead><tr><th scope="col">Gracz</th>`;
-  for (const cat of ROUND_RESULT_CATEGORIES) {
+  for (const cat of activeCats) {
     html += `<th scope="col">${escapeHtml(cat)}</th>`;
   }
   for (var ci = 0; ci < customCats.length; ci++) {
@@ -820,7 +827,7 @@ function buildRoundResultsHtml(msg, options = {}) {
         : {};
     const meClass = player === viewer ? " round-results-player-row--me" : "";
     html += `<tr class="round-results-player-row${meClass}"><th scope="row" class="round-results-player">${escapeHtml(player)}</th>`;
-    for (const cat of ROUND_RESULT_CATEGORIES) {
+    for (const cat of activeCats) {
       const raw = answers[cat];
       const hasAns = raw != null && String(raw).trim() !== "";
       const ptsRaw = rScore.details?.[cat];
@@ -1044,6 +1051,8 @@ function buildGameOverRoundBreakdownHtml(msg) {
             answers: round.answers,
             round_scores: round.round_scores,
             veto_tallies: round.veto_tallies,
+            categories: round.categories,
+            custom_categories: round.custom_categories,
             final: true,
           },
           {

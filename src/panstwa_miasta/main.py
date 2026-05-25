@@ -703,6 +703,8 @@ async def _send_initial_state(websocket: WebSocket, room, client_name: str) -> N
                     "final": False,
                     "veto_tallies": room.veto_tallies(),
                     "veto_ends_at": veto_ends_at,
+                    "categories": list(room.categories),
+                    "custom_categories": dict(room.custom_categories),
                 }
             )
         )
