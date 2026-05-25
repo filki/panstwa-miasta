@@ -141,29 +141,78 @@
                             <div class="room-lobby-bar-intro">
                                 <h2 class="room-lobby-title">Lobby</h2>
                                 <p class="room-lobby-lead">
-                                    Gospodarz startuje, gdy wszyscy są gotowi.
+                                    Kod:
+                                    <strong id="lobby-room-code">—</strong>
+                                    &nbsp;·&nbsp; Gracze:
+                                    <strong id="lobby-player-count-bar"
+                                        >0</strong
+                                    >
                                 </p>
                             </div>
-                            <dl class="room-lobby-bar-meta">
-                                <div class="room-lobby-chip">
-                                    <dt>Kod</dt>
-                                    <dd id="lobby-room-code">—</dd>
+                            <div
+                                class="room-lobby-bar-config"
+                                id="lobby-config-bar"
+                            >
+                                <div class="config-inline-row">
+                                    <label class="config-inline-field">
+                                        Rundy
+                                        <select id="lobby_rounds">
+                                            <option value="1">1</option>
+                                            <option value="3">3</option>
+                                            <option value="5" selected>
+                                                5
+                                            </option>
+                                            <option value="10">10</option>
+                                            <option value="22">22</option>
+                                        </select>
+                                    </label>
+                                    <label class="config-inline-field">
+                                        Czas
+                                        <select id="lobby_time_limit">
+                                            <option value="60">60s</option>
+                                            <option value="90" selected>
+                                                90s
+                                            </option>
+                                            <option value="120">120s</option>
+                                            <option value="180">180s</option>
+                                        </select>
+                                    </label>
+                                    <label class="config-inline-field">
+                                        Wid.
+                                        <select id="lobby_visibility">
+                                            <option value="public" selected>
+                                                Pub
+                                            </option>
+                                            <option value="private">
+                                                Pryw
+                                            </option>
+                                        </select>
+                                    </label>
+                                    <label
+                                        class="config-inline-field config-inline-stop"
+                                    >
+                                        STOP
+                                        <input
+                                            type="checkbox"
+                                            id="lobby_stop_mechanism"
+                                            checked
+                                        />
+                                    </label>
+                                    <button
+                                        type="button"
+                                        class="btn btn-primary"
+                                        id="lobby-start-game"
+                                        style="
+                                            min-height: 2.25rem;
+                                            padding: 0.5rem 1rem;
+                                            font-size: 0.8rem;
+                                            width: auto;
+                                        "
+                                    >
+                                        ▶ Start
+                                    </button>
                                 </div>
-                                <div class="room-lobby-chip">
-                                    <dt>Rundy</dt>
-                                    <dd id="lobby-room-rounds">5</dd>
-                                </div>
-                                <div class="room-lobby-chip">
-                                    <dt>Czas</dt>
-                                    <dd id="lobby-room-limit">90s</dd>
-                                </div>
-                                <div class="room-lobby-chip">
-                                    <dt>Widoczność</dt>
-                                    <dd id="lobby-room-visibility">
-                                        Publiczny
-                                    </dd>
-                                </div>
-                            </dl>
+                            </div>
                         </header>
                         <div class="room-lobby-body">
                             <div class="room-lobby-panel">
@@ -180,112 +229,6 @@
                                     class="lobby-roster"
                                     aria-live="polite"
                                 ></div>
-                            </div>
-                            <div
-                                id="lobby-config-info"
-                                class="room-lobby-panel"
-                                style="display: none"
-                            >
-                                <p class="room-lobby-panel-title">
-                                    Ustawienia gry
-                                </p>
-                                <p
-                                    style="
-                                        color: var(--text-muted);
-                                        font-size: 0.875rem;
-                                    "
-                                >
-                                    Host konfiguruje grę...
-                                </p>
-                            </div>
-                            <div
-                                id="lobby-config-panel"
-                                class="room-lobby-panel"
-                            >
-                                <p class="room-lobby-panel-title">
-                                    Ustawienia gry
-                                </p>
-                                <div
-                                    class="settings-grid"
-                                    style="
-                                        grid-template-columns: 1fr 1fr;
-                                        gap: var(--space-3);
-                                    "
-                                >
-                                    <div class="form-group">
-                                        <label for="lobby_rounds">Rundy</label>
-                                        <select id="lobby_rounds">
-                                            <option value="1">1</option>
-                                            <option value="3">3</option>
-                                            <option value="5" selected>
-                                                5
-                                            </option>
-                                            <option value="10">10</option>
-                                            <option value="22">
-                                                22 — każda litera raz
-                                            </option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="lobby_time_limit"
-                                            >Czas (s)</label
-                                        >
-                                        <select id="lobby_time_limit">
-                                            <option value="60">60</option>
-                                            <option value="90" selected>
-                                                90
-                                            </option>
-                                            <option value="120">120</option>
-                                            <option value="180">180</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="lobby_visibility"
-                                            >Widoczność</label
-                                        >
-                                        <select id="lobby_visibility">
-                                            <option value="public" selected>
-                                                Publiczny
-                                            </option>
-                                            <option value="private">
-                                                Prywatny
-                                            </option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Mechanika STOP</label>
-                                        <label class="toggle-switch">
-                                            <input
-                                                type="checkbox"
-                                                id="lobby_stop_mechanism"
-                                                checked
-                                            />
-                                            <span class="toggle-slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div
-                                    style="
-                                        display: flex;
-                                        gap: var(--space-2);
-                                        margin-top: var(--space-3);
-                                    "
-                                >
-                                    <button
-                                        type="button"
-                                        class="btn btn-primary"
-                                        id="lobby-start-game"
-                                    >
-                                        ▶ Rozpocznij grę
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="btn btn-secondary"
-                                        id="lobby-save-config"
-                                    >
-                                        💾 Zapisz ustawienia
-                                    </button>
-                                </div>
                             </div>
                         </div>
                         <div class="room-lobby-actions">

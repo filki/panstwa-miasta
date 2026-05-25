@@ -337,6 +337,52 @@ button {
     width: 100%;
 }
 
+/* Inline config in lobby bar */
+@utility room-lobby-bar-config {
+    width: 100%;
+    margin-top: var(--space-2);
+}
+
+@utility config-inline-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+@utility config-inline-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.config-inline-field select {
+    min-height: 2rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.85);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+@utility config-inline-stop {
+    gap: 0.2rem;
+}
+
+.config-inline-stop input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--brand-3);
+}
+
 @media (max-width: 480px) {
     .room-lobby-bar-meta {
         display: grid;

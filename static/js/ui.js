@@ -749,13 +749,11 @@ function setRoomPhase(phase) {
       connectedPlayers,
     );
 
-    // Host vs non-host panel visibility
-    const configPanel = document.getElementById("lobby-config-panel");
-    const configInfo = document.getElementById("lobby-config-info");
+    // Host vs non-host: config bar + start button
+    const configBar = document.getElementById("lobby-config-bar");
     const startBtn = document.getElementById("lobby-start-game");
     const isHost = globalThis.myNick === hostName;
-    if (configPanel) configPanel.style.display = isHost ? "" : "none";
-    if (configInfo) configInfo.style.display = isHost ? "none" : "";
+    if (configBar) configBar.style.display = isHost ? "" : "none";
     if (startBtn) startBtn.style.display = isHost ? "" : "none";
 
     // Swap chat send button to use lobby chat
@@ -779,13 +777,7 @@ function readRoomSettingsFromUrl() {
 
 function syncRoomLobbySettings(roomId = "") {
   const codeEl = document.getElementById("lobby-room-code");
-  const roundsEl = document.getElementById("lobby-room-rounds");
-  const limitEl = document.getElementById("lobby-room-limit");
-  const visEl = document.getElementById("lobby-room-visibility");
   if (codeEl) codeEl.textContent = roomId || "—";
-  if (roundsEl) roundsEl.textContent = "5";
-  if (limitEl) limitEl.textContent = "90s";
-  if (visEl) visEl.textContent = "Publiczny";
   if (typeof bindLobbyConfigEvents === "function") {
     bindLobbyConfigEvents();
   }
@@ -809,7 +801,6 @@ function updateLobbyConfig() {
       visibility,
       stop_mechanism: stopEnabled,
     });
-    addLog("<em>Ustawienia zapisane.</em>", "system-msg");
   }
 }
 
@@ -818,27 +809,23 @@ function updateLobbyConfigUI(data) {
   const limitEl = document.getElementById("lobby_time_limit");
   const visibilityEl = document.getElementById("lobby_visibility");
   const stopEl = document.getElementById("lobby_stop_mechanism");
-  const roundsDetail = document.getElementById("lobby-room-rounds");
-  const limitDetail = document.getElementById("lobby-room-limit");
-  const visDetail = document.getElementById("lobby-room-visibility");
+  const codeEl = document.getElementById("lobby-room-code");
+  const countBarEl = document.getElementById("lobby-player-count-bar");
 
   if (roundsEl) roundsEl.value = String(data.rounds ?? 5);
   if (limitEl) limitEl.value = String(data.limit ?? 90);
   if (visibilityEl) visibilityEl.value = data.visibility ?? "public";
   if (stopEl) stopEl.checked = data.stop_mechanism ?? true;
+  if (codeEl && data.room_id) codeEl.textContent = data.room_id;
+  if (countBarEl && data.player_count != null)
+    countBarEl.textContent = data.player_count;
 
-  if (roundsDetail) roundsDetail.textContent = String(data.rounds ?? 5);
-  if (limitDetail) limitDetail.textContent = `${data.limit ?? 90}s`;
-  if (visDetail)
-    visDetail.textContent =
-      data.visibility === "private" ? "Prywatny" : "Publiczny";
-
-  // Host vs non-host panel visibility
-  const configPanel = document.getElementById("lobby-config-panel");
-  const configInfo = document.getElementById("lobby-config-info");
+  // Host vs non-host: config editable only for host
+  const configBar = document.getElementById("lobby-config-bar");
   const isHost = globalThis.myNick === lastLobbyRosterState.hostName;
-  if (configPanel) configPanel.style.display = isHost ? "" : "none";
-  if (configInfo) configInfo.style.display = isHost ? "none" : "";
+  if (configBar) {
+    configBar.style.display = isHost ? "" : "none";
+  }
 }
 
 async function copyRoomInviteLink() {
@@ -1132,10 +1119,23 @@ function bindCategoryEnter() {
 }
 
 function bindLobbyConfigEvents() {
-  const saveBtn = document.getElementById("lobby-save-config");
-  if (saveBtn) {
-    saveBtn.addEventListener("click", updateLobbyConfig);
-  }
+  // Auto-save on change — no save button needed
+  const bindOnChange = (id) => {
+    const el = document.getElementById(id);
+    if (el && !el.dataset.pmConfigBound) {
+      el.dataset.pmConfigBound = "1";
+      if (el.type === "checkbox") {
+        el.addEventListener("change", updateLobbyConfig);
+      } else {
+        el.addEventListener("change", updateLobbyConfig);
+      }
+    }
+  };
+  bindOnChange("lobby_rounds");
+  bindOnChange("lobby_time_limit");
+  bindOnChange("lobby_visibility");
+  bindOnChange("lobby_stop_mechanism");
+
   const startBtn = document.getElementById("lobby-start-game");
   if (startBtn) {
     startBtn.addEventListener("click", () => {
