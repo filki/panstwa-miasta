@@ -663,6 +663,26 @@ button {
     width: 100%;
 }
 
+@utility support-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: var(--tap);
+    padding: 0.65rem 0.9rem;
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-decoration: none;
+    gap: 0.35rem;
+    letter-spacing: 0;
+    text-transform: none;
+    box-sizing: border-box;
+}
+
 @utility landing-anon-cta {
     display: inline-flex;
     align-items: center;
@@ -1207,7 +1227,7 @@ button {
     border-radius: 999px;
     border: 1px solid rgba(174, 96, 30, 0.22);
     background: rgba(255, 255, 255, 0.92);
-    color: rgba(174, 96, 30, 0.62);
+    color: var(--accent-text);
     font-size: 1.25rem;
     font-weight: 800;
     cursor: pointer;
