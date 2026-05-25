@@ -6,8 +6,6 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator
 
-from .manager import GAME_CATEGORIES
-
 _MAX_CHAT = 2000
 _MAX_ANSWER_VALUE = 500
 _MAX_KICK_TARGET = 120
@@ -61,12 +59,9 @@ class AnswersMessage(BaseModel):
     @field_validator("answers")
     @classmethod
     def _answers_shape(cls, v: dict[str, str]) -> dict[str, str]:
-        allowed = frozenset(GAME_CATEGORIES)
-        if len(v) > len(allowed):
+        if len(v) > 20:
             raise ValueError("too_many_categories")
-        for key, val in v.items():
-            if key not in allowed:
-                raise ValueError(f"unknown_category:{key}")
+        for val in v.values():
             if len(val) > _MAX_ANSWER_VALUE:
                 raise ValueError("answer_too_long")
         return v
@@ -87,6 +82,40 @@ class VetoVoteMessage(BaseModel):
     vote: Literal["tak", "nie"]
 
 
+class LobbyConfigUpdateMessage(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["lobby_config_update"]
+    rounds: int = Field(default=5, ge=1, le=50)
+    limit: int = Field(default=90, ge=10, le=600)
+    visibility: Literal["public", "private"] = "public"
+    stop_mechanism: bool = True
+    categories: list[str] | None = None
+    custom_categories: dict[str, bool] | None = None
+
+
+class AddCustomCategoryMessage(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    type: Literal["add_custom_category"]
+    name: str = Field(..., min_length=2, max_length=20)
+    veto: bool = True
+
+
+class RemoveCustomCategoryMessage(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    type: Literal["remove_custom_category"]
+    name: str = Field(..., min_length=2, max_length=20)
+
+
+class LobbyChatMessage(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    type: Literal["lobby_chat_msg"]
+    text: str = Field(..., min_length=1, max_length=_MAX_CHAT)
+
+
 WsInboundMessage = Annotated[
     ChatMessage
     | ReadyMessage
@@ -96,8 +125,13 @@ WsInboundMessage = Annotated[
     | StopMessage
     | AnswersMessage
     | KickPlayerMessage
-    | VetoVoteMessage,
+    | VetoVoteMessage
+    | LobbyConfigUpdateMessage
+    | AddCustomCategoryMessage
+    | RemoveCustomCategoryMessage
+    | LobbyChatMessage,
     Field(discriminator="type"),
 ]
+
 
 ws_inbound_adapter: TypeAdapter[WsInboundMessage] = TypeAdapter(WsInboundMessage)
