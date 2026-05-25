@@ -567,10 +567,10 @@ function updateScoreboard(
 
     const nameSpan = document.createElement("span");
     if (name === hostName) {
-      const crown = document.createElement("span");
-      crown.className = "crown";
-      crown.textContent = "👑";
-      nameSpan.appendChild(crown);
+      const badge = document.createElement("span");
+      badge.className = "host-badge";
+      badge.textContent = "HOST";
+      nameSpan.appendChild(badge);
     }
     nameSpan.appendChild(document.createTextNode(name));
 
@@ -672,10 +672,10 @@ function renderLobbyRoster(
     const nameSpan = document.createElement("span");
     nameSpan.className = "lobby-roster-name";
     if (name === hostName) {
-      const crown = document.createElement("span");
-      crown.className = "crown";
-      crown.textContent = "👑";
-      nameSpan.appendChild(crown);
+      const badge = document.createElement("span");
+      badge.className = "host-badge";
+      badge.textContent = "HOST";
+      nameSpan.appendChild(badge);
     }
     nameSpan.appendChild(document.createTextNode(name));
     nameSpan.title = name;
