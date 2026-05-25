@@ -113,6 +113,13 @@ button {
         --landing-inset: var(--space-4);
         border-radius: var(--r-xl);
     }
+    /* Tighter carousel on narrow containers */
+    .landing-guide-carousel-panel {
+        padding: var(--space-4);
+    }
+    .landing-guide-carousel-viewport {
+        border-radius: var(--r-md);
+    }
 }
 
 @utility landing-shell-header {
@@ -166,6 +173,24 @@ button {
     }
     .landing-actions {
         min-height: 0;
+    }
+    /* Hide active rooms on mobile — join card + carousel are enough */
+    .active-rooms-block,
+    #active-rooms-section {
+        display: none;
+    }
+    /* Tighter hero spacing on mobile */
+    .landing-shell-header {
+        margin-bottom: 0;
+        gap: var(--space-1);
+    }
+    .landing-hero-subtitle {
+        font-size: 0.875rem;
+    }
+    /* Tighter join card buttons */
+    .landing-anon-actions .btn {
+        padding: 0.7rem 0.8rem;
+        font-size: 0.9rem;
     }
 }
 
@@ -397,6 +422,13 @@ button {
     background: rgba(255, 255, 255, 0.72);
 }
 
+@media (max-width: 480px) {
+    .game-header {
+        padding: 0.5rem 0.75rem;
+        gap: var(--space-2);
+    }
+}
+
 @utility letter-display {
     display: inline-flex;
     align-items: center;
@@ -410,6 +442,14 @@ button {
     font-weight: 900;
     font-family: "Outfit", system-ui, sans-serif;
     line-height: 1;
+}
+
+@media (max-width: 480px) {
+    .letter-display {
+        width: 2.75rem;
+        height: 2.75rem;
+        font-size: 1.4rem;
+    }
 }
 
 @utility game-hud-room {
@@ -604,6 +644,29 @@ button {
 @utility landing-anon-support-row {
     margin-top: var(--space-3);
     width: 100%;
+}
+
+@utility landing-anon-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--tap);
+    width: 100%;
+    border: 0;
+    border-radius: var(--r-md);
+    padding: 0.75rem 1.1rem;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--brand-3), var(--brand-2));
+    color: #fff;
+    transition:
+        transform 0.15s ease,
+        filter 0.15s ease,
+        box-shadow 0.15s ease,
+        background 0.15s ease;
 }
 
 @utility landing-anon-join-head {
@@ -1251,6 +1314,10 @@ button {
         gap: var(--space-4);
         align-items: center;
     }
+}
+@utility landing-anon-cta--quick {
+    width: 100%;
+    max-width: 18rem;
 }
 @utility landing-quick-game-title {
     font-size: 0.95rem;
@@ -2057,6 +2124,12 @@ body.room-phase-playing .game-header-room {
         calc(var(--space-3) + env(safe-area-inset-bottom, 0));
     background: transparent;
     border-top: none;
+}
+
+@media (max-width: 480px) {
+    .site-footer-nav {
+        gap: var(--space-1) var(--space-2);
+    }
 }
 
 @utility site-footer-inner {
