@@ -940,13 +940,15 @@ class ConnectionManager:
         if client_name == room.host_name and room.connections:
             self._schedule_host_reassign(room, room_id, client_name)
 
-        # Remove empty room
+        # Remove empty room — natychmiast z RAM i DB/Redis
         if not room.connections:
             self.cancel_lobby_idle(room)
+            self.cancel_delayed_room_delete(room_id)
             del self.rooms[room_id]
-            logger.info("Room %s deleted because it became empty", room_id)
-            if not redis_configured():
-                self.schedule_delayed_room_delete(room_id)
+            # Usun z Redis/DB od razu — nie czekaj na delayed delete
+            # (inaczej po resecie serwera pokoj wroci jako widmo)
+            loop = asyncio.ensure_future(delete_room(room_id))
+            logger.info("Room %s deleted because it became empty (RAM+DB)", room_id)
             return True
 
         if self._is_lobby_idle_candidate(room):
