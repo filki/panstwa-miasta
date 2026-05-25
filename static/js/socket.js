@@ -12,6 +12,7 @@ var PM_SERVER_ORIGIN =
 function sendJson(obj) {
   if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
 }
+globalThis.sendJson = sendJson;
 
 function clearClientRoundTimers() {
   if (globalThis.globalRoundTimer) {
