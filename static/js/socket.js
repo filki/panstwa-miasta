@@ -84,6 +84,14 @@ function stopCelebrationEffects() {
 }
 
 function leaveRoom() {
+  if (
+    pmHadRoundStarted &&
+    !confirm(
+      "Czy na pewno chcesz wyjść? Możesz wrócić do pokoju w ciągu 2 minut.",
+    )
+  ) {
+    return;
+  }
   leftByUser = true;
   isLeaving = true;
   globalThis.myNick = "";

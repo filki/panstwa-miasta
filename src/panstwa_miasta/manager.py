@@ -805,10 +805,22 @@ class ConnectionManager:
         self.touch_lobby_idle(room, reset=False)
         return True, None
 
-    async def load_from_db(self):
+    async def load_from_db(self) -> None:
         """Ładuje aktywne pokoje i wyniki z bazy danych przy starcie"""
+        from . import db as dbmod
+
         active_rooms = await get_active_rooms()
+        loaded = 0
         for r_data in active_rooms:
+            players = r_data.get("players", {})
+            # Ghost room — nikt nigdy nie dolaczyl lub wszyscy odeszli
+            if not players and r_data.get("current_round", 0) == 0:
+                await dbmod.delete_room(r_data["room_id"])
+                logger.info(
+                    "Deleted ghost room %s from DB (no players, never played)",
+                    r_data["room_id"],
+                )
+                continue
             vis = normalize_room_visibility(str(r_data.get("visibility", "public")))
             stop = bool(int(r_data.get("stop_mechanism", 1)))
             room = Room(
@@ -820,9 +832,14 @@ class ConnectionManager:
             )
             room.current_round = r_data["current_round"]
             room.host_name = r_data["host_name"]
-            room.scores = r_data["players"]
+            room.scores = players
             self.rooms[r_data["room_id"]] = room
-        logger.info("Loaded %d rooms from database", len(active_rooms))
+            loaded += 1
+        logger.info(
+            "Loaded %d rooms from database (%d ghosts deleted)",
+            loaded,
+            len(active_rooms) - loaded,
+        )
 
     async def kick_player(
         self, room_id: str, actor_name: str, target_name: str
@@ -940,15 +957,13 @@ class ConnectionManager:
         if client_name == room.host_name and room.connections:
             self._schedule_host_reassign(room, room_id, client_name)
 
-        # Remove empty room — natychmiast z RAM i DB/Redis
+        # Remove empty room
         if not room.connections:
             self.cancel_lobby_idle(room)
-            self.cancel_delayed_room_delete(room_id)
             del self.rooms[room_id]
-            # Usun z Redis/DB od razu — nie czekaj na delayed delete
-            # (inaczej po resecie serwera pokoj wroci jako widmo)
-            loop = asyncio.ensure_future(delete_room(room_id))
-            logger.info("Room %s deleted because it became empty (RAM+DB)", room_id)
+            logger.info("Room %s deleted because it became empty", room_id)
+            if not redis_configured():
+                self.schedule_delayed_room_delete(room_id)
             return True
 
         if self._is_lobby_idle_candidate(room):
