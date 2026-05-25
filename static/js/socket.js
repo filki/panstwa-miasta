@@ -1351,8 +1351,9 @@ function handleGameOver(hostName, roomId, resultsMsg = null) {
 
   if (myNick === hostName) {
     document.getElementById("btn-restart-game").style.display = "block";
-    document.getElementById("btn-dissolve").style.display = "block";
+    document.getElementById("btn-restart-defaults").style.display = "block";
   }
+  // Wyjdz z pokoju always visible for everyone
 
   fireConfetti({ particleCount: 200, spread: 100, origin: { y: 0.3 } });
   setTimeout(

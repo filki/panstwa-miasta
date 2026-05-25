@@ -629,47 +629,45 @@
                                     aria-live="polite"
                                 ></div>
                             </div>
-                            <h3>Zagraj ponownie</h3>
-                            <div class="settings-grid">
-                                <div>
-                                    <label for="restart-rounds">Rundy</label>
-                                    <select id="restart-rounds">
-                                        <option value="1">1</option>
-                                        <option value="3">3</option>
-                                        <option value="5" selected>5</option>
-                                        <option value="10">10</option>
-                                        <option value="22">
-                                            22 — każda litera raz
-                                        </option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="restart-limit">Czas</label>
-                                    <select id="restart-limit">
-                                        <option value="60">60</option>
-                                        <option value="90" selected>90</option>
-                                        <option value="120">120</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="restart-buttons">
+                            <h3 class="restart-heading">Koniec gry</h3>
+                            <div class="restart-actions">
                                 <button
                                     type="button"
                                     id="btn-restart-game"
                                     onclick="requestRestart()"
+                                    class="restart-btn--primary"
+                                    style="display: none"
+                                >
+                                    Zagraj ponownie
+                                </button>
+                                <p class="restart-action-desc">
+                                    Nowa runda z tymi samymi graczami i
+                                    ustawieniami
+                                </p>
+                                <button
+                                    type="button"
+                                    id="btn-restart-defaults"
+                                    onclick="requestRestart()"
+                                    class="restart-btn--secondary"
                                     style="display: none"
                                 >
                                     Nowa gra
                                 </button>
+                                <p class="restart-action-desc">
+                                    Rozpocznij od nowa z domyślnymi ustawieniami
+                                </p>
                                 <button
                                     type="button"
-                                    id="btn-dissolve"
-                                    onclick="dissolveRoom()"
+                                    id="btn-leave-room"
+                                    onclick="leaveRoom()"
                                     class="restart-btn--danger"
-                                    style="display: none"
                                 >
-                                    Rozwiąż pokój
+                                    Wyjdź z pokoju
                                 </button>
+                                <p class="restart-action-desc">
+                                    Opuść pokój — jeśli jesteś hostem,
+                                    prowadzenie przejmie następny gracz
+                                </p>
                             </div>
                         </div>
                     </section>
@@ -787,9 +785,9 @@
         <script src="/static/js/audio.js" defer></script>
         <script src="/static/js/capacitor-bridge.js" defer></script>
         <script src="/static/js/ui.js" defer></script>
-        <script src="/static/js/game.js?v=2" defer></script>
+        <script src="/static/js/game.js?v=3" defer></script>
         <script src="/static/js/word-ai.js" defer></script>
-        <script src="/static/js/socket.js?v=5" defer></script>
+        <script src="/static/js/socket.js?v=6" defer></script>
         <script>
             const isLocalDev = ["localhost", "127.0.0.1"].includes(
                 location.hostname,

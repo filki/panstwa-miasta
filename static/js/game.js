@@ -24,16 +24,23 @@ function stopGame() {
 }
 
 function requestRestart() {
-  const rounds =
-    Number.parseInt(document.getElementById("restart-rounds").value) || 5;
-  const limit =
-    Number.parseInt(document.getElementById("restart-limit").value) || 90;
+  var rounds = 5;
+  var limit = 90;
+  var sel = document.getElementById("restart-rounds");
+  if (sel) {
+    rounds = Number.parseInt(sel.value) || 5;
+  }
+  var sel2 = document.getElementById("restart-limit");
+  if (sel2) {
+    limit = Number.parseInt(sel2.value) || 90;
+  }
   sendJson({
     type: "restart_game",
     rounds: rounds,
     limit: limit,
   });
-  document.getElementById("restart-settings").style.display = "none";
+  var rs = document.getElementById("restart-settings");
+  if (rs) rs.style.display = "none";
 }
 
 function dissolveRoom() {
