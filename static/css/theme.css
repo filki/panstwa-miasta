@@ -417,6 +417,21 @@ button {
     accent-color: var(--brand-3);
 }
 
+/* Wylaczone kategorie w grze */
+.game-field.cat-inactive {
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+.game-field.cat-inactive label::after {
+    content: " (wyłączona)";
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
 /* HOST badge w lobby roster i scoreboard */
 @utility host-badge {
     display: inline-block;
@@ -1274,6 +1289,39 @@ button {
     display: grid;
     place-items: center;
 }
+
+@utility active-rooms-empty-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+    color: var(--brand-3);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.15s;
+    &:hover {
+        color: var(--accent);
+        text-decoration: underline;
+    }
+}
+
+@utility landing-hero-links {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin: 0;
+    a {
+        color: var(--brand-3);
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.15s;
+        &:hover {
+            color: var(--accent);
+            text-decoration: underline;
+        }
+    }
+}
+
 @utility active-rooms-table-wrap {
     width: 100%;
     overflow-x: auto;

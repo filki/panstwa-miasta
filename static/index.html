@@ -92,6 +92,46 @@
         <script type="application/ld+json">
             {
                 "@context": "https://schema.org",
+                "@type": "FAQPage",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": "Jak grać w Państwa-Miasta online?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Stwórz pokój lub dołącz kodem do znajomych, bez rejestracji. W lobby gracze oznaczają gotowość, serwer losuje literę, a ty wypełniasz kategorie (Państwo, Miasto, Rzecz, Zwierzę, Roślina, Imię, Zawód) i wciskasz STOP. Po rundzie trwa faza weta — gracze weryfikują odpowiedzi. Więcej zasad znajdziesz w regulaminie."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Ile kategorii jest w grze?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "7 podstawowych kategorii: Państwo, Miasto, Rzecz, Zwierzę, Roślina, Imię i Zawód. Host może też dodać własne kategorie (np. Marki samochodów) lub wyłączyć niechciane. Zobacz pełny słownik haseł dla każdej kategorii."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Czy gra jest darmowa?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Tak, gra jest w pełni darmowa — nie wymaga rejestracji, logowania ani płatności. Wszystkie funkcje, w tym prywatne pokoje i własne kategorie, są dostępne bez opłat."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Ile osób może grać?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "W jednym pokoju może grać od 2 do 8 osób. Możesz stworzyć prywatny pokój dla znajomych i udostępnić kod, albo dołączyć do publicznego lobby."
+                        }
+                    }
+                ]
+            }
+        </script>
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
                 "@type": "HowTo",
                 "name": "Jak grać w Państwa-Miasta online?",
                 "description": "Instrukcja gry w Państwa-Miasta w przeglądarce. Graj ze znajomymi bez rejestracji.",
@@ -194,6 +234,12 @@
                             <p class="landing-hero-subtitle">
                                 Graj ze znajomymi w przeglądarce. Stwórz pokój,
                                 dołącz kodem lub szybka gra bez konta.
+                            </p>
+                            <p class="landing-hero-links">
+                                Sprawdź
+                                <a href="/slownik">słownik haseł</a>
+                                ·
+                                <a href="/regulamin">zasady gry</a>
                             </p>
                         </div>
                     </header>
@@ -435,6 +481,9 @@
                             >
                                 Stwórz pokój
                             </button>
+                            <a href="/slownik" class="active-rooms-empty-link"
+                                >Zobacz słownik 32k haseł ›</a
+                            >
                         </div>
                         <div
                             id="active-rooms-table-wrap"

@@ -224,6 +224,15 @@
             .word-chip:hover {
                 background: rgba(14, 165, 233, 0.08);
             }
+            .slownik-category-desc {
+                max-width: 720px;
+                margin: 0 auto 1.5rem;
+                padding: 0 1rem;
+                text-align: center;
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                line-height: 1.5;
+            }
             .empty-state {
                 text-align: center;
                 padding: 3rem 1rem;
@@ -266,6 +275,14 @@
             </div>
 
             <div class="category-grid" id="categories"></div>
+
+            <div
+                id="category-description"
+                class="slownik-category-desc"
+                style="display: none"
+            >
+                <p id="category-desc-text"></p>
+            </div>
 
             <div class="letter-nav" id="letters"></div>
 
@@ -348,6 +365,28 @@
                 }
             }
 
+            var CATEGORY_DESCRIPTIONS = {
+                miasta: "Miasta to jedna z najbogatszych kategorii — w bazie znajduje się ponad 32 tysiące miejscowości z Polski i świata, od małych wsi po wielkie metropolie. Wystarczy, że nazwa zaczyna się na wylosowaną literę.",
+                rosliny:
+                    "Rośliny obejmują kwiaty, drzewa, krzewy, owoce, warzywa, zioła i grzyby. Baza zawiera około 19 tysięcy haseł — od popularnych gatunków po egzotyczne okazy.",
+                zwierzeta:
+                    "Zwierzęta to ssaki, ptaki, gady, płazy, ryby i owady. W słowniku znajdziesz około 10 tysięcy gatunków, od domowych pupili po dzikie zwierzęta z całego świata.",
+                zawody: "Zawody to profesje i role społeczne — od tradycyjnych rzemieślników po nowoczesne specjalizacje. Kategoria zawiera kilkaset haseł, które wystarczą na wiele rund.",
+                imiona: "Imiona to kategoria, w której liczy się kreatywność — możesz podać dowolne imię żeńskie, męskie lub zdrobnienie. Baza zawiera popularne i rzadkie imiona z różnych krajów.",
+                rzeczy: "Rzeczy to najszersza kategoria — wszystko, co nas otacza: przedmioty codziennego użytku, narzędzia, ubrania, meble, elektronika i wiele więcej. Ponad 5 tysięcy haseł czeka na odkrycie.",
+            };
+
+            function showCategoryDescription(cat) {
+                var descEl = document.getElementById("category-description");
+                var textEl = document.getElementById("category-desc-text");
+                if (descEl && textEl && CATEGORY_DESCRIPTIONS[cat]) {
+                    textEl.textContent = CATEGORY_DESCRIPTIONS[cat];
+                    descEl.style.display = "";
+                } else if (descEl) {
+                    descEl.style.display = "none";
+                }
+            }
+
             function renderLetters() {
                 const nav = document.getElementById("letters");
                 nav.innerHTML = LETTERS.map(
@@ -372,6 +411,7 @@
                 renderLetters();
                 document.getElementById("words-container").innerHTML =
                     '<p class="empty-state">👆 Wybierz literę</p>';
+                showCategoryDescription(cat);
             }
 
             async function selectLetter(letter) {

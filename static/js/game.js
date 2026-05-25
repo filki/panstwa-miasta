@@ -46,44 +46,83 @@ function dissolveRoom() {
 
 function enableInputs() {
   if (globalThis.currentCountdown) clearInterval(globalThis.currentCountdown);
-  const inputs = document.querySelectorAll("#categories input");
-  inputs.forEach((inp) => {
-    inp.disabled = false;
-    inp.value = "";
-    inp.classList.remove("error", "success-10", "warning-5", "error-0");
-    inp.style.borderColor = "";
 
-    // Remove stare listenery, żeby się nie duplikowały
-    const clone = inp.cloneNode(true);
-    inp.parentNode.replaceChild(clone, inp);
+  // Ktore kategorie sa aktywne? (z configu lobby)
+  // null = brak configu (reconnect) → wszystkie wlaczone
+  var config = globalThis.pmLastConfig;
+  var activeCats =
+    config && Array.isArray(config.categories) && config.categories.length > 0
+      ? config.categories
+      : null;
+
+  var inputs = document.querySelectorAll("#categories input");
+  inputs.forEach(function (inp) {
+    var cat = inp.getAttribute("data-category") || "";
+    var field = inp.closest(".game-field");
+    var isActive = activeCats === null || activeCats.indexOf(cat) !== -1;
+
+    if (isActive) {
+      inp.disabled = false;
+      inp.value = "";
+      inp.classList.remove("error", "success-10", "warning-5", "error-0");
+      inp.style.borderColor = "";
+      if (field) {
+        field.classList.remove("cat-inactive");
+        field.classList.add("cat-active");
+      }
+      var label = field ? field.querySelector("label") : null;
+      if (label) {
+        label.textContent = label.textContent.replace(/\s*\(wyłączona\)$/, "");
+      }
+    } else {
+      inp.disabled = true;
+      inp.value = "";
+      if (field) {
+        field.classList.add("cat-inactive");
+        field.classList.remove("cat-active");
+      }
+      var label = field ? field.querySelector("label") : null;
+      if (label && label.textContent.indexOf("(wyłączona)") === -1) {
+        label.textContent = label.textContent + " (wyłączona)";
+      }
+    }
   });
 
-  // Ponownie łapiemy, bo zrobiliśmy cloneNode
-  const newInputs = document.querySelectorAll("#categories input");
-  newInputs.forEach((inp, i) => {
-    inp.addEventListener("input", (e) => {
+  // Ponownie lap eventy (cloneNode usuwa listenery)
+  const newInputs = document.querySelectorAll(
+    "#categories input:not([disabled])",
+  );
+  newInputs.forEach(function (inp, i) {
+    var clone = inp.cloneNode(true);
+    inp.parentNode.replaceChild(clone, inp);
+  });
+  const finalInputs = document.querySelectorAll(
+    "#categories input:not([disabled])",
+  );
+  finalInputs.forEach(function (inp, i) {
+    inp.addEventListener("input", function (e) {
       checkAllFilled();
       validateFirstLetter(e.target);
     });
-
-    // Zgłaszaj odpowiedzi Enterem
-    inp.addEventListener("keypress", (e) => {
+    inp.addEventListener("keypress", function (e) {
       if (e.key === "Enter") {
-        if (i < newInputs.length - 1) newInputs[i + 1].focus();
+        var sibs = document.querySelectorAll(
+          "#categories input:not([disabled])",
+        );
+        if (i < sibs.length - 1) sibs[i + 1].focus();
         else {
-          const stopBtn = document.getElementById("btn-stop");
-          if (!stopBtn.disabled) stopGame(); // Ostatni input i enter = STOP!
+          var stopBtn = document.getElementById("btn-stop");
+          if (!stopBtn.disabled) stopGame();
         }
       }
     });
   });
 
-  const btnStop = document.getElementById("btn-stop");
+  var btnStop = document.getElementById("btn-stop");
   btnStop.disabled = true;
   delete btnStop.dataset.stopped;
   btnStop.innerHTML = "🛑 STOP!";
 
-  // Przywracamy literę jeśli zniknęła
   if (globalThis.currentLetter) {
     document.getElementById("current-letter").innerHTML =
       globalThis.currentLetter;
@@ -91,9 +130,12 @@ function enableInputs() {
 }
 
 function checkAllFilled() {
-  const inputs = Array.from(document.querySelectorAll("#categories input"));
-  const allFilled = inputs.every((inp) => inp.value.trim().length > 0);
-  const stopBtn = document.getElementById("btn-stop");
+  var inputs = document.querySelectorAll("#categories input:not([disabled])");
+  var allFilled = true;
+  inputs.forEach(function (inp) {
+    if (inp.value.trim().length === 0) allFilled = false;
+  });
+  var stopBtn = document.getElementById("btn-stop");
 
   if (allFilled && !("stopped" in stopBtn.dataset)) {
     stopBtn.disabled = false;
@@ -147,9 +189,9 @@ function validateFirstLetter(inp) {
 }
 
 function disableAndSubmit() {
-  const inputs = document.querySelectorAll("#categories input");
-  let answers = {};
-  inputs.forEach((inp) => {
+  var inputs = document.querySelectorAll("#categories input:not([disabled])");
+  var answers = {};
+  inputs.forEach(function (inp) {
     answers[inp.dataset.category] = inp.value.trim();
     inp.disabled = true;
   });
