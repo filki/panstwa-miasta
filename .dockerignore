@@ -13,3 +13,13 @@ node_modules
 *.db
 dist
 build
+.env
+.env.*
+*.log
+.DS_Store
+.idea/
+.vscode/
+tests/
+deploy/
+docs/
+.dockerignore

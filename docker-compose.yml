@@ -9,7 +9,15 @@ services:
       UV_PROJECT_ENVIRONMENT: /opt/venv
       REDIS_URL: redis://redis:6379/0
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
     command:
       - uv
       - run
@@ -30,15 +38,17 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
-
-volumes:
-  redis_data:
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   ngrok:
     # Włącz: w .env ustaw COMPOSE_PROFILES=tunnel oraz NGROK_AUTHTOKEN (bez tego ERR_NGROK_4018).
     profiles:
       - tunnel
-    image: ngrok/ngrok:latest
+    image: ngrok/ngrok:3
     restart: "no"
     depends_on:
       - web
@@ -50,3 +60,6 @@ volumes:
     # Host 4040 often conflicts with a locally installed ngrok agent (same inspect port).
     ports:
       - "127.0.0.1:${NGROK_INSPECT_PORT:-14040}:4040"
+
+volumes:
+  redis_data:
