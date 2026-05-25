@@ -756,6 +756,22 @@
                     >
                         Podsumowanie rundy
                     </h2>
+                    <div class="round-results-modal-head-actions">
+                        <button
+                            type="button"
+                            id="btn-round-results-leave"
+                            class="round-results-leave-btn"
+                            onclick="leaveRoom()"
+                        >
+                            🚪 Wyjdź
+                        </button>
+                    </div>
+                </header>
+                <div
+                    id="round-results-modal-body"
+                    class="round-results-modal-body"
+                ></div>
+                <footer class="round-results-modal-foot">
                     <p class="round-results-veto-hint">
                         Veto na <strong>Rzecz</strong> — większość 👎 odrzuca
                         odpowiedź.
@@ -766,27 +782,12 @@
                         hidden
                         aria-live="polite"
                     ></p>
-                </header>
-                <div
-                    id="round-results-modal-body"
-                    class="round-results-modal-body"
-                ></div>
-                <footer class="round-results-modal-foot">
                     <button
                         type="button"
                         id="btn-round-results-dismiss"
                         class="round-results-dismiss-btn"
                     >
                         Dalej
-                    </button>
-                    <button
-                        type="button"
-                        id="btn-round-results-leave"
-                        class="round-results-dismiss-btn danger"
-                        onclick="leaveRoom()"
-                        style="margin-top: var(--space-2)"
-                    >
-                        🚪 Wyjdź z pokoju
                     </button>
                 </footer>
             </section>

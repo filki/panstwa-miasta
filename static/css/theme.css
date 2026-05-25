@@ -1903,6 +1903,30 @@ button {
     padding: 1rem 1.25rem;
     border-bottom: 1px solid rgba(213, 143, 35, 0.12);
 }
+@utility round-results-modal-head-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+.round-results-leave-btn {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #dc2626;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 999px;
+    padding: 0.35rem 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+        background 0.15s,
+        border-color 0.15s;
+}
+.round-results-leave-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.35);
+}
 @utility round-results-modal-title {
     font-size: 1.1rem;
     font-weight: 800;
@@ -1916,6 +1940,10 @@ button {
 @utility round-results-modal-foot {
     position: sticky;
     bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
     padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom, 0));
     border-top: 1px solid rgba(213, 143, 35, 0.12);
     background: linear-gradient(
@@ -1929,7 +1957,6 @@ button {
     font-size: 0.875rem;
     font-weight: 700;
     color: var(--text-muted);
-    margin-bottom: var(--space-3);
 }
 @utility round-results-dismiss-btn {
     width: auto;
