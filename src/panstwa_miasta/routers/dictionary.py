@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import math
 
+import aiosqlite
 from fastapi import APIRouter, HTTPException
 
 from ..api_models import WordReportIn, WordReportOut
 from ..data import JOBS, MIASTA, NAMES, ROSLINY, THINGS, ZWIERZETA
-from ..db_backend import connect
+from ..db_backend import _db_path
 from ..word_queue import submit_dictionary_intake
 
 router = APIRouter(prefix="/api/dictionary", tags=["dictionary"])
@@ -70,25 +71,27 @@ async def search_slownik(
 
     # --- Imiona: strukturalne zapytanie do SQLite ---
     if category == "imiona":
-        async with connect() as db:
-            db.row_factory = None  # tuples
+        async with aiosqlite.connect(_db_path()) as db:
+            db.row_factory = aiosqlite.Row
             where = ""
             params: list[str] = []
             if q:
                 where = "WHERE imie_norm LIKE ?"
                 params = [q + "%"]
             # count
-            await db.execute(f"SELECT COUNT(*) FROM names {where}", params)
-            row = await db.fetchone()
-            total = row[0] if row else 0
+            async with db.execute(f"SELECT COUNT(*) as cnt FROM names {where}", params) as cur:
+                cnt_row = await cur.fetchone()
+                total = cnt_row["cnt"] if cnt_row else 0
             # data
             offset = (page - 1) * per_page
-            await db.execute(
+            async with db.execute(
                 f"SELECT imie, plec, liczebnosc FROM names {where} ORDER BY liczebnosc DESC, imie ASC LIMIT ? OFFSET ?",
                 params + [per_page, offset],
-            )
-            rows = await db.fetchall()
-            words = [{"name": r[0], "gender": r[1], "count": r[2]} for r in rows]
+            ) as cur:
+                rows = await cur.fetchall()
+            words = [
+                {"name": r["imie"], "gender": r["plec"], "count": r["liczebnosc"]} for r in rows
+            ]
         pages = max(1, math.ceil(total / per_page))
         return {
             "category": "imiona",
