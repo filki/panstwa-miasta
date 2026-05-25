@@ -577,9 +577,10 @@ button {
     display: flex;
     flex-direction: column;
     gap: var(--space-5);
-    width: min(100%, 36rem);
+    width: 100%;
+    max-width: 36rem;
     justify-content: center;
-    align-items: center;
+    margin-inline: auto;
 }
 
 @utility landing-anon-profile {
@@ -650,6 +651,11 @@ button {
     margin-top: 0;
     width: 100%;
     margin-inline: auto;
+}
+
+/* 3-ci przycisk (Dołącz do pokoju) rozciąga się na 2 kolumny */
+.landing-anon-actions .btn:nth-child(3) {
+    grid-column: 1 / -1;
 }
 
 @media (max-width: 360px) {
