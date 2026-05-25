@@ -108,6 +108,7 @@ class Room:
         self.time_limit = time_limit
         self.visibility = normalize_room_visibility(visibility)
         self.stop_mechanism = stop_mechanism
+        self.categories: list[str] = list(GAME_CATEGORIES)
         self.connections: dict[str, WebSocket] = {}
         self.scores: dict[str, int] = {}
         self.host_name = ""
@@ -318,7 +319,7 @@ class Room:
 
     def _assign_round_points(self, round_scores: dict[str, dict]):
         """Applies 15/10/5 points logic based on uniqueness of answers."""
-        for category in GAME_CATEGORIES:
+        for category in self.categories:
             valid_answers = {}  # ans -> count
             players_with_valid = []
 
@@ -347,7 +348,7 @@ class Room:
 
     def _fill_base_scores(self, round_scores: dict[str, dict]) -> None:
         """Wypełnia ``round_scores[*][details][kategoria]`` wstępnymi 0 lub -1 (poprawna odpowiedź)."""
-        for category in GAME_CATEGORIES:
+        for category in self.categories:
             for player, answers in self.answers_received.items():
                 ans_raw = answers.get(category, "").strip().lower()
                 if not (

@@ -383,6 +383,40 @@ button {
     accent-color: var(--brand-3);
 }
 
+/* Category toggles in lobby bar */
+@utility config-cats-row {
+    margin-top: var(--space-1);
+    gap: var(--space-1);
+}
+
+@utility config-cat-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.6);
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.12s ease;
+    line-height: 1.4;
+}
+
+.config-cat-toggle:has(:checked) {
+    border-color: var(--brand-3);
+    background: rgba(213, 143, 35, 0.12);
+    color: var(--text);
+}
+
+.config-cat-toggle input[type="checkbox"] {
+    width: 0.8rem;
+    height: 0.8rem;
+    accent-color: var(--brand-3);
+}
+
 /* HOST badge w lobby roster i scoreboard */
 @utility host-badge {
     display: inline-block;

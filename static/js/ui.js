@@ -756,7 +756,7 @@ function setRoomPhase(phase) {
 
     // Host vs non-host: host edytuje, non-host widzi readonly
     const configBar = document.getElementById("lobby-config-bar");
-    const startBtn = document.getElementById("lobby-start-game");
+    const catsBar = document.getElementById("lobby-cats-bar");
     const isHost = globalThis.myNick === hostName;
     if (configBar) {
       configBar.style.display = "";
@@ -764,7 +764,9 @@ function setRoomPhase(phase) {
         el.disabled = !isHost;
       });
     }
-    if (startBtn) startBtn.style.display = isHost ? "" : "none";
+    if (catsBar) {
+      catsBar.style.display = isHost ? "" : "none";
+    }
 
     // Swap chat send button to use lobby chat
     const sendBtn = document.querySelector(".game-chat-send");
@@ -803,6 +805,19 @@ function updateLobbyConfig() {
   const stopEnabled =
     document.getElementById("lobby_stop_mechanism")?.checked || false;
 
+  // Read selected categories
+  var cats = [];
+  document.querySelectorAll(".cat-checkbox:checked").forEach(function (cb) {
+    cats.push(cb.value);
+  });
+  // Minimum 1 kategoria
+  if (cats.length < 1) {
+    // Re-check the last unchecked one
+    var anyCb = document.querySelector(".cat-checkbox");
+    if (anyCb) anyCb.checked = true;
+    return;
+  }
+
   if (typeof sendJson === "function") {
     sendJson({
       type: "lobby_config_update",
@@ -810,6 +825,7 @@ function updateLobbyConfig() {
       limit,
       visibility,
       stop_mechanism: stopEnabled,
+      categories: cats,
     });
   }
 }
@@ -830,12 +846,18 @@ function updateLobbyConfigUI(data) {
   if (countBarEl && data.player_count != null)
     countBarEl.textContent = data.player_count;
 
+  // Update category checkboxes
+  if (Array.isArray(data.categories)) {
+    document.querySelectorAll(".cat-checkbox").forEach(function (cb) {
+      cb.checked = data.categories.indexOf(cb.value) !== -1;
+    });
+  }
+
   // Host vs non-host: host edytuje, non-host widzi readonly
   const configBar = document.getElementById("lobby-config-bar");
   const isHost = globalThis.myNick === lastLobbyRosterState.hostName;
   if (configBar) {
     configBar.style.display = "";
-    // non-host: disable wszystkich selectow
     configBar.querySelectorAll("select, input").forEach((el) => {
       el.disabled = !isHost;
     });
@@ -1134,15 +1156,11 @@ function bindCategoryEnter() {
 
 function bindLobbyConfigEvents() {
   // Auto-save on change — no save button needed
-  const bindOnChange = (id) => {
-    const el = document.getElementById(id);
+  var bindOnChange = function (id) {
+    var el = document.getElementById(id);
     if (el && !el.dataset.pmConfigBound) {
       el.dataset.pmConfigBound = "1";
-      if (el.type === "checkbox") {
-        el.addEventListener("change", updateLobbyConfig);
-      } else {
-        el.addEventListener("change", updateLobbyConfig);
-      }
+      el.addEventListener("change", updateLobbyConfig);
     }
   };
   bindOnChange("lobby_rounds");
@@ -1150,14 +1168,22 @@ function bindLobbyConfigEvents() {
   bindOnChange("lobby_visibility");
   bindOnChange("lobby_stop_mechanism");
 
-  const startBtn = document.getElementById("lobby-start-game");
-  if (startBtn) {
-    startBtn.addEventListener("click", () => {
-      if (typeof sendJson === "function") {
-        sendJson({ type: "start_game" });
-      }
-    });
-  }
+  // Category checkboxes
+  document.querySelectorAll(".cat-checkbox").forEach(function (cb) {
+    if (!cb.dataset.pmCatsBound) {
+      cb.dataset.pmCatsBound = "1";
+      cb.addEventListener("change", function () {
+        // Minimum 1 kategoria
+        var checked = document.querySelectorAll(".cat-checkbox:checked");
+        if (checked.length < 1) {
+          cb.checked = true;
+          return;
+        }
+        updateLobbyConfig();
+      });
+    }
+  });
+
   const chatSendBtn = document.getElementById("btn-chat-send");
   if (chatSendBtn) {
     chatSendBtn.addEventListener("click", sendLobbyChat);

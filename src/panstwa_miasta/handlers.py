@@ -64,6 +64,7 @@ def lobby_state_payload(room: Room) -> dict:
             "visibility": room.visibility,
             "visibility_label": "Publiczny" if room.visibility == "public" else "Prywatny",
             "stop_mechanism": room.stop_mechanism,
+            "categories": room.categories,
         },
     }
 
@@ -416,10 +417,26 @@ async def handle_lobby_config_update(
     if visibility not in ("public", "private"):
         return
 
+    categories = data.get("categories")
+    if categories is not None:
+        if not isinstance(categories, list) or len(categories) < 1:
+            return
+        from .constants import GAME_CATEGORIES
+
+        valid = [c for c in categories if c in GAME_CATEGORIES]
+        if len(valid) < 1:
+            return
+        categories = valid
+    else:
+        from .constants import GAME_CATEGORIES
+
+        categories = list(GAME_CATEGORIES)
+
     room.max_rounds = rounds
     room.time_limit = limit
     room.visibility = visibility
     room.stop_mechanism = stop_mechanism
+    room.categories = categories
 
     await save_room(
         room_id,
@@ -440,6 +457,7 @@ async def handle_lobby_config_update(
                 "visibility": visibility,
                 "visibility_label": "Publiczny" if visibility == "public" else "Prywatny",
                 "stop_mechanism": stop_mechanism,
+                "categories": categories,
             }
         )
     )
