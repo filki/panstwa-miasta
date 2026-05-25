@@ -207,6 +207,12 @@ async def _begin_results_phase(room: Room, room_id: str, timeout_coro) -> None:
     room.sync_results_roster()
     round_scores = await room.compute_round_scores(persist=False)
     room.provisional_round_scores = round_scores
+
+    # Last round — skip 30s veto phase, go straight to finalize
+    if room.current_round >= room.max_rounds:
+        await _finalize_results_phase(room, room_id, timeout_coro)
+        return
+
     veto_ends_at = int(time.time() * 1000) + RESULTS_PHASE_SECONDS * 1000
     room.results_veto_ends_at = veto_ends_at / 1000.0
     await room.broadcast(
