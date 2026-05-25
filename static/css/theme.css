@@ -2141,6 +2141,12 @@ button {
     margin: 0;
     line-height: 1.35;
 }
+.restart-actions-section {
+    border-top: 1px solid rgba(213, 143, 35, 0.12);
+    padding-top: var(--space-5);
+    margin-top: var(--space-2);
+    width: 100%;
+}
 .restart-btn--primary,
 .restart-btn--secondary,
 .restart-btn--danger {
