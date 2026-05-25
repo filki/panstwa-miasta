@@ -1159,7 +1159,7 @@ button {
     display: flex;
     flex-direction: column;
     border-radius: 24px;
-    background: rgba(255, 255, 255, 0.96);
+    background: var(--surface-1);
     box-shadow: 0 25px 50px -12px rgba(62, 20, 15, 0.2);
     overflow: hidden;
     animation: fadeIn 0.15s ease-out;
@@ -2341,34 +2341,26 @@ button {
 
 .round-results-table th,
 .round-results-table td {
-    padding: 0.55rem 0.45rem;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+    padding: var(--space-2) var(--space-1);
     vertical-align: middle;
     text-align: left;
 }
 
 .round-results-table thead th {
-    font-size: 0.75rem;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: transparent;
+    font-size: 0.7rem;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     color: var(--text-muted);
     font-weight: 700;
+    padding-bottom: var(--space-2);
 }
 
 @utility round-results-player-row {
-    transition: background 0.15s;
-}
-
-.round-results-player-row:hover {
-    background: rgba(213, 143, 35, 0.04);
-}
-
-@utility round-results-player-row--me {
-    background: rgba(213, 143, 35, 0.06);
-}
-
-.round-results-player-row--me:hover {
-    background: rgba(213, 143, 35, 0.1);
+    transition: background 0.1s;
 }
 
 .round-results-player-row--me .round-results-player {
@@ -2380,10 +2372,13 @@ button {
     font-weight: 800;
     color: var(--text);
     white-space: nowrap;
+    padding-right: var(--space-2);
+    font-size: 0.9rem;
 }
 
 @utility round-results-td {
     vertical-align: middle;
+    padding: var(--space-2) var(--space-1);
 }
 
 @utility round-results-td--total {
@@ -2398,9 +2393,24 @@ button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.35rem;
+    gap: 0.4rem;
     flex-wrap: nowrap;
     max-width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 14px;
+    background: var(--surface-1);
+    border: 1px solid rgba(213, 143, 35, 0.1);
+    min-height: 2.4rem;
+    box-shadow: 0 1px 3px rgba(213, 143, 35, 0.06);
+}
+
+/* Empty answer (—) pill stays very subtle */
+.round-results-td .round-results-cell:has(.round-results-pts--0:only-child) {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    min-height: auto;
+    padding: 0.2rem 0.4rem;
 }
 
 @utility round-results-val {
@@ -2409,6 +2419,8 @@ button {
     word-break: keep-all;
     hyphens: manual;
     font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text);
 }
 
 /* Round results score badges */
