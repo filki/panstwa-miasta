@@ -399,7 +399,9 @@ function syncLandingGuideSheetState(root, openBtn, expanded) {
 function initLandingGuideMobileSheet() {
   const openBtn = document.getElementById("landing-guide-open");
   const closeBtn = document.querySelector(".landing-guide-close");
-  const root = document.getElementById("landing-guide-carousel");
+  const root =
+    document.getElementById("guide") ||
+    document.querySelector(".landing-guide-carousel");
   if (!openBtn || !root) return;
 
   const applyLayoutMode = () => {

@@ -164,6 +164,16 @@
                         "
                         >Słownik</a
                     >
+                    <a
+                        href="#guide"
+                        class="nav-link-extra hidden md:inline-block no-underline"
+                        style="
+                            color: var(--text-muted);
+                            font-size: 0.875rem;
+                            font-weight: 600;
+                        "
+                        >Jak grać?</a
+                    >
                 </div>
             </div>
         </nav>
@@ -175,44 +185,12 @@
                             <h1 class="landing-shell-title">
                                 Państwa<span>Miasta</span> — gra online
                             </h1>
-                            <p
-                                class="landing-hero-subtitle"
-                                style="text-align: justify !important"
-                            >
+                            <p class="landing-hero-subtitle">
                                 Graj ze znajomymi w przeglądarce. Stwórz pokój,
                                 dołącz kodem lub szybka gra bez konta.
                             </p>
                         </div>
                     </header>
-
-                    <section class="daily-stats-card">
-                        <div class="daily-stats-header">
-                            <h3
-                                class="daily-stats-title"
-                                id="daily-stats-title"
-                            >
-                                Najczęstsze państwo
-                            </h3>
-                            <span
-                                class="daily-stats-badge"
-                                id="daily-stats-badge"
-                            ></span>
-                        </div>
-                        <div id="daily-stats-body" class="daily-stats-body">
-                            <div
-                                class="daily-stats-loading"
-                                id="daily-stats-loading"
-                            >
-                                Ładowanie…
-                            </div>
-                            <canvas
-                                id="daily-stats-chart"
-                                width="400"
-                                height="80"
-                                style="display: none"
-                            ></canvas>
-                        </div>
-                    </section>
 
                     <div class="landing-grid">
                         <section id="lobby" class="landing-actions">
@@ -351,7 +329,7 @@
                         </section>
 
                         <section
-                            id="landing-guide-carousel"
+                            id="guide"
                             class="landing-guide-carousel landing-guide-carousel--gartic"
                             aria-labelledby="landing-guide-carousel-title"
                             aria-roledescription="karuzela"
@@ -637,6 +615,38 @@
                         </button>
                     </section>
 
+                    <section class="daily-ticker" id="daily-ticker">
+                        <span class="daily-ticker-icon">💡</span>
+                        <span class="daily-ticker-text" id="daily-ticker-text"
+                            >Ładowanie ciekawostki…</span
+                        >
+                        <button
+                            class="daily-ticker-btn"
+                            id="daily-ticker-btn"
+                            onclick="
+                                document
+                                    .getElementById('daily-ticker-chart')
+                                    .classList.toggle(
+                                        'daily-ticker-chart--open',
+                                    );
+                                this.textContent =
+                                    this.textContent === 'Pokaż wykres'
+                                        ? 'Ukryj wykres'
+                                        : 'Pokaż wykres';
+                            "
+                            style="display: none"
+                        >
+                            Pokaż wykres
+                        </button>
+                    </section>
+                    <div class="daily-ticker-chart" id="daily-ticker-chart">
+                        <canvas
+                            id="daily-stats-chart"
+                            width="400"
+                            height="120"
+                        ></canvas>
+                    </div>
+
                     <div id="active-rooms-section" class="active-rooms-block">
                         <h3 class="active-rooms-title">Aktywne pokoje</h3>
                         <div id="active-rooms-empty" class="active-rooms-empty">
@@ -905,25 +915,25 @@
                         return r.json();
                     })
                     .then(function (data) {
-                        document.getElementById(
-                            "daily-stats-loading",
-                        ).style.display = "none";
                         if (!data.top || data.top.length === 0) {
                             document.getElementById(
-                                "daily-stats-body",
-                            ).innerHTML =
-                                '<div class="daily-stats-loading">Brak danych dla litery ' +
-                                data.letter +
-                                "</div>";
+                                "daily-ticker",
+                            ).style.display = "none";
                             return;
                         }
+                        var top = data.top[0];
                         document.getElementById(
-                            "daily-stats-title",
+                            "daily-ticker-text",
                         ).textContent =
-                            "Najczęstsze państwo na literę " + data.letter;
+                            "Aż " +
+                            top.pct +
+                            "% graczy wybiera " +
+                            top.name +
+                            " na literę " +
+                            data.letter;
                         document.getElementById(
-                            "daily-stats-badge",
-                        ).textContent = data.total_games + " gier";
+                            "daily-ticker-btn",
+                        ).style.display = "inline";
                         var labels = data.top.map(function (i) {
                             return i.name;
                         });
@@ -932,8 +942,6 @@
                         });
                         var canvas =
                             document.getElementById("daily-stats-chart");
-                        canvas.style.display = "block";
-                        var maxPct = Math.max.apply(null, vals);
                         new Chart(canvas, {
                             type: "bar",
                             data: {
@@ -941,13 +949,7 @@
                                 datasets: [
                                     {
                                         data: vals,
-                                        backgroundColor: [
-                                            "#d58f23",
-                                            "#d58f23",
-                                            "#d58f23",
-                                            "#d58f23",
-                                            "#d58f23",
-                                        ],
+                                        backgroundColor: "#d58f23",
                                         borderRadius: 4,
                                         borderSkipped: false,
                                     },
@@ -980,9 +982,7 @@
                                     x: {
                                         max: 100,
                                         grid: { display: false },
-                                        ticks: {
-                                            display: false,
-                                        },
+                                        ticks: { display: false },
                                     },
                                     y: {
                                         grid: { display: false },
@@ -998,14 +998,11 @@
                                     afterDraw: function (chart) {
                                         var ctx = chart.ctx;
                                         chart.data.datasets.forEach(
-                                            function (ds, i) {
+                                            function (ds) {
                                                 var meta =
-                                                    chart.getDatasetMeta(i);
+                                                    chart.getDatasetMeta(0);
                                                 meta.data.forEach(
                                                     function (bar, j) {
-                                                        var val = ds.data[j];
-                                                        var x = bar.x + 4;
-                                                        var y = bar.y + 4;
                                                         ctx.fillStyle =
                                                             "#3e140f";
                                                         ctx.font =
@@ -1014,9 +1011,9 @@
                                                         ctx.textBaseline =
                                                             "middle";
                                                         ctx.fillText(
-                                                            val + "%",
-                                                            x,
-                                                            y,
+                                                            ds.data[j] + "%",
+                                                            bar.x + 4,
+                                                            bar.y + 4,
                                                         );
                                                     },
                                                 );
@@ -1028,8 +1025,8 @@
                         });
                     })
                     .catch(function () {
-                        document.getElementById("daily-stats-body").innerHTML =
-                            '<div class="daily-stats-loading">Nie udało się załadować statystyk</div>';
+                        document.getElementById("daily-ticker").style.display =
+                            "none";
                     });
             })();
         </script>
