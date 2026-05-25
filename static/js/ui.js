@@ -19,8 +19,8 @@ function showJoinModal() {
 function showCreateModal() {
   const landingNick = document.getElementById("landing_nickname")?.value.trim();
   if (landingNick) syncNicknameInputs(landingNick);
-  document.getElementById("create-modal").style.display = "flex";
   preparePlayNickname();
+  createRoomAndEnter();
 }
 
 function showLandingJoinCode() {
@@ -146,7 +146,8 @@ async function createRoomAndEnter() {
 
 function hideModals() {
   document.getElementById("join-modal").style.display = "none";
-  document.getElementById("create-modal").style.display = "none";
+  var cm = document.getElementById("create-modal");
+  if (cm) cm.style.display = "none";
   document.getElementById("lottery-modal").style.display = "none";
 }
 
