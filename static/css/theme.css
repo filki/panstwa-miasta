@@ -669,17 +669,17 @@ button {
     justify-content: center;
     width: 100%;
     min-height: var(--tap);
-    padding: 0.65rem 0.9rem;
+    padding: 0.85rem 1.1rem;
     border-radius: var(--r-md);
     background: var(--surface-2);
     border: 1px solid var(--border-strong);
     color: var(--text);
-    font-size: 0.875rem;
+    font-size: 1rem;
     font-weight: 700;
     text-decoration: none;
     gap: 0.35rem;
-    letter-spacing: 0;
-    text-transform: none;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
     box-sizing: border-box;
 }
 
