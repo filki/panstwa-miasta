@@ -653,8 +653,8 @@ button {
     margin-inline: auto;
 }
 
-/* 3-ci przycisk (Dołącz do pokoju) rozciąga się na 2 kolumny */
-.landing-anon-actions .btn:nth-child(3) {
+/* 1. przycisk (Jak grać?) full width nad 2-kolumnowym gridem */
+.landing-anon-actions .btn:nth-child(1) {
     grid-column: 1 / -1;
 }
 
