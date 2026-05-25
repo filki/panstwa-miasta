@@ -2322,6 +2322,177 @@ button {
     flex-shrink: 0;
 }
 
+/* ── Round results table ── */
+@utility round-results-block {
+    width: 100%;
+}
+
+@utility round-results-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@utility round-results-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.8rem;
+    min-width: max(100%, 32rem);
+}
+
+.round-results-table th {
+    position: sticky;
+    top: 0;
+    background: rgba(255, 255, 255, 0.98);
+    padding: 0.5rem 0.4rem;
+    font-family: "Outfit", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 2px solid rgba(213, 143, 35, 0.14);
+    z-index: 1;
+}
+
+.round-results-table th:first-child {
+    padding-left: var(--space-1);
+}
+
+.round-results-table th:last-child {
+    text-align: right;
+    padding-right: var(--space-1);
+}
+
+@utility round-results-player-row {
+    transition: background 0.15s;
+}
+
+.round-results-player-row:hover {
+    background: rgba(213, 143, 35, 0.04);
+}
+
+@utility round-results-player-row--me {
+    background: rgba(213, 143, 35, 0.06);
+}
+
+.round-results-player-row--me:hover {
+    background: rgba(213, 143, 35, 0.1);
+}
+
+@utility round-results-player {
+    font-family: "Outfit", system-ui, sans-serif;
+    font-weight: 700;
+    color: var(--text);
+    padding: 0.5rem 0.4rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 8rem;
+    border-bottom: 1px solid rgba(213, 143, 35, 0.06);
+}
+
+@utility round-results-td {
+    padding: 0.25rem 0.15rem;
+    border-bottom: 1px solid rgba(213, 143, 35, 0.06);
+    vertical-align: middle;
+}
+
+@utility round-results-td--total {
+    text-align: right;
+    padding-right: var(--space-1);
+}
+
+@utility round-results-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    white-space: nowrap;
+}
+
+@utility round-results-val {
+    max-width: 8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    color: var(--text);
+}
+
+/* Round results score badges */
+@utility round-results-pts {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.6rem;
+    height: 1.4rem;
+    padding: 0 0.3rem;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+@utility round-results-pts--15 {
+    background: var(--pts-15);
+    color: #fff;
+}
+
+@utility round-results-pts--10 {
+    background: var(--pts-10);
+    color: var(--brand-1);
+}
+
+@utility round-results-pts--5 {
+    background: var(--pts-5);
+    color: #fff;
+}
+
+@utility round-results-pts--0 {
+    background: rgba(62, 20, 15, 0.08);
+    color: var(--text-muted);
+}
+
+@utility round-results-veto-tally {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-right: 0.15rem;
+}
+
+@utility round-results-veto-actions {
+    display: inline-flex;
+    gap: 0.1rem;
+}
+
+@utility round-results-veto-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.4rem;
+    height: 1.4rem;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    font-size: 0.7rem;
+    line-height: 1;
+    padding: 0;
+    transition: background 0.1s;
+}
+
+.round-results-veto-btn:hover {
+    background: rgba(213, 143, 35, 0.1);
+}
+
+.round-results-veto-btn.is-active {
+    background: rgba(213, 143, 35, 0.18);
+    border-color: var(--brand-3);
+}
+
 /* ── Log entries ── */
 @utility log-entry {
     background: var(--surface-1);
