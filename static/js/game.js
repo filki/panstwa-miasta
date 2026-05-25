@@ -48,18 +48,19 @@ function enableInputs() {
   if (globalThis.currentCountdown) clearInterval(globalThis.currentCountdown);
 
   // Ktore kategorie sa aktywne? (z configu lobby)
-  // null = brak configu (reconnect) → wszystkie wlaczone
-  var config = globalThis.pmLastConfig;
-  var activeCats =
-    config && Array.isArray(config.categories) && config.categories.length > 0
-      ? config.categories
-      : null;
-
+  // Sprawdzamy BEZPOSREDNIO w DOM lobby — kategoria jest aktywna jesli
+  // checkbox .cat-checkbox[value=X] jest :checked.
+  // Fallback: jesli lobby nie ma checkboxow (reconnect), wszystkie wlaczone.
   var inputs = document.querySelectorAll("#categories input");
   inputs.forEach(function (inp) {
     var cat = inp.getAttribute("data-category") || "";
     var field = inp.closest(".game-field");
-    var isActive = activeCats === null || activeCats.indexOf(cat) !== -1;
+    // Szukamy checkboxa w lobby (mozliwe ze ukryty jesli nie ma lobby)
+    var lobbyCb = document.querySelector(
+      '.cat-checkbox[value="' + cat.replace(/"/g, "&quot;") + '"]',
+    );
+    var isActive =
+      !lobbyCb || lobbyCb.checked || globalThis.currentLetter === undefined;
 
     if (isActive) {
       inp.disabled = false;
@@ -69,10 +70,7 @@ function enableInputs() {
       if (field) {
         field.classList.remove("cat-inactive");
         field.classList.add("cat-active");
-      }
-      var label = field ? field.querySelector("label") : null;
-      if (label) {
-        label.textContent = label.textContent.replace(/\s*\(wyłączona\)$/, "");
+        field.hidden = false;
       }
     } else {
       inp.disabled = true;
@@ -80,10 +78,7 @@ function enableInputs() {
       if (field) {
         field.classList.add("cat-inactive");
         field.classList.remove("cat-active");
-      }
-      var label = field ? field.querySelector("label") : null;
-      if (label && label.textContent.indexOf("(wyłączona)") === -1) {
-        label.textContent = label.textContent + " (wyłączona)";
+        field.hidden = true;
       }
     }
   });

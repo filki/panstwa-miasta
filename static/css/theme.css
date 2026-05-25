@@ -417,19 +417,10 @@ button {
     accent-color: var(--brand-3);
 }
 
-/* Wylaczone kategorie w grze */
+/* Wylaczone kategorie w grze — cat-inactive + hidden przez JS */
 .game-field.cat-inactive {
     opacity: 0.35;
     pointer-events: none;
-}
-
-.game-field.cat-inactive label::after {
-    content: " (wyłączona)";
-    font-weight: 400;
-    color: var(--text-muted);
-    font-size: 0.65rem;
-    text-transform: none;
-    letter-spacing: 0;
 }
 
 /* HOST badge w lobby roster i scoreboard */
