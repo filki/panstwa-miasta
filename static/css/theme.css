@@ -1057,6 +1057,23 @@ button {
     height: 100%;
     align-self: stretch;
 }
+
+/* Mobile: carousel hidden behind info button */
+@media (max-width: 1023px) {
+    .landing-guide-carousel[aria-hidden="true"] .landing-guide-carousel-panel {
+        display: none;
+    }
+}
+
+/* Desktop: info button and × button hidden */
+@media (min-width: 1024px) {
+    #landing-guide-open {
+        display: none;
+    }
+    .landing-guide-close {
+        display: none;
+    }
+}
 @utility landing-guide-carousel-panel {
     display: flex;
     flex-direction: column;
