@@ -605,6 +605,15 @@
                         </button>
                     </section>
 
+                    <section class="daily-stats-card">
+                        <h3 class="daily-stats-title" id="daily-stats-title">
+                            📊 Najczęstsze państwo
+                        </h3>
+                        <div id="daily-stats-body" class="daily-stats-body">
+                            <div class="daily-stats-loading">Ładowanie…</div>
+                        </div>
+                    </section>
+
                     <div id="active-rooms-section" class="active-rooms-block">
                         <h3 class="active-rooms-title">Aktywne pokoje</h3>
                         <div id="active-rooms-empty" class="active-rooms-empty">
@@ -864,6 +873,62 @@
                     });
                 }
             }
+        </script>
+        <script>
+            (function () {
+                var body = document.getElementById("daily-stats-body");
+                if (!body) return;
+                var title = document.getElementById("daily-stats-title");
+                fetch("/api/stats/daily-top")
+                    .then(function (r) {
+                        return r.json();
+                    })
+                    .then(function (data) {
+                        if (!data.top || data.top.length === 0) {
+                            body.innerHTML =
+                                '<div class="daily-stats-loading">Brak danych dla litery ' +
+                                data.letter +
+                                "</div>";
+                            return;
+                        }
+                        if (title)
+                            title.textContent =
+                                '📊 Najczęstsze państwo na "' +
+                                data.letter +
+                                '"';
+                        var maxCount = data.top[0].count;
+                        var html = "";
+                        data.top.forEach(function (item, i) {
+                            var pct =
+                                maxCount > 0
+                                    ? (item.count / maxCount) * 100
+                                    : 0;
+                            html += '<div class="daily-stats-row">';
+                            html +=
+                                '<span class="daily-stats-rank">' +
+                                (i + 1) +
+                                ".</span>";
+                            html +=
+                                '<span class="daily-stats-name">' +
+                                item.name +
+                                "</span>";
+                            html +=
+                                '<span class="daily-stats-bar" style="width: ' +
+                                pct +
+                                '%"></span>';
+                            html +=
+                                '<span class="daily-stats-count">' +
+                                item.count +
+                                "x</span>";
+                            html += "</div>";
+                        });
+                        body.innerHTML = html;
+                    })
+                    .catch(function () {
+                        body.innerHTML =
+                            '<div class="daily-stats-loading">Nie udało się załadować statystyk</div>';
+                    });
+            })();
         </script>
     </body>
 </html>

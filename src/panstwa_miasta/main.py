@@ -66,6 +66,7 @@ from .limits import (
 from .logger import get_logger
 from .manager import ConnectionManager, room_listed_in_active_lobby
 from .routers.dictionary import router as dictionary_router
+from .routers.stats import router as stats_router
 from .routers.words import router as words_router
 from .routers.words_worker import router as words_worker_router
 from .ws_messages import ws_inbound_adapter
@@ -128,6 +129,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(stats_router)
 app.include_router(words_router)
 app.include_router(dictionary_router)
 app.include_router(words_worker_router)
