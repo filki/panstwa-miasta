@@ -91,6 +91,21 @@ PM_BASE_URL = (
     + "/"
 )
 
+# Dev environment detection — injects a visual badge
+_PM_IS_DEV = PM_BASE_URL != "https://panstwamiasta.com.pl/"
+_DEV_RIBBON_HTML = (
+    (
+        '<div id="pm-dev-ribbon" style="'
+        "position:fixed;top:0;left:0;right:0;z-index:9999;"
+        "background:#dc2626;color:#fff;text-align:center;"
+        "padding:2px 0;font-size:0.7rem;font-weight:700;"
+        "letter-spacing:2px;text-transform:uppercase"
+        '">ŚRODOWISKO DEV</div>'
+    )
+    if _PM_IS_DEV
+    else ""
+)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -276,6 +291,8 @@ async def _html_with_injected_footer(page_path: pathlib.Path) -> HTMLResponse:
     if _BASE_URL_PLACEHOLDER in html_content:
         html_content = html_content.replace(_BASE_URL_PLACEHOLDER, PM_BASE_URL, 1)
     html_content = inject_before_head_close(html_content, public_head_snippets())
+    if _DEV_RIBBON_HTML:
+        html_content = inject_before_head_close(html_content, _DEV_RIBBON_HTML)
     return HTMLResponse(content=html_content)
 
 
@@ -288,6 +305,8 @@ async def _html_with_meta(page_path: pathlib.Path, extra_head: str) -> HTMLRespo
     if _BASE_URL_PLACEHOLDER in html_content:
         html_content = html_content.replace(_BASE_URL_PLACEHOLDER, PM_BASE_URL, 1)
     html_content = inject_before_head_close(html_content, public_head_snippets())
+    if _DEV_RIBBON_HTML:
+        html_content = inject_before_head_close(html_content, _DEV_RIBBON_HTML)
     html_content = _replace_room_head(html_content, extra_head)
     return HTMLResponse(content=html_content)
 
