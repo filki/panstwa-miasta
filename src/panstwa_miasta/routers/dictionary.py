@@ -128,8 +128,11 @@ async def search_slownik(
             where = ""
             params: list[str] = []
             if q:
+                # Dla zapytań 3+ znaków: prefix + substring match
+                # Krótkie zapytania: tylko prefix (substring daje za dużo wyników)
+                pattern = f"%{q}%" if len(q) >= 3 else f"{q}%"
                 where = f"WHERE {info['where_col']} LIKE ?"
-                params = [q + "%"]
+                params = [pattern]
             # count
             async with db.execute(
                 f"SELECT COUNT(*) as cnt FROM {info['table']} {where}", params
