@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import pathlib
 import time
 from contextlib import asynccontextmanager, suppress
@@ -18,7 +19,6 @@ from pydantic import ValidationError
 from .analytics_snippet import inject_before_head_close, public_head_snippets
 from .api_models import (
     ActiveRoomRow,
-    AppealIn,
     AppealOut,
     ClientNamePath,
     CreateRoomIn,
@@ -77,6 +77,18 @@ from .routers.words_worker import router as words_worker_router
 from .ws_messages import ws_inbound_adapter
 
 logger = get_logger(__name__)
+
+# ---------------------------------------------------------------------------
+# Base URL — wstrzykiwane do HTML zamiast hardcoded
+# ---------------------------------------------------------------------------
+_BASE_URL_PLACEHOLDER = "{{BASE_URL}}"
+PM_BASE_URL = (
+    os.environ.get(
+        "PM_BASE_URL",
+        "https://panstwamiasta.com.pl/",
+    ).rstrip("/")
+    + "/"
+)
 
 
 @asynccontextmanager
@@ -170,9 +182,21 @@ async def rate_limit_http_middleware(request: Request, call_next):
     return await call_next(request)
 
 
-# Montowanie plików statycznych
+# Montowanie plików statycznych — custom wrapper dla {{BASE_URL}} w HTML
 static_path = pathlib.Path(__file__).parent.parent.parent / "static"
-app.mount("/static", StaticFiles(directory=static_path), name="static")
+
+
+class _BaseUrlStaticFiles(StaticFiles):
+    """Injects {{BASE_URL}} into served HTML files."""
+
+    async def get_response(self, path: str, scope):
+        if path in {"index.html", "room.html"}:
+            return await _html_with_injected_footer(static_path / path)
+        return await super().get_response(path, scope)
+
+
+app.mount("/static", _BaseUrlStaticFiles(directory=static_path), name="static")
+
 
 INDEX_PATH = static_path / "index.html"
 ROOM_PATH = static_path / "room.html"
@@ -248,6 +272,8 @@ async def _html_with_injected_footer(page_path: pathlib.Path) -> HTMLResponse:
         html_content = await f.read()
     if _FOOTER_PLACEHOLDER in html_content:
         html_content = html_content.replace(_FOOTER_PLACEHOLDER, FOOTER_HTML, 1)
+    if _BASE_URL_PLACEHOLDER in html_content:
+        html_content = html_content.replace(_BASE_URL_PLACEHOLDER, PM_BASE_URL, 1)
     html_content = inject_before_head_close(html_content, public_head_snippets())
     return HTMLResponse(content=html_content)
 
@@ -258,6 +284,8 @@ async def _html_with_meta(page_path: pathlib.Path, extra_head: str) -> HTMLRespo
         html_content = await f.read()
     if _FOOTER_PLACEHOLDER in html_content:
         html_content = html_content.replace(_FOOTER_PLACEHOLDER, FOOTER_HTML, 1)
+    if _BASE_URL_PLACEHOLDER in html_content:
+        html_content = html_content.replace(_BASE_URL_PLACEHOLDER, PM_BASE_URL, 1)
     html_content = inject_before_head_close(html_content, public_head_snippets())
     html_content = _replace_room_head(html_content, extra_head)
     return HTMLResponse(content=html_content)
