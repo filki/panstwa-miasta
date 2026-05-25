@@ -812,15 +812,29 @@ class ConnectionManager:
         loaded = 0
         for r_data in active_rooms:
             players = r_data.get("players", {})
+            max_r = r_data.get("max_rounds", 0) or 0
+            cur_r = r_data.get("current_round", 0) or 0
+
             # Ghost room — nikt nie jest podłączony (wszyscy odeszli).
-            # Niezależnie od current_round — takie pokoje nie mają prawa
-            # wrócić po resecie, bo nikt nie może do nich dołączyć bez WS.
             if not players:
                 await dbmod.delete_room(r_data["room_id"])
                 logger.info(
                     "Deleted ghost room %s from DB (no players, current_round=%s)",
                     r_data["room_id"],
-                    r_data.get("current_round", 0),
+                    cur_r,
+                )
+                continue
+
+            # Ukonczona gra — max_rounds osiagniete, nikt nie gra.
+            # Po resecie nie ma sensu trzymac takiego pokoju.
+            if max_r > 0 and cur_r >= max_r:
+                await dbmod.delete_room(r_data["room_id"])
+                logger.info(
+                    "Deleted completed room %s from DB (%d/%d rounds, %d players)",
+                    r_data["room_id"],
+                    cur_r,
+                    max_r,
+                    len(players),
                 )
                 continue
             vis = normalize_room_visibility(str(r_data.get("visibility", "public")))
