@@ -192,15 +192,22 @@ button {
         padding: 0.7rem 0.8rem;
         font-size: 0.9rem;
     }
-    /* Tighter join card — reduce gaps creating empty space */
+}
+
+/* Desktop: distribute left column space intentionally instead of dead centering */
+@media (min-width: 1024px) {
+    .landing-actions {
+        justify-content: start;
+        min-height: 0;
+    }
     .landing-anon-stage {
-        gap: var(--space-4);
+        gap: var(--space-7);
     }
     .landing-join-card {
-        padding: var(--space-3);
+        padding: var(--space-6);
     }
-    .landing-access-panel {
-        gap: var(--space-3);
+    .landing-anon-actions {
+        gap: var(--space-4);
     }
 }
 
