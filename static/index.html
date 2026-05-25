@@ -231,6 +231,22 @@
                                                 >
                                                     🎲
                                                 </button>
+                                                <button
+                                                    type="button"
+                                                    class="btn-secondary !w-[2.5rem] min-w-[2.5rem] p-0 rounded-[var(--r-md)] border border-[rgba(148,163,184,0.24)] bg-white/92 text-muted text-base leading-none"
+                                                    style="
+                                                        text-transform: none;
+                                                        letter-spacing: 0;
+                                                    "
+                                                    onclick="
+                                                        document.getElementById(
+                                                            'guide-modal',
+                                                        ).style.display = 'flex'
+                                                    "
+                                                    aria-label="Jak grać"
+                                                >
+                                                    ?
+                                                </button>
                                             </div>
                                         </div>
 
@@ -329,265 +345,44 @@
                         </section>
 
                         <section
-                            id="guide"
-                            class="landing-guide-carousel landing-guide-carousel--gartic"
-                            aria-labelledby="landing-guide-carousel-title"
-                            aria-roledescription="karuzela"
+                            class="daily-ticker-card"
+                            id="daily-ticker-card"
                         >
-                            <button
-                                type="button"
-                                id="landing-guide-open"
-                                class="landing-guide-open"
-                                aria-label="Jak grać?"
-                                aria-expanded="false"
-                            >
+                            <div class="daily-ticker-header">
+                                <span class="daily-ticker-icon">💡</span>
                                 <span
-                                    class="landing-guide-open-icon"
-                                    aria-hidden="true"
-                                    >?</span
+                                    class="daily-ticker-text"
+                                    id="daily-ticker-text"
+                                    >Ładowanie ciekawostki…</span
                                 >
-                            </button>
-                            <div class="landing-guide-carousel-panel">
-                                <div class="landing-guide-carousel-toolbar">
-                                    <h2
-                                        id="landing-guide-carousel-title"
-                                        class="landing-guide-carousel-title"
-                                    >
-                                        Jak grać?
-                                    </h2>
-                                    <button
-                                        type="button"
-                                        class="landing-guide-close"
-                                        aria-label="Zamknij instrukcję"
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-                                <div class="landing-guide-carousel-viewport">
-                                    <div
-                                        class="landing-guide-carousel-track"
-                                        id="landing-guide-carousel-track"
-                                    >
-                                        <article
-                                            class="landing-guide-carousel-slide"
-                                            aria-labelledby="landing-carousel-step-1"
-                                        >
-                                            <p
-                                                class="landing-guide-carousel-step-num"
-                                                aria-hidden="true"
-                                            >
-                                                1.
-                                            </p>
-                                            <h3
-                                                id="landing-carousel-step-1"
-                                                class="landing-guide-carousel-slide-title"
-                                            >
-                                                Gotowość
-                                            </h3>
-                                            <p
-                                                class="landing-guide-carousel-copy"
-                                            >
-                                                Wszyscy oznaczają gotowość w
-                                                lobby.
-                                            </p>
-                                        </article>
-                                        <article
-                                            class="landing-guide-carousel-slide"
-                                            aria-labelledby="landing-carousel-step-2"
-                                        >
-                                            <p
-                                                class="landing-guide-carousel-step-num"
-                                                aria-hidden="true"
-                                            >
-                                                2.
-                                            </p>
-                                            <h3
-                                                id="landing-carousel-step-2"
-                                                class="landing-guide-carousel-slide-title"
-                                            >
-                                                Litera
-                                            </h3>
-                                            <p
-                                                class="landing-guide-carousel-copy"
-                                            >
-                                                Serwer losuje literę rundy.
-                                            </p>
-                                        </article>
-                                        <article
-                                            class="landing-guide-carousel-slide"
-                                            aria-labelledby="landing-carousel-step-3"
-                                        >
-                                            <p
-                                                class="landing-guide-carousel-step-num"
-                                                aria-hidden="true"
-                                            >
-                                                3.
-                                            </p>
-                                            <h3
-                                                id="landing-carousel-step-3"
-                                                class="landing-guide-carousel-slide-title"
-                                            >
-                                                Wypełnij i STOP
-                                            </h3>
-                                            <p
-                                                class="landing-guide-carousel-copy"
-                                            >
-                                                Uzupełniasz kategorie i wciskasz
-                                                STOP.
-                                            </p>
-                                        </article>
-                                        <article
-                                            class="landing-guide-carousel-slide"
-                                            aria-labelledby="landing-carousel-categories-title"
-                                        >
-                                            <p
-                                                class="landing-guide-carousel-step-num"
-                                                aria-hidden="true"
-                                            >
-                                                4.
-                                            </p>
-                                            <h3
-                                                id="landing-carousel-categories-title"
-                                                class="landing-guide-carousel-slide-title"
-                                            >
-                                                Kategorie
-                                            </h3>
-                                            <ul
-                                                class="landing-guide-category-list landing-guide-category-list--carousel"
-                                            >
-                                                <li>Państwo</li>
-                                                <li>Miasto</li>
-                                                <li>Rzecz</li>
-                                                <li>Zwierzę</li>
-                                                <li>Roślina</li>
-                                                <li>Imię</li>
-                                                <li>Zawód</li>
-                                            </ul>
-                                        </article>
-                                        <article
-                                            class="landing-guide-carousel-slide"
-                                            aria-labelledby="landing-carousel-letters-title"
-                                        >
-                                            <p
-                                                class="landing-guide-carousel-step-num"
-                                                aria-hidden="true"
-                                            >
-                                                5.
-                                            </p>
-                                            <h3
-                                                id="landing-carousel-letters-title"
-                                                class="landing-guide-carousel-slide-title"
-                                            >
-                                                Litery
-                                            </h3>
-                                            <p
-                                                class="landing-guide-carousel-copy"
-                                            >
-                                                22 litery w losowaniu — bez Q, V
-                                                i X. Bez powtórek w kolejnych
-                                                grach w tym samym pokoju.
-                                            </p>
-                                        </article>
-                                        <article
-                                            class="landing-guide-carousel-slide"
-                                            aria-labelledby="landing-carousel-scores-title"
-                                        >
-                                            <p
-                                                class="landing-guide-carousel-step-num"
-                                                aria-hidden="true"
-                                            >
-                                                6.
-                                            </p>
-                                            <h3
-                                                id="landing-carousel-scores-title"
-                                                class="landing-guide-carousel-slide-title"
-                                            >
-                                                Punktacja
-                                            </h3>
-                                            <dl
-                                                class="landing-guide-scores landing-guide-scores--carousel"
-                                                aria-label="Punktacja"
-                                            >
-                                                <div>
-                                                    <dt>15</dt>
-                                                    <dd>
-                                                        <span
-                                                            class="landing-guide-score-label"
-                                                            >unikat</span
-                                                        >
-                                                        — tylko ty masz hasło
-                                                    </dd>
-                                                </div>
-                                                <div>
-                                                    <dt>10</dt>
-                                                    <dd>
-                                                        <span
-                                                            class="landing-guide-score-label"
-                                                            >powtórka</span
-                                                        >
-                                                        — inni mają hasło, ale
-                                                        masz inne od nich
-                                                    </dd>
-                                                </div>
-                                                <div>
-                                                    <dt>5</dt>
-                                                    <dd>
-                                                        <span
-                                                            class="landing-guide-score-label"
-                                                            >z listy</span
-                                                        >
-                                                        — masz to samo co ktoś
-                                                    </dd>
-                                                </div>
-                                                <div>
-                                                    <dt>0</dt>
-                                                    <dd>
-                                                        <span
-                                                            class="landing-guide-score-label"
-                                                            >pusto</span
-                                                        >
-                                                        — nie masz nic / błąd
-                                                    </dd>
-                                                </div>
-                                            </dl>
-                                        </article>
-                                    </div>
-                                </div>
-                                <footer class="landing-guide-carousel-footer">
-                                    <div
-                                        class="landing-guide-carousel-controls"
-                                        aria-label="Nawigacja Jak grać"
-                                    >
-                                        <button
-                                            type="button"
-                                            class="landing-guide-carousel-nav"
-                                            data-carousel-dir="prev"
-                                            aria-label="Poprzedni slajd"
-                                        >
-                                            ‹
-                                        </button>
-                                        <div
-                                            class="landing-guide-carousel-dots"
-                                            id="landing-guide-carousel-dots"
-                                            role="tablist"
-                                            aria-label="Slajdy Jak grać"
-                                        ></div>
-                                        <button
-                                            type="button"
-                                            class="landing-guide-carousel-nav"
-                                            data-carousel-dir="next"
-                                            aria-label="Następny slajd"
-                                        >
-                                            ›
-                                        </button>
-                                    </div>
-                                </footer>
+                                <button
+                                    class="daily-ticker-btn"
+                                    id="daily-ticker-btn"
+                                    onclick="
+                                        var c =
+                                            document.getElementById(
+                                                'daily-chart-box',
+                                            );
+                                        c.classList.toggle(
+                                            'daily-chart-box--open',
+                                        );
+                                        this.textContent =
+                                            this.textContent === 'Wykres'
+                                                ? 'Ukryj'
+                                                : 'Wykres';
+                                    "
+                                    style="display: none"
+                                >
+                                    Wykres
+                                </button>
                             </div>
-                            <p
-                                class="landing-guide-carousel-live visually-hidden"
-                                id="landing-guide-carousel-live"
-                                aria-live="polite"
-                            ></p>
+                            <div class="daily-chart-box" id="daily-chart-box">
+                                <canvas
+                                    id="daily-stats-chart"
+                                    width="400"
+                                    height="150"
+                                ></canvas>
+                            </div>
                         </section>
                     </div>
 
@@ -614,38 +409,6 @@
                             Szybka gra
                         </button>
                     </section>
-
-                    <section class="daily-ticker" id="daily-ticker">
-                        <span class="daily-ticker-icon">💡</span>
-                        <span class="daily-ticker-text" id="daily-ticker-text"
-                            >Ładowanie ciekawostki…</span
-                        >
-                        <button
-                            class="daily-ticker-btn"
-                            id="daily-ticker-btn"
-                            onclick="
-                                document
-                                    .getElementById('daily-ticker-chart')
-                                    .classList.toggle(
-                                        'daily-ticker-chart--open',
-                                    );
-                                this.textContent =
-                                    this.textContent === 'Pokaż wykres'
-                                        ? 'Ukryj wykres'
-                                        : 'Pokaż wykres';
-                            "
-                            style="display: none"
-                        >
-                            Pokaż wykres
-                        </button>
-                    </section>
-                    <div class="daily-ticker-chart" id="daily-ticker-chart">
-                        <canvas
-                            id="daily-stats-chart"
-                            width="400"
-                            height="120"
-                        ></canvas>
-                    </div>
 
                     <div id="active-rooms-section" class="active-rooms-block">
                         <h3 class="active-rooms-title">Aktywne pokoje</h3>
@@ -827,6 +590,84 @@
             </div>
         </div>
 
+        <!-- Guide modal -->
+        <div
+            id="guide-modal"
+            class="modal-overlay"
+            style="display: none"
+            onclick="if (event.target === this) this.style.display = 'none';"
+        >
+            <div
+                class="modal-content"
+                style="max-width: 32rem; max-height: 80vh; overflow-y: auto"
+            >
+                <div
+                    style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 1rem;
+                    "
+                >
+                    <h2 style="font-size: 1.25rem; font-weight: 800">
+                        Jak grać?
+                    </h2>
+                    <button
+                        type="button"
+                        onclick="
+                            document.getElementById(
+                                'guide-modal',
+                            ).style.display = 'none'
+                        "
+                        style="
+                            background: none;
+                            border: none;
+                            font-size: 1.5rem;
+                            cursor: pointer;
+                            color: var(--text-muted);
+                        "
+                    >
+                        ×
+                    </button>
+                </div>
+                <ol
+                    style="
+                        list-style: none;
+                        padding: 0;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 0.75rem;
+                    "
+                >
+                    <li>
+                        <strong>1.</strong> Wpisz pseudonim i stwórz lub dołącz
+                        do pokoju.
+                    </li>
+                    <li>
+                        <strong>2.</strong> Kliknij "Gotowy" w lobby — gra
+                        zaczyna się, gdy wszyscy są gotowi.
+                    </li>
+                    <li>
+                        <strong>3.</strong> Serwer losuje literę. Wpisz hasła w
+                        każdej kategorii zaczynające się na tę literę.
+                    </li>
+                    <li>
+                        <strong>4.</strong> Kliknij STOP jak skończysz —
+                        czekasz, aż pozostali zrobią to samo.
+                    </li>
+                    <li>
+                        <strong>5.</strong> Punkty: 15 (unikat), 10 (powtórka),
+                        5 (z listy), 0 (pusto).
+                    </li>
+                    <li>
+                        <strong>W skrócie:</strong> Kategorie to Państwo,
+                        Miasto, Rzecz, Zwierzę, Roślina, Imię, Zawód. 22 litery
+                        w puli (bez Q, V, X).
+                    </li>
+                </ol>
+            </div>
+        </div>
+
         <button
             type="button"
             id="btn-leave"
@@ -917,7 +758,7 @@
                     .then(function (data) {
                         if (!data.top || data.top.length === 0) {
                             document.getElementById(
-                                "daily-ticker",
+                                "daily-ticker-card",
                             ).style.display = "none";
                             return;
                         }
@@ -1025,8 +866,9 @@
                         });
                     })
                     .catch(function () {
-                        document.getElementById("daily-ticker").style.display =
-                            "none";
+                        document.getElementById(
+                            "daily-ticker-card",
+                        ).style.display = "none";
                     });
             })();
         </script>
