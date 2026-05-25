@@ -897,9 +897,6 @@
         </script>
         <script>
             (function () {
-                var body = document.getElementById("daily-stats-body");
-                if (!body) return;
-                var title = document.getElementById("daily-stats-title");
                 fetch("/api/stats/daily-top")
                     .then(function (r) {
                         return r.json();
@@ -955,7 +952,7 @@
                             options: {
                                 indexAxis: "y",
                                 responsive: true,
-                                maintainAspectRatio: true,
+                                maintainAspectRatio: false,
                                 plugins: {
                                     legend: { display: false },
                                     tooltip: {
