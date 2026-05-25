@@ -200,9 +200,46 @@
                                     </label>
                                 </div>
                                 <div
+                                    class="config-inline-row"
+                                    style="
+                                        font-size: 0.6rem;
+                                        color: var(--text-muted);
+                                        gap: var(--space-2);
+                                    "
+                                >
+                                    <span
+                                        title="Liczba rund w grze (1-22). Po ostatniej rundzie gra się kończy."
+                                        >Rundy: ile rund gracie</span
+                                    >
+                                    <span
+                                        title="Limit czasu na rundę w sekundach. Po tym czasie STOP jest automatyczny."
+                                        >Czas: sekund na rundę</span
+                                    >
+                                    <span
+                                        title="Publiczny = widoczny na liście aktywnych pokoi. Prywatny = tylko z linku."
+                                        >Wid.: kto może dołączyć</span
+                                    >
+                                    <span
+                                        title="Gdy włączone, gracze mogą kliknąć STOP w trakcie rundy. Wyłącz = runda trwa do końca czasu."
+                                        >STOP: czy gracz może przerwać
+                                        rundę</span
+                                    >
+                                </div>
+                                <div
                                     class="config-inline-row config-cats-row"
                                     id="lobby-cats-bar"
                                 >
+                                    <span
+                                        style="
+                                            font-size: 0.6rem;
+                                            color: var(--text-muted);
+                                            font-weight: 700;
+                                            text-transform: uppercase;
+                                            letter-spacing: 0.04em;
+                                            margin-right: var(--space-1);
+                                        "
+                                        >Kategorie:</span
+                                    >
                                     <label class="config-cat-toggle">
                                         <input
                                             type="checkbox"

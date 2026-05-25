@@ -756,16 +756,18 @@ function setRoomPhase(phase) {
 
     // Host vs non-host: host edytuje, non-host widzi readonly
     const configBar = document.getElementById("lobby-config-bar");
-    const catsBar = document.getElementById("lobby-cats-bar");
     const isHost = globalThis.myNick === hostName;
     if (configBar) {
       configBar.style.display = "";
-      configBar.querySelectorAll("select, input").forEach((el) => {
-        el.disabled = !isHost;
-      });
-    }
-    if (catsBar) {
-      catsBar.style.display = isHost ? "" : "none";
+      configBar
+        .querySelectorAll("select, input, .config-cat-toggle")
+        .forEach(function (el) {
+          if (el.tagName === "SELECT" || el.tagName === "INPUT") {
+            el.disabled = !isHost;
+          } else {
+            el.style.opacity = isHost ? "1" : "0.6";
+          }
+        });
     }
 
     // Swap chat send button to use lobby chat
@@ -858,9 +860,15 @@ function updateLobbyConfigUI(data) {
   const isHost = globalThis.myNick === lastLobbyRosterState.hostName;
   if (configBar) {
     configBar.style.display = "";
-    configBar.querySelectorAll("select, input").forEach((el) => {
-      el.disabled = !isHost;
-    });
+    configBar
+      .querySelectorAll("select, input, .config-cat-toggle")
+      .forEach(function (el) {
+        if (el.tagName === "SELECT" || el.tagName === "INPUT") {
+          el.disabled = !isHost;
+        } else {
+          el.style.opacity = isHost ? "1" : "0.6";
+        }
+      });
   }
 }
 
