@@ -1071,14 +1071,27 @@ button {
     gap: 0;
     margin-top: 0;
     min-height: 0;
-    height: 100%;
+    height: auto;
     align-self: stretch;
+}
+
+@utility landing-guide-carousel--expanded {
+    height: 100%;
 }
 
 /* Mobile: carousel hidden behind info button */
 @media (max-width: 1023px) {
     .landing-guide-carousel[aria-hidden="true"] .landing-guide-carousel-panel {
         display: none;
+    }
+    /* Slides must always be visible when panel is shown */
+    .landing-guide-carousel[aria-hidden="false"] .landing-guide-carousel-slide {
+        display: flex !important;
+    }
+    /* Viewport needs explicit height so slides aren't crushed */
+    .landing-guide-carousel[aria-hidden="false"]
+        .landing-guide-carousel-viewport {
+        min-height: 12rem;
     }
 }
 
