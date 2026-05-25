@@ -1946,11 +1946,7 @@ button {
     gap: var(--space-2);
     padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom, 0));
     border-top: 1px solid rgba(213, 143, 35, 0.12);
-    background: linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.72),
-        rgba(255, 255, 255, 0.96)
-    );
+    background: var(--surface-1);
 }
 @utility round-results-countdown {
     text-align: center;
