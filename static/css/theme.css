@@ -2150,23 +2150,26 @@ button {
 
 /* ── Navbar extras ── */
 @utility nav-cta--leave {
-    background: rgba(239, 68, 68, 0.1);
-    color: #b91c1c;
-    border: 1px solid rgba(239, 68, 68, 0.35);
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.2);
     text-transform: none;
     letter-spacing: 0.2px;
-    font-weight: 700;
+    font-weight: 600;
     box-shadow: none;
     min-height: 36px;
-    padding: 0.4rem 0.7rem;
+    padding: 0.45rem 0.85rem;
     font-size: 0.8rem;
     width: auto;
-    border-radius: var(--r-md);
+    border-radius: 999px;
+    transition:
+        background 0.15s,
+        border-color 0.15s;
 
     &:hover {
-        background: rgba(239, 68, 68, 0.16);
-        color: #991b1b;
-        border-color: rgba(239, 68, 68, 0.55);
+        background: rgba(239, 68, 68, 0.14);
+        color: #b91c1c;
+        border-color: rgba(239, 68, 68, 0.4);
     }
 }
 
@@ -2380,6 +2383,7 @@ button {
     border: 1px solid rgba(213, 143, 35, 0.1);
     box-shadow: 0 1px 3px rgba(213, 143, 35, 0.06);
     display: inline-block;
+    text-align: left;
 }
 
 @utility round-results-td {
