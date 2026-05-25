@@ -1713,28 +1713,8 @@ button {
     flex-direction: column;
     gap: var(--space-4);
 }
-@utility game-over-share {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-4);
-    padding: 1.5rem;
-    border-radius: 24px;
-    border: 1px solid rgba(213, 143, 35, 0.18);
-    background: rgba(255, 255, 255, 0.34);
-}
-@utility game-over-share-title {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--text);
-}
-@utility game-over-share-hint {
-    color: var(--text-muted);
-    font-size: 0.875rem;
-    text-align: center;
-    max-width: 28rem;
-}
 
+/* Misc */
 /* Game over scoreboard */
 .game-over-scoreboard {
     background: rgba(255, 255, 255, 0.92);
@@ -2129,6 +2109,75 @@ button {
     display: flex;
     gap: var(--space-3);
     justify-content: center;
+}
+
+/* Restart section typography & form styles */
+.restart-card h3 {
+    font-family: "Outfit", system-ui, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0;
+}
+.settings-grid label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: var(--space-1);
+}
+.settings-grid select {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.65rem 0.85rem;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: rgba(255, 255, 255, 0.92);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    appearance: auto;
+}
+#btn-restart-game {
+    width: auto;
+    min-height: var(--tap);
+    padding: 0.75rem 1.4rem;
+    border-radius: 14px;
+    border: 0;
+    background: linear-gradient(135deg, var(--brand-3), var(--brand-2));
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: filter 0.15s;
+}
+#btn-restart-game:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+.restart-btn--danger {
+    width: auto;
+    min-height: var(--tap);
+    padding: 0.75rem 1.4rem;
+    border-radius: 14px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition:
+        background 0.15s,
+        border-color 0.15s;
+}
+.restart-btn--danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.35);
 }
 
 @utility visually-hidden {

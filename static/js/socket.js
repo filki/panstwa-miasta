@@ -1361,7 +1361,6 @@ function handleGameOver(hostName, roomId, resultsMsg = null) {
   );
 
   renderGameOverResults(resultsMsg);
-  wireGameOverShare(roomId);
 }
 
 function resetReadyButton() {
@@ -1375,7 +1374,6 @@ function resetReadyButton() {
 
 function onGameRestarted(msg) {
   hideRoundResultsOverlay();
-  hideGameOverShare();
   clearGameOverResults();
   document.getElementById("game-layout")?.classList.remove("game-over");
   document.getElementById("game-main-area").style.display = "block";
