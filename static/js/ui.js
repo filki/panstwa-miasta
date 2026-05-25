@@ -471,6 +471,7 @@ function resetLobbyRosterState() {
 
 function renderLobbyState(m) {
   if (!m || !Array.isArray(m.ready_players)) return;
+  lastLobbyRosterState.hostName = m.host_name || "";
   const { scores, hostName, viewerNick } = lastLobbyRosterState;
   const readySet = new Set(m.ready_players);
   const connectedSet = Array.isArray(m.connected_players)
@@ -480,6 +481,10 @@ function renderLobbyState(m) {
     ? new Set(m.disconnected_players)
     : new Set();
   lastLobbyRosterState.disconnectedPlayers = disconnectedSet;
+  // Init config UI z lobby_state
+  if (m.config && typeof updateLobbyConfigUI === "function") {
+    updateLobbyConfigUI(m.config);
+  }
   renderLobbyRoster(
     scores,
     hostName,
