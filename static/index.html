@@ -165,12 +165,18 @@
                         >Słownik</a
                     >
                     <a
-                        href="#guide"
+                        href="#"
                         class="nav-link-extra hidden md:inline-block no-underline"
                         style="
                             color: var(--text-muted);
                             font-size: 0.875rem;
                             font-weight: 600;
+                        "
+                        onclick="
+                            document.getElementById(
+                                'guide-modal',
+                            ).style.display = 'flex';
+                            return false;
                         "
                         >Jak grać?</a
                     >
@@ -254,6 +260,22 @@
                                             class="landing-anon-actions"
                                             id="landing-anon-actions"
                                         >
+                                            <button
+                                                type="button"
+                                                class="btn btn-secondary"
+                                                style="
+                                                    text-transform: none;
+                                                    letter-spacing: 0;
+                                                    font-size: 0.9rem;
+                                                "
+                                                onclick="
+                                                    document.getElementById(
+                                                        'guide-modal',
+                                                    ).style.display = 'flex'
+                                                "
+                                            >
+                                                ❓ Jak grać?
+                                            </button>
                                             <button
                                                 type="button"
                                                 class="btn btn-primary"
