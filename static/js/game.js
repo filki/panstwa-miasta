@@ -46,92 +46,44 @@ function dissolveRoom() {
 
 function enableInputs() {
   if (globalThis.currentCountdown) clearInterval(globalThis.currentCountdown);
+  const inputs = document.querySelectorAll("#categories input");
+  inputs.forEach((inp) => {
+    inp.disabled = false;
+    inp.value = "";
+    inp.classList.remove("error", "success-10", "warning-5", "error-0");
+    inp.style.borderColor = "";
 
-  // Read active categories directly from lobby checkboxes (always in sync)
-  var checkedCats = [];
-  document.querySelectorAll(".cat-checkbox:checked").forEach(function (cb) {
-    checkedCats.push(cb.value);
-  });
-  // Custom categories from last config
-  var config = globalThis.pmLastConfig || {};
-  var customCats = config.custom_categories || {};
-
-  var catContainer = document.getElementById("categories");
-  if (!catContainer) return;
-
-  // Show/hide built-in category fields
-  var fields = catContainer.querySelectorAll(".game-field");
-  fields.forEach(function (field) {
-    var inp = field.querySelector("input");
-    if (!inp) return;
-    var cat = inp.getAttribute("data-category") || "";
-    if (checkedCats.indexOf(cat) !== -1) {
-      field.style.display = "";
-      inp.disabled = false;
-      inp.value = "";
-      inp.classList.remove("error", "success-10", "warning-5", "error-0");
-      inp.style.borderColor = "";
-    } else {
-      field.style.display = "none";
-      inp.disabled = true;
-    }
+    // Remove stare listenery, żeby się nie duplikowały
+    const clone = inp.cloneNode(true);
+    inp.parentNode.replaceChild(clone, inp);
   });
 
-  // Remove old custom fields
-  catContainer.querySelectorAll(".game-field--custom").forEach(function (el) {
-    el.remove();
-  });
-
-  // Add custom category fields
-  Object.keys(customCats).forEach(function (name) {
-    var div = document.createElement("div");
-    div.className = "form-group game-field game-field--custom";
-    var label = document.createElement("label");
-    label.setAttribute("for", "cat-custom-" + name);
-    label.textContent = "🔶 " + name;
-    var input = document.createElement("input");
-    input.type = "text";
-    input.className = "game-input";
-    input.id = "cat-custom-" + name;
-    input.setAttribute("data-category", name);
-    input.disabled = false;
-    input.value = "";
-    div.appendChild(label);
-    div.appendChild(input);
-    catContainer.appendChild(div);
-  });
-
-  // Attach event listeners to all enabled inputs
-  var allInputs = catContainer.querySelectorAll("input:not([disabled])");
-  allInputs.forEach(function (inp, i) {
-    ["input", "keydown"].forEach(function (evt) {
-      inp.removeEventListener(evt, inp._pmHandler);
+  // Ponownie łapiemy, bo zrobiliśmy cloneNode
+  const newInputs = document.querySelectorAll("#categories input");
+  newInputs.forEach((inp, i) => {
+    inp.addEventListener("input", (e) => {
+      checkAllFilled();
+      validateFirstLetter(e.target);
     });
-    var handler = function (e) {
-      if (e.type === "input") {
-        checkAllFilled();
-        validateFirstLetter(e.target);
-      } else if (e.key === "Enter") {
-        var siblings = catContainer.querySelectorAll("input:not([disabled])");
-        var idx = Array.prototype.indexOf.call(siblings, e.target);
-        if (idx < siblings.length - 1) {
-          siblings[idx + 1].focus();
-        } else {
-          var stopBtn = document.getElementById("btn-stop");
-          if (!stopBtn.disabled) stopGame();
+
+    // Zgłaszaj odpowiedzi Enterem
+    inp.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        if (i < newInputs.length - 1) newInputs[i + 1].focus();
+        else {
+          const stopBtn = document.getElementById("btn-stop");
+          if (!stopBtn.disabled) stopGame(); // Ostatni input i enter = STOP!
         }
       }
-    };
-    inp._pmHandler = handler;
-    inp.addEventListener("input", handler);
-    inp.addEventListener("keydown", handler);
+    });
   });
 
-  var btnStop = document.getElementById("btn-stop");
+  const btnStop = document.getElementById("btn-stop");
   btnStop.disabled = true;
   delete btnStop.dataset.stopped;
   btnStop.innerHTML = "🛑 STOP!";
 
+  // Przywracamy literę jeśli zniknęła
   if (globalThis.currentLetter) {
     document.getElementById("current-letter").innerHTML =
       globalThis.currentLetter;
@@ -139,12 +91,9 @@ function enableInputs() {
 }
 
 function checkAllFilled() {
-  var inputs = document.querySelectorAll("#categories input:not([disabled])");
-  var allFilled = true;
-  inputs.forEach(function (inp) {
-    if (inp.value.trim().length === 0) allFilled = false;
-  });
-  var stopBtn = document.getElementById("btn-stop");
+  const inputs = Array.from(document.querySelectorAll("#categories input"));
+  const allFilled = inputs.every((inp) => inp.value.trim().length > 0);
+  const stopBtn = document.getElementById("btn-stop");
 
   if (allFilled && !("stopped" in stopBtn.dataset)) {
     stopBtn.disabled = false;
@@ -198,9 +147,9 @@ function validateFirstLetter(inp) {
 }
 
 function disableAndSubmit() {
-  var inputs = document.querySelectorAll("#categories input:not([disabled])");
-  var answers = {};
-  inputs.forEach(function (inp) {
+  const inputs = document.querySelectorAll("#categories input");
+  let answers = {};
+  inputs.forEach((inp) => {
     answers[inp.dataset.category] = inp.value.trim();
     inp.disabled = true;
   });
