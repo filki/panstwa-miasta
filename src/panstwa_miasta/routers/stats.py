@@ -52,13 +52,13 @@ async def get_daily_top() -> dict:
     counts: dict[str, int] = {}
 
     async with connect() as db:
-        db.row_factory = None  # domyslne tuple
-        cursor = await db.execute(
+        async with db.execute(
             "SELECT payload FROM game_transcripts ORDER BY finished_at DESC LIMIT 500"
-        )
-        rows = await cursor.fetchall()
+        ) as cursor:
+            rows = await cursor.fetchall()
 
-    for (payload_json,) in rows:
+    for row in rows:
+        payload_json = row["payload"]
         try:
             data = json.loads(payload_json)
         except (json.JSONDecodeError, TypeError):
