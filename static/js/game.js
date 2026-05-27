@@ -204,8 +204,9 @@ function disableAndSubmit() {
 
 
 /**
- * Udostępnianie linku do pokoju z poziomu lobby (tylko mobile).
- * Używa Web Share API jeśli dostępne, fallback: clipboard, ostatecznie prompt().
+ * Udostępnianie linku do pokoju z poziomu lobby.
+ * Mobile (pointer:coarse): Web Share API → native share sheet.
+ * Desktop (pointer:fine): clipboard.writeText → skopiowanie linku.
  */
 function shareLobbyRoom() {
   const rid = (function () {
@@ -229,7 +230,11 @@ function shareLobbyRoom() {
   }
   const url = `${base}/room/${encodeURIComponent(rid)}`;
 
-  if (typeof globalThis.navigator?.share === "function") {
+  const isTouchDevice =
+    typeof globalThis.matchMedia === "function" &&
+    globalThis.matchMedia("(pointer: coarse)").matches;
+
+  if (isTouchDevice && typeof globalThis.navigator?.share === "function") {
     globalThis.navigator
       .share({
         title: "Państwa-Miasta — dołącz do pokoju!",
@@ -240,7 +245,7 @@ function shareLobbyRoom() {
     return;
   }
 
-  // Fallback: clipboard
+  // Desktop / fallback: clipboard
   if (typeof globalThis.navigator?.clipboard?.writeText === "function") {
     globalThis.navigator.clipboard
       .writeText(url)
