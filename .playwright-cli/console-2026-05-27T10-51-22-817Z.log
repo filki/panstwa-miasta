@@ -1,0 +1,2 @@
+[     356ms] [LOG] Auto-joining room: TESTID @ http://46.62.225.116:8001/static/js/ui.js:1155
+[     381ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://46.62.225.116:8001/static/js/audio.js:8
