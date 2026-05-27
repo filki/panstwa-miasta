@@ -226,20 +226,7 @@ function shareLobbyRoom() {
   }
   const url = `${base}/room/${encodeURIComponent(rid)}`;
 
-  // 1) Capacitor native Share plugin (Android WebView / iOS)
-  //    window.Capacitor jest zawsze wstrzykiwany przez bridge, nawet przy server.url
-  const capShare = globalThis.Capacitor?.Plugins?.Share;
-  if (capShare && typeof capShare.share === "function") {
-    capShare.share({
-      title: "Państwa-Miasta — dołącz do pokoju!",
-      text: `Dołącz do pokoju ${rid} 🎮`,
-      url,
-      dialogTitle: "Udostępnij link",
-    }).catch(() => {});
-    return;
-  }
-
-  // 2) Web Share API (przeglądarki, PWA)
+  // Web Share API (przeglądarki, PWA, Capacitor)
   if (typeof globalThis.navigator?.share === "function") {
     globalThis.navigator
       .share({
