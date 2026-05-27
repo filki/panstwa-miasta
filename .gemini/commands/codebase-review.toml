@@ -1,0 +1,6 @@
+description = "Review an entire codebase against framework best practices and generate a prioritized improvement plan."
+prompt = """
+Please execute the workflow defined in `../../.agents/workflows/codebase-review.md` for: {{args}}
+
+Follow the exact steps in the workflow file.
+"""

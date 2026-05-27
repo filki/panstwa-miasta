@@ -1,0 +1,6 @@
+description = "Turn an approved PRD or implementation goal into SRS/FRS technical requirements (How), architecture, contracts, and verification decisions."
+prompt = """
+Please execute the workflow defined in `../../.agents/workflows/design-solution.md` for: {{args}}
+
+Follow the exact steps in the workflow file.
+"""

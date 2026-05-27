@@ -1,0 +1,39 @@
+registry: https://github.com/HoangNguyen0403/agent-skills-standard
+agents:
+  - gemini
+skills:
+  common:
+    ref: common-v2.1.0
+  javascript:
+    ref: javascript-v1.3.4
+  typescript:
+    ref: typescript-v1.3.3
+  database:
+    ref: database-v1.3.4
+  quality-engineering:
+    ref: quality-engineering-v1.5.0
+workflows:
+  - brainstorm-feature
+  - code-review
+  - codebase-review
+  - deploy-release
+  - design-solution
+  - dev-fix
+  - implement-feature
+  - implementation-readiness
+  - pentest
+  - plan-feature
+  - publish-notes
+  - retro-learn
+  - review-ticket
+  - sdlc
+  - security-test
+  - session-report
+  - skill-benchmark
+  - traceability-audit
+  - verify-bug
+  - verify-work
+mcp:
+  enabled: true
+  scope: project
+  prompted: true

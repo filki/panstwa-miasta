@@ -1,0 +1,6 @@
+description = "Clarify a rough product or engineering idea into a BRD-lite brief (Why) with measurable business value."
+prompt = """
+Please execute the workflow defined in `../../.agents/workflows/brainstorm-feature.md` for: {{args}}
+
+Follow the exact steps in the workflow file.
+"""

@@ -1,0 +1,6 @@
+description = "Route a task to the next synced SDLC workflow based on current artifacts and repo state."
+prompt = """
+Please execute the workflow defined in `../../.agents/workflows/sdlc.md` for: {{args}}
+
+Follow the exact steps in the workflow file.
+"""

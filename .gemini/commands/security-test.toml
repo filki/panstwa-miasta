@@ -1,0 +1,6 @@
+description = "Fast, continuous DevSecOps pipeline for Pull Requests and active branches. Runs SAST, SCA, and secrets detection to catch vulnerabilities before they merge."
+prompt = """
+Please execute the workflow defined in `../../.agents/workflows/security-test.md` for: {{args}}
+
+Follow the exact steps in the workflow file.
+"""

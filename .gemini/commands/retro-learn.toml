@@ -1,0 +1,6 @@
+description = "Convert delivery findings into skill, eval, workflow, and documentation improvements."
+prompt = """
+Please execute the workflow defined in `../../.agents/workflows/retro-learn.md` for: {{args}}
+
+Follow the exact steps in the workflow file.
+"""
