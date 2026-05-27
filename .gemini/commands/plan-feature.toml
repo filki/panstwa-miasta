@@ -1,6 +1,0 @@
-description = "Plan a feature from BRD-lite brief or clear intent into PRD (What), decisions, implementation plan, and task slices."
-prompt = """
-Please execute the workflow defined in `../../.agents/workflows/plan-feature.md` for: {{args}}
-
-Follow the exact steps in the workflow file.
-"""

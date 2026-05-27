@@ -65,6 +65,10 @@ projekt-testowy-*.json
 *.db?mode=ro
 .codegraph/
 
+# Agent artifacts (local-only, tool working directories)
+.playwright-cli/
+.gemini/
+
 # Android keystore (local secrets)
 release.keystore
 android/keystore.properties

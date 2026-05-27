@@ -1,6 +1,0 @@
-description = "Verify feature, bug, UI, API, mobile, security, or deployment work against acceptance criteria."
-prompt = """
-Please execute the workflow defined in `../../.agents/workflows/verify-work.md` for: {{args}}
-
-Follow the exact steps in the workflow file.
-"""

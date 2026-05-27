@@ -1,6 +1,0 @@
-description = "Review a ticket or PR through focused specialist lenses: scope, architecture, security, tests, AC coverage, and PR metadata."
-prompt = """
-Please execute the workflow defined in `../../.agents/workflows/review-ticket.md` for: {{args}}
-
-Follow the exact steps in the workflow file.
-"""

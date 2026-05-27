@@ -1,6 +1,0 @@
-description = "Implement an approved feature plan with fresh-context slices, TDD, evidence, and PR-ready output."
-prompt = """
-Please execute the workflow defined in `../../.agents/workflows/implement-feature.md` for: {{args}}
-
-Follow the exact steps in the workflow file.
-"""

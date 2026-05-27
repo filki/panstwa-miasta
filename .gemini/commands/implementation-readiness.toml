@@ -1,6 +1,0 @@
-description = "Verify BRD-lite, PRD, SRS/FRS, UX, and test prerequisites before implementation starts."
-prompt = """
-Please execute the workflow defined in `../../.agents/workflows/implementation-readiness.md` for: {{args}}
-
-Follow the exact steps in the workflow file.
-"""

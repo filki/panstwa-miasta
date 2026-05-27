@@ -1,6 +1,0 @@
-description = "Capture delivery evidence, commands, changed files, blockers, and standards feedback after a work session."
-prompt = """
-Please execute the workflow defined in `../../.agents/workflows/session-report.md` for: {{args}}
-
-Follow the exact steps in the workflow file.
-"""

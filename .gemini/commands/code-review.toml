@@ -1,6 +1,0 @@
-description = "Run an AI-assisted PR code review using multi-layer lenses with confidence scoring."
-prompt = """
-Please execute the workflow defined in `../../.agents/workflows/code-review.md` for: {{args}}
-
-Follow the exact steps in the workflow file.
-"""
