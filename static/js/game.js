@@ -230,6 +230,20 @@ function shareLobbyRoom() {
   }
   const url = `${base}/room/${encodeURIComponent(rid)}`;
 
+  // Capacitor (Android APK) → native share via plugin
+  const isCapacitor =
+    typeof window !== "undefined" &&
+    (window.Capacitor || window._cordovaNative);
+  if (isCapacitor && window.Capacitor?.Plugins?.Share) {
+    window.Capacitor.Plugins.Share.share({
+      title: "Państwa-Miasta — dołącz do pokoju!",
+      text: `Dołącz do pokoju ${rid} 🎮`,
+      url,
+      dialogTitle: "Udostępnij pokój",
+    }).catch(() => {});
+    return;
+  }
+
   const isTouchDevice =
     typeof globalThis.matchMedia === "function" &&
     globalThis.matchMedia("(pointer: coarse)").matches;

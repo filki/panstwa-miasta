@@ -1,0 +1,81 @@
+1779883997.572586:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='init', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], template_branch='', command=<hermes.commands.init.base.HermesInitCommand object at 0x7f2fdcce9d30>)
+1779883997.572682:          hermes.cli:     DEBUG | Loading settings...
+1779883997.572706:          hermes.cli:     DEBUG | Update settings from command line...
+1779883997.572724:          hermes.cli:      INFO | Run subcommand init
+1779883997.572837:         hermes.init:      INFO | Preparing HERMES initialization
+
+1779883997.577345:         hermes.init:      INFO | Git project using GitHub detected.
+
+1779883997.577381:         hermes.init:      INFO | Starting to initialize HERMES in /home/filki/workspace/panstwa-miasta
+
+1779883997.577405:         hermes.init:      INFO | -- Step 1 of 8: Configure HERMES plugins --
+1779883998.797897:         hermes.init:      INFO | The following plugins are already builtin:
+1779883998.797965:         hermes.init:      INFO | [harvest] [1mCITATION.cff Harvester[0m (builtin)
+1779883998.797986:         hermes.init:      INFO | [harvest] [1mcodemeta.json Harvester[0m (builtin)
+1779883998.798007:         hermes.init:      INFO | [harvest] [1m'file_exists' Harvester[0m (builtin)
+1779883998.798027:         hermes.init:      INFO | [process] [1mMerge[0m (builtin)
+1779883998.798041:         hermes.init:      INFO | [curate] [1mCurate[0m (builtin)
+1779883998.798054:         hermes.init:      INFO | [deposit] [1mInvenio Deposit[0m (builtin)
+1779883998.798067:         hermes.init:      INFO | [deposit] [1mInvenio RDM Deposit[0m (builtin)
+1779883998.798080:         hermes.init:      INFO | [deposit] [1mRodare Deposit[0m (builtin)
+1779883998.798092:         hermes.init:      INFO | [postprocess] [1mInvenio Postprocess[0m (builtin)
+1779883998.798105:         hermes.init:      INFO | [postprocess] [1mInvenio RDM Postprocess[0m (builtin)
+1779883998.798121:         hermes.init:      INFO | The following plugins are available for installation:
+1779883998.798167:         hermes.init:      INFO | Do you want to add a plugin?
+1779884006.636800:         hermes.init:     ERROR | Error: invalid input
+1779884007.516765:         hermes.init:      INFO | You selected "Add hermes-plugin-git".
+
+1779884007.516847:         hermes.init:      INFO | The following plugins are going to be installed:
+1779884007.516870:         hermes.init:      INFO | [harvest] [1mhermes-plugin-git[0m (https://github.com/softwarepub/hermes-plugin-git)
+1779884007.516893:         hermes.init:      INFO | The following plugins are available for installation:
+1779884007.516934:         hermes.init:      INFO | Do you want to add a plugin?
+1779884010.693502:         hermes.init:      INFO | You selected "Add hermes-plugin-python".
+
+1779884010.693585:         hermes.init:      INFO | The following plugins are going to be installed:
+1779884010.693612:         hermes.init:      INFO | [harvest] [1mhermes-plugin-git[0m (https://github.com/softwarepub/hermes-plugin-git)
+1779884010.693636:         hermes.init:      INFO | [harvest] [1mhermes-plugin-python[0m (https://github.com/softwarepub/hermes-plugin-python)
+1779884010.693658:         hermes.init:      INFO | The following plugins are available for installation:
+1779884010.693695:         hermes.init:      INFO | Do you want to add a plugin?
+1779884011.888784:         hermes.init:      INFO | You selected "Add hermes-plugin-software-card".
+
+1779884011.888861:         hermes.init:      INFO | The following plugins are going to be installed:
+1779884011.888882:         hermes.init:      INFO | [harvest] [1mhermes-plugin-git[0m (https://github.com/softwarepub/hermes-plugin-git)
+1779884011.888903:         hermes.init:      INFO | [harvest] [1mhermes-plugin-python[0m (https://github.com/softwarepub/hermes-plugin-python)
+1779884011.888919:         hermes.init:      INFO | [curate] [1mhermes-plugin-software-card[0m (https://github.com/softwarepub/hermes-plugin-software-card)
+1779884011.888969:         hermes.init:      INFO | -- Step 2 of 8: Configure deposition platform and setup method --
+1779884011.888999:         hermes.init:      INFO | Where do you want to publish the software?
+1779884015.202810:         hermes.init:      INFO | You selected "Zenodo (Sandbox)".
+
+1779884015.202913:         hermes.init:      INFO | How do you want to connect Zenodo (Sandbox) with your GitHub CI?
+1779884036.708349:         hermes.init:      INFO | You selected "Automatically (using OAuth / Device Flow)".
+
+1779884036.708440:         hermes.init:      INFO | -- Step 3 of 8: Configure HERMES behaviour --
+1779884036.708467:         hermes.init:      INFO | When should the automated HERMES process start?
+1779884042.895821:         hermes.init:      INFO | You selected "When I push a branch".
+
+1779884046.465859:         hermes.init:      INFO | The HERMES pipeline will be activated when you push on [1mmain[0m
+1779884052.145782:         hermes.init:      INFO | Which other folders / files of your root directory should be included in the Zenodo (Sandbox) upload?
+1779884057.064828:         hermes.init:      INFO | You selected "All (non hidden) folders".
+
+1779884057.064913:         hermes.init:      INFO | Your upload will consist of the following:
+1779884057.064936:         hermes.init:      INFO | 	Unzipped:
+1779884057.064956:         hermes.init:      INFO | 		README.md
+1779884057.064976:         hermes.init:      INFO | 	Zipped:
+1779884057.064998:         hermes.init:      INFO | 		node_modules
+1779884057.065018:         hermes.init:      INFO | 		coverage-js
+1779884057.065036:         hermes.init:      INFO | 		deploy
+1779884057.065051:         hermes.init:      INFO | 		scripts
+1779884057.065068:         hermes.init:      INFO | 		src
+1779884057.065085:         hermes.init:      INFO | 		static
+1779884057.065100:         hermes.init:      INFO | 		tests
+1779884057.065117:         hermes.init:      INFO | 		android
+1779884057.065132:         hermes.init:      INFO | 		logs
+1779884057.065148:         hermes.init:      INFO | 		screenshots
+1779884057.065164:         hermes.init:      INFO | 		swagger-cache
+1779884057.065179:         hermes.init:      INFO | 		tools
+1779884057.065201:         hermes.init:      INFO | -- Step 4 of 8: Create hermes.toml file --
+1779884057.065443:         hermes.init:      INFO | `hermes.toml` was created.
+1779884057.065473:         hermes.init:      INFO | -- Step 5 of 8: Create CITATION.cff file --
+1779884057.065495:         hermes.init:      INFO | Your project does not contain a `CITATION.cff` file (yet). It would be very helpful for saving important metadata which is necessary for publishing.
+1779884071.576244:         hermes.init:   WARNING | HERMES init was aborted.
+1779884071.576322:         hermes.init:      INFO | Cleaning unused files...
