@@ -71,6 +71,8 @@ async def get_slownik_words(category: str, letter: str, limit: int = 200):
     words = CAT_MAP.get(category)
     if words is None and category not in STRUCTURED_TABLES:
         raise HTTPException(404, f"Nieznana kategoria: {category}")
+    if words is None:
+        words = set()
     if category in STRUCTURED_TABLES:
         # Dla strukturalnych — deleguj do search
         return await search_slownik(q=letter, category=category, page=1, per_page=limit)

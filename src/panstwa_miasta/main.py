@@ -10,7 +10,7 @@ from typing import Annotated, Literal, cast
 
 import aiofiles
 import aiosqlite
-from fastapi import FastAPI, Header, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Header, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -22,7 +22,6 @@ from .api_models import (
     AppealIn,
     AppealOut,
     ClientNamePath,
-    CreateRoomIn,
     CreateRoomOut,
     LobbyConfigIn,
     QuickJoinOut,

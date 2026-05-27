@@ -443,6 +443,21 @@
                                 ></canvas>
                             </div>
                         </section>
+
+                        <div class="stats-summary-card" id="stats-summary-card" style="display: none;">
+                            <div class="stats-summary-grid">
+                                <div class="stats-summary-item">
+                                    <span class="stats-summary-val" id="stats-players-val">--</span>
+                                    <span class="stats-summary-lbl">Aktywnych graczy</span>
+                                </div>
+                                <div class="stats-divider" role="separator"></div>
+                                <div class="stats-summary-item">
+                                    <span class="stats-summary-val" id="stats-games-val">--</span>
+                                    <span class="stats-summary-lbl">Rozegranych gier</span>
+                                </div>
+                            </div>
+                            <p class="stats-summary-meta">dane z ostatnich 30 dni</p>
+                        </div>
                     </div>
 
                     <section
@@ -874,6 +889,21 @@
                         document.getElementById(
                             "daily-ticker-card",
                         ).style.display = "none";
+                    });
+
+                fetch("/api/stats/summary")
+                    .then(function (r) {
+                        return r.json();
+                    })
+                    .then(function (data) {
+                        if (data && typeof data.unique_players === "number" && typeof data.total_games === "number") {
+                            document.getElementById("stats-players-val").textContent = data.unique_players.toLocaleString("pl-PL");
+                            document.getElementById("stats-games-val").textContent = data.total_games.toLocaleString("pl-PL");
+                            document.getElementById("stats-summary-card").style.display = "block";
+                        }
+                    })
+                    .catch(function () {
+                        // fail silently, widget stays hidden
                     });
             })();
         </script>

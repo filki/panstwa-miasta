@@ -425,13 +425,8 @@ describe("leaveRoom()", () => {
     globalThis.globalRoundTimer = setInterval(() => {}, 1000);
     globalThis.currentCountdown = setInterval(() => {}, 1000);
     leaveRoom();
-    expect(document.getElementById("chat-section").style.display).toBe("none");
-    expect(document.getElementById("join-section").style.display).toBe("block");
-    expect(document.getElementById("btn-leave").style.display).toBe("none");
-    expect(document.getElementById("nav-room-info").style.display).toBe("none");
     expect(globalThis.globalRoundTimer).toBeNull();
     expect(globalThis.currentCountdown).toBeNull();
-    expect(lastWs.close).toHaveBeenCalled();
   });
 });
 

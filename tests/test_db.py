@@ -42,7 +42,7 @@ async def test_save_room_dispatches_to_redis(mock_redis_dispatch):
     await save_room("test", 5, 90, 0, "host")
     from panstwa_miasta.db import redis_save_room
 
-    redis_save_room.assert_awaited_once_with("test", 5, 90, 0, "host", "public")
+    redis_save_room.assert_awaited_once_with("test", 5, 90, 0, "host", "public", stop_mechanism=1)
 
 
 async def test_save_player_score_dispatches_to_redis(mock_redis_dispatch):

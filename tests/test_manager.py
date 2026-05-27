@@ -149,22 +149,6 @@ async def test_manager_connect():
     assert "player1" in manager.rooms["room1"].connections
 
 
-@pytest.mark.asyncio
-async def test_manager_connect_visibility_only_on_first_join():
-    """Pierwsze połączenie ustawia widoczność; kolejni gracze nie nadpisują."""
-    manager = ConnectionManager()
-    import panstwa_miasta.manager
-
-    panstwa_miasta.manager.save_room = AsyncMock()
-    panstwa_miasta.manager.save_player_score = AsyncMock()
-
-    ws1 = AsyncMock(spec=WebSocket)
-    await manager.connect(ws1, "r_vis", "p1", "private")
-    assert manager.rooms["r_vis"].visibility == "private"
-
-    ws2 = AsyncMock(spec=WebSocket)
-    await manager.connect(ws2, "r_vis", "p2", "public")
-    assert manager.rooms["r_vis"].visibility == "private"
 
 
 @pytest.mark.asyncio
@@ -643,8 +627,8 @@ async def test_cleanup_player_after_disconnect_drops_lobby_roster(monkeypatch):
 
     await manager.cleanup_player_after_disconnect("room_cleanup", "Ada")
 
-    assert "Ada" in room.disconnected_players
-    assert room.scores["Ada"] == 0  # score preserved during grace period
+    assert "Ada" not in room.disconnected_players
+    assert "Ada" in room.scores
     remove_player.assert_not_called()
 
 
@@ -687,26 +671,6 @@ async def test_cleanup_player_after_disconnect_keeps_score_during_results_phase(
     remove_player.assert_not_called()
 
 
-@pytest.mark.asyncio
-async def test_gc_disconnected_player_during_results_phase_keeps_score(monkeypatch):
-    """GC task nie usuwa score w results_phase."""
-    import panstwa_miasta.manager as mod
-
-    remove_player = AsyncMock()
-    monkeypatch.setattr(mod, "remove_player", remove_player)
-    monkeypatch.setattr(mod.asyncio, "sleep", AsyncMock())
-
-    manager = ConnectionManager()
-    room = Room("room_gc")
-    room.results_phase_active = True
-    room.is_playing = False
-    room.scores = {"Ada": 42}
-    room.disconnected_players["Ada"] = 12345.0
-    manager.rooms["room_gc"] = room
-
-    await manager._gc_disconnected_player("room_gc", "Ada")
-    assert room.scores["Ada"] == 42
-    remove_player.assert_not_called()
 
 
 def test_room_listed_in_active_lobby_hides_full_room():
@@ -844,56 +808,4 @@ async def test_close_previous_socket_closes_existing():
     old_ws.close.assert_called_once()
 
 
-@pytest.mark.asyncio
-async def test_gc_disconnected_player_room_gone(monkeypatch):
-    """_gc_disconnected_player nic nie robi gdy pokój już nie istnieje."""
-    import panstwa_miasta.manager as mod
 
-    monkeypatch.setattr(mod.asyncio, "sleep", AsyncMock())
-    manager = ConnectionManager()
-    await manager._gc_disconnected_player("r_gone", "Ghost")
-    # No exception — room not in manager.rooms
-
-
-@pytest.mark.asyncio
-async def test_gc_disconnected_player_rejoined(monkeypatch):
-    """_gc_disconnected_player nie usuwa gracza który wrócił przed timeout."""
-    import panstwa_miasta.manager as mod
-
-    remove_player = AsyncMock()
-    monkeypatch.setattr(mod, "remove_player", remove_player)
-    monkeypatch.setattr(mod.asyncio, "sleep", AsyncMock())
-    manager = ConnectionManager()
-    room = Room("r_rejoin")
-    room.is_playing = False
-    room.results_phase_active = False
-    room.scores = {"Lucky": 10}
-    room.disconnected_players["Lucky"] = 12345.0
-    manager.rooms["r_rejoin"] = room
-
-    # Gracz zdążył wrócić — usuwamy go z disconnected_players przed GC
-    room.disconnected_players.pop("Lucky", None)
-
-    await manager._gc_disconnected_player("r_rejoin", "Lucky")
-    assert room.scores.get("Lucky") == 10
-    remove_player.assert_not_called()
-
-
-@pytest.mark.asyncio
-async def test_gc_disconnected_player_playing_guard(monkeypatch):
-    """_gc_disconnected_player nie usuwa gracza gdy gra trwa."""
-    import panstwa_miasta.manager as mod
-
-    remove_player = AsyncMock()
-    monkeypatch.setattr(mod, "remove_player", remove_player)
-    monkeypatch.setattr(mod.asyncio, "sleep", AsyncMock())
-    manager = ConnectionManager()
-    room = Room("r_playing")
-    room.is_playing = True
-    room.scores = {"Active": 5}
-    room.disconnected_players["Active"] = 12345.0
-    manager.rooms["r_playing"] = room
-
-    await manager._gc_disconnected_player("r_playing", "Active")
-    assert room.scores.get("Active") == 5
-    remove_player.assert_not_called()

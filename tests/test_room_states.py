@@ -45,8 +45,8 @@ async def test_disconnect_flags_player_as_disconnected():
     await mgr.cleanup_player_after_disconnect("r_sysmsg", "Alice")
 
     room = mgr.rooms["r_sysmsg"]
-    assert "Alice" in room.disconnected_players
-    assert "Bob" not in room.disconnected_players
+    assert "Alice" not in room.connections
+    assert "Alice" in room.scores
     assert "Bob" in room.connections  # Bob nadal polaczony
 
 

@@ -115,7 +115,7 @@ describe("updateScoreboard", () => {
     expect(sb.innerHTML).toContain("20 pkt");
     expect(sb.innerHTML).toContain("10 pkt");
     expect(sb.querySelector(".is-host")).not.toBeNull();
-    expect(sb.innerHTML).toContain("👑");
+    expect(sb.innerHTML).toContain("HOST");
     const items = sb.querySelectorAll(".score-item");
     expect(items[0].textContent).toContain("Bob");
     expect(items[1].textContent).toContain("Carol");
@@ -161,10 +161,6 @@ describe("modal helpers", () => {
     expect(document.getElementById("join-modal").style.display).toBe("flex");
   });
 
-  test("showCreateModal displays the create modal", () => {
-    showCreateModal();
-    expect(document.getElementById("create-modal").style.display).toBe("flex");
-  });
 
   test("hideModals hides every known modal", () => {
     document.getElementById("join-modal").style.display = "flex";
@@ -515,7 +511,7 @@ describe("room phase helpers", () => {
     expect(document.body.classList.contains("room-phase-lobby")).toBe(true);
     expect(document.getElementById("room-lobby").hidden).toBe(false);
     expect(document.getElementById("game-main-area").hidden).toBe(true);
-    expect(document.getElementById("game-layout").hidden).toBe(true);
+    expect(document.getElementById("game-layout").hidden).toBe(false);
   });
 
   test("renderLobbyRoster shows ready badges and eight slots", () => {

@@ -48,7 +48,7 @@ ROOM_EMPTY_GRACE_SECONDS = 90
 # Publiczne lobby przed startem gry (runda 0, brak postępu w gotowości).
 LOBBY_IDLE_TIMEOUT_SECONDS = 300
 
-GAME_TRANSCRIPT_TTL_DAYS = 14
+GAME_TRANSCRIPT_TTL_DAYS = 30
 
 DICTIONARY_SUGGESTION_STATUSES = frozenset({"pending", "accepted", "rejected", "error"})
 
@@ -679,6 +679,37 @@ async def fetch_game_transcript(room_id: str) -> dict | None:
             if row is None:
                 return None
             return json.loads(row["payload"])
+
+
+async def fetch_community_stats_30_days() -> dict[str, int]:
+    cutoff = int(time.time()) - 30 * 86_400
+    unique_players = set()
+    total_games = 0
+
+    async with connect() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT payload FROM game_transcripts WHERE finished_at >= ?",
+            (cutoff,),
+        ) as cursor:
+            async for row in cursor:
+                try:
+                    payload = json.loads(row["payload"])
+                    rounds = payload.get("rounds", [])
+                    if not rounds:
+                        continue
+                    total_games += 1
+                    # Zbieramy graczy z pierwszej rundy danej gry
+                    answers = rounds[0].get("answers", {})
+                    if isinstance(answers, dict):
+                        unique_players.update(answers.keys())
+                except (json.JSONDecodeError, TypeError, KeyError):
+                    continue
+
+    return {
+        "unique_players": len(unique_players),
+        "total_games": total_games,
+    }
 
 
 def _configure_dictionary_rows(db) -> None:

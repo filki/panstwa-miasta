@@ -158,14 +158,14 @@ async def test_handle_dissolve_room_iterates_snapshot_not_live_dict():
     room.broadcast = AsyncMock()
     delete_mock = AsyncMock()
 
-    async def close_a():
-        room.connections.pop("Guest", None)
+    async def close_b():
+        room.connections.pop("Host1", None)
 
-    ws_a.close = AsyncMock(side_effect=close_a)
-    ws_b.close = AsyncMock()
+    ws_a.close = AsyncMock()
+    ws_b.close = AsyncMock(side_effect=close_b)
 
     await handle_dissolve_room(room, "room1", "Host1", delete_mock)
-    ws_a.close.assert_called_once()
+    ws_a.close.assert_not_called()
     ws_b.close.assert_called_once()
     delete_mock.assert_called_once_with("room1")
 

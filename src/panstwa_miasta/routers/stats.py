@@ -59,12 +59,14 @@ async def get_daily_top() -> dict:
     counts: dict[str, int] = {}
     total_games_with_letter = 0
 
-    async with connect() as db:
-        async with db.execute(
+    async with (
+        connect() as db,
+        db.execute(
             "SELECT payload FROM game_transcripts WHERE finished_at >= ? ORDER BY finished_at DESC",
             (cutoff,),
-        ) as cursor:
-            rows = await cursor.fetchall()
+        ) as cursor,
+    ):
+        rows = await cursor.fetchall()
 
     for row in rows:
         payload_json = row["payload"]
@@ -83,7 +85,7 @@ async def get_daily_top() -> dict:
             answers = rnd.get("answers", {})
             for player_answers in answers.values():
                 kraj = (player_answers.get("Państwo") or "").strip()
-                if not kraj or not kraj[0].upper() == letter:
+                if not kraj or kraj[0].upper() != letter:
                     continue
                 countries_in_game.add(kraj.capitalize())
 
@@ -110,3 +112,23 @@ async def get_daily_top() -> dict:
         "total_games": total_games_with_letter,
         "top": top,
     }
+
+
+_stats_cache: dict = {}
+_stats_cache_expires_at: float = 0.0
+
+
+@router.get("/summary")
+async def get_community_summary() -> dict:
+    global _stats_cache, _stats_cache_expires_at
+    now = time.time()
+    if now < _stats_cache_expires_at:
+        return _stats_cache
+
+    from ..db import fetch_community_stats_30_days
+
+    data = await fetch_community_stats_30_days()
+
+    _stats_cache = data
+    _stats_cache_expires_at = now + 300  # 5 minut cache
+    return data
