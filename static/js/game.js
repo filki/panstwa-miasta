@@ -201,12 +201,8 @@ function disableAndSubmit() {
   document.getElementById("btn-stop").disabled = true;
   sendJson({ type: "answers", answers: answers });
 }
-
-
 /**
- * Udostępnianie linku do pokoju z poziomu lobby.
- * Mobile (pointer:coarse): Web Share API → native share sheet.
- * Desktop (pointer:fine): clipboard.writeText → skopiowanie linku.
+ * Priority: Capacitor native Share → Web Share API → clipboard.
  */
 function shareLobbyRoom() {
   const rid = (function () {
@@ -230,7 +226,20 @@ function shareLobbyRoom() {
   }
   const url = `${base}/room/${encodeURIComponent(rid)}`;
 
-  // Web Share API — jeśli dostępna, użyj (działa w Android WebView / Capacitor)
+  // 1) Capacitor native Share plugin (Android WebView / iOS)
+  //    window.Capacitor jest zawsze wstrzykiwany przez bridge, nawet przy server.url
+  const capShare = globalThis.Capacitor?.Plugins?.Share;
+  if (capShare && typeof capShare.share === "function") {
+    capShare.share({
+      title: "Państwa-Miasta — dołącz do pokoju!",
+      text: `Dołącz do pokoju ${rid} 🎮`,
+      url,
+      dialogTitle: "Udostępnij link",
+    }).catch(() => {});
+    return;
+  }
+
+  // 2) Web Share API (przeglądarki, PWA)
   if (typeof globalThis.navigator?.share === "function") {
     globalThis.navigator
       .share({
@@ -242,7 +251,7 @@ function shareLobbyRoom() {
     return;
   }
 
-  // Desktop / fallback: clipboard
+  // 3) Fallback: clipboard
   if (typeof globalThis.navigator?.clipboard?.writeText === "function") {
     globalThis.navigator.clipboard
       .writeText(url)
@@ -259,7 +268,7 @@ function shareLobbyRoom() {
     return;
   }
 
-  // Last-resort fallback
+  // 4) Last-resort fallback
   try {
     globalThis.prompt("Skopiuj link do pokoju:", url);
   } catch (e) {
