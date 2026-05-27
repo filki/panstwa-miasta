@@ -535,7 +535,41 @@ button {
 
 @utility room-lobby-actions {
     display: flex;
+    align-items: center;
     justify-content: center;
+    gap: var(--space-3);
+}
+
+@utility btn-share-lobby {
+    display: none;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: var(--tap);
+    min-width: var(--tap);
+    padding: 0.65rem 1.1rem;
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.12s ease;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+/* Visible only on touch/mobile (no fine pointer = no mouse) */
+@media (pointer: coarse) {
+    .btn-share-lobby {
+        display: inline-flex;
+    }
+}
+
+.btn-share-lobby:active {
+    transform: scale(0.96);
+    background: var(--surface-3, #e8e4d0);
 }
 
 @utility layout-grid {

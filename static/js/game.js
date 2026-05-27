@@ -202,6 +202,69 @@ function disableAndSubmit() {
   sendJson({ type: "answers", answers: answers });
 }
 
+
+/**
+ * Udostępnianie linku do pokoju z poziomu lobby (tylko mobile).
+ * Używa Web Share API jeśli dostępne, fallback: clipboard, ostatecznie prompt().
+ */
+function shareLobbyRoom() {
+  const rid = (function () {
+    try {
+      const parts = globalThis.location.pathname.split("/");
+      if (parts.length >= 3 && parts[1] === "room") return parts[2];
+    } catch (e) {
+      // ignore
+    }
+    const el = document.getElementById("lobby-room-code");
+    return el ? el.textContent.trim().replace(/^—$/, "") : "";
+  })();
+
+  if (!rid) return;
+
+  let base = "";
+  try {
+    base = globalThis.location.origin || "";
+  } catch (e) {
+    // ignore
+  }
+  const url = `${base}/room/${encodeURIComponent(rid)}`;
+
+  if (typeof globalThis.navigator?.share === "function") {
+    globalThis.navigator
+      .share({
+        title: "Państwa-Miasta — dołącz do pokoju!",
+        text: `Dołącz do pokoju ${rid} 🎮`,
+        url,
+      })
+      .catch(() => {});
+    return;
+  }
+
+  // Fallback: clipboard
+  if (typeof globalThis.navigator?.clipboard?.writeText === "function") {
+    globalThis.navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        if (typeof addLog === "function") {
+          addLog("<em>Skopiowano link do schowka.</em>", "system-msg");
+        }
+      })
+      .catch(() => {
+        if (typeof addLog === "function") {
+          addLog("<em>Nie udało się skopiować — skopiuj link ręcznie.</em>", "system-msg");
+        }
+      });
+    return;
+  }
+
+  // Last-resort fallback
+  try {
+    globalThis.prompt("Skopiuj link do pokoju:", url);
+  } catch (e) {
+    // ignore
+  }
+}
+
 if (typeof module !== "undefined") {
   module.exports = {
     toggleReady,
@@ -212,5 +275,6 @@ if (typeof module !== "undefined") {
     checkAllFilled,
     validateFirstLetter,
     disableAndSubmit,
+    shareLobbyRoom,
   };
 }
