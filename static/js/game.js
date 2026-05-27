@@ -230,12 +230,8 @@ function shareLobbyRoom() {
   }
   const url = `${base}/room/${encodeURIComponent(rid)}`;
 
-  // Mobile touch device → Web Share API (działa w Android WebView / Capacitor)
-  const isTouchDevice =
-    typeof globalThis.matchMedia === "function" &&
-    globalThis.matchMedia("(pointer: coarse)").matches;
-
-  if (isTouchDevice && typeof globalThis.navigator?.share === "function") {
+  // Web Share API — jeśli dostępna, użyj (działa w Android WebView / Capacitor)
+  if (typeof globalThis.navigator?.share === "function") {
     globalThis.navigator
       .share({
         title: "Państwa-Miasta — dołącz do pokoju!",
