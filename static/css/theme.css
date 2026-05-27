@@ -541,7 +541,7 @@ button {
 }
 
 @utility btn-share-lobby {
-    display: none;
+    display: inline-flex;
     align-items: center;
     gap: 0.45rem;
     min-height: var(--tap);
@@ -560,15 +560,12 @@ button {
     user-select: none;
 }
 
-/* Visible only on touch/mobile (no fine pointer = no mouse) */
-@media (pointer: coarse) {
-    .btn-share-lobby {
-        display: inline-flex;
-    }
-}
-
 .btn-share-lobby:active {
     transform: scale(0.96);
+    background: var(--surface-3, #e8e4d0);
+}
+
+.btn-share-lobby:hover:not(:active) {
     background: var(--surface-3, #e8e4d0);
 }
 
