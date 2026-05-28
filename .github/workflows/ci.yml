@@ -108,21 +108,13 @@ jobs:
         with:
           name: coverage-js
           path: coverage-js
-      - name: SonarQube Cloud Scan (attempt 1)
-        id: sonar1
-        continue-on-error: true
-        uses: SonarSource/sonarqube-scan-action@v7
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      - name: SonarQube Cloud Scan (attempt 2)
-        if: steps.sonar1.outcome == 'failure'
-        id: sonar2
-        continue-on-error: true
-        uses: SonarSource/sonarqube-scan-action@v7
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      - name: SonarQube Cloud Scan (attempt 3)
-        if: steps.sonar2.outcome == 'failure'
+      # Fix: v7 auto-provisions JRE from SonarCloud API and gets 403;
+      # pre-installing Java skips JRE provisioning entirely.
+      - uses: actions/setup-java@v7
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: SonarQube Cloud Scan
         uses: SonarSource/sonarqube-scan-action@v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
