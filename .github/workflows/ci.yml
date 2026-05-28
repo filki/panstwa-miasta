@@ -112,7 +112,8 @@ jobs:
         run: |
           wget -q https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-6.2.1.4610-linux-x64.zip
           unzip -q -o sonar-scanner-cli-6.2.1.4610-linux-x64.zip
-          ./sonar-scanner-6.2.1.4610-linux-x64/bin/sonar-scanner
+          ./sonar-scanner-6.2.1.4610-linux-x64/bin/sonar-scanner \
+            -Dsonar.token="$SONAR_TOKEN"
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       # Quality Gate is informational only — does not block deploy.
