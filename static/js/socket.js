@@ -4,7 +4,7 @@ let isLeaving = false; // flag to suppress auto-reconnect on manual leave
 let leftByUser = false; // distinguish "user navigated away" from "room dissolved"
 let pmHadRoundStarted = false;
 let pmWsGeneration = 0;
-var PM_SERVER_ORIGIN =
+let PM_SERVER_ORIGIN =
   typeof window !== "undefined" && (window.Capacitor || window._cordovaNative)
     ? "https://panstwamiasta.com.pl"
     : null;
@@ -93,15 +93,15 @@ function leaveRoom() {
 }
 
 function showLeaveConfirmModal() {
-  var existing = document.getElementById("leave-confirm-overlay");
+  let existing = document.getElementById("leave-confirm-overlay");
   if (existing) existing.remove();
 
-  var overlay = document.createElement("div");
+  let overlay = document.createElement("div");
   overlay.id = "leave-confirm-overlay";
   overlay.style.cssText =
     "position:fixed;inset:0;z-index:2500;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);padding:1rem;";
 
-  var card = document.createElement("div");
+  let card = document.createElement("div");
   card.style.cssText =
     "background:#fff;border-radius:20px;padding:1.5rem;max-width:320px;width:100%;text-align:center;box-shadow:0 25px 50px -12px rgba(0,0,0,0.18);font-family:Inter,system-ui,sans-serif;";
 
@@ -236,11 +236,11 @@ function _resolveConnectionSettings() {
 }
 
 function _buildWsUrl(roomId) {
-  var baseHost = globalThis.location.host;
-  var protocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
+  let baseHost = globalThis.location.host;
+  let protocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
   // W Capacitor WebView laczymy sie z serwerem produkcyjnym
   if (typeof window !== "undefined" && window.PM_WS_BASE) {
-    var url = new URL(window.PM_WS_BASE);
+    let url = new URL(window.PM_WS_BASE);
     baseHost = url.host;
   }
   const encNick = encodeURIComponent(myNick);
@@ -303,7 +303,7 @@ function connect() {
   socket.onopen = () => {
     if (socketGeneration !== pmWsGeneration) return;
     // Zapis sesji dla reconnect po zamknieciu apki/przegladarki
-    var activeRoom = _detectRoomId();
+    let activeRoom = _detectRoomId();
     if (activeRoom) {
       localStorage.setItem("pm_active_room", activeRoom);
       localStorage.setItem("pm_active_nick", myNick);
@@ -508,25 +508,25 @@ function onRoundStartedResume(msg) {
 }
 
 function injectCustomCategoryFields() {
-  var config = globalThis.pmLastConfig;
+  let config = globalThis.pmLastConfig;
   if (!config || !config.custom_categories) return;
-  var names = Object.keys(config.custom_categories);
+  let names = Object.keys(config.custom_categories);
   if (names.length === 0) return;
-  var container = document.getElementById("categories");
+  let container = document.getElementById("categories");
   if (!container) return;
   names.forEach(function (name) {
-    var safe = name
+    let safe = name
       .replace(/[^a-zA-Z0-9\u00C0-\u024f\u0400-\u04FF]+/g, "-")
       .toLowerCase();
-    var existing = document.getElementById("cat-custom-" + safe);
+    let existing = document.getElementById("cat-custom-" + safe);
     if (existing) return;
-    var div = document.createElement("div");
+    let div = document.createElement("div");
     div.className = "form-group game-field";
-    var label = document.createElement("label");
+    let label = document.createElement("label");
     label.textContent = "\u2728 " + name;
     label.htmlFor = "cat-custom-" + safe;
     div.appendChild(label);
-    var inp = document.createElement("input");
+    let inp = document.createElement("input");
     inp.type = "text";
     inp.className = "game-input";
     inp.id = "cat-custom-" + safe;
@@ -539,7 +539,7 @@ function injectCustomCategoryFields() {
 
 function cleanupCustomCategoryFields() {
   document.querySelectorAll("#categories .game-field").forEach(function (el) {
-    var inp = el.querySelector("input");
+    let inp = el.querySelector("input");
     if (
       inp &&
       inp.dataset.category &&
@@ -702,6 +702,46 @@ function buildPlayerResultHtml(player, rScore, pAnswers, viewerNick) {
   );
 }
 
+function _buildVetoHtml(cat, player, viewer, isFinal, hasAns, tallies) {
+  if (cat === "Rzecz" && !isFinal && player !== viewer && hasAns) {
+    const tally = tallies[player] || {};
+    const tak = typeof tally.tak === "number" ? tally.tak : 0;
+    const nie = typeof tally.nie === "number" ? tally.nie : 0;
+    return `<span class="round-results-veto-tally" aria-hidden="true">${tak}·${nie}</span><div class="round-results-veto-actions" data-veto-target="${escapeHtml(player)}"><button type="button" class="round-results-veto-btn round-results-veto-btn--up" data-target="${escapeHtml(player)}" data-vote="tak" aria-label="Zatwierdź odpowiedź">👍</button><button type="button" class="round-results-veto-btn round-results-veto-btn--down" data-target="${escapeHtml(player)}" data-vote="nie" aria-label="Odrzuć odpowiedź">👎</button></div>`;
+  }
+  return "";
+}
+
+function _buildCustomCatVetoHtml(vetoKey, tallies, isFinal, player, viewer, hasAns, cat) {
+  if (
+    ROUND_RESULT_CATEGORIES.indexOf(cat) === -1 &&
+    !isFinal &&
+    player !== viewer &&
+    hasAns
+  ) {
+    const ctally = tallies[vetoKey] || {};
+    const cTak = typeof ctally.tak === "number" ? ctally.tak : 0;
+    const cNie = typeof ctally.nie === "number" ? ctally.nie : 0;
+    return `<span class="round-results-veto-tally" aria-hidden="true">${cTak}·${cNie}</span><div class="round-results-veto-actions"><button type="button" class="round-results-veto-btn round-results-veto-btn--up" data-target="${escapeHtml(player)}" data-cat="${escapeHtml(cat)}" data-vote="tak" aria-label="Zatwierdź">👍</button><button type="button" class="round-results-veto-btn round-results-veto-btn--down" data-target="${escapeHtml(player)}" data-cat="${escapeHtml(cat)}" data-vote="nie" aria-label="Odrzuć">👎</button></div>`;
+  }
+  return "";
+}
+
+function _buildAppealHtml(allowAppeals, player, viewer, pts, roundNumber, roomId, cat) {
+  if (allowAppeals && player === viewer && pts === 0 && roundNumber > 0 && roomId) {
+    return `<button type="button" class="postgame-appeal-btn" data-room-id="${escapeHtml(roomId)}" data-round="${roundNumber}" data-category="${escapeHtml(cat)}">Wyjaśnij</button><div class="postgame-appeal-result" hidden></div>`;
+  }
+  return "";
+}
+
+function _buildWordReportHtml(allowAppeals, player, viewer, pts, hasAns, roundLetter, cat, raw) {
+  if (allowAppeals && player === viewer && pts === 0 && hasAns && roundLetter.length === 1) {
+    const wordText = String(raw).trim();
+    return `<button type="button" class="postgame-word-report-btn" data-word="${escapeHtml(wordText)}" data-category="${escapeHtml(cat)}" data-letter="${escapeHtml(roundLetter)}">Zapisz do słownika</button><div class="postgame-word-report-result" hidden></div>`;
+  }
+  return "";
+}
+
 function buildResultCell(
   cat,
   hasAns,
@@ -716,48 +756,13 @@ function buildResultCell(
   roomId,
   roundLetter,
 ) {
-  let vetoKey = player;
-  if (ROUND_RESULT_CATEGORIES.indexOf(cat) === -1) {
-    vetoKey = player + "::" + cat;
-  }
+  const vetoKey =
+    ROUND_RESULT_CATEGORIES.indexOf(cat) === -1 ? player + "::" + cat : player;
   let cell = `<div class="round-results-cell"><span class="round-results-val">${hasAns ? escapeHtml(String(raw).trim()) : "—"}</span><span class="${roundResultsPtsClass(pts)}">${pts}</span>`;
-  if (cat === "Rzecz" && !isFinal && player !== viewer && hasAns) {
-    const tally = tallies[player] || {};
-    const tak = typeof tally.tak === "number" ? tally.tak : 0;
-    const nie = typeof tally.nie === "number" ? tally.nie : 0;
-    cell += `<span class="round-results-veto-tally" aria-hidden="true">${tak}·${nie}</span><div class="round-results-veto-actions" data-veto-target="${escapeHtml(player)}"><button type="button" class="round-results-veto-btn round-results-veto-btn--up" data-target="${escapeHtml(player)}" data-vote="tak" aria-label="Zatwierdź odpowiedź">👍</button><button type="button" class="round-results-veto-btn round-results-veto-btn--down" data-target="${escapeHtml(player)}" data-vote="nie" aria-label="Odrzuć odpowiedź">👎</button></div>`;
-  }
-  // Custom category veto
-  if (
-    ROUND_RESULT_CATEGORIES.indexOf(cat) === -1 &&
-    !isFinal &&
-    player !== viewer &&
-    hasAns
-  ) {
-    var ctally = tallies[vetoKey] || {};
-    var cTak = typeof ctally.tak === "number" ? ctally.tak : 0;
-    var cNie = typeof ctally.nie === "number" ? ctally.nie : 0;
-    cell += `<span class="round-results-veto-tally" aria-hidden="true">${cTak}·${cNie}</span><div class="round-results-veto-actions"><button type="button" class="round-results-veto-btn round-results-veto-btn--up" data-target="${escapeHtml(player)}" data-cat="${escapeHtml(cat)}" data-vote="tak" aria-label="Zatwierdź">👍</button><button type="button" class="round-results-veto-btn round-results-veto-btn--down" data-target="${escapeHtml(player)}" data-cat="${escapeHtml(cat)}" data-vote="nie" aria-label="Odrzuć">👎</button></div>`;
-  }
-  if (
-    allowAppeals &&
-    player === viewer &&
-    pts === 0 &&
-    roundNumber > 0 &&
-    roomId
-  ) {
-    cell += `<button type="button" class="postgame-appeal-btn" data-room-id="${escapeHtml(roomId)}" data-round="${roundNumber}" data-category="${escapeHtml(cat)}">Wyjaśnij</button><div class="postgame-appeal-result" hidden></div>`;
-  }
-  if (
-    allowAppeals &&
-    player === viewer &&
-    pts === 0 &&
-    hasAns &&
-    roundLetter.length === 1
-  ) {
-    const wordText = String(raw).trim();
-    cell += `<button type="button" class="postgame-word-report-btn" data-word="${escapeHtml(wordText)}" data-category="${escapeHtml(cat)}" data-letter="${escapeHtml(roundLetter)}">Zapisz do słownika</button><div class="postgame-word-report-result" hidden></div>`;
-  }
+  cell += _buildVetoHtml(cat, player, viewer, isFinal, hasAns, tallies);
+  cell += _buildCustomCatVetoHtml(vetoKey, tallies, isFinal, player, viewer, hasAns, cat);
+  cell += _buildAppealHtml(allowAppeals, player, viewer, pts, roundNumber, roomId, cat);
+  cell += _buildWordReportHtml(allowAppeals, player, viewer, pts, hasAns, roundLetter, cat, raw);
   cell += "</div>";
   return cell;
 }
@@ -765,7 +770,7 @@ function buildResultCell(
 function buildRoundResultsHtml(msg, options = {}) {
   const variant = options.variant === "overlay" ? "overlay" : "sidebar";
   // Active standard categories — fall back to full list if not provided
-  var activeCats =
+  let activeCats =
     msg.categories &&
     msg.categories instanceof Array &&
     msg.categories.length > 0
@@ -794,12 +799,12 @@ function buildRoundResultsHtml(msg, options = {}) {
   const players = sortRoundResultPlayers(scores, viewer);
 
   // Detect custom categories from score details
-  var customCats = [];
-  for (var pi = 0; pi < players.length; pi++) {
-    var pdet = scores[players[pi]] && scores[players[pi]].details;
+  let customCats = [];
+  for (let pi = 0; pi < players.length; pi++) {
+    let pdet = scores[players[pi]] && scores[players[pi]].details;
     if (pdet) {
-      var keys = Object.keys(pdet);
-      for (var ki = 0; ki < keys.length; ki++) {
+      let keys = Object.keys(pdet);
+      for (let ki = 0; ki < keys.length; ki++) {
         if (
           ROUND_RESULT_CATEGORIES.indexOf(keys[ki]) === -1 &&
           customCats.indexOf(keys[ki]) === -1
@@ -814,7 +819,7 @@ function buildRoundResultsHtml(msg, options = {}) {
   for (const cat of activeCats) {
     html += `<th scope="col">${escapeHtml(cat)}</th>`;
   }
-  for (var ci = 0; ci < customCats.length; ci++) {
+  for (let ci = 0; ci < customCats.length; ci++) {
     html += `<th scope="col">${escapeHtml(customCats[ci])}</th>`;
   }
   html += `<th scope="col">Suma</th></tr></thead><tbody>`;
@@ -849,13 +854,13 @@ function buildRoundResultsHtml(msg, options = {}) {
       html += `<td class="round-results-td">${cell}</td>`;
     }
     // Custom category columns
-    for (var cci = 0; cci < customCats.length; cci++) {
-      var ccat = customCats[cci];
-      var craw = answers[ccat];
-      var chasAns = craw != null && String(craw).trim() !== "";
-      var cptsRaw = rScore.details?.[ccat];
-      var cpts = typeof cptsRaw === "number" ? cptsRaw : 0;
-      var ccell = buildResultCell(
+    for (let cci = 0; cci < customCats.length; cci++) {
+      let ccat = customCats[cci];
+      let craw = answers[ccat];
+      let chasAns = craw != null && String(craw).trim() !== "";
+      let cptsRaw = rScore.details?.[ccat];
+      let cpts = typeof cptsRaw === "number" ? cptsRaw : 0;
+      let ccell = buildResultCell(
         ccat,
         chasAns,
         craw,
@@ -918,7 +923,7 @@ function bindRoundResultsVeto(root) {
       const vote = btn.dataset.vote;
       const cat = btn.dataset.cat || "";
       if (!target || !vote) return;
-      var payload = { type: "veto_vote", target: target, vote: vote };
+      let payload = { type: "veto_vote", target: target, vote: vote };
       if (cat) payload.cat = cat;
       sendJson(payload);
       btn

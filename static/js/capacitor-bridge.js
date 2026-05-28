@@ -3,9 +3,9 @@
 // is-mobile:  ekran < 1024px (mobile-first breakpoint)
 // is-desktop: ekran >= 1024px
 (function () {
-  var html = document.documentElement;
+  let html = document.documentElement;
 
-  var IS_CAPACITOR =
+  let IS_CAPACITOR =
     typeof window !== "undefined" &&
     (window.Capacitor || window._cordovaNative);
 
@@ -14,7 +14,7 @@
   }
 
   function updateBreakpoint() {
-    var isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+    let isDesktop = window.matchMedia("(min-width: 1024px)").matches;
     html.classList.toggle("is-desktop", isDesktop);
     html.classList.toggle("is-mobile", !isDesktop);
   }
@@ -23,8 +23,8 @@
   window.addEventListener("resize", updateBreakpoint);
 
   // Sprawdz czy jest niedokonczona sesja (po zamknieciu apki/przegladarki)
-  var savedRoom = localStorage.getItem("pm_active_room");
-  var savedNick = localStorage.getItem("pm_active_nick");
+  let savedRoom = localStorage.getItem("pm_active_room");
+  let savedNick = localStorage.getItem("pm_active_nick");
   if (savedRoom && savedNick && window.location.pathname === "/") {
     document.addEventListener("DOMContentLoaded", function () {
       setTimeout(function () {
@@ -35,12 +35,12 @@
 })();
 
 function showReconnectDialog(roomId, nick) {
-  var overlay = document.createElement("div");
+  let overlay = document.createElement("div");
   overlay.id = "reconnect-overlay";
   overlay.style.cssText =
     "position:fixed;inset:0;z-index:2500;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.82);backdrop-filter:blur(6px);padding:1rem;";
 
-  var card = document.createElement("div");
+  let card = document.createElement("div");
   card.style.cssText =
     "background:#fff;border-radius:20px;padding:1.5rem;max-width:340px;width:100%;text-align:center;box-shadow:0 25px 50px -12px rgba(49,126,157,0.18);";
 

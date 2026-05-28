@@ -65,7 +65,13 @@ STRUCTURED_TABLES = {
 }
 
 
-@router.get("/slownik/{category}/{letter}")
+@router.get(
+    "/slownik/{category}/{letter}",
+    responses={
+        404: {"description": "Nieznana kategoria"},
+        400: {"description": "Podaj pojedyncza litere"},
+    },
+)
 async def get_slownik_words(category: str, letter: str, limit: int = 200):
     """Zwraca slowa dla kategorii + litery z pamieci (ladowanej przy starcie)."""
     words = CAT_MAP.get(category)
