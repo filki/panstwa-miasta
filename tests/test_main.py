@@ -61,7 +61,7 @@ def test_legal_pages_and_injected_footer(path: str, needle: str, canonical: str)
     assert "site-footer" in response.text
     assert "/regulamin" in response.text
     assert "buycoffee.to/filki" in response.text
-    assert "rel=\"canonical\"" in response.text
+    assert 'rel="canonical"' in response.text
     assert canonical in response.text
     assert 'property="og:title"' in response.text
 

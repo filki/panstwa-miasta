@@ -96,7 +96,9 @@ class TestCallLlm:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "choices": [{"message": {"content": '{"verdict": "suggest_seed", "explanation": "Poprawne"}'}}]
+            "choices": [
+                {"message": {"content": '{"verdict": "suggest_seed", "explanation": "Poprawne"}'}}
+            ]
         }
 
         with (
@@ -194,7 +196,10 @@ class TestMaybeEnqueueDictionarySuggestion:
                     }
                 ),
             ),
-            patch("panstwa_miasta.appeals_llm.insert_dictionary_suggestion", AsyncMock(return_value=42)),
+            patch(
+                "panstwa_miasta.appeals_llm.insert_dictionary_suggestion",
+                AsyncMock(return_value=42),
+            ),
         ):
             result = await maybe_enqueue_dictionary_suggestion(
                 room_id="r1",

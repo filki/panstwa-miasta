@@ -149,8 +149,6 @@ async def test_manager_connect():
     assert "player1" in manager.rooms["room1"].connections
 
 
-
-
 @pytest.mark.asyncio
 async def test_manager_disconnect(monkeypatch):
     import panstwa_miasta.manager as mod
@@ -671,8 +669,6 @@ async def test_cleanup_player_after_disconnect_keeps_score_during_results_phase(
     remove_player.assert_not_called()
 
 
-
-
 def test_room_listed_in_active_lobby_hides_full_room():
     from panstwa_miasta.manager import Room, room_listed_in_active_lobby
 
@@ -806,6 +802,3 @@ async def test_close_previous_socket_closes_existing():
     room.connections = {"Rejoin": old_ws}
     await manager._close_previous_socket(room, "Rejoin", "r_old")
     old_ws.close.assert_called_once()
-
-
-
