@@ -1,0 +1,312 @@
+#!/usr/bin/env bash
+# pm-prompt — interactive prompt template collector
+# Usage: pm-prompt <feature|fix|review|config>
+# Multi-phase: main info → deploy? → cleanup?
+set -euo pipefail
+
+TEMPLATE_TYPE="${1:-}"
+OUTPUT_FILE="/tmp/pm-prompt-output.md"
+
+usage() {
+    echo "Usage: pm-prompt <feature|fix|review|config>"
+    echo ""
+    echo "Templates:"
+    echo "  feature — New feature: plan + deploy + cleanup"
+    echo "  fix     — Bug fix: diagnose + (hotfix)deploy + cleanup"
+    echo "  review  — Code review / PR (standalone)"
+    echo "  config  — Config / infra change: describe + deploy + cleanup"
+    exit 1
+}
+
+# Read multi-line input from stdin until Ctrl-D
+read_multiline() {
+    local input=""
+    local line
+    while IFS= read -r line; do
+        input="${input}${line}"$'\n'
+    done
+    # Remove trailing newline
+    input="${input%"$'\n'"}"
+    # If it's a heredoc artifact, just return as-is
+    echo "$input"
+}
+
+# Ask yes/no, default yes
+ask_yesno() {
+    local prompt="$1"
+    local default="${2:-y}"
+    local answer
+    if [ "$default" = "y" ]; then
+        read -r -p "$prompt [Y/n]: " answer
+        case "$answer" in
+            n|N|no|No) return 1 ;;
+            *) return 0 ;;
+        esac
+    else
+        read -r -p "$prompt [y/N]: " answer
+        case "$answer" in
+            y|Y|yes|Yes) return 0 ;;
+            *) return 1 ;;
+        esac
+    fi
+}
+
+# Ask a multi-line field
+ask_field() {
+    local key="$1"
+    local prompt="$2"
+    echo ""
+    echo "--- $prompt ---"
+    echo "(wpisz, Ctrl-D konczy. Sam Enter = puste):"
+    local val
+    val=$(read_multiline)
+    eval "$key=\"\$val\""
+}
+
+# Ask a single-line field
+ask_line() {
+    local key="$1"
+    local prompt="$2"
+    echo ""
+    read -r -p "$prompt: " val
+    eval "$key=\"\$val\""
+}
+
+# === COLLECT MAIN INFO ===
+
+case "$TEMPLATE_TYPE" in
+    feature)
+        echo "=== NOWY FEATURE ==="
+        ask_field  FEATURE_CEL    "Cel — co chcesz osiągnąć?"
+        ask_field  FEATURE_GDZIE  "Gdzie działa? (frontend/backend/mobile/devops)"
+        ask_field  FEATURE_AC     "Acceptance criteria (1 per line)"
+        ask_field  FEATURE_UI     "UI / design zmiany (Enter=brak)"
+        ask_field  FEATURE_CONST  "Constraints (perf/security/deadline?)"
+        ask_field  FEATURE_NOTES  "Inne uwagi"
+
+        echo ""
+        echo "--- DEPLOY? ---"
+        if ask_yesno "Deployowaś po feature?"; then
+            ask_line DEPLOY_BRANCH  "Branch/git ref do deployu"
+            ask_field DEPLOY_NOTES  "Extra kroki (migracje, build frontendu, zmiana env)"
+        fi
+        echo ""
+        if ask_yesno "Cleanup po deployu?"; then
+            ask_field CLEANUP_NOTES "Co posprzątać? (stare branche, logi, depy, pliki)"
+        fi
+        ;;
+
+    fix)
+        echo "=== FIX BUG ==="
+        ask_field  FIX_OBJAW     "Objaw — co się dzieje?"
+        ask_field  FIX_KROKI     "Kroki do reprodukcji (1 per line)"
+        ask_field  FIX_OCZ       "Oczekiwane zachowanie"
+        ask_field  FIX_RZECZ     "Rzeczywiste zachowanie"
+        ask_field  FIX_KOMP      "Endpoint / komponent"
+        ask_field  FIX_KONTEKST  "Browser/device/logi (Enter=brak)"
+        ask_field  FIX_DZIALALO  "Działało wcześniej? co się zmieniło?"
+        ask_field  FIX_SPRAWDZ   "Co już sprawdziłeś?"
+
+        echo ""
+        echo "--- HOTFIX? ---"
+        if ask_yesno "Czy to hotfix na produkcję? (pomija cleanup)"; then
+            HOTFIX="tak"
+            ask_line DEPLOY_BRANCH "Branch z fixem"
+            ask_field DEPLOY_NOTES "Extra kroki deployu"
+        else
+            HOTFIX="nie"
+            if ask_yesno "Deployować fix normalnie?"; then
+                ask_line DEPLOY_BRANCH "Branch/git ref"
+                ask_field DEPLOY_NOTES "Extra kroki"
+            fi
+            echo ""
+            if ask_yesno "Cleanup po deployu?"; then
+                ask_field CLEANUP_NOTES "Co posprzątać?"
+            fi
+        fi
+        ;;
+
+    review)
+        echo "=== CODE REVIEW ==="
+        ask_line  RV_BRANCH    "Branch / PR link"
+        ask_field RV_SCOPE     "Scope — co się zmienia?"
+        ask_field RV_PLIKI     "Kluczowe pliki (path/to/file1, path/to/file2)"
+        ask_field RV_CONCERNS  "Concerns (architektura/bezpieczenstwo/perf/etc)"
+        ask_field RV_KNOWN     "Known issues / rzeczy które wiesz"
+        # review is standalone — no deploy/cleanup
+        ;;
+
+    config)
+        echo "=== KONFIGURACJA / INFRA ==="
+        ask_field  CFG_CO      "Co zmieniasz? (tool, env, serwer, MCP, etc)"
+        ask_field  CFG_STAN    "Obecny stan"
+        ask_field  CFG_CEL     "Docelowy stan / cel zmiany"
+        ask_field  CFG_PLIKI   "Pliki do zmiany (path/to/file1, path/to/file2)"
+        ask_field  CFG_EXTRA   "Extra info / zależności / ryzyka"
+
+        echo ""
+        echo "--- RESTART / DEPLOY? ---"
+        if ask_yesno "Wymaga restartu/deployu?"; then
+            ask_field DEPLOY_NOTES "Co zrestartować / zadeployować?"
+        fi
+        echo ""
+        if ask_yesno "Cleanup po?"; then
+            ask_field CLEANUP_NOTES "Co posprzątać?"
+        fi
+        ;;
+
+    *)
+        usage
+        ;;
+esac
+
+# === GENERATE OUTPUT ===
+
+{
+echo "# Prompt Template: $TEMPLATE_TYPE"
+echo ""
+
+case "$TEMPLATE_TYPE" in
+    feature)
+        echo "## Feature"
+        echo ""
+        echo "**Cel:** ${FEATURE_CEL:-}"
+        echo ""
+        echo "**Gdzie:** ${FEATURE_GDZIE:-}"
+        echo ""
+        echo "**AC:**"
+        echo "${FEATURE_AC:-}"
+        echo ""
+        echo "**UI/design:** ${FEATURE_UI:-}"
+        echo ""
+        echo "**Constraints:** ${FEATURE_CONST:-}"
+        echo ""
+        echo "**Uwagi:** ${FEATURE_NOTES:-}"
+        echo ""
+        if [ -n "${DEPLOY_BRANCH:-}" ]; then
+            echo "---"
+            echo "## Deploy"
+            echo ""
+            echo "**Branch:** ${DEPLOY_BRANCH:-}"
+            echo ""
+            echo "**Extra:** ${DEPLOY_NOTES:-}"
+            echo ""
+        fi
+        if [ -n "${CLEANUP_NOTES:-}" ]; then
+            echo "---"
+            echo "## Cleanup"
+            echo ""
+            echo "${CLEANUP_NOTES}"
+            echo ""
+        fi
+        ;;
+
+    fix)
+        echo "## Bug Fix"
+        echo ""
+        echo "**Objaw:** ${FIX_OBJAW:-}"
+        echo ""
+        echo "**Kroki repro:**"
+        echo "${FIX_KROKI:-}"
+        echo ""
+        echo "**Oczekiwane:** ${FIX_OCZ:-}"
+        echo ""
+        echo "**Rzeczywiste:** ${FIX_RZECZ:-}"
+        echo ""
+        echo "**Komponent:** ${FIX_KOMP:-}"
+        echo ""
+        echo "**Kontekst:** ${FIX_KONTEKST:-}"
+        echo ""
+        echo "**Działało wcześniej:** ${FIX_DZIALALO:-}"
+        echo ""
+        echo "**Sprawdzone:** ${FIX_SPRAWDZ:-}"
+        echo ""
+        if [ -n "${DEPLOY_BRANCH:-}" ]; then
+            echo "---"
+            echo "## Deploy"
+            echo ""
+            if [ "${HOTFIX:-nie}" = "tak" ]; then
+                echo "**Typ:** HOTFIX (produkcja, pomija cleanup)"
+                echo ""
+            fi
+            echo "**Branch:** ${DEPLOY_BRANCH:-}"
+            echo ""
+            echo "**Extra:** ${DEPLOY_NOTES:-}"
+            echo ""
+        fi
+        if [ -n "${CLEANUP_NOTES:-}" ]; then
+            echo "---"
+            echo "## Cleanup"
+            echo ""
+            echo "${CLEANUP_NOTES}"
+            echo ""
+        fi
+        ;;
+
+    review)
+        echo "## Code Review"
+        echo ""
+        echo "**Branch/PR:** ${RV_BRANCH:-}"
+        echo ""
+        echo "**Scope:**"
+        echo "${RV_SCOPE:-}"
+        echo ""
+        echo "**Kluczowe pliki:** ${RV_PLIKI:-}"
+        echo ""
+        echo "**Concerns:** ${RV_CONCERNS:-}"
+        echo ""
+        echo "**Known issues:** ${RV_KNOWN:-}"
+        ;;
+
+    config)
+        echo "## Konfiguracja"
+        echo ""
+        echo "**Co:** ${CFG_CO:-}"
+        echo ""
+        echo "**Obecny stan:** ${CFG_STAN:-}"
+        echo ""
+        echo "**Cel:** ${CFG_CEL:-}"
+        echo ""
+        echo "**Pliki:** ${CFG_PLIKI:-}"
+        echo ""
+        echo "**Extra:** ${CFG_EXTRA:-}"
+        echo ""
+        if [ -n "${DEPLOY_NOTES:-}" ]; then
+            echo "---"
+            echo "## Restart / Deploy"
+            echo ""
+            echo "${DEPLOY_NOTES}"
+            echo ""
+        fi
+        if [ -n "${CLEANUP_NOTES:-}" ]; then
+            echo "---"
+            echo "## Cleanup"
+            echo ""
+            echo "${CLEANUP_NOTES}"
+            echo ""
+        fi
+        ;;
+esac
+} > "$OUTPUT_FILE"
+
+# === OUTPUT ===
+echo ""
+echo "=========================================="
+echo "Formularz gotowy: $OUTPUT_FILE"
+echo "=========================================="
+echo ""
+cat "$OUTPUT_FILE"
+
+# Clipboard
+if command -v xclip &>/dev/null; then
+    cat "$OUTPUT_FILE" | xclip -selection clipboard
+    echo ""
+    echo "[v] Skopiowano do schowka (xclip)"
+elif command -v wl-copy &>/dev/null; then
+    cat "$OUTPUT_FILE" | wl-copy
+    echo ""
+    echo "[v] Skopiowano do schowka (wl-copy)"
+else
+    echo ""
+    echo "[!] Brak xclip/wl-copy — skopiuj recznie z $OUTPUT_FILE"
+fi
