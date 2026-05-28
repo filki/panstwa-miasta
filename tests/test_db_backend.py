@@ -8,10 +8,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from panstwa_miasta.db_backend import (
+    _db_path,
     _LibsqlConnection,
     _LibsqlCursor,
     _LibsqlRow,
-    _db_path,
     connect,
     connect_dictionary,
     dictionary_libsql_configured,
@@ -166,7 +166,7 @@ class TestConnectFallback:
             patch.dict(os.environ, {}, clear=True),
             patch("panstwa_miasta.db_backend.aiosqlite.connect", mock_connect),
         ):
-            async with connect() as db:
+            async with connect() as _:
                 pass
             mock_connect.assert_called_once()
 
@@ -178,6 +178,6 @@ class TestConnectFallback:
             patch.dict(os.environ, {}, clear=True),
             patch("panstwa_miasta.db_backend.aiosqlite.connect", mock_connect),
         ):
-            async with connect_dictionary() as db:
+            async with connect_dictionary() as _:
                 pass
             mock_connect.assert_called_once()
