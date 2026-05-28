@@ -339,7 +339,7 @@ async def handle_dissolve_room(room: Room, room_id: str, client_name: str, delet
     # Zamknij sockety WSZYSTKICH innych graczy — hosta nie zamykamy, bo
     # wciąż jesteśmy w jego pętli _handle_ws_messages. Host poczeka na
     # WebSocketDisconnect które ASGI dostarczy po powrocie z handlera.
-    for _name, conn in room.connections.items():
+    for _name, conn in list(room.connections.items()):
         if _name == client_name:
             continue
         try:
