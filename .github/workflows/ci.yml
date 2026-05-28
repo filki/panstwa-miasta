@@ -108,14 +108,11 @@ jobs:
         with:
           name: coverage-js
           path: coverage-js
-      # Fix: v7 auto-provisions JRE from SonarCloud API and gets 403;
-      # pre-installing Java skips JRE provisioning entirely.
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
       - name: SonarQube Cloud Scan
-        uses: SonarSource/sonarqube-scan-action@v6
+        run: |
+          wget -q https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-6.2.1.4610-linux-x64.zip
+          unzip -q -o sonar-scanner-cli-6.2.1.4610-linux-x64.zip
+          ./sonar-scanner-6.2.1.4610-linux-x64/bin/sonar-scanner
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       # Quality Gate is informational only — does not block deploy.
