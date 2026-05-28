@@ -86,7 +86,7 @@ function stopCelebrationEffects() {
 function leaveRoom() {
   // Jesli gra sie nie zaczela — wychodzimy bez pytania
   if (!pmHadRoundStarted) {
-    doLeaveRoom(false);
+    doLeaveRoom();
     return;
   }
   showLeaveConfirmModal();
@@ -129,7 +129,7 @@ function doLeaveRoom() {
   // Nie zamykamy WS recznie — serwer zamknie socket po dissolve.
   // Jesli nie jestesmy hostem, serwer odrzuci dissolve, a my i tak
   // juz nawigujemy na /, co zamknie WS po stronie przegladarki.
-  if (ws && ws.readyState === WebSocket.OPEN) {
+  if (ws?.readyState === WebSocket.OPEN) {
     sendJson({ type: "dissolve_room" });
   }
   leftByUser = true;
@@ -239,8 +239,8 @@ function _buildWsUrl(roomId) {
   let baseHost = globalThis.location.host;
   let protocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
   // W Capacitor WebView laczymy sie z serwerem produkcyjnym
-  if (typeof window !== "undefined" && window.PM_WS_BASE) {
-    let url = new URL(window.PM_WS_BASE);
+  if (typeof globalThis.PM_WS_BASE !== "undefined" && globalThis.PM_WS_BASE) {
+    let url = new URL(globalThis.PM_WS_BASE);
     baseHost = url.host;
   }
   const encNick = encodeURIComponent(myNick);
@@ -509,7 +509,7 @@ function onRoundStartedResume(msg) {
 
 function injectCustomCategoryFields() {
   let config = globalThis.pmLastConfig;
-  if (!config || !config.custom_categories) return;
+  if (!config?.custom_categories) return;
   let names = Object.keys(config.custom_categories);
   if (names.length === 0) return;
   let container = document.getElementById("categories");
@@ -541,10 +541,8 @@ function cleanupCustomCategoryFields() {
   document.querySelectorAll("#categories .game-field").forEach(function (el) {
     let inp = el.querySelector("input");
     if (
-      inp &&
-      inp.dataset.category &&
-      globalThis.pmLastConfig &&
-      globalThis.pmLastConfig.custom_categories
+      inp?.dataset?.category &&
+      globalThis.pmLastConfig?.custom_categories
     ) {
       if (
         globalThis.pmLastConfig.custom_categories[inp.dataset.category] !==
