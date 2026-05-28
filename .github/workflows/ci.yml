@@ -110,7 +110,7 @@ jobs:
           path: coverage-js
       # Fix: v7 auto-provisions JRE from SonarCloud API and gets 403;
       # pre-installing Java skips JRE provisioning entirely.
-      - uses: actions/setup-java@v7
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
