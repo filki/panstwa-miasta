@@ -817,40 +817,35 @@ async def _handle_ws_messages(
     client_name: str,
 ) -> None:
     """Process incoming WebSocket messages until disconnect."""
-    try:
-        while True:
-            data = await websocket.receive_text()
-            logger.debug(f"Raw data from '{client_name}': {data}")
-            if not await check_ws_message_rate(room_id, client_name):
-                logger.warning(
-                    "WS message rate limit exceeded for %r in %s",
-                    client_name,
-                    room_id,
-                )
-                with suppress(Exception):
-                    await websocket.send_json(
-                        {"type": "error", "message": "Zbyt wiele wiadomości."}
-                    )
-                await websocket.close(code=1008)
-                return
-            try:
-                msg = ws_inbound_adapter.validate_json(data)
-                await _dispatch(msg.model_dump(), room, room_id, client_name)
-            except json.JSONDecodeError:
-                logger.warning(f"Invalid JSON from '{client_name}': {data}")
-            except ValidationError as exc:
-                logger.warning(
-                    "Invalid WS payload from %r in %s: %s",
-                    client_name,
-                    room_id,
-                    exc,
-                )
-                with suppress(Exception):
-                    await websocket.send_json({"type": "error", "message": "Invalid message"})
-            except Exception as exc:
-                logger.exception(f"Error handling message from '{client_name}': {exc}")
-    except WebSocketDisconnect:
-        raise
+    while True:
+        data = await websocket.receive_text()
+        logger.debug(f"Raw data from '{client_name}': {data}")
+        if not await check_ws_message_rate(room_id, client_name):
+            logger.warning(
+                "WS message rate limit exceeded for %r in %s",
+                client_name,
+                room_id,
+            )
+            with suppress(Exception):
+                await websocket.send_json({"type": "error", "message": "Zbyt wiele wiadomości."})
+            await websocket.close(code=1008)
+            return
+        try:
+            msg = ws_inbound_adapter.validate_json(data)
+            await _dispatch(msg.model_dump(), room, room_id, client_name)
+        except json.JSONDecodeError:
+            logger.warning(f"Invalid JSON from '{client_name}': {data}")
+        except ValidationError as exc:
+            logger.warning(
+                "Invalid WS payload from %r in %s: %s",
+                client_name,
+                room_id,
+                exc,
+            )
+            with suppress(Exception):
+                await websocket.send_json({"type": "error", "message": "Invalid message"})
+        except Exception as exc:
+            logger.exception(f"Error handling message from '{client_name}': {exc}")
 
 
 @app.websocket("/ws/{room_id}/{client_name}")

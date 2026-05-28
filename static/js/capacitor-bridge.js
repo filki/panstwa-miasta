@@ -6,26 +6,25 @@
   let html = document.documentElement;
 
   let IS_CAPACITOR =
-    typeof window !== "undefined" &&
-    (window.Capacitor || window._cordovaNative);
+    globalThis.Capacitor || globalThis._cordovaNative;
 
   if (IS_CAPACITOR) {
     html.classList.add("is-capacitor");
   }
 
   function updateBreakpoint() {
-    let isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+    let isDesktop = globalThis.matchMedia("(min-width: 1024px)").matches;
     html.classList.toggle("is-desktop", isDesktop);
     html.classList.toggle("is-mobile", !isDesktop);
   }
 
   updateBreakpoint();
-  window.addEventListener("resize", updateBreakpoint);
+  globalThis.addEventListener("resize", updateBreakpoint);
 
   // Sprawdz czy jest niedokonczona sesja (po zamknieciu apki/przegladarki)
   let savedRoom = localStorage.getItem("pm_active_room");
   let savedNick = localStorage.getItem("pm_active_nick");
-  if (savedRoom && savedNick && window.location.pathname === "/") {
+  if (savedRoom && savedNick && globalThis.location.pathname === "/") {
     document.addEventListener("DOMContentLoaded", function () {
       setTimeout(function () {
         showReconnectDialog(savedRoom, savedNick);
@@ -65,7 +64,7 @@ function showReconnectDialog(roomId, nick) {
 
   document.getElementById("reconnect-btn").onclick = function () {
     closeOverlay();
-    window.location.href = "/room/" + roomId + "?reconnect=1";
+    globalThis.location.href = "/room/" + roomId + "?reconnect=1";
   };
 
   document.getElementById("reconnect-leave-btn").onclick = function () {
@@ -81,7 +80,7 @@ function showReconnectDialog(roomId, nick) {
       fetch("/api/rooms/" + roomId + "/players/" + nick, { method: "DELETE" })
         .catch(function () {})
         .finally(function () {
-          window.location.reload();
+          globalThis.location.reload();
         });
     }
   };

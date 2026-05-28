@@ -59,7 +59,7 @@ function enableInputs() {
 
   var inputs = document.querySelectorAll("#categories input");
   inputs.forEach(function (inp) {
-    var cat = inp.getAttribute("data-category") || "";
+    var cat = inp.dataset.category || "";
     var field = inp.closest(".game-field");
     // Aktywne jesli: brak danych = wszystkie wlaczone (fallback),
     // albo kategoria jest w liscie z backendu, albo custom kategoria
@@ -206,40 +206,18 @@ function disableAndSubmit() {
  */
 function shareLobbyRoom() {
   const rid = (function () {
-    try {
-      const parts = globalThis.location.pathname.split("/");
-      if (parts.length >= 3 && parts[1] === "room") return parts[2];
-    } catch (e) {
-      // ignore
-    }
+    const parts = globalThis.location.pathname.split("/");
+    if (parts.length >= 3 && parts[1] === "room") return parts[2];
     const el = document.getElementById("lobby-room-code");
     return el ? el.textContent.trim().replace(/^—$/, "") : "";
   })();
 
   if (!rid) return;
 
-  let base = "";
-  try {
-    base = globalThis.location.origin || "";
-  } catch (e) {
-    // ignore
-  }
+  let base = globalThis.location.origin || "";
   const url = `${base}/room/${encodeURIComponent(rid)}`;
 
-  // 1) Capacitor native Share plugin (Android WebView / iOS)
-  //    window.Capacitor jest zawsze wstrzykiwany przez bridge, nawet przy server.url
-  const capShare = globalThis.Capacitor?.Plugins?.Share;
-  if (capShare && typeof capShare.share === "function") {
-    capShare.share({
-      title: "Państwa-Miasta — dołącz do pokoju!",
-      text: `Dołącz do pokoju ${rid} 🎮`,
-      url,
-      dialogTitle: "Udostępnij link",
-    }).catch(() => {});
-    return;
-  }
-
-  // 2) Web Share API (przeglądarki, PWA)
+  // Web Share API (przeglądarki, PWA, Capacitor)
   if (typeof globalThis.navigator?.share === "function") {
     globalThis.navigator
       .share({
@@ -269,11 +247,7 @@ function shareLobbyRoom() {
   }
 
   // 4) Last-resort fallback
-  try {
-    globalThis.prompt("Skopiuj link do pokoju:", url);
-  } catch (e) {
-    // ignore
-  }
+  globalThis.prompt("Skopiuj link do pokoju:", url);
 }
 
 if (typeof module !== "undefined") {

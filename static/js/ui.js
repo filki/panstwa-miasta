@@ -612,7 +612,7 @@ function updateScoreboard(
 function createLobbyAvatar(name, viewerNick = "") {
   const el = document.createElement("span");
   el.className = "lobby-roster-avatar";
-  el.textContent = ((name && name.trim()[0]) || "?").toUpperCase();
+  el.textContent = (name?.trim()[0] || "?").toUpperCase();
   return el;
 }
 
@@ -854,7 +854,7 @@ function updateLobbyConfigUI(data) {
   // Update category checkboxes
   if (Array.isArray(data.categories)) {
     document.querySelectorAll(".cat-checkbox").forEach(function (cb) {
-      cb.checked = data.categories.indexOf(cb.value) !== -1;
+      cb.checked = data.categories.includes(cb.value);
     });
   }
 
