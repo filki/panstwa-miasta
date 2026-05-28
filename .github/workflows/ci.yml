@@ -115,7 +115,7 @@ jobs:
           distribution: temurin
           java-version: 21
       - name: SonarQube Cloud Scan
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@v8
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       # Quality Gate is informational only — does not block deploy.
