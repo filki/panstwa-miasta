@@ -67,7 +67,7 @@ function enableInputs() {
       globalThis.currentLetter === undefined ||
       !activeCats ||
       activeCats.indexOf(cat) !== -1 ||
-      (activeCustomCats && activeCustomCats[cat] !== undefined);
+      activeCustomCats?.[cat] !== undefined;
 
     if (isActive) {
       inp.disabled = false;

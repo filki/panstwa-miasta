@@ -473,6 +473,7 @@ class ConnectionManager:
     def __init__(self):
         self.rooms: dict[str, Room] = {}
         self._room_delete_tasks: dict[str, asyncio.Task[None]] = {}
+        self._background_tasks: set[asyncio.Task[None]] = set()
 
     def cancel_delayed_room_delete(self, room_id: str) -> None:
         """Anuluje zaplanowane usunięcie pokoju z SQLite (np. przed reconnect)."""
@@ -713,7 +714,7 @@ class ConnectionManager:
             return False, "rate_limited"
         return True, None
 
-    async def _resolve_room_join(
+    def _resolve_room_join(
         self, room: Room, client_name: str, room_id: str
     ) -> tuple[bool, str | None]:
         """Check if client_name can join this room; returns (ok, reason)."""
@@ -781,7 +782,7 @@ class ConnectionManager:
 
         room = self.rooms[room_id]
 
-        ok, reason = await self._resolve_room_join(room, client_name, room_id)
+        ok, reason = self._resolve_room_join(room, client_name, room_id)
         if not ok:
             return False, reason
 
@@ -995,7 +996,9 @@ class ConnectionManager:
             self.cancel_lobby_idle(room)
             del self.rooms[room_id]
             logger.info("Room %s deleted because it became empty", room_id)
-            asyncio.ensure_future(delete_room(room_id))
+            task = asyncio.ensure_future(delete_room(room_id))
+            self._background_tasks.add(task)
+            task.add_done_callback(self._background_tasks.discard)
             return True
 
         if self._is_lobby_idle_candidate(room):

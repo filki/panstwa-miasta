@@ -602,7 +602,14 @@ async def post_create_room() -> CreateRoomOut:
     return CreateRoomOut(room_id=room_id)
 
 
-@app.patch("/api/rooms/{room_id}/config")
+@app.patch(
+    "/api/rooms/{room_id}/config",
+    responses={
+        404: {"description": "Room not found"},
+        403: {"description": "Only host can change config"},
+        409: {"description": "Cannot change config during game"},
+    },
+)
 async def patch_room_config(
     room_id: RoomIdPath,
     body: LobbyConfigIn,
