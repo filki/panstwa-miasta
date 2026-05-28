@@ -5,7 +5,7 @@ let leftByUser = false; // distinguish "user navigated away" from "room dissolve
 let pmHadRoundStarted = false;
 let pmWsGeneration = 0;
 let PM_SERVER_ORIGIN =
-  typeof window !== "undefined" && (window.Capacitor || window._cordovaNative)
+  globalThis.Capacitor || globalThis._cordovaNative
     ? "https://panstwamiasta.com.pl"
     : null;
 
@@ -239,7 +239,7 @@ function _buildWsUrl(roomId) {
   let baseHost = globalThis.location.host;
   let protocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
   // W Capacitor WebView laczymy sie z serwerem produkcyjnym
-  if (typeof globalThis.PM_WS_BASE !== "undefined" && globalThis.PM_WS_BASE) {
+  if (globalThis.PM_WS_BASE !== undefined) {
     let url = new URL(globalThis.PM_WS_BASE);
     baseHost = url.host;
   }
@@ -712,7 +712,7 @@ function _buildVetoHtml(cat, player, viewer, isFinal, hasAns, tallies) {
 
 function _buildCustomCatVetoHtml(vetoKey, tallies, isFinal, player, viewer, hasAns, cat) {
   if (
-    ROUND_RESULT_CATEGORIES.indexOf(cat) === -1 &&
+    !ROUND_RESULT_CATEGORIES.includes(cat) &&
     !isFinal &&
     player !== viewer &&
     hasAns
@@ -755,7 +755,7 @@ function buildResultCell(
   roundLetter,
 ) {
   const vetoKey =
-    ROUND_RESULT_CATEGORIES.indexOf(cat) === -1 ? player + "::" + cat : player;
+    !ROUND_RESULT_CATEGORIES.includes(cat) ? player + "::" + cat : player;
   let cell = `<div class="round-results-cell"><span class="round-results-val">${hasAns ? escapeHtml(String(raw).trim()) : "—"}</span><span class="${roundResultsPtsClass(pts)}">${pts}</span>`;
   cell += _buildVetoHtml(cat, player, viewer, isFinal, hasAns, tallies);
   cell += _buildCustomCatVetoHtml(vetoKey, tallies, isFinal, player, viewer, hasAns, cat);
@@ -770,7 +770,7 @@ function buildRoundResultsHtml(msg, options = {}) {
   // Active standard categories — fall back to full list if not provided
   let activeCats =
     msg.categories &&
-    msg.categories instanceof Array &&
+    Array.isArray(msg.categories) &&
     msg.categories.length > 0
       ? msg.categories
       : ROUND_RESULT_CATEGORIES;
@@ -798,16 +798,16 @@ function buildRoundResultsHtml(msg, options = {}) {
 
   // Detect custom categories from score details
   let customCats = [];
-  for (let pi = 0; pi < players.length; pi++) {
-    let pdet = scores[players[pi]] && scores[players[pi]].details;
+  for (const player of players) {
+    let pdet = scores[player]?.details;
     if (pdet) {
       let keys = Object.keys(pdet);
-      for (let ki = 0; ki < keys.length; ki++) {
+      for (const key of keys) {
         if (
-          ROUND_RESULT_CATEGORIES.indexOf(keys[ki]) === -1 &&
-          customCats.indexOf(keys[ki]) === -1
+          !ROUND_RESULT_CATEGORIES.includes(key) &&
+          !customCats.includes(key)
         ) {
-          customCats.push(keys[ki]);
+          customCats.push(key);
         }
       }
     }
@@ -817,8 +817,8 @@ function buildRoundResultsHtml(msg, options = {}) {
   for (const cat of activeCats) {
     html += `<th scope="col">${escapeHtml(cat)}</th>`;
   }
-  for (let ci = 0; ci < customCats.length; ci++) {
-    html += `<th scope="col">${escapeHtml(customCats[ci])}</th>`;
+  for (const cat of customCats) {
+    html += `<th scope="col">${escapeHtml(cat)}</th>`;
   }
   html += `<th scope="col">Suma</th></tr></thead><tbody>`;
 
@@ -852,8 +852,7 @@ function buildRoundResultsHtml(msg, options = {}) {
       html += `<td class="round-results-td">${cell}</td>`;
     }
     // Custom category columns
-    for (let cci = 0; cci < customCats.length; cci++) {
-      let ccat = customCats[cci];
+    for (const ccat of customCats) {
       let craw = answers[ccat];
       let chasAns = craw != null && String(craw).trim() !== "";
       let cptsRaw = rScore.details?.[ccat];

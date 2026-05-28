@@ -112,7 +112,12 @@ async def get_slownik_categories():
     return counts
 
 
-@router.get("/slownik/search")
+@router.get(
+    "/slownik/search",
+    responses={
+        404: {"description": "Unknown category"},
+    },
+)
 async def search_slownik(
     q: str = "",
     category: str = "rosliny",

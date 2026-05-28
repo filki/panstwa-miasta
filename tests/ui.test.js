@@ -762,8 +762,7 @@ describe("applyRoomSettingsFromUrl", () => {
   test("is a no-op (settings no longer passed via URL)", () => {
     window.history.replaceState({}, "", "/room/1234?rounds=10&limit=60");
     applyRoomSettingsFromUrl();
-    // Function is a no-op; no DOM elements are read or written
-    expect(true).toBe(true);
+    expect(globalThis.location.search).toBe("?rounds=10&limit=60");
   });
 });
 
