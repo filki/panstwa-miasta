@@ -7,13 +7,18 @@
             name="description"
             content="Słownik do gry Państwa-Miasta — tysiące słów w 6 kategoriach. Sprawdź miasta, rośliny, zwierzęta, zawody, imiona i rzeczy na każdą literę."
         />
-        <meta name="robots" content="index, follow" />
+        <meta
+            name="robots"
+            content="index, follow"
+        />
         <meta property="og:title" content="Słownik — Państwa-Miasta Online" />
         <meta
             property="og:description"
             content="Tysiące słów do gry Państwa-Miasta — miasta, rośliny, zwierzęta, zawody, imiona, rzeczy."
         />
+        <meta property="og:image" content="https://panstwamiasta.com.pl/static/img/og-image.png" />
         <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://panstwamiasta.com.pl/slownik" />
         <link rel="canonical" href="https://panstwamiasta.com.pl/slownik" />
         <link
             rel="icon"
@@ -520,124 +525,77 @@
             let searchTimer = null;
             let currentPage = 1;
 
+            /* --- Pre-renderowane dane (wstrzyknięte przez backend) --- */
+            const slownikDataScript = document.getElementById("slownik-data");
+            const SLOWNIK_WORDS = slownikDataScript
+                ? JSON.parse(slownikDataScript.textContent)
+                : {};
+            const SLOWNIK_COUNTS = {};
+            for (var cid in SLOWNIK_WORDS) {
+                var total = 0;
+                var ld = SLOWNIK_WORDS[cid];
+                for (var l in ld) {
+                    total += ld[l].length;
+                }
+                SLOWNIK_COUNTS[cid] = total;
+            }
+
             function escapeHtml(s) {
                 var d = document.createElement("div");
                 d.appendChild(document.createTextNode(s));
                 return d.innerHTML;
             }
 
-            /* --- Wyszukiwarka --- */
+            /* --- DOM refs --- */
             const searchInput = document.getElementById("search-input");
             const searchCatLabel = document.getElementById("search-cat-label");
-            const searchSection = document.getElementById(
-                "slownik-search-section",
-            );
+            const searchSection = document.getElementById("slownik-search-section");
             const searchResults = document.getElementById("search-results");
             const searchClear = document.getElementById("search-clear-btn");
 
             const CATEGORY_ICONS = {
-                miasta: "🏙️",
-                panstwa: "🌍",
-                rosliny: "🌿",
-                zwierzeta: "🐾",
-                zawody: "💼",
-                imiona: "👤",
-                rzeczy: "📦",
+                miasta: "🏙️", panstwa: "🌍", rosliny: "🌿",
+                zwierzeta: "🐾", zawody: "💼", imiona: "👤", rzeczy: "📦",
             };
 
             const TABLE_COLUMNS = {
                 imiona: [
                     { key: "name", label: "Imię", tdClass: "slownik-td-name" },
-                    {
-                        key: "gender",
-                        label: "Płeć",
-                        tdClass: "slownik-td-gender",
-                        format: (v) =>
-                            v === "M" ? "Mężczyzna" : v === "K" ? "Kobieta" : v,
-                    },
-                    {
-                        key: "count",
-                        label: "Liczba wystąpień",
-                        tdClass: "slownik-td-count",
-                        format: (v) => Number(v).toLocaleString(),
-                    },
+                    { key: "gender", label: "Płeć", tdClass: "slownik-td-gender",
+                      format: (v) => v === "M" ? "Mężczyzna" : v === "K" ? "Kobieta" : v },
+                    { key: "count", label: "Liczba wystąpień", tdClass: "slownik-td-count",
+                      format: (v) => Number(v).toLocaleString() },
                 ],
                 panstwa: [
-                    {
-                        key: "name",
-                        label: "Państwo",
-                        tdClass: "slownik-td-name",
-                    },
-                    {
-                        key: "continent",
-                        label: "Kontynent",
-                        tdClass: "slownik-td-gender",
-                    },
-                    {
-                        key: "capital",
-                        label: "Stolica",
-                        tdClass: "slownik-td-gender",
-                    },
-                    {
-                        key: "population",
-                        label: "Populacja",
-                        tdClass: "slownik-td-count",
-                        format: (v) => (v ? Number(v).toLocaleString() : "—"),
-                    },
-                    {
-                        key: "area_km2",
-                        label: "Pow. km²",
-                        tdClass: "slownik-td-count",
-                        format: (v) => (v ? Number(v).toLocaleString() : "—"),
-                    },
+                    { key: "name", label: "Państwo", tdClass: "slownik-td-name" },
+                    { key: "continent", label: "Kontynent", tdClass: "slownik-td-gender" },
+                    { key: "capital", label: "Stolica", tdClass: "slownik-td-gender" },
+                    { key: "population", label: "Populacja", tdClass: "slownik-td-count",
+                      format: (v) => (v ? Number(v).toLocaleString() : "—") },
+                    { key: "area_km2", label: "Pow. km²", tdClass: "slownik-td-count",
+                      format: (v) => (v ? Number(v).toLocaleString() : "—") },
                 ],
                 miasta: [
-                    {
-                        key: "name",
-                        label: "Miasto",
-                        tdClass: "slownik-td-name",
-                    },
-                    {
-                        key: "country",
-                        label: "Kraj",
-                        tdClass: "slownik-td-gender",
-                    },
+                    { key: "name", label: "Miasto", tdClass: "slownik-td-name" },
+                    { key: "country", label: "Kraj", tdClass: "slownik-td-gender" },
                 ],
                 zawody: [
-                    {
-                        key: "name",
-                        label: "Zawód",
-                        tdClass: "slownik-td-name",
-                    },
-                    {
-                        key: "code",
-                        label: "Kod PKD",
-                        tdClass: "slownik-td-gender",
-                        format: (v) => v || "—",
-                    },
+                    { key: "name", label: "Zawód", tdClass: "slownik-td-name" },
+                    { key: "code", label: "Kod PKD", tdClass: "slownik-td-gender",
+                      format: (v) => v || "—" },
                 ],
             };
 
             function renderStructuredTable(data, columns) {
-                var html =
-                    '<div class="slownik-table-wrap">' +
-                    '<table class="slownik-table">' +
-                    "<thead><tr>";
-                columns.forEach(function (col) {
-                    html += "<th>" + col.label + "</th>";
-                });
+                var html = '<div class="slownik-table-wrap"><table class="slownik-table"><thead><tr>';
+                columns.forEach(function (col) { html += "<th>" + col.label + "</th>"; });
                 html += "</tr></thead><tbody>";
                 data.words.forEach(function (w) {
                     html += "<tr>";
                     columns.forEach(function (col) {
                         var val = w[col.key];
                         if (col.format) val = col.format(val);
-                        html +=
-                            '<td class="' +
-                            (col.tdClass || "") +
-                            '">' +
-                            escapeHtml(String(val ?? "")) +
-                            "</td>";
+                        html += '<td class="' + (col.tdClass || "") + '">' + escapeHtml(String(val ?? "")) + "</td>";
                     });
                     html += "</tr>";
                 });
@@ -649,8 +607,7 @@
             function renderSearchChips(data) {
                 var html = '<div class="words-grid">';
                 data.words.forEach(function (w) {
-                    var word = typeof w === "string" ? w : w.name || w;
-                    html += '<span class="word-chip">' + word + "</span>";
+                    html += '<span class="word-chip">' + (typeof w === "string" ? w : w.name || w) + "</span>";
                 });
                 html += "</div>";
                 html += renderPagination(data);
@@ -661,24 +618,11 @@
                 if (data.pages <= 1) return "";
                 var html = '<div class="slownik-pagination">';
                 if (data.page > 1) {
-                    html +=
-                        '<button class="slownik-page-btn" onclick="goToPage(' +
-                        (data.page - 1) +
-                        ')">‹ Poprzednia</button>';
+                    html += '<button class="slownik-page-btn" onclick="goToPage(' + (data.page - 1) + ')">‹ Poprzednia</button>';
                 }
-                html +=
-                    '<span class="slownik-page-info">Strona ' +
-                    data.page +
-                    " z " +
-                    data.pages +
-                    " (" +
-                    data.total.toLocaleString() +
-                    " wyników)</span>";
+                html += '<span class="slownik-page-info">Strona ' + data.page + " z " + data.pages + " (" + data.total.toLocaleString() + " wyników)</span>";
                 if (data.page < data.pages) {
-                    html +=
-                        '<button class="slownik-page-btn" onclick="goToPage(' +
-                        (data.page + 1) +
-                        ')">Następna ›</button>';
+                    html += '<button class="slownik-page-btn" onclick="goToPage(' + (data.page + 1) + ')">Następna ›</button>';
                 }
                 html += "</div>";
                 return html;
@@ -689,38 +633,31 @@
                 doSearch();
             }
 
+            /* --- Search (via API — paginacja) --- */
             async function doSearch() {
                 const q = searchInput.value.trim();
                 if (!q || q.length < 1 || !activeCategory) {
-                    searchResults.innerHTML =
-                        '<p class="empty-state">👆 Wybierz kategorię i literę, albo wpisz szukaną frazę</p>';
+                    searchResults.innerHTML = '<p class="empty-state">👆 Wybierz kategorię i literę, albo wpisz szukaną frazę</p>';
                     searchClear.style.display = "none";
                     return;
                 }
                 searchClear.style.display = "";
-                searchResults.innerHTML =
-                    '<p class="loading" style="padding:0.75rem">Szukanie…</p>';
+                searchResults.innerHTML = '<p class="loading" style="padding:0.75rem">Szukanie…</p>';
                 try {
                     const resp = await fetch(
                         `/api/dictionary/slownik/search?q=${encodeURIComponent(q)}&category=${encodeURIComponent(activeCategory)}&page=${currentPage}&per_page=10`,
                     );
                     const data = await resp.json();
                     if (data.words.length === 0) {
-                        searchResults.innerHTML =
-                            '<p class="empty-state" style="padding:0.75rem;font-size:0.9rem">Brak wyników dla <strong>' +
-                            escapeHtml(q) +
-                            "</strong></p>";
+                        searchResults.innerHTML = '<p class="empty-state" style="padding:0.75rem;font-size:0.9rem">Brak wyników dla <strong>' + escapeHtml(q) + "</strong></p>";
                     } else if (data.structured) {
                         var cols = TABLE_COLUMNS[data.category];
-                        searchResults.innerHTML = cols
-                            ? renderStructuredTable(data, cols)
-                            : renderSearchChips(data);
+                        searchResults.innerHTML = cols ? renderStructuredTable(data, cols) : renderSearchChips(data);
                     } else {
                         searchResults.innerHTML = renderSearchChips(data);
                     }
                 } catch (e) {
-                    searchResults.innerHTML =
-                        '<p class="empty-state" style="padding:0.75rem;font-size:0.9rem">Błąd wyszukiwania</p>';
+                    searchResults.innerHTML = '<p class="empty-state" style="padding:0.75rem;font-size:0.9rem">Błąd wyszukiwania</p>';
                 }
             }
 
@@ -741,45 +678,27 @@
                 searchInput.focus();
             });
 
-            async function loadCategories() {
+            /* --- Kategorie (z pre-renderowanych danych) --- */
+            function loadCategories() {
                 const grid = document.getElementById("categories");
-                try {
-                    const resp = await fetch(
-                        "/api/dictionary/slownik/categories",
-                    );
-                    const counts = await resp.json();
-                    grid.innerHTML = CATEGORIES.map(
-                        (c) => `
+                grid.innerHTML = CATEGORIES.map(
+                    (c) => `
                 <button class="category-card" data-cat="${c.id}" onclick="selectCategory('${c.id}')">
                     <span class="category-icon">${c.icon}</span>
                     <span class="category-name">${c.name}</span>
-                    <span class="category-count">${(counts[c.id] || 0).toLocaleString()} słów</span>
-                </button>
-            `,
-                    ).join("");
-                } catch (e) {
-                    grid.innerHTML = CATEGORIES.map(
-                        (c) => `
-                <button class="category-card" data-cat="${c.id}" onclick="selectCategory('${c.id}')">
-                    <span class="category-icon">${c.icon}</span>
-                    <span class="category-name">${c.name}</span>
-                </button>
-            `,
-                    ).join("");
-                }
+                    <span class="category-count">${(SLOWNIK_COUNTS[c.id] || 0).toLocaleString()} słów</span>
+                </button>`,
+                ).join("");
             }
 
             var CATEGORY_DESCRIPTIONS = {
-                miasta: "Miasta to jedna z najbogatszych kategorii — w bazie znajduje się ponad 32 tysiące miejscowości z Polski i świata, od małych wsi po wielkie metropolie. Wystarczy, że nazwa zaczyna się na wylosowaną literę.",
-                panstwa:
-                    "Państwa to 205 krajów i terytoriów z całego świata. Dla każdego znajdziesz kontynent, stolicę, populację i powierzchnię.",
-                rosliny:
-                    "Rośliny obejmują kwiaty, drzewa, krzewy, owoce, warzywa, zioła i grzyby. Baza zawiera około 19 tysięcy haseł — od popularnych gatunków po egzotyczne okazy.",
-                zwierzeta:
-                    "Zwierzęta to ssaki, ptaki, gady, płazy, ryby i owady. W słowniku znajdziesz około 10 tysięcy gatunków, od domowych pupili po dzikie zwierzęta z całego świata.",
-                zawody: "Zawody to profesje i role społeczne — od tradycyjnych rzemieślników po nowoczesne specjalizacje. Kategoria zawiera kilkaset haseł, które wystarczą na wiele rund.",
-                imiona: "Imiona to kategoria, w której liczy się kreatywność — możesz podać dowolne imię żeńskie, męskie lub zdrobnienie. Baza zawiera popularne i rzadkie imiona z różnych krajów.",
-                rzeczy: "Rzeczy to najszersza kategoria — wszystko, co nas otacza: przedmioty codziennego użytku, narzędzia, ubrania, meble, elektronika i wiele więcej. Ponad 5 tysięcy haseł czeka na odkrycie.",
+                miasta: "Miasta — ponad 32 tysiące miejscowości z Polski i świata, od małych wsi po wielkie metropolie.",
+                panstwa: "Państwa — 205 krajów i terytoriów z całego świata. Dla każdego znajdziesz kontynent, stolicę, populację i powierzchnię.",
+                rosliny: "Rośliny — kwiaty, drzewa, krzewy, owoce, warzywa, zioła i grzyby. Około 19 tysięcy haseł.",
+                zwierzeta: "Zwierzęta — ssaki, ptaki, gady, płazy, ryby i owady. Około 10 tysięcy gatunków.",
+                zawody: "Zawody — profesje i role społeczne, od tradycyjnych rzemieślników po nowoczesne specjalizacje.",
+                imiona: "Imiona — żeńskie, męskie i zdrobnienia. Popularne i rzadkie imiona z różnych krajów.",
+                rzeczy: "Rzeczy — przedmioty codziennego użytku, narzędzia, ubrania, meble, elektronika. Ponad 5 tysięcy haseł.",
             };
 
             function showCategoryDescription(cat) {
@@ -795,63 +714,95 @@
 
             function renderLetters() {
                 const nav = document.getElementById("letters");
-                nav.innerHTML = LETTERS.map(
-                    (l) => `
-            <button class="letter-btn" data-letter="${l}" onclick="selectLetter('${l}')">${l}</button>
-        `,
+                nav.innerHTML = LETTERS.map((l) =>
+                    `<button class="letter-btn" data-letter="${l}" onclick="selectLetter('${l}')">${l}</button>`
                 ).join("");
                 nav.style.display = activeCategory ? "flex" : "none";
+            }
+
+            /* --- Wyświetlanie słów z pre-renderowanych danych --- */
+            function renderWordsFromData(cat, letter) {
+                const sectionId = "dict-" + cat + "-" + letter.toLowerCase();
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    // Pokaz sekcję (usuwamy hidden)
+                    searchResults.innerHTML = section.outerHTML;
+                    return;
+                }
+                // Brak danych dla tej kombinacji
+                searchResults.innerHTML = '<p class="empty-state">Brak słów na ' + letter.toUpperCase() + ' w kategorii ' + CATEGORIES.find(c => c.id === cat)?.name + '.</p>';
+            }
+
+            function updateHash(cat, letter) {
+                if (cat && letter) {
+                    history.replaceState(null, "", "/slownik#" + cat + "/" + letter.toLowerCase());
+                } else if (cat) {
+                    history.replaceState(null, "", "/slownik#" + cat);
+                } else {
+                    history.replaceState(null, "", "/slownik");
+                }
             }
 
             function selectCategory(cat) {
                 activeCategory = cat;
                 activeLetter = null;
-                document
-                    .querySelectorAll(".category-card")
-                    .forEach((c) =>
-                        c.classList.toggle("active", c.dataset.cat === cat),
-                    );
-                document
-                    .querySelectorAll(".letter-btn")
-                    .forEach((b) => b.classList.remove("active"));
-                // Pokaż wyszukiwarkę z ikoną kategorii
+
+                document.querySelectorAll(".category-card").forEach((c) =>
+                    c.classList.toggle("active", c.dataset.cat === cat));
+
                 searchSection.style.display = "";
                 searchCatLabel.textContent = CATEGORY_ICONS[cat] || "🌿";
-                searchInput.placeholder =
-                    "Wpisz nazwę " +
-                    (
-                        CATEGORIES.find((c) => c.id === cat)?.name || ""
-                    ).toLowerCase() +
-                    "…";
+                searchInput.placeholder = "Wpisz nazwę " + (CATEGORIES.find((c) => c.id === cat)?.name || "").toLowerCase() + "…";
                 renderLetters();
                 showCategoryDescription(cat);
-                // Czyścimy poprzednie wyniki
-                searchResults.innerHTML =
-                    '<p class="empty-state">👆 Wybierz literę albo wpisz szukaną frazę</p>';
+                searchResults.innerHTML = '<p class="empty-state">👆 Wybierz literę albo wpisz szukaną frazę</p>';
                 searchInput.value = "";
                 searchClear.style.display = "none";
                 searchInput.focus();
+                updateHash(cat, null);
             }
 
-            async function selectLetter(letter) {
+            function selectLetter(letter) {
                 activeLetter = letter;
-                document
-                    .querySelectorAll(".letter-btn")
-                    .forEach((b) =>
-                        b.classList.toggle(
-                            "active",
-                            b.dataset.letter === letter,
-                        ),
-                    );
-                // Ustaw litere w wyszukiwarce i odpal szukanie
+                document.querySelectorAll(".letter-btn").forEach((b) =>
+                    b.classList.toggle("active", b.dataset.letter === letter));
+
+                // Użyj pre-renderowanych danych — szybkie, bez API
                 searchInput.value = letter;
-                currentPage = 1;
-                await doSearch();
+                renderWordsFromData(activeCategory, letter);
                 searchInput.focus();
+                updateHash(activeCategory, letter);
             }
 
+            /* --- Hash routing: /slownik#miasta/a → nawiguj --- */
+            function navigateFromHash() {
+                var hash = window.location.hash.replace(/^#/, "");
+                if (!hash) return;
+                var parts = hash.split("/");
+                var cat = parts[0];
+                var letter = parts.length > 1 ? parts[1] : null;
+                if (!cat) return;
+                // Znajdź kategorię
+                var match = CATEGORIES.find(function (c) { return c.id === cat; });
+                if (!match) return;
+                selectCategory(cat);
+                if (letter) {
+                    // Znajdź literę
+                    var upper = letter.toUpperCase();
+                    if (LETTERS.indexOf(upper) !== -1) {
+                        selectLetter(upper);
+                    }
+                }
+            }
+
+            /* --- Init --- */
             loadCategories();
             renderLetters();
+            // Obsłuż hash na starcie (jeśli user wszedł z linku /slownik#miasta/a)
+            navigateFromHash();
+
+            /* --- Nasłuchuj zmian hasha (przycisk wstecz/dalej) --- */
+            window.addEventListener("hashchange", navigateFromHash);
         </script>
     </body>
 </html>
