@@ -236,6 +236,69 @@ button {
     }
 }
 
+/* FAQ section — visible Q&A dla SEO + UX */
+@utility landing-faq {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    width: 100%;
+    max-width: 100%;
+    margin: var(--space-8) 0 0;
+    padding: var(--space-6) var(--space-5);
+    border-radius: var(--r-xl);
+    border: 1px solid var(--border);
+    background: var(--surface-0);
+}
+
+@utility landing-faq-title {
+    font-size: var(--fs-h3);
+    font-weight: 800;
+    color: var(--brand-1);
+    text-align: center;
+    margin: 0 0 var(--space-2);
+}
+
+/* 2 kolumny FAQ na desktop, 1 na mobile */
+@utility landing-faq-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+    width: 100%;
+}
+@container landing-shell (max-width: 680px) {
+    .landing-faq-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@utility landing-faq-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    border-radius: var(--r-lg);
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+}
+@utility landing-faq-q {
+    font-weight: 700;
+    font-size: 0.925rem;
+    color: var(--text);
+    margin: 0;
+    line-height: 1.4;
+}
+@utility landing-faq-a {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+    margin: 0;
+
+    & a {
+        color: var(--accent);
+        text-decoration: underline;
+    }
+}
+
 @utility landing-actions {
     display: flex;
     flex-direction: column;
