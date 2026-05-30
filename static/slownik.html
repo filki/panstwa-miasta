@@ -724,13 +724,16 @@
             function renderWordsFromData(cat, letter) {
                 const sectionId = "dict-" + cat + "-" + letter.toLowerCase();
                 const section = document.getElementById(sectionId);
+                const container = document.getElementById("words-container");
                 if (section) {
-                    // Pokaz sekcję (usuwamy hidden)
-                    searchResults.innerHTML = section.outerHTML;
+                    // Clone bez hidden — zachowujemy oryginal do ponownego użycia
+                    const clone = section.cloneNode(true);
+                    clone.removeAttribute("hidden");
+                    container.innerHTML = "";
+                    container.appendChild(clone);
                     return;
                 }
-                // Brak danych dla tej kombinacji
-                searchResults.innerHTML = '<p class="empty-state">Brak słów na ' + letter.toUpperCase() + ' w kategorii ' + CATEGORIES.find(c => c.id === cat)?.name + '.</p>';
+                container.innerHTML = '<p class="empty-state">Brak słów na ' + letter.toUpperCase() + ' w kategorii ' + CATEGORIES.find(c => c.id === cat)?.name + '.</p>';
             }
 
             function updateHash(cat, letter) {
@@ -746,19 +749,33 @@
             function selectCategory(cat) {
                 activeCategory = cat;
                 activeLetter = null;
+                currentPage = 1;
 
                 document.querySelectorAll(".category-card").forEach((c) =>
                     c.classList.toggle("active", c.dataset.cat === cat));
 
+                // Pokaż search (API), ale wyczyść
                 searchSection.style.display = "";
                 searchCatLabel.textContent = CATEGORY_ICONS[cat] || "🌿";
                 searchInput.placeholder = "Wpisz nazwę " + (CATEGORIES.find((c) => c.id === cat)?.name || "").toLowerCase() + "…";
-                renderLetters();
-                showCategoryDescription(cat);
-                searchResults.innerHTML = '<p class="empty-state">👆 Wybierz literę albo wpisz szukaną frazę</p>';
                 searchInput.value = "";
                 searchClear.style.display = "none";
-                searchInput.focus();
+                searchResults.innerHTML = "";
+
+                renderLetters();
+                showCategoryDescription(cat);
+
+                // Główny kontener: wyświetl wszystkie slowa dla tej kategorii
+                const wordsContainer = document.getElementById("words-container");
+                const allWords = SLOWNIK_WORDS[cat];
+                if (allWords) {
+                    var total = 0;
+                    for (var l in allWords) total += allWords[l].length;
+                    wordsContainer.innerHTML = '<p class="slownik-category-desc" style="text-align:center;color:var(--text-muted);font-size:0.9rem">' +
+                        total.toLocaleString() + ' słów. Wybierz literę powyżej, żeby filtrować.</p>';
+                } else {
+                    wordsContainer.innerHTML = '<p class="empty-state">Brak danych</p>';
+                }
                 updateHash(cat, null);
             }
 
@@ -767,10 +784,8 @@
                 document.querySelectorAll(".letter-btn").forEach((b) =>
                     b.classList.toggle("active", b.dataset.letter === letter));
 
-                // Użyj pre-renderowanych danych — szybkie, bez API
-                searchInput.value = letter;
+                // Pre-renderowane dane w głównym kontenerze (NIE w search)
                 renderWordsFromData(activeCategory, letter);
-                searchInput.focus();
                 updateHash(activeCategory, letter);
             }
 
