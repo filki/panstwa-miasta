@@ -7,10 +7,8 @@ client-side JS for interactive search.
 from __future__ import annotations
 
 from html import escape
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    import aiosqlite
+import aiosqlite
 
 # Polish alphabet — wszystkie litery, nawet te bez słów w danej kategorii
 LETTERS = "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ"
