@@ -263,11 +263,23 @@
                 color: var(--text-muted);
             }
 
-            /* --- Wyszukiwarka --- */
+            /* --- Wyszukiwarka (secondary, pod lista liter) --- */
             .slownik-search {
                 max-width: 560px;
-                margin: 0 auto 2rem;
-                padding: 0 1rem;
+                margin: 1.5rem auto 2rem;
+                padding: 1.25rem 1rem 0.75rem;
+                border-top: 1px solid var(--border);
+            }
+            .slownik-search-prompt {
+                text-align: center;
+                font-size: 0.85rem;
+                color: var(--text-muted);
+                margin-bottom: 0.75rem;
+                line-height: 1.5;
+            }
+            .slownik-search-prompt-icon {
+                font-size: 1rem;
+                margin-right: 0.2rem;
             }
             .slownik-search-row {
                 display: flex;
@@ -446,6 +458,11 @@
                 id="slownik-search-section"
                 style="display: none"
             >
+                <div class="slownik-search-prompt">
+                    <span class="slownik-search-prompt-icon">🔍</span>
+                    Nie znalazłeś tego czego szukałeś? Może masz ochotę
+                    poszukać głębiej?
+                </div>
                 <div class="slownik-search-row">
                     <span class="slownik-search-cat-label" id="search-cat-label"
                         >🌿</span
@@ -468,11 +485,7 @@
                         ×
                     </button>
                 </div>
-                <div class="slownik-search-results" id="search-results">
-                    <p class="empty-state">
-                        👆 Wybierz kategorię i literę, albo wpisz szukaną frazę
-                    </p>
-                </div>
+                <div class="slownik-search-results" id="search-results"></div>
             </div>
         </main>
 
@@ -637,7 +650,7 @@
             async function doSearch() {
                 const q = searchInput.value.trim();
                 if (!q || q.length < 1 || !activeCategory) {
-                    searchResults.innerHTML = '<p class="empty-state">👆 Wybierz kategorię i literę, albo wpisz szukaną frazę</p>';
+                    searchResults.innerHTML = "";
                     searchClear.style.display = "none";
                     return;
                 }
