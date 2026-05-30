@@ -10,8 +10,10 @@ from html import escape
 
 import aiosqlite
 
+from panstwa_miasta.data import fold_polish_diacritics
+
 # Polish alphabet — wszystkie litery, nawet te bez słów w danej kategorii
-LETTERS = "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ"
+LETTERS = "ABCDEFGHIJKLMNOPRSTUWZ"
 
 # Konfiguracja kategorii: (id, nazwa, ikona, czy_structured, max_preview)
 CATEGORIES = [
@@ -59,9 +61,8 @@ SITE_ORIGIN = "https://panstwamiasta.com.pl"
 
 
 def _words_by_letter(words: set[str], letter: str) -> list[str]:
-    """Zwraca słowa z setu zaczynające się na literę (case-insensitive, sorted)."""
-    upper = letter.upper()
-    return sorted(w for w in words if w.upper().startswith(upper))
+    """Zwraca slowa z setu zaczynajace sie na litere (fold diacritics, sorted)."""
+    return sorted(w for w in words if fold_polish_diacritics(w).startswith(letter.lower()))
 
 
 async def _query_structured_by_letter(
@@ -74,7 +75,7 @@ async def _query_structured_by_letter(
     info = STRUCTURED_TABLES.get(category)
     if not info:
         return []
-    pattern = f"{letter.upper()}%"
+    pattern = f"{letter.lower()}%"
     query = (
         f"SELECT {info['columns']} FROM {info['table']} "
         f"WHERE {info['where_col']} LIKE ? "
