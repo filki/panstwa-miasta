@@ -16,9 +16,20 @@
             property="og:description"
             content="Tysiące słów do gry Państwa-Miasta — miasta, rośliny, zwierzęta, zawody, imiona, rzeczy."
         />
+        <meta property="og:locale" content="pl_PL" />
         <meta property="og:image" content="https://panstwamiasta.com.pl/static/img/og-image.png" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://panstwamiasta.com.pl/slownik" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Słownik — Państwa-Miasta Online" />
+        <meta
+            name="twitter:description"
+            content="Tysiące słów do gry Państwa-Miasta — miasta, rośliny, zwierzęta, zawody, imiona, rzeczy."
+        />
+        <meta
+            name="twitter:image"
+            content="https://panstwamiasta.com.pl/static/img/og-image.png"
+        />
         <link rel="canonical" href="https://panstwamiasta.com.pl/slownik" />
         <link
             rel="icon"
@@ -263,23 +274,11 @@
                 color: var(--text-muted);
             }
 
-            /* --- Wyszukiwarka (secondary, pod lista liter) --- */
+            /* --- Wyszukiwarka (centralnie pod literami) --- */
             .slownik-search {
                 max-width: 560px;
-                margin: 1.5rem auto 2rem;
-                padding: 1.25rem 1rem 0.75rem;
-                border-top: 1px solid var(--border);
-            }
-            .slownik-search-prompt {
-                text-align: center;
-                font-size: 0.85rem;
-                color: var(--text-muted);
-                margin-bottom: 0.75rem;
-                line-height: 1.5;
-            }
-            .slownik-search-prompt-icon {
-                font-size: 1rem;
-                margin-right: 0.2rem;
+                margin: 0 auto 1rem;
+                padding: 0 1rem;
             }
             .slownik-search-row {
                 display: flex;
@@ -327,12 +326,6 @@
                 display: flex;
                 align-items: center;
                 padding: 0 0.25rem 0 0.5rem;
-            }
-            .slownik-search-results {
-                margin-top: 0.75rem;
-            }
-            .slownik-search-results .words-grid {
-                margin-top: 0;
             }
 
             /* --- Tabela dla imion --- */
@@ -433,7 +426,7 @@
                 <h1>Słownik</h1>
                 <p>
                     Tysiące słów do gry Państwa-Miasta. Wybierz kategorię i
-                    literę, albo skorzystaj z wyszukiwarki poniżej.
+                    literę, albo filtruj wyniki wyszukiwarką.
                 </p>
             </div>
 
@@ -449,20 +442,11 @@
 
             <div class="letter-nav" id="letters"></div>
 
-            <div class="words-container" id="words-container">
-                <p class="empty-state">👆 Wybierz kategorię i literę powyżej</p>
-            </div>
-
             <div
                 class="slownik-search"
                 id="slownik-search-section"
                 style="display: none"
             >
-                <div class="slownik-search-prompt">
-                    <span class="slownik-search-prompt-icon">🔍</span>
-                    Nie znalazłeś tego czego szukałeś? Może masz ochotę
-                    poszukać głębiej?
-                </div>
                 <div class="slownik-search-row">
                     <span class="slownik-search-cat-label" id="search-cat-label"
                         >🌿</span
@@ -485,7 +469,10 @@
                         ×
                     </button>
                 </div>
-                <div class="slownik-search-results" id="search-results"></div>
+            </div>
+
+            <div class="words-container" id="words-container">
+                <p class="empty-state">👆 Wybierz kategorię i literę powyżej</p>
             </div>
         </main>
 
@@ -537,6 +524,7 @@
             let activeLetter = null;
             let searchTimer = null;
             let currentPage = 1;
+            let searchActive = false; // true gdy search input ma tekst
 
             /* --- Pre-renderowane dane (wstrzyknięte przez backend) --- */
             const slownikDataScript = document.getElementById("slownik-data");
@@ -563,8 +551,8 @@
             const searchInput = document.getElementById("search-input");
             const searchCatLabel = document.getElementById("search-cat-label");
             const searchSection = document.getElementById("slownik-search-section");
-            const searchResults = document.getElementById("search-results");
             const searchClear = document.getElementById("search-clear-btn");
+            const wordsContainer = document.getElementById("words-container");
 
             const CATEGORY_ICONS = {
                 miasta: "🏙️", panstwa: "🌍", rosliny: "🌿",
@@ -646,31 +634,35 @@
                 doSearch();
             }
 
-            /* --- Search (via API — paginacja) --- */
+            /* --- Search (API) — modyfikuje words-container --- */
             async function doSearch() {
                 const q = searchInput.value.trim();
-                if (!q || q.length < 1 || !activeCategory) {
-                    searchResults.innerHTML = "";
+                if (!q) {
+                    // Wycofaj search → przywroc wyniki litery
+                    searchActive = false;
                     searchClear.style.display = "none";
+                    if (activeCategory && activeLetter) {
+                        renderWordsFromData(activeCategory, activeLetter);
+                    }
                     return;
                 }
+                searchActive = true;
                 searchClear.style.display = "";
-                searchResults.innerHTML = '<p class="loading" style="padding:0.75rem">Szukanie…</p>';
+                wordsContainer.innerHTML = '<p class="loading">Szukanie…</p>';
                 try {
-                    const resp = await fetch(
-                        `/api/dictionary/slownik/search?q=${encodeURIComponent(q)}&category=${encodeURIComponent(activeCategory)}&page=${currentPage}&per_page=10`,
-                    );
+                    const url = `/api/dictionary/slownik/search?q=${encodeURIComponent(q)}&category=${encodeURIComponent(activeCategory)}&letter=${encodeURIComponent(activeLetter)}&page=${currentPage}&per_page=10`;
+                    const resp = await fetch(url);
                     const data = await resp.json();
                     if (data.words.length === 0) {
-                        searchResults.innerHTML = '<p class="empty-state" style="padding:0.75rem;font-size:0.9rem">Brak wyników dla <strong>' + escapeHtml(q) + "</strong></p>";
+                        wordsContainer.innerHTML = '<p class="empty-state">Brak wyników dla <strong>' + escapeHtml(q) + '</strong> w tej kategorii na literę ' + activeLetter.toUpperCase() + '.</p>';
                     } else if (data.structured) {
                         var cols = TABLE_COLUMNS[data.category];
-                        searchResults.innerHTML = cols ? renderStructuredTable(data, cols) : renderSearchChips(data);
+                        wordsContainer.innerHTML = cols ? renderStructuredTable(data, cols) : renderSearchChips(data);
                     } else {
-                        searchResults.innerHTML = renderSearchChips(data);
+                        wordsContainer.innerHTML = renderSearchChips(data);
                     }
                 } catch (e) {
-                    searchResults.innerHTML = '<p class="empty-state" style="padding:0.75rem;font-size:0.9rem">Błąd wyszukiwania</p>';
+                    wordsContainer.innerHTML = '<p class="empty-state">Błąd wyszukiwania</p>';
                 }
             }
 
@@ -685,9 +677,12 @@
             });
             searchClear.addEventListener("click", function () {
                 searchInput.value = "";
-                searchResults.innerHTML = "";
+                searchActive = false;
                 searchClear.style.display = "none";
                 currentPage = 1;
+                if (activeCategory && activeLetter) {
+                    renderWordsFromData(activeCategory, activeLetter);
+                }
                 searchInput.focus();
             });
 
@@ -763,23 +758,22 @@
                 activeCategory = cat;
                 activeLetter = null;
                 currentPage = 1;
+                searchActive = false;
 
                 document.querySelectorAll(".category-card").forEach((c) =>
                     c.classList.toggle("active", c.dataset.cat === cat));
 
-                // Pokaż search (API), ale wyczyść
-                searchSection.style.display = "";
+                // Search schowany — pojawi sie dopiero po wybraniu litery
+                searchSection.style.display = "none";
                 searchCatLabel.textContent = CATEGORY_ICONS[cat] || "🌿";
                 searchInput.placeholder = "Wpisz nazwę " + (CATEGORIES.find((c) => c.id === cat)?.name || "").toLowerCase() + "…";
                 searchInput.value = "";
                 searchClear.style.display = "none";
-                searchResults.innerHTML = "";
 
                 renderLetters();
                 showCategoryDescription(cat);
 
                 // Główny kontener: wyświetl wszystkie slowa dla tej kategorii
-                const wordsContainer = document.getElementById("words-container");
                 const allWords = SLOWNIK_WORDS[cat];
                 if (allWords) {
                     var total = 0;
@@ -794,10 +788,16 @@
 
             function selectLetter(letter) {
                 activeLetter = letter;
+                searchActive = false;
                 document.querySelectorAll(".letter-btn").forEach((b) =>
                     b.classList.toggle("active", b.dataset.letter === letter));
 
-                // Pre-renderowane dane w głównym kontenerze (NIE w search)
+                // Pokaż search pod literami, wyczyść poprzedni
+                searchSection.style.display = "";
+                searchInput.value = "";
+                searchClear.style.display = "none";
+
+                // Pre-renderowane dane w głównym kontenerze
                 renderWordsFromData(activeCategory, letter);
                 updateHash(activeCategory, letter);
             }

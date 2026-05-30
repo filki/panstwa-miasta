@@ -12,6 +12,10 @@ wheels/
 # Node modules
 node_modules/
 
+# OAuth client secrets
+client_secret_*.json
+client_secret_*.apps.googleusercontent.com.json
+
 # Coverage and Sonar
 coverage/
 coverage-js/

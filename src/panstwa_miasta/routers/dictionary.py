@@ -8,7 +8,7 @@ import aiosqlite
 from fastapi import APIRouter, HTTPException
 
 from ..api_models import WordReportIn, WordReportOut
-from ..data import COUNTRIES, JOBS, MIASTA, NAMES, ROSLINY, THINGS, ZWIERZETA
+from ..data import COUNTRIES, JOBS, MIASTA, NAMES, ROSLINY, THINGS, ZWIERZETA, fold_polish_diacritics
 from ..db_backend import _db_path
 from ..word_queue import submit_dictionary_intake
 
@@ -121,10 +121,15 @@ async def get_slownik_categories():
 async def search_slownik(
     q: str = "",
     category: str = "rosliny",
+    letter: str = "",
     page: int = 1,
     per_page: int = 10,
 ):
-    """Wyszukiwarka słownikowa z paginacją.
+    """Wyszukiwarka słownikowa z paginacją i opcjonalnym filtrem litery.
+
+    Gdy podano ``letter``, wyniki są dodatkowo filtrowane do słów
+    zaczynających się na tę literę — obsługiwane zarówno dla kategorii
+    strukturalnych (SQL LIKE) jak i pamięciowych (set comprehension).
 
     Kategorie strukturalne (imiona, panstwa, miasta) zwracają dane z SQLite.
     Pozostałe — listę słów z pamięci.
@@ -132,20 +137,25 @@ async def search_slownik(
     page = max(1, page)
     per_page = max(1, min(50, per_page))
     q = q.strip().lower()
+    letter_stripped = letter.strip().lower()
 
     # --- Kategorie strukturalne: zapytanie do SQLite ---
     if category in STRUCTURED_TABLES:
         info = STRUCTURED_TABLES[category]
         async with aiosqlite.connect(_db_path()) as db:
             db.row_factory = aiosqlite.Row
-            where = ""
+            where_parts: list[str] = []
             params: list[str] = []
             if q:
                 # Dla zapytań 3+ znaków: prefix + substring match
                 # Krótkie zapytania: tylko prefix (substring daje za dużo wyników)
                 pattern = f"%{q}%" if len(q) >= 3 else f"{q}%"
-                where = f"WHERE {info['where_col']} LIKE ?"
-                params = [pattern]
+                where_parts.append(f"{info['where_col']} LIKE ?")
+                params.append(pattern)
+            if letter_stripped:
+                where_parts.append(f"{info['where_col']} LIKE ?")
+                params.append(f"{letter_stripped}%")
+            where = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
             # count
             async with db.execute(
                 f"SELECT COUNT(*) as cnt FROM {info['table']} {where}", params
@@ -164,6 +174,7 @@ async def search_slownik(
         return {
             "category": category,
             "query": q,
+            "letter": letter_stripped,
             "words": words,
             "total": total,
             "page": page,
@@ -176,14 +187,25 @@ async def search_slownik(
     if words_set is None:
         raise HTTPException(404, f"Nieznana kategoria: {category}")
 
+    # Opcjonalny filtr litery (na surowym secie, przed q)
+    if letter_stripped:
+        words_set = {w for w in words_set if fold_polish_diacritics(w).startswith(letter_stripped)}
+
     if not q or len(q) < 1:
+        all_filtered = sorted(words_set) if words_set else []
+        # bez q zwracamy wszystko co pasuje do litery
+        total = len(all_filtered)
+        pages = max(1, math.ceil(total / per_page))
+        offset = (page - 1) * per_page
+        page_results = all_filtered[offset : offset + per_page]
         return {
             "category": category,
             "query": q,
-            "words": [],
-            "total": 0,
-            "page": 1,
-            "pages": 1,
+            "letter": letter_stripped,
+            "words": page_results,
+            "total": total,
+            "page": page,
+            "pages": pages,
             "structured": False,
         }
 
@@ -203,6 +225,7 @@ async def search_slownik(
     return {
         "category": category,
         "query": q,
+        "letter": letter_stripped,
         "words": page_results,
         "total": total,
         "page": page,
