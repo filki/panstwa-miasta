@@ -36,6 +36,9 @@ jest_full_output.txt
 # GeoNames źródło (pobierz: https://download.geonames.org/export/dump/cities15000.zip)
 scripts/cities15000.txt
 
+# Surowa baza geonames (projekt referencyjny)
+/geonames/
+
 # Wyjście scripts/extract_jobs.py
 scripts/pkd_raw_jobs.txt
 

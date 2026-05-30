@@ -11,7 +11,7 @@ from panstwa_miasta.data import (
 
 def test_data_sets_not_empty():
     assert len(NAMES) > 100
-    assert len(MIASTA) > 10_000  # PL (Wikidata) + pl.wiki „A” + GeoNames (≥15k, bez PL)
+    assert len(MIASTA) > 5_000  # PL (Wikidata) + polonized GeoNames
     assert len(JOBS) > 1400
     assert len(COUNTRIES) > 100
 
@@ -40,9 +40,9 @@ def test_job_answer_compound_job_prefixes():
 
 
 def test_miasta_ascii_without_polish_diacritics():
-    """Seed ma „kalińingrad” (ń); alias bez ogonków musi zaliczać walidację."""
-    assert "kalińingrad" in MIASTA
-    assert "kaliningrad" in MIASTA
+    """Seed ma „Dżalalabad” (ż); alias bez ogonków musi zaliczać walidację."""
+    assert "dżalalabad" in MIASTA
+    assert "dzalalabad" in MIASTA
 
 
 def test_rosliny_ascii_without_polish_diacritics():

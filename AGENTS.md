@@ -50,7 +50,18 @@ Bez kroków 1-4 twoja praca jest niekompletna.
 4. **Obsługa CORS:** Backend FastAPI musi akceptować zapytania z domen mobilnych Capacitora: `capacitor://localhost` (iOS) oraz `http://localhost` (Android).
 5. **Połączenia WebSocket & Redis:** Urządzenia mobilne często gubią zasięg. Logika kliencka JS musi posiadać stabilny autopołączenie (`reconnect`) przywracające stan z Redisa, a backend FastAPI musi radzić sobie z nagłymi rozłączeniami (`DisconnectionException`).
 
-## 🧠 Styl pracy i komunikacja (Way of Working)
+## 🚨 ABSOLUTNY ZAKAZ: deploy na produkcję z pominięciem maina
+
+**Nie pchaj na proda z żadnego innego brancha niż `main`.** Ani `git reset --hard origin/dev`, ani bezpośredni SCP, ani patch na żywym serwerze. Nawet jak myślisz że to "to samo". Naruszenie 2026-05-30 — nie powtarzaj.
+
+Poprawna ścieżka:
+1. **Pracuj na `dev`**  → `git push origin dev`
+2. **User weryfikuje** na `dev.panstwamiasta.com.pl`
+3. **User mówi "mergeuj"** → dopiero wtedy
+4. Locally: `git checkout main && git pull origin main && git merge dev --no-ff && git push origin main`
+5. **User mówi "deploy"** → dopiero wtedy
+6. SSH: `cd /srv/panstwa-miasta && git pull origin main && systemctl restart panstwa-miasta`
+
 
 1. **Monotropizm & Zero Fluff:** Komunikuj się krótko, rzeczowo i technicznie. Pomiń powitania, podsumowania, pytania kurtuazyjne i przeprosiny.
 2. **Optymalizacja kontekstu i kodu:** 
