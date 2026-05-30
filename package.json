@@ -34,8 +34,8 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.3.4",
-    "@capacitor/cli": "^8.3.3",
-    "@capacitor/core": "^8.3.3",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
     "@capacitor/share": "^8.0.1",
     "n8n-nodes-langchain": "^1.2.0"
   }
