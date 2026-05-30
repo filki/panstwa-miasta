@@ -49,6 +49,20 @@ def load_cities_geonames_from_seed_file() -> list[tuple[str, str]]:
     ]
 
 
+def load_cities_polonized_from_seed_file() -> list[tuple[str, str]]:
+    return [
+        (row["nazwa"], row["kraj"])
+        for row in iter_jsonl_gz(seed_data_path("cities_polonized.jsonl.gz"))
+    ]
+
+
+def load_cities_to_translate_from_seed_file() -> list[tuple[str, str]]:
+    return [
+        (row["nazwa"], row["kraj"])
+        for row in iter_jsonl_gz(seed_data_path("cities_to_translate.jsonl.gz"))
+    ]
+
+
 def write_jsonl_gz(path: Path, rows: list[dict[str, str]]) -> int:
     path.parent.mkdir(parents=True, exist_ok=True)
     with gzip.open(path, "wt", encoding="utf-8") as f:

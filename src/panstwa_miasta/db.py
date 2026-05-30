@@ -6,7 +6,7 @@ from typing import Literal
 
 import aiosqlite
 
-from .cities_seed import CITIES_SEED
+from .cities_seed import CITIES_SEED, CITIES_TO_TRANSLATE
 from .countries_seed import COUNTRIES_SEED
 from .db_backend import connect, connect_dictionary
 from .db_redis import (
@@ -337,7 +337,30 @@ async def init_db():
                 for row in CITIES_SEED
             ],
         )
-        await db.execute("""
+        await db.execute("""\
+            CREATE TABLE IF NOT EXISTS cities_to_translate (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nazwa TEXT NOT NULL,
+                nazwa_norm TEXT NOT NULL,
+                kraj TEXT NOT NULL,
+                kraj_norm TEXT NOT NULL,
+                UNIQUE(nazwa_norm, kraj_norm)
+            )
+        """)
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_ctt_nazwa ON cities_to_translate(nazwa_norm)")
+        await _seed_executemany_if_empty(
+            db,
+            "cities_to_translate",
+            """
+                INSERT OR IGNORE INTO cities_to_translate (nazwa, nazwa_norm, kraj, kraj_norm)
+                VALUES (?, ?, ?, ?)
+                """,
+            [
+                (row["nazwa"], _name_norm(row["nazwa"]), row["kraj"], _name_norm(row["kraj"]))
+                for row in CITIES_TO_TRANSLATE
+            ],
+        )
+        await db.execute("""\
             CREATE TABLE IF NOT EXISTS names (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 imie TEXT NOT NULL,
