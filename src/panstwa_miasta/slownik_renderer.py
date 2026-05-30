@@ -59,6 +59,17 @@ CATEGORY_DESCRIPTIONS = {
 
 SITE_ORIGIN = "https://panstwamiasta.com.pl"
 
+# Kolumny tabel dla kategorii strukturalnych — zgodne z JS TABLE_COLUMNS
+_STRUCTURED_HDRS: dict[str, list[tuple[str, str]]] = {
+    "miasta": [("name", "Miasto"), ("country", "Kraj")],
+    "panstwa": [
+        ("name", "Państwo"),
+        ("continent", "Kontynent"),
+        ("capital", "Stolica"),
+    ],
+    "imiona": [("name", "Imię"), ("gender", "Płeć"), ("count", "Liczba")],
+}
+
 
 def _words_by_letter(words: set[str], letter: str) -> list[str]:
     """Zwraca slowa z setu zaczynajace sie na litere (fold diacritics, sorted)."""
@@ -99,16 +110,39 @@ async def _query_structured_counts(
     return counts
 
 
-def _words_to_html(
-    words: list[str] | list[dict[str, object]],
-    structured: bool,
+def _render_table(
+    words: list[dict],
+    cat_id: str,
 ) -> str:
-    """Render word list as inline ul/li HTML."""
-    items: list[str] = []
+    """Render structured category words as an HTML table."""
+    cols = _STRUCTURED_HDRS.get(cat_id, [])
+    if not cols:
+        return ""
+
+    hdrs = "".join(f"<th>{_escape(label)}</th>" for _, label in cols)
+    rows_html = ""
     for w in words:
-        name: str = str(w["name"]) if structured else str(w)  # type: ignore
-        items.append(f"<li>{escape(str(name))}</li>")
-    return f'<ul class="word-list">{"".join(items)}</ul>'
+        cells = "".join("<td>" + _escape(str(w.get(key, ""))) + "</td>" for key, _ in cols)
+        rows_html += f"<tr>{cells}</tr>"
+
+    return (
+        '<div class="slownik-table-wrap">'
+        '<table class="slownik-table">'
+        f"<thead><tr>{hdrs}</tr></thead>"
+        f"<tbody>{rows_html}</tbody>"
+        "</table>"
+        "</div>"
+    )
+
+
+def _render_list(words: list[str]) -> str:
+    """Render non-structured words as an inline ul/li."""
+    items = "".join(f"<li>{_escape(w)}</li>" for w in words)
+    return f'<ul class="word-list">{items}</ul>'
+
+
+def _escape(s: str) -> str:
+    return escape(s)
 
 
 def _jsonld_itemlist(
@@ -162,28 +196,28 @@ async def render_slownik_sections(
 
         for letter in LETTERS:
             if structured:
-                # Structured — query SQLite
+                # Structured — query SQLite, keep full rows for table render
                 rows = await _query_structured_by_letter(db, cat_id, letter, limit=preview_limit)
-                words_for_html = [r["name"] for r in rows]
                 words_preview = [r["name"] for r in rows]
                 letter_data[letter.lower()] = words_preview
+                words_html = _render_table(rows, cat_id) if rows else None
             else:
                 # Non-structured — filter in-memory set
                 words_set = non_structured.get(cat_id, set())
                 all_words = _words_by_letter(words_set, letter)
                 words_preview = all_words[:preview_limit]
-                words_for_html = words_preview
                 letter_data[letter.lower()] = words_preview
+                words_html = _render_list(words_preview) if words_preview else None
 
-            if not words_for_html:
+            if not words_html:
                 continue
 
             # Hidden HTML section
             section_id = f"dict-{cat_id}-{letter.lower()}"
             html = (
                 f'<section id="{section_id}" hidden>'
-                f"<h2>{escape(cat_name)} na {escape(letter)}</h2>"
-                f"{_words_to_html(words_for_html, False)}"
+                f"<h2>{_escape(cat_name)} na {_escape(letter)}</h2>"
+                f"{words_html}"
                 f"</section>"
             )
             sections.append(html)
