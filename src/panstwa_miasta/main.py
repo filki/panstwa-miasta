@@ -32,6 +32,10 @@ from .appeal_tokens import issue_appeal_token, verify_appeal_token
 from .appeals_service import submit_appeal
 from .constants import STOP_SUBMIT_GRACE_SECONDS, STOP_SUBMIT_SECONDS
 from .data import (
+    JOBS,
+    ROSLINY,
+    THINGS,
+    ZWIERZETA,
     reload_countries,
     reload_jobs,
     reload_miasta,
@@ -175,6 +179,16 @@ async def delete_room_immediate(room_id: str) -> None:
 
 
 @app.middleware("http")
+async def cache_static_middleware(request: Request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if path.startswith("/static/"):
+        if any(path.endswith(ext) for ext in (".css", ".js", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".ico", ".woff2")):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return response
+
+
+@app.middleware("http")
 async def rate_limit_http_middleware(request: Request, call_next):
     bucket = http_rate_bucket_name(request.url.path)
     if bucket is not None and (
@@ -292,7 +306,10 @@ async def _html_with_injected_footer(page_path: pathlib.Path) -> HTMLResponse:
     html_content = inject_before_head_close(html_content, public_head_snippets())
     if _DEV_RIBBON_HTML:
         html_content = inject_before_head_close(html_content, _DEV_RIBBON_HTML)
-    return HTMLResponse(content=html_content)
+    return HTMLResponse(
+        content=html_content,
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
 
 
 async def _html_with_meta(page_path: pathlib.Path, extra_head: str) -> HTMLResponse:
@@ -381,7 +398,48 @@ async def get_regulamin() -> HTMLResponse:
 
 @app.get("/slownik")
 async def get_slownik() -> HTMLResponse:
-    return await _html_with_injected_footer(SLOWNIK_PATH)
+    resp = await _html_with_injected_footer(SLOWNIK_PATH)
+    html_content = resp.body.decode("utf-8") if isinstance(resp.body, bytes) else str(resp.body)
+
+    # Pre-render ukryte sekcje + JSON-LD + dane dla JS
+    from .db_backend import connect
+    from .slownik_renderer import render_slownik_sections
+
+    non_structured = {
+        "rosliny": ROSLINY,
+        "zwierzeta": ZWIERZETA,
+        "zawody": JOBS,
+        "rzeczy": THINGS,
+    }
+    try:
+        async with connect() as db:
+            db.row_factory = aiosqlite.Row  # type: ignore[attr-defined]
+            sections_html, jsonld, jsondata, _counts = await render_slownik_sections(
+                db, non_structured
+            )
+    except Exception:
+        # Fallback: bez pre-renderu
+        sections_html = ""
+        jsonld = ""
+        jsondata = ""
+
+    # Wstrzyknij JSON-LD i data blob przed </head>
+    if jsonld:
+        html_content = inject_before_head_close(html_content, jsonld + "\n")
+    if jsondata:
+        html_content = inject_before_head_close(html_content, jsondata + "\n")
+
+    # Wstrzyknij ukryte sekcje przed </body>
+    if sections_html:
+        body_marker = "</body>"
+        idx = html_content.lower().find(body_marker)
+        if idx != -1:
+            html_content = html_content[:idx] + sections_html + "\n" + html_content[idx:]
+
+    return HTMLResponse(
+        content=html_content,
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
 
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
@@ -394,7 +452,10 @@ async def get_robots_txt() -> PlainTextResponse:
         "Disallow: /share/\n"
         f"Sitemap: {SITE_PUBLIC_ORIGIN}/sitemap.xml\n"
     )
-    return PlainTextResponse(content=body)
+    return PlainTextResponse(
+        content=body,
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 @app.get("/sitemap.xml")
@@ -428,7 +489,11 @@ async def get_sitemap_xml() -> Response:
         f"{urls}"
         "</urlset>\n"
     )
-    return Response(content=body, media_type="application/xml")
+    return Response(
+        content=body,
+        media_type="application/xml",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 # Service worker must be served from a top-level scope to control all routes.
