@@ -587,6 +587,12 @@
                 ],
                 rosliny: [
                     { key: "name", label: "Roślina", tdClass: "slownik-td-name" },
+                    { key: "latin", label: "Nazwa łacińska", tdClass: "slownik-td-gender",
+                      format: (v) => v || "—" },
+                    { key: "family", label: "Rodzina", tdClass: "slownik-td-gender",
+                      format: (v) => v || "—" },
+                    { key: "genus", label: "Rodzaj", tdClass: "slownik-td-gender",
+                      format: (v) => v || "—" },
                 ],
                 zwierzeta: [
                     { key: "name", label: "Zwierzę", tdClass: "slownik-td-name" },

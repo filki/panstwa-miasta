@@ -22,6 +22,5 @@ CITIES_SEED = [
 
 # Tabela do tłumaczenia: reszta GeoNames
 CITIES_TO_TRANSLATE = [
-    {"nazwa": row[0], "kraj": row[1]}
-    for row in load_cities_to_translate_from_seed_file()
+    {"nazwa": row[0], "kraj": row[1]} for row in load_cities_to_translate_from_seed_file()
 ]

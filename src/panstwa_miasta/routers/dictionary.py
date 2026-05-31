@@ -8,7 +8,16 @@ import aiosqlite
 from fastapi import APIRouter, HTTPException
 
 from ..api_models import WordReportIn, WordReportOut
-from ..data import COUNTRIES, JOBS, MIASTA, NAMES, ROSLINY, THINGS, ZWIERZETA, fold_polish_diacritics
+from ..data import (
+    COUNTRIES,
+    JOBS,
+    MIASTA,
+    NAMES,
+    ROSLINY,
+    THINGS,
+    ZWIERZETA,
+    fold_polish_diacritics,
+)
 from ..db_backend import _db_path
 from ..word_queue import submit_dictionary_intake
 
@@ -51,10 +60,10 @@ STRUCTURED_TABLES = {
         "order": "opis ASC",
     },
     "rosliny": {
-        "table": "plant_norms",
-        "columns": "norm AS name",
-        "where_col": "norm",
-        "order": "norm ASC",
+        "table": "plants",
+        "columns": "nazwa AS name, nazwa_lacinska AS latin, rodzina AS family, rodzaj AS genus",
+        "where_col": "nazwa_norm",
+        "order": "nazwa ASC",
     },
     "zwierzeta": {
         "table": "animals",

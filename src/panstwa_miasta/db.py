@@ -347,7 +347,9 @@ async def init_db():
                 UNIQUE(nazwa_norm, kraj_norm)
             )
         """)
-        await db.execute("CREATE INDEX IF NOT EXISTS idx_ctt_nazwa ON cities_to_translate(nazwa_norm)")
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_ctt_nazwa ON cities_to_translate(nazwa_norm)"
+        )
         await _seed_executemany_if_empty(
             db,
             "cities_to_translate",

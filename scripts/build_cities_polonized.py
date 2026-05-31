@@ -17,9 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 import zipfile
-from datetime import UTC, datetime
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -138,20 +136,19 @@ def load_polish_alternames(zip_path: Path) -> dict[str, str]:
     if not zip_path.exists():
         print(f"  [WARN] {zip_path} nie istnieje — brak polskich nazw z alternateNames")
         return result
-    with zipfile.ZipFile(zip_path, "r") as z:
-        with z.open("alternateNamesV2.txt") as f:
-            for raw in f:
-                parts = raw.decode("utf-8").strip().split("\t")
-                if len(parts) < 4:
-                    continue
-                lang = parts[2]
-                if lang == "pl":
-                    gid = parts[1]
-                    alt_name = parts[3]
-                    is_pref = parts[4] if len(parts) > 4 else "0"
-                    # Preferuj preferred, potem pierwszy znaleziony
-                    if gid not in result or is_pref == "1":
-                        result[gid] = alt_name
+    with zipfile.ZipFile(zip_path, "r") as z, z.open("alternateNamesV2.txt") as f:
+        for raw in f:
+            parts = raw.decode("utf-8").strip().split("\t")
+            if len(parts) < 4:
+                continue
+            lang = parts[2]
+            if lang == "pl":
+                gid = parts[1]
+                alt_name = parts[3]
+                is_pref = parts[4] if len(parts) > 4 else "0"
+                # Preferuj preferred, potem pierwszy znaleziony
+                if gid not in result or is_pref == "1":
+                    result[gid] = alt_name
     return result
 
 
@@ -226,8 +223,10 @@ def main() -> None:
         geoname_to_city[geonameid] = (display_name, kraj, fcode, is_polish)
 
     print(f"  Ogółem: {len(geoname_to_city)} miast")
-    print(f"  Pominięte: PL={counts['pl_skip']}, feat={counts['feat_skip']}, "
-          f"pop={counts['pop_skip']}, kraj={counts['kraj_skip']}, dup={counts['dup_skip']}")
+    print(
+        f"  Pominięte: PL={counts['pl_skip']}, feat={counts['feat_skip']}, "
+        f"pop={counts['pop_skip']}, kraj={counts['kraj_skip']}, dup={counts['dup_skip']}"
+    )
 
     # --- Podział na polonized / to_translate ---
     polonized: list[tuple[str, str]] = []

@@ -2,7 +2,6 @@
 
 from panstwa_miasta.seed_data_loader import (
     load_animal_norms_from_seed_file,
-    load_cities_geonames_from_seed_file,
     load_cities_polonized_from_seed_file,
     load_cities_to_translate_from_seed_file,
     load_plant_norms_from_seed_file,
