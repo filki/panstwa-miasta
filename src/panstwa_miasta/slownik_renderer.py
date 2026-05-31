@@ -20,7 +20,7 @@ CATEGORIES = [
     ("miasta", "Miasta", "🏙️", True, 20),
     ("panstwa", "Państwa", "🌍", True, 20),
     ("rosliny", "Rośliny", "🌿", False, 20),
-    ("zwierzeta", "Zwierzęta", "🐾", False, 20),
+    ("zwierzeta", "Zwierzęta", "🐾", True, 20),
     ("imiona", "Imiona", "👤", True, 20),
     ("zawody", "Zawody", "💼", False, 20),
     ("rzeczy", "Rzeczy", "📦", False, 20),
@@ -42,6 +42,12 @@ STRUCTURED_TABLES = {
     "miasta": {
         "table": "cities",
         "columns": "nazwa AS name, kraj AS country",
+        "where_col": "nazwa_norm",
+        "order": "nazwa ASC",
+    },
+    "zwierzeta": {
+        "table": "animals",
+        "columns": "nazwa AS name, nazwa_lacinska AS latin, rodzina AS family, rodzaj AS genus",
         "where_col": "nazwa_norm",
         "order": "nazwa ASC",
     },
@@ -68,6 +74,12 @@ _STRUCTURED_HDRS: dict[str, list[tuple[str, str]]] = {
         ("capital", "Stolica"),
     ],
     "imiona": [("name", "Imię"), ("gender", "Płeć"), ("count", "Liczba")],
+    "zwierzeta": [
+        ("name", "Zwierzę"),
+        ("latin", "Nazwa łacińska"),
+        ("family", "Rodzina"),
+        ("genus", "Rodzaj"),
+    ],
 }
 
 
