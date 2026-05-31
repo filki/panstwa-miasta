@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Państwa-Miasta — SPARQL Seed Data Pipeline</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" integrity="sha384-en/ztfPSRkGfME4KIm05joYXynqzUgbsG5nMrj/xEFAHXkeZfO3yMK8QQ+mP7p1/" crossorigin="anonymous"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #020617; color: #e2e8f0; font-family: 'JetBrains Mono', monospace; display: flex; justify-content: center; padding: 20px; }
+.container { max-width: 1100px; width: 100%; }
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.header-left { display: flex; align-items: center; gap: 12px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: #34d399; animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.header h1 { font-size: 18px; font-weight: 700; color: #f1f5f9; letter-spacing: 0.5px; }
+.header .subtitle { font-size: 11px; color: #64748b; margin-top: 2px; }
+.toolbar { display: flex; align-items: center; gap: 6px; }
+.toolbar-toggle { background: none; border: 1px solid #334155; color: #94a3b8; width: 30px; height: 26px; border-radius: 4px; cursor: pointer; font-size: 14px; line-height: 1; }
+.toolbar-toggle:hover { background: #1e293b; }
+.toolbar-actions { display: none; gap: 6px; }
+.toolbar-actions.show { display: flex; }
+.toolbar-actions button { background: #1e293b; border: 1px solid #334155; color: #cbd5e1; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-family: inherit; }
+.toolbar-actions button:hover { background: #334155; }
+.diagram-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; overflow: hidden; }
+.diagram-card svg { display: block; margin: 0 auto; }
+.summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+.card { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 14px; }
+.card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.card-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.card h3 { font-size: 12px; font-weight: 600; color: #e2e8f0; }
+.card ul { list-style: none; }
+.card li { font-size: 10px; color: #94a3b8; line-height: 1.7; padding-left: 4px; }
+.footer { margin-top: 12px; font-size: 9px; color: #475569; text-align: center; }
+@media print { .toolbar { display: none !important; } body { background: white; } .container { max-width: 100%; } svg { max-width: 100%; } }
+</style>
+</head>
+<body>
+<div class="container" id="report-container">
+  <div class="header">
+    <div class="header-left">
+      <div class="dot"></div>
+      <div>
+        <h1>Państwa-Miasta · Seed Data Pipeline</h1>
+        <div class="subtitle">SPARQL → Turso → dictionary.py → slownik.html</div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-actions" id="toolbarActions">
+        <button onclick="copyAsImage()">📋 Copy</button>
+        <button onclick="downloadPNG()">🖼️ PNG</button>
+        <button onclick="downloadPDF()">📄 PDF</button>
+      </div>
+      <button class="toolbar-toggle" onclick="toggleToolbar()">⋯</button>
+    </div>
+  </div>
+
+  <div class="diagram-card">
+    <svg viewBox="0 0 960 680" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+      <defs>
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+        </pattern>
+        <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+        </marker>
+        <marker id="arrow-emerald" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#34d399"/>
+        </marker>
+        <marker id="arrow-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee"/>
+        </marker>
+      </defs>
+
+      <!-- Background grid -->
+      <rect width="960" height="680" fill="url(#grid)"/>
+
+      <!-- Arrows drawn behind components -->
+
+      <!-- WDQS → seed script: dashed exploratory query -->
+      <path d="M 320 145 L 430 145" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <text x="375" y="135" fill="#64748b" font-size="7" text-anchor="middle">SPARQL VALUES</text>
+
+      <!-- seed script → code patches -->
+      <path d="M 540 165 L 540 260 L 840 260 L 840 280" stroke="#34d399" stroke-width="1.5" fill="none" marker-end="url(#arrow-emerald)"/>
+      <text x="690" y="250" fill="#64748b" font-size="7" text-anchor="middle">INSERT OR IGNORE</text>
+
+      <!-- seed script → plants.jsonl.gz (local file) -->
+      <path d="M 540 200 L 700 200 L 700 220" stroke="#64748b" stroke-width="1" stroke-dasharray="3,3" fill="none" marker-end="url(#arrow)"/>
+      <text x="620" y="193" fill="#64748b" font-size="7" text-anchor="middle">backup</text>
+
+      <!-- animal_norms → seed script -->
+      <path d="M 130 280 L 130 165 L 320 165" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+      <text x="130" y="222" fill="#64748b" font-size="7" text-anchor="middle" transform="rotate(-90,130,222)">turso db shell</text>
+
+      <!-- Turso <-> FastAPI (dictionary.py reads) -->
+      <path d="M 130 400 L 130 510" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <text x="145" y="458" fill="#64748b" font-size="7">SELECT</text>
+
+      <!-- FastAPI -> slownik.html -->
+      <path d="M 130 530 L 130 570 L 440 570 L 440 590" stroke="#22d3ee" stroke-width="1.5" fill="none" marker-end="url(#arrow-cyan)"/>
+      <text x="260" y="565" fill="#64748b" font-size="7" text-anchor="middle">HTTP JSON /api/dictionary/…</text>
+
+      <!-- slownik_renderer.py (FastAPI) -> slownik.html -->
+      <path d="M 130 530 L 130 570 L 440 570 L 440 590" stroke="#22d3ee" stroke-width="1.5" fill="none" marker-end="url(#arrow-cyan)"/>
+
+      <!-- code patches (dictionary.py + slownik_renderer.py) -> FastAPI -->
+      <path d="M 840 380 L 840 420 L 250 420 L 250 490" stroke="#34d399" stroke-width="1.5" fill="none" marker-end="url(#arrow-emerald)"/>
+      <text x="640" y="408" fill="#64748b" font-size="7" text-anchor="middle">STRUCTURED_TABLES · CATEGORIES · _STRUCTURED_HDRS</text>
+
+      <!-- slownik.html (patched) -> browser -->
+      <path d="M 440 610 L 440 630 L 130 630 L 130 640" stroke="#22d3ee" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
+
+      <!-- =================== COMPONENTS =================== -->
+
+      <!-- 1. WIKIDATA (top-left) -->
+      <rect x="80" y="100" width="240" height="90" rx="8" fill="#0f172a"/>
+      <rect x="80" y="100" width="240" height="90" rx="8" fill="rgba(251,146,60,0.3)" stroke="#fb923c" stroke-width="1.5"/>
+      <text x="200" y="128" fill="#fb923c" font-size="11" font-weight="600" text-anchor="middle">📡 Wikidata Query Service</text>
+      <text x="200" y="148" fill="#94a3b8" font-size="9" text-anchor="middle">WDQS · query.wikidata.org/sparql</text>
+      <text x="200" y="164" fill="#64748b" font-size="8" text-anchor="middle">wdt:P31 wd:Q729 / wd:Q16521</text>
+      <text x="200" y="178" fill="#64748b" font-size="8" text-anchor="middle">P1843 ∪ rdfs:label · P225 · P171</text>
+
+      <!-- 2. SEED SCRIPTS (center) -->
+      <rect x="430" y="100" width="220" height="130" rx="8" fill="#0f172a"/>
+      <rect x="430" y="100" width="220" height="130" rx="8" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="540" y="128" fill="#34d399" font-size="11" font-weight="600" text-anchor="middle">🐍 Scripts SPARQL</text>
+      <text x="540" y="148" fill="#94a3b8" font-size="9" text-anchor="middle">seed_animals_sparql.py</text>
+      <text x="540" y="164" fill="#94a3b8" font-size="9" text-anchor="middle">seed_plants_sparql.py</text>
+      <text x="540" y="185" fill="#64748b" font-size="8" text-anchor="middle">batch 500 · sleep(1) · 3 retry</text>
+      <text x="540" y="200" fill="#64748b" font-size="8" text-anchor="middle">turso db shell → INSERT</text>
+      <text x="540" y="215" fill="#64748b" font-size="8" text-anchor="middle">plants.jsonl.gz backup</text>
+
+      <!-- 3. TURSO DATABASE (left) -->
+      <rect x="60" y="280" width="200" height="110" rx="8" fill="#0f172a"/>
+      <rect x="60" y="280" width="200" height="110" rx="8" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+      <text x="160" y="308" fill="#a78bfa" font-size="11" font-weight="600" text-anchor="middle">🗄️ Turso (libSQL)</text>
+      <text x="160" y="328" fill="#94a3b8" font-size="9" text-anchor="middle">panstwa-miasta</text>
+      <text x="160" y="350" fill="#64748b" font-size="8" text-anchor="middle">animals: nazwa, latin, rodzina, rodzaj</text>
+      <text x="160" y="364" fill="#64748b" font-size="8" text-anchor="middle">plants:  nazwa, latin, rodzina, rodzaj</text>
+      <text x="160" y="378" fill="#64748b" font-size="8" text-anchor="middle">animal_norms / plant_norms</text>
+
+      <!-- 4. NORMS (left, below Turso) -->
+      <rect x="60" y="490" width="200" height="60" rx="8" fill="#0f172a"/>
+      <rect x="60" y="490" width="200" height="60" rx="8" fill="rgba(30,41,59,0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+      <text x="160" y="514" fill="#94a3b8" font-size="10" font-weight="600" text-anchor="middle">📋 Tabele źródłowe</text>
+      <text x="160" y="532" fill="#64748b" font-size="8" text-anchor="middle">animal_norms (1k) · plant_norms (12.8k)</text>
+
+      <!-- 5. CODE PATCHES (right) -->
+      <rect x="770" y="280" width="170" height="140" rx="8" fill="#0f172a"/>
+      <rect x="770" y="280" width="170" height="140" rx="8" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="855" y="308" fill="#34d399" font-size="11" font-weight="600" text-anchor="middle">🔧 Kod do patcha</text>
+      <text x="855" y="332" fill="#94a3b8" font-size="9" text-anchor="middle">dictionary.py</text>
+      <text x="855" y="348" fill="#64748b" font-size="8" text-anchor="middle">STRUCTURED_TABLES</text>
+      <text x="855" y="368" fill="#94a3b8" font-size="9" text-anchor="middle">slownik_renderer.py</text>
+      <text x="855" y="384" fill="#64748b" font-size="8" text-anchor="middle">CATEGORIES (structured)</text>
+      <text x="855" y="398" fill="#64748b" font-size="8" text-anchor="middle">_STRUCTURED_HDRS</text>
+
+      <!-- 6. FASTAPI BACKEND (left center) -->
+      <rect x="60" y="490" width="200" height="60" rx="8" fill="#0f172a"/>
+      <rect x="60" y="490" width="200" height="60" rx="8" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="160" y="514" fill="#34d399" font-size="10" font-weight="600" text-anchor="middle">⚙️ FastAPI Backend</text>
+      <text x="160" y="532" fill="#64748b" font-size="8" text-anchor="middle">/api/dictionary/slownik/…</text>
+
+      <!-- 7. FRONTEND (bottom) -->
+      <rect x="340" y="590" width="200" height="60" rx="8" fill="#0f172a"/>
+      <rect x="340" y="590" width="200" height="60" rx="8" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+      <text x="440" y="614" fill="#22d3ee" font-size="10" font-weight="600" text-anchor="middle">🌐 slownik.html</text>
+      <text x="440" y="632" fill="#64748b" font-size="8" text-anchor="middle">TABLE_COLUMNS · dynamic JSON</text>
+
+      <!-- 8. PLANTS BACKUP (top right) -->
+      <rect x="770" y="110" width="170" height="55" rx="6" fill="#0f172a"/>
+      <rect x="770" y="110" width="170" height="55" rx="6" fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="4,4"/>
+      <text x="855" y="134" fill="#fbbf24" font-size="9" font-weight="600" text-anchor="middle">🗂️ backup file</text>
+      <text x="855" y="152" fill="#64748b" font-size="8" text-anchor="middle">plants.jsonl.gz (987)</text>
+
+      <!-- 9. USER (top right) -->
+      <rect x="770" y="200" width="170" height="50" rx="6" fill="#0f172a"/>
+      <rect x="770" y="200" width="170" height="50" rx="6" fill="rgba(136,19,55,0.4)" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="4,4"/>
+      <text x="855" y="224" fill="#fb7185" font-size="10" font-weight="600" text-anchor="middle">👤 Ty</text>
+      <text x="855" y="240" fill="#64748b" font-size="8" text-anchor="middle">terminal: uv run python</text>
+
+      <!-- Arrows from user -->
+      <path d="M 770 225 L 660 225 L 660 165" stroke="#fb7185" stroke-width="1" stroke-dasharray="3,3" fill="none" marker-end="url(#arrow)"/>
+      <path d="M 770 225 L 660 225 L 660 350" stroke="#fb7185" stroke-width="1" stroke-dasharray="3,3" fill="none" marker-end="url(#arrow)"/>
+
+      <!-- =================== LEGEND =================== -->
+      <rect x="40" y="660" width="880" height="1" fill="#1e293b"/>
+
+      <rect x="40" y="670" width="12" height="12" rx="3" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1"/>
+      <text x="58" y="679" fill="#94a3b8" font-size="8">Backend / Seed script</text>
+
+      <rect x="220" y="670" width="12" height="12" rx="3" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1"/>
+      <text x="238" y="679" fill="#94a3b8" font-size="8">Frontend</text>
+
+      <rect x="350" y="670" width="12" height="12" rx="3" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1"/>
+      <text x="368" y="679" fill="#94a3b8" font-size="8">Database</text>
+
+      <rect x="480" y="670" width="12" height="12" rx="3" fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1" stroke-dasharray="2,2"/>
+      <text x="498" y="679" fill="#94a3b8" font-size="8">External / File</text>
+
+      <rect x="610" y="670" width="12" height="12" rx="3" fill="rgba(136,19,55,0.4)" stroke="#fb7185" stroke-width="1" stroke-dasharray="2,2"/>
+      <text x="628" y="679" fill="#94a3b8" font-size="8">User / Auth</text>
+
+      <rect x="740" y="670" width="12" height="12" rx="3" fill="rgba(251,146,60,0.3)" stroke="#fb923c" stroke-width="1"/>
+      <text x="758" y="679" fill="#94a3b8" font-size="8">External API</text>
+
+    </svg>
+  </div>
+
+  <div class="summary-grid">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot" style="background:#34d399"></div>
+        <h3>Scripts</h3>
+      </div>
+      <ul>
+        <li>• seed_animals_sparql.py</li>
+        <li>• seed_plants_sparql.py</li>
+        <li>• batch 500 · sleep(1) · 3 retry</li>
+        <li>• backup do plants.jsonl.gz</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot" style="background:#a78bfa"></div>
+        <h3>Database (Turso)</h3>
+      </div>
+      <ul>
+        <li>• animals: 842 → ∞ (bez duplikatów)</li>
+        <li>• plants: 987 → ∞</li>
+        <li>• INSERT OR IGNORE</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot" style="background:#22d3ee"></div>
+        <h3>Frontend</h3>
+      </div>
+      <ul>
+        <li>• dictionary.py STRUCTURED_TABLES</li>
+        <li>• slownik_renderer.py CATEGORIES</li>
+        <li>• slownik.html TABLE_COLUMNS</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer">panstwamiasta.com.pl · Państwa-Miasta · seed-data-pipeline · v1.0</div>
+</div>
+
+<script>
+function toggleToolbar() { document.getElementById('toolbarActions').classList.toggle('show'); }
+function capture() {
+  const el = document.getElementById('report-container');
+  const rect = el.getBoundingClientRect();
+  return html2canvas(document.body, {
+    x: rect.left - 20, y: rect.top - 20,
+    width: rect.width + 40, height: rect.height + 40,
+    scale: 2,
+    ignoreElements: (e) => e.classList.contains('toolbar') && !e.classList.contains('toolbar-toggle')
+  });
+}
+async function copyAsImage() {
+  const canvas = await capture();
+  canvas.toBlob(async b => {
+    try { await navigator.clipboard.write([new ClipboardItem({'image/png': b})]); } catch(e) { alert('Copy failed: ' + e.message); }
+  });
+}
+async function downloadPNG() {
+  const canvas = await capture();
+  const a = document.createElement('a');
+  a.download = 'seed-data-pipeline.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+async function downloadPDF() {
+  const canvas = await capture();
+  const imgData = canvas.toDataURL('image/png');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width/2, canvas.height/2] });
+  pdf.addImage(imgData, 'PNG', 0, 0, canvas.width/2, canvas.height/2);
+  pdf.save('seed-data-pipeline.pdf');
+}
+</script>
+</body>
+</html>
