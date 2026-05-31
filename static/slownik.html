@@ -585,6 +585,21 @@
                     { key: "code", label: "Kod PKD", tdClass: "slownik-td-gender",
                       format: (v) => v || "—" },
                 ],
+                rosliny: [
+                    { key: "name", label: "Roślina", tdClass: "slownik-td-name" },
+                ],
+                zwierzeta: [
+                    { key: "name", label: "Zwierzę", tdClass: "slownik-td-name" },
+                    { key: "latin", label: "Nazwa łacińska", tdClass: "slownik-td-gender",
+                      format: (v) => v || "—" },
+                    { key: "family", label: "Rodzina", tdClass: "slownik-td-gender",
+                      format: (v) => v || "—" },
+                    { key: "genus", label: "Rodzaj", tdClass: "slownik-td-gender",
+                      format: (v) => v || "—" },
+                ],
+                rzeczy: [
+                    { key: "name", label: "Rzecz", tdClass: "slownik-td-name" },
+                ],
             };
 
             function renderStructuredTable(data, columns) {

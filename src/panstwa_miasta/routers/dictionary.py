@@ -57,10 +57,10 @@ STRUCTURED_TABLES = {
         "order": "norm ASC",
     },
     "zwierzeta": {
-        "table": "animal_norms",
-        "columns": "norm AS name",
-        "where_col": "norm",
-        "order": "norm ASC",
+        "table": "animals",
+        "columns": "nazwa AS name, nazwa_lacinska AS latin, rodzina AS family, rodzaj AS genus, kategoria_zagrozenia AS threat_category",
+        "where_col": "nazwa_norm",
+        "order": "nazwa ASC",
     },
 }
 
