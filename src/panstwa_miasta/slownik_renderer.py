@@ -19,7 +19,7 @@ LETTERS = "ABCDEFGHIJKLMNOPRSTUWZ"
 CATEGORIES = [
     ("miasta", "Miasta", "🏙️", True, 20),
     ("panstwa", "Państwa", "🌍", True, 20),
-    ("rosliny", "Rośliny", "🌿", False, 20),
+    ("rosliny", "Rośliny", "🌿", True, 20),
     ("zwierzeta", "Zwierzęta", "🐾", True, 20),
     ("imiona", "Imiona", "👤", True, 20),
     ("zawody", "Zawody", "💼", False, 20),
@@ -51,6 +51,12 @@ STRUCTURED_TABLES = {
         "where_col": "nazwa_norm",
         "order": "nazwa ASC",
     },
+    "rosliny": {
+        "table": "plants",
+        "columns": "nazwa AS name, nazwa_lacinska AS latin, rodzina AS family, rodzaj AS genus",
+        "where_col": "nazwa_norm",
+        "order": "nazwa ASC",
+    },
 }
 
 CATEGORY_DESCRIPTIONS = {
@@ -76,6 +82,12 @@ _STRUCTURED_HDRS: dict[str, list[tuple[str, str]]] = {
     "imiona": [("name", "Imię"), ("gender", "Płeć"), ("count", "Liczba")],
     "zwierzeta": [
         ("name", "Zwierzę"),
+        ("latin", "Nazwa łacińska"),
+        ("family", "Rodzina"),
+        ("genus", "Rodzaj"),
+    ],
+    "rosliny": [
+        ("name", "Roślina"),
         ("latin", "Nazwa łacińska"),
         ("family", "Rodzina"),
         ("genus", "Rodzaj"),

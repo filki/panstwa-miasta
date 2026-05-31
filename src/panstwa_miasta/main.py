@@ -183,7 +183,10 @@ async def cache_static_middleware(request: Request, call_next):
     response = await call_next(request)
     path = request.url.path
     if path.startswith("/static/"):
-        if any(path.endswith(ext) for ext in (".css", ".js", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".ico", ".woff2")):
+        if any(
+            path.endswith(ext)
+            for ext in (".css", ".js", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".ico", ".woff2")
+        ):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     return response
 
