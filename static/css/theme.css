@@ -3,7 +3,7 @@
 @theme {
     --color-1: #3e140f;
     --color-2: #74371f;
-    --color-3: #d58f23;
+    --color-3: #7a4f0f;
     --color-4: #eee08f;
     --color-5: #efefd2;
 
@@ -18,13 +18,18 @@
 :root {
     --brand-1: #3e140f;
     --brand-2: #74371f;
-    --brand-3: #d58f23;
+    --brand-3: #7a4f0f;
     --brand-4: #eee08f;
     --brand-5: #efefd2;
 }
 
 html {
     -webkit-tap-highlight-color: transparent;
+}
+
+*:focus-visible {
+    outline: 3px solid #1a0a06;
+    outline-offset: 2px;
 }
 
 body {
@@ -2316,7 +2321,7 @@ button {
 :root {
     --brand-1: #3e140f;
     --brand-2: #74371f;
-    --brand-3: #d58f23;
+    --brand-3: #7a4f0f;
     --brand-4: #eee08f;
     --brand-5: #efefd2;
     --primary: var(--brand-3);

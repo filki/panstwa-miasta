@@ -200,8 +200,12 @@
         <link rel="stylesheet" href="/static/css/dist.css?v=4" />
     </head>
     <body class="landing-page">
+        <a href="#main" class="skip-link sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:p-4 focus:bg-white focus:text-black focus:outline-2 focus:outline-[#1a0a06] focus:rounded-lg">
+            Przejdź do treści
+        </a>
         <nav
             class="fixed inset-x-0 top-0 z-50 h-14 md:h-16 bg-5/96 backdrop-blur-xl border-b border-[rgba(236,166,124,0.18)] pt-safe"
+            aria-label="Nawigacja główna"
         >
             <div class="nav-container">
                 <a href="/" class="logo no-underline" style="color: var(--text)"
@@ -237,7 +241,7 @@
                 </div>
             </div>
         </nav>
-        <main class="flex-1 pt-20">
+        <main id="main" class="flex-1 pt-20">
             <header>
                 <div class="landing-shell">
                     <header class="landing-shell-header">
@@ -465,12 +469,12 @@
                         class="landing-quick-game"
                         aria-labelledby="landing-quick-game-title"
                     >
-                        <h3
+                        <h2
                             id="landing-quick-game-title"
                             class="landing-quick-game-title"
                         >
                             Szybka gra
-                        </h3>
+                        </h2>
                         <p class="landing-quick-game-copy">
                             Dołączysz do publicznego lobby z graczami. Gdy pokój
                             jest pełny, otworzymy nowy. Maks. 8 osób.
@@ -485,7 +489,7 @@
                     </section>
 
                     <div id="active-rooms-section" class="active-rooms-block">
-                        <h3 class="active-rooms-title">Aktywne pokoje</h3>
+                        <h2 class="active-rooms-title">Aktywne pokoje</h2>
                         <div id="active-rooms-empty" class="active-rooms-empty">
                             <div
                                 class="active-rooms-empty-visual"
@@ -786,7 +790,7 @@
 
         <footer class="site-footer">
             <div class="site-footer-inner">
-                <nav class="site-footer-nav">
+                <nav class="site-footer-nav" aria-label="Linki w stopce">
                     <a href="/polityka-prywatnosci">Polityka prywatności</a>
                     <span class="site-footer-sep">·</span>
                     <a href="/cookies">Cookies</a>
@@ -889,7 +893,7 @@
                                 datasets: [
                                     {
                                         data: vals,
-                                        backgroundColor: "#d58f23",
+                                        backgroundColor: "#7a4f0f",
                                         borderRadius: 4,
                                         borderSkipped: false,
                                     },
